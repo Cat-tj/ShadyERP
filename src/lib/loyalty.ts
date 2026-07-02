@@ -1,0 +1,1 @@
+export const REDEEM_RATE_RUPIAH_PER_POINT = 100;

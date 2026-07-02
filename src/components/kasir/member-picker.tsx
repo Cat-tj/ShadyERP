@@ -2,7 +2,13 @@
 
 import { useEffect, useState } from "react";
 
-export type MemberOption = { id: string; name: string; phone: string; points: number };
+export type MemberOption = {
+  id: string;
+  name: string;
+  phone: string;
+  points: number;
+  depositBalance: number;
+};
 
 export function MemberPicker({
   value,

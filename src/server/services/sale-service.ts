@@ -83,6 +83,22 @@ export async function createSale(input: CreateSaleInput) {
     if (input.paymentMethod === "CASH" && input.amountPaid < total) {
       throw new Error("Uang diterima kurang dari total belanja.");
     }
+
+    let member = null;
+    if (input.paymentMethod === "DEPOSIT") {
+      if (!input.memberId) {
+        throw new Error("Pilih member dulu untuk bayar pakai saldo deposit.");
+      }
+      member = await tx.member.findFirst({ where: { id: input.memberId, tenantId: input.tenantId } });
+      if (!member) throw new Error("Member tidak ditemukan.");
+      if (member.depositBalance < total) {
+        throw new Error(
+          `Saldo deposit ${member.name} tidak cukup — sisa ${member.depositBalance}, butuh ${total}.`
+        );
+      }
+    }
+
+    const amountPaid = input.paymentMethod === "DEPOSIT" ? total : input.amountPaid;
     const changeAmount = input.paymentMethod === "CASH" ? input.amountPaid - total : 0;
 
     const now = new Date();
@@ -105,7 +121,7 @@ export async function createSale(input: CreateSaleInput) {
         taxAmount,
         total,
         paymentMethod: input.paymentMethod,
-        amountPaid: input.amountPaid,
+        amountPaid,
         changeAmount,
         status: "COMPLETED",
         items: { create: itemsData },
@@ -121,6 +137,13 @@ export async function createSale(input: CreateSaleInput) {
           data: { qty: { decrement: item.qty } },
         });
       }
+    }
+
+    if (member) {
+      await tx.member.update({
+        where: { id: member.id },
+        data: { depositBalance: { decrement: total } },
+      });
     }
 
     if (input.memberId) {

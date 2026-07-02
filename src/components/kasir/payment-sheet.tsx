@@ -13,6 +13,7 @@ const PAYMENT_METHODS: { value: CreateSalePayload["paymentMethod"]; label: strin
   { value: "QRIS", label: "QRIS" },
   { value: "TRANSFER", label: "Transfer" },
   { value: "EWALLET", label: "E-Wallet" },
+  { value: "DEPOSIT", label: "Saldo" },
 ];
 
 export function PaymentSheet({
@@ -40,6 +41,7 @@ export function PaymentSheet({
   const amountPaid = method === "CASH" ? Number(amountInput) || 0 : total;
   const change = method === "CASH" ? Math.max(0, amountPaid - total) : 0;
   const isCashInsufficient = method === "CASH" && amountPaid < total;
+  const isDepositInsufficient = method === "DEPOSIT" && (!member || member.depositBalance < total);
 
   function handleSubmit() {
     setError(null);
@@ -86,24 +88,33 @@ export function PaymentSheet({
 
         <div className="mt-4">
           <p className="mb-1.5 text-sm font-medium text-[var(--color-text)]">Metode pembayaran</p>
-          <div className="grid grid-cols-4 gap-2">
-            {PAYMENT_METHODS.map((option) => (
-              <button
-                key={option.value}
-                onClick={() => {
-                  setMethod(option.value);
-                  setAmountInput("");
-                }}
-                className={`min-h-[48px] rounded-lg border text-xs font-medium ${
-                  method === option.value
-                    ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
-                    : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
+          <div className="grid grid-cols-3 gap-2">
+            {PAYMENT_METHODS.map((option) => {
+              const disabled = option.value === "DEPOSIT" && !member;
+              return (
+                <button
+                  key={option.value}
+                  onClick={() => {
+                    setMethod(option.value);
+                    setAmountInput("");
+                  }}
+                  disabled={disabled}
+                  className={`min-h-[48px] rounded-lg border text-xs font-medium disabled:opacity-40 ${
+                    method === option.value
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
+                      : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              );
+            })}
           </div>
+          {method === "DEPOSIT" && !member && (
+            <p className="mt-1.5 text-xs text-[var(--color-text-secondary)]">
+              Pilih member dulu untuk bayar pakai saldo.
+            </p>
+          )}
         </div>
 
         {method === "CASH" ? (
@@ -147,6 +158,17 @@ export function PaymentSheet({
               </span>
             </div>
           </div>
+        ) : method === "DEPOSIT" ? (
+          <div className="mt-4 flex items-center justify-between rounded-lg bg-[var(--color-surface)] px-4 py-3">
+            <span className="text-sm text-[var(--color-text-secondary)]">Saldo {member?.name ?? "member"}</span>
+            <span
+              className={`tabular-nums text-lg font-bold ${
+                isDepositInsufficient ? "text-[var(--color-danger)]" : "text-[var(--color-text)]"
+              }`}
+            >
+              {formatRupiah(member?.depositBalance ?? 0)}
+            </span>
+          </div>
         ) : (
           <p className="mt-4 text-sm text-[var(--color-text-secondary)]">
             Pastikan pembayaran {formatRupiah(total)} sudah diterima lewat {PAYMENT_METHODS.find((m) => m.value === method)?.label} sebelum lanjut.
@@ -161,7 +183,7 @@ export function PaymentSheet({
 
         <button
           onClick={handleSubmit}
-          disabled={isPending || isCashInsufficient}
+          disabled={isPending || isCashInsufficient || isDepositInsufficient}
           className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           {isPending && (
