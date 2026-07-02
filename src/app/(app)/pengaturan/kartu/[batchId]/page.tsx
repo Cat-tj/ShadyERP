@@ -52,7 +52,7 @@ export default async function BatchDetailPage({
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+      <div id="print-area" className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
         {cardsWithQr.map((card) => (
           <div
             key={card.id}

@@ -1,4 +1,4 @@
-# ShadyERP — Kasir & Manajemen Toko untuk UMKM
+# Altora — Kasir & Manajemen Toko untuk UMKM
 
 SaaS untuk UMKM Indonesia (coffee shop, barbershop, toko kecil): kasir/POS, member
 kartu QR, absensi karyawan, dan laporan, dalam satu aplikasi web multi-tenant.

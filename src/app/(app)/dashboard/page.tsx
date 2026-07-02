@@ -35,7 +35,7 @@ export default async function DashboardPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 text-lg">
               {card.icon}
             </div>
-            <p className="mt-3 font-display tabular-nums text-2xl font-semibold text-[var(--color-text)]">
+            <p className="mt-3 font-mono-data tabular-nums text-2xl font-semibold text-[var(--color-text)]">
               {summary[card.key]}
             </p>
             <p className="text-xs text-[var(--color-text-secondary)]">{card.label}</p>

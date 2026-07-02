@@ -47,11 +47,11 @@ export default async function MemberDetailPage({
 
         <div className="mt-4 grid grid-cols-2 gap-3">
           <div className="rounded-lg bg-[var(--color-bg)] p-3">
-            <p className="font-display text-2xl font-semibold text-[var(--color-text)]">{member.points}</p>
+            <p className="font-mono-data tabular-nums text-2xl font-semibold text-[var(--color-text)]">{member.points}</p>
             <p className="text-xs text-[var(--color-text-secondary)]">Poin</p>
           </div>
           <div className="rounded-lg bg-[var(--color-bg)] p-3">
-            <p className="font-display tabular-nums text-2xl font-semibold text-[var(--color-text)]">
+            <p className="font-mono-data tabular-nums text-2xl font-semibold text-[var(--color-text)]">
               {formatRupiah(member.depositBalance)}
             </p>
             <p className="text-xs text-[var(--color-text-secondary)]">Saldo</p>

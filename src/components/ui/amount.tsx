@@ -16,7 +16,7 @@ export function Amount({
     lg: "text-3xl sm:text-4xl",
   };
   return (
-    <span className={`font-display tabular-nums font-semibold text-[var(--color-text)] ${SIZE_CLASS[size]} ${className}`}>
+    <span className={`font-mono-data tabular-nums font-semibold text-[var(--color-text)] ${SIZE_CLASS[size]} ${className}`}>
       {formatRupiah(value)}
     </span>
   );

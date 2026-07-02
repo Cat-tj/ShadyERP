@@ -83,7 +83,7 @@ export function RegisterMemberForm({ uid, tenantName }: { uid: string; tenantNam
         className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-60"
       >
         {isPending && (
-          <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+          <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)]" />
         )}
         {isPending ? "Mendaftar..." : "Daftar sekarang"}
       </button>
