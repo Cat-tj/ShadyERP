@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { navItemsForRole, type Role } from "@/lib/nav";
+import { UserIcon, PowerIcon } from "@/components/ui/icons";
 
 const ROLE_LABEL: Record<Role, string> = {
   OWNER: "Pemilik",
@@ -41,6 +42,7 @@ export function AppShell({
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {items.map((item) => {
             const active = pathname.startsWith(item.href);
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
@@ -51,9 +53,7 @@ export function AppShell({
                     : "text-[var(--color-text)] hover:bg-white/40"
                 }`}
               >
-                <span className="text-base" aria-hidden>
-                  {item.icon}
-                </span>
+                <Icon aria-hidden className="h-5 w-5 shrink-0" />
                 {item.label}
               </Link>
             );
@@ -88,14 +88,14 @@ export function AppShell({
               aria-label="Akun saya"
               className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-white/40"
             >
-              👤
+              <UserIcon aria-hidden className="h-5 w-5" />
             </Link>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
               aria-label="Keluar"
               className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-white/40"
             >
-              ⏻
+              <PowerIcon aria-hidden className="h-5 w-5" />
             </button>
           </div>
         </header>
@@ -108,6 +108,7 @@ export function AppShell({
         <nav className="glass-surface fixed inset-x-0 bottom-0 z-10 flex rounded-none border-x-0 border-b-0 md:hidden">
           {bottomItems.map((item) => {
             const active = pathname.startsWith(item.href);
+            const Icon = item.icon;
             return (
               <Link
                 key={item.href}
@@ -116,9 +117,7 @@ export function AppShell({
                   active ? "text-[var(--color-primary)]" : "text-[var(--color-text-secondary)]"
                 }`}
               >
-                <span className="text-lg" aria-hidden>
-                  {item.icon}
-                </span>
+                <Icon aria-hidden className="h-5 w-5" />
                 {item.label}
               </Link>
             );

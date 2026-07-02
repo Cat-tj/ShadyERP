@@ -7,6 +7,7 @@ import {
   updateCategoryAction,
   deleteCategoryAction,
 } from "@/app/(app)/produk/actions";
+import { XIcon, EditIcon } from "@/components/ui/icons";
 
 export type CategoryOption = { id: string; name: string };
 
@@ -115,7 +116,7 @@ export function KategoriManager({
                 aria-label={`Ubah kategori ${category.name}`}
                 className="flex h-6 w-6 items-center justify-center rounded-full text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
               >
-                ✎
+                <EditIcon aria-hidden className="h-3.5 w-3.5" />
               </button>
               <button
                 onClick={() => handleDelete(category.id)}
@@ -123,7 +124,7 @@ export function KategoriManager({
                 disabled={isPending}
                 className="flex h-6 w-6 items-center justify-center rounded-full text-xs text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
               >
-                ✕
+                <XIcon aria-hidden className="h-3.5 w-3.5" />
               </button>
             </div>
           )

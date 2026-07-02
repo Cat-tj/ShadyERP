@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import { formatRupiah } from "@/lib/format";
 import { PaymentSheet } from "@/components/kasir/payment-sheet";
+import { XIcon } from "@/components/ui/icons";
 
 export type PosProduct = {
   id: string;
@@ -260,7 +261,7 @@ export function PosScreen({
                 className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)]"
                 aria-label="Tutup"
               >
-                ✕
+                <XIcon aria-hidden className="h-5 w-5" />
               </button>
             </div>
             {cartPanel}
@@ -340,7 +341,7 @@ function CartPanel({
                   aria-label={`Hapus ${line.name}`}
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)]"
                 >
-                  ✕
+                  <XIcon aria-hidden className="h-4 w-4" />
                 </button>
               </div>
               <div className="mt-2 flex items-center justify-between">

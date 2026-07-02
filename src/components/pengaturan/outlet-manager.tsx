@@ -8,6 +8,7 @@ import {
   toggleOutletActiveAction,
 } from "@/app/(app)/pengaturan/outlet/actions";
 import { useToast, Toast } from "@/components/toast";
+import { XIcon } from "@/components/ui/icons";
 
 export type OutletRow = {
   id: string;
@@ -65,7 +66,7 @@ function OutletFormModal({
             aria-label="Tutup"
             className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
           >
-            ✕
+            <XIcon aria-hidden className="h-5 w-5" />
           </button>
         </div>
 

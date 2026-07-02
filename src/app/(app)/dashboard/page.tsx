@@ -4,12 +4,13 @@ import { getDashboardSummary } from "@/server/services/dashboard-service";
 import { formatTanggal } from "@/lib/format";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { navItemsForRole } from "@/lib/nav";
+import { BuildingIcon, BriefcaseIcon, PackageIcon, UsersIcon } from "@/components/ui/icons";
 
 const STAT_CARDS = [
-  { key: "outletCount", label: "Outlet aktif", icon: "🏬" },
-  { key: "userCount", label: "Karyawan aktif", icon: "🧑‍💼" },
-  { key: "productCount", label: "Produk aktif", icon: "📦" },
-  { key: "memberCount", label: "Member terdaftar", icon: "👥" },
+  { key: "outletCount", label: "Outlet aktif", icon: BuildingIcon },
+  { key: "userCount", label: "Karyawan aktif", icon: BriefcaseIcon },
+  { key: "productCount", label: "Produk aktif", icon: PackageIcon },
+  { key: "memberCount", label: "Member terdaftar", icon: UsersIcon },
 ] as const;
 
 export default async function DashboardPage() {
@@ -22,7 +23,7 @@ export default async function DashboardPage() {
       <div>
         <p className="text-sm text-[var(--color-text-secondary)]">{formatTanggal(new Date())}</p>
         <h1 className="font-display text-2xl font-semibold tracking-tight text-[var(--color-text)] sm:text-3xl">
-          Halo, {user.name.split(" ")[0]} 👋
+          Halo, {user.name.split(" ")[0]}
         </h1>
         <p className="text-sm text-[var(--color-text-secondary)]">
           Ini ringkasan {summary.tenant?.name ?? "tokomu"} hari ini.
@@ -32,8 +33,8 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {STAT_CARDS.map((card) => (
           <GlassPanel key={card.key} className="rounded-xl p-4">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 text-lg">
-              {card.icon}
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 text-[var(--color-primary)]">
+              <card.icon aria-hidden className="h-5 w-5" />
             </div>
             <p className="mt-3 font-mono-data tabular-nums text-2xl font-semibold text-[var(--color-text)]">
               {summary[card.key]}
@@ -55,9 +56,7 @@ export default async function DashboardPage() {
               href={item.href}
               className="flex min-h-[48px] items-center gap-2 rounded-lg border border-[var(--color-border)] px-3 text-sm font-medium text-[var(--color-text)] transition-colors duration-150 hover:bg-[var(--color-bg)]"
             >
-              <span className="text-base" aria-hidden>
-                {item.icon}
-              </span>
+              <item.icon aria-hidden className="h-5 w-5 shrink-0 text-[var(--color-text-secondary)]" />
               {item.label}
             </Link>
           ))}

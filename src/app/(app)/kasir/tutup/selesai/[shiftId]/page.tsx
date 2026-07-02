@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireSession } from "@/server/require-session";
 import { getShiftSummary } from "@/server/services/shift-service";
 import { formatRupiah } from "@/lib/format";
+import { CheckCircleIcon, AlertTriangleIcon } from "@/components/ui/icons";
 
 export default async function ShiftSelesaiPage({
   params,
@@ -25,8 +26,8 @@ export default async function ShiftSelesaiPage({
   return (
     <div className="mx-auto max-w-sm">
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center">
-        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-warning-bg)] text-xl">
-          {isPas ? "✅" : "⚠️"}
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]">
+          {isPas ? <CheckCircleIcon aria-hidden className="h-6 w-6" /> : <AlertTriangleIcon aria-hidden className="h-6 w-6" />}
         </div>
         <h1 className="mt-3 text-lg font-bold text-[var(--color-text)]">Shift ditutup</h1>
         <p className="text-sm text-[var(--color-text-secondary)]">{shift.outlet.name}</p>

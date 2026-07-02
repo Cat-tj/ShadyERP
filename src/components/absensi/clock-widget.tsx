@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { clockInAction, clockOutAction } from "@/app/(app)/absensi/actions";
 import { compressImageFile } from "@/lib/compress-image";
 import { formatJam } from "@/lib/format";
+import { CameraIcon } from "@/components/ui/icons";
 
 export type AttendanceInfo = {
   clockInAt: string | null;
@@ -136,8 +137,12 @@ export function ClockWidget({
             disabled={busy || !outletId}
             className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] disabled:opacity-60"
           >
-            {busy && <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)]" />}
-            {busy ? "Memproses..." : "📸 Absen masuk"}
+            {busy ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)]" />
+            ) : (
+              <CameraIcon aria-hidden className="h-5 w-5" />
+            )}
+            {busy ? "Memproses..." : "Absen masuk"}
           </button>
         </>
       ) : !attendance.clockOutAt ? (

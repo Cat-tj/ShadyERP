@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { XIcon } from "@/components/ui/icons";
 import { createUserAction, updateUserAction } from "@/app/(app)/pengaturan/karyawan/actions";
 
 export type OutletOption = { id: string; name: string };
@@ -92,7 +93,7 @@ export function UserFormModal({
             aria-label="Tutup"
             className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
           >
-            ✕
+            <XIcon aria-hidden className="h-5 w-5" />
           </button>
         </div>
 

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { formatRupiah } from "@/lib/format";
 import { createSaleAction, type CreateSalePayload } from "@/app/(app)/kasir/actions";
 import { MemberPicker, type MemberOption } from "@/components/kasir/member-picker";
+import { XIcon } from "@/components/ui/icons";
 
 const QUICK_CASH = [20000, 50000, 100000];
 
@@ -72,7 +73,7 @@ export function PaymentSheet({
             aria-label="Tutup"
             className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
           >
-            ✕
+            <XIcon aria-hidden className="h-5 w-5" />
           </button>
         </div>
 
