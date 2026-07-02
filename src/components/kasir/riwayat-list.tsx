@@ -162,7 +162,7 @@ export function RiwayatList({
               <button
                 onClick={handleVoid}
                 disabled={isPending}
-                className="min-h-[48px] flex-1 rounded-lg bg-[var(--color-danger)] text-sm font-semibold text-white disabled:opacity-60"
+                className="min-h-[48px] flex-1 rounded-lg bg-[var(--color-danger)] text-sm font-semibold text-[var(--color-on-primary)] disabled:opacity-60"
               >
                 {isPending ? "Memproses..." : "Ya, batalkan"}
               </button>

@@ -76,10 +76,10 @@ export function ProdukManager({
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--color-text)]">Produk</h1>
+        <h1 className="font-display text-2xl font-semibold text-[var(--color-text)]">Produk</h1>
         <button
           onClick={openCreate}
-          className="min-h-[44px] rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-white"
+          className="min-h-[44px] rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)]"
         >
           + Tambah produk
         </button>

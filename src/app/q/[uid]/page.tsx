@@ -3,10 +3,11 @@ import { getMemberPublicProfile } from "@/server/services/member-service";
 import { prisma } from "@/lib/prisma";
 import { RegisterMemberForm } from "@/components/member-portal/register-member-form";
 import { MemberProfile } from "@/components/member-portal/member-profile";
+import { GlassPanel } from "@/components/ui/glass-panel";
 
 function Shell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[var(--color-bg)] px-4 py-10">
+    <div className="portal-backdrop flex min-h-screen items-center justify-center px-4 py-10">
       {children}
     </div>
   );
@@ -14,13 +15,13 @@ function Shell({ children }: { children: React.ReactNode }) {
 
 function InfoCard({ title, description }: { title: string; description: string }) {
   return (
-    <div className="w-full max-w-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center">
+    <GlassPanel strong className="w-full max-w-sm rounded-xl p-6 text-center">
       <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--color-warning-bg)] text-xl">
         ⚠️
       </div>
-      <h1 className="text-lg font-bold text-[var(--color-text)]">{title}</h1>
+      <h1 className="font-display text-lg font-semibold text-[var(--color-text)]">{title}</h1>
       <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{description}</p>
-    </div>
+    </GlassPanel>
   );
 }
 

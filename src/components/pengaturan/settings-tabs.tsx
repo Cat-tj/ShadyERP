@@ -14,7 +14,7 @@ export function SettingsTabs() {
   const pathname = usePathname();
 
   return (
-    <div className="mb-4 flex gap-2 overflow-x-auto border-b border-[var(--color-border)] pb-px">
+    <div className="hairline-gold mb-4 flex gap-2 overflow-x-auto border-b pb-px">
       {TABS.map((tab) => {
         const active = pathname.startsWith(tab.href);
         return (

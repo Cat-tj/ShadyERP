@@ -90,7 +90,7 @@ export function KategoriManager({
               <button
                 onClick={() => handleRename(category.id)}
                 disabled={isPending}
-                className="h-9 rounded-md bg-[var(--color-primary)] px-2 text-xs font-semibold text-white"
+                className="h-9 rounded-md bg-[var(--color-primary)] px-2 text-xs font-semibold text-[var(--color-on-primary)]"
               >
                 Simpan
               </button>
@@ -141,7 +141,7 @@ export function KategoriManager({
         <button
           onClick={handleAdd}
           disabled={isPending || !newName.trim()}
-          className="h-10 rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-white disabled:opacity-40"
+          className="h-10 rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)] disabled:opacity-40"
         >
           Tambah
         </button>

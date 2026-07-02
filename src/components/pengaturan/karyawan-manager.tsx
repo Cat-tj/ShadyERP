@@ -70,7 +70,7 @@ export function KaryawanManager({
       <div className="flex justify-end">
         <button
           onClick={openCreate}
-          className="min-h-[44px] rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-white"
+          className="min-h-[44px] rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)]"
         >
           + Tambah karyawan
         </button>

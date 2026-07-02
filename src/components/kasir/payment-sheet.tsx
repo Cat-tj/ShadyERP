@@ -101,7 +101,7 @@ export function PaymentSheet({
                   disabled={disabled}
                   className={`min-h-[48px] rounded-lg border text-xs font-medium disabled:opacity-40 ${
                     method === option.value
-                      ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-white"
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)]"
                       : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]"
                   }`}
                 >
@@ -184,7 +184,7 @@ export function PaymentSheet({
         <button
           onClick={handleSubmit}
           disabled={isPending || isCashInsufficient || isDepositInsufficient}
-          className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-40"
+          className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           {isPending && (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />

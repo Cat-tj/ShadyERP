@@ -36,7 +36,7 @@ export default async function LaporanPage({
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="text-2xl font-bold text-[var(--color-text)]">Laporan</h1>
+        <h1 className="font-display text-2xl font-semibold text-[var(--color-text)]">Laporan</h1>
         <PeriodFilter activeDays={days} />
       </div>
 

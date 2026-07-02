@@ -19,7 +19,7 @@ export default async function AbsensiPage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--color-text)]">Absensi</h1>
+        <h1 className="font-display text-2xl font-semibold text-[var(--color-text)]">Absensi</h1>
         {(user.role === "OWNER" || user.role === "MANAGER") && (
           <a
             href="/absensi/tim"

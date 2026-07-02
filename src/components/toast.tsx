@@ -19,7 +19,7 @@ export function useToast() {
 export function Toast({ message }: { message: string | null }) {
   if (!message) return null;
   return (
-    <div className="fixed inset-x-4 bottom-24 z-50 mx-auto flex max-w-sm items-center justify-center rounded-lg bg-[var(--color-text)] px-4 py-3 text-center text-sm font-medium text-white shadow-lg md:bottom-6">
+    <div className="fixed inset-x-4 bottom-24 z-50 mx-auto flex max-w-sm items-center justify-center rounded-lg bg-[var(--color-text)] px-4 py-3 text-center text-sm font-medium text-[var(--color-on-primary)] shadow-lg md:bottom-6">
       {message}
     </div>
   );

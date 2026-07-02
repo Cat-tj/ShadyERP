@@ -15,7 +15,7 @@ export function PeriodFilter({ activeDays }: { activeDays: number }) {
           href={`/laporan?days=${period.days}`}
           className={`min-h-[40px] rounded-full px-4 text-sm font-medium flex items-center ${
             activeDays === period.days
-              ? "bg-[var(--color-primary)] text-white"
+              ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
               : "border border-[var(--color-border)] text-[var(--color-text)]"
           }`}
         >

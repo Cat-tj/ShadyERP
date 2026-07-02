@@ -82,7 +82,7 @@ export function UserFormModal({
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/40 sm:items-center sm:justify-center">
-      <div className="max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-[var(--color-bg)] p-5 sm:max-w-md sm:rounded-2xl">
+      <div className="max-h-[90vh] w-full overflow-y-auto glass-surface-strong rounded-t-2xl p-5 sm:max-w-md sm:rounded-2xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-[var(--color-text)]">
             {user ? "Ubah karyawan" : "Tambah karyawan"}
@@ -190,7 +190,7 @@ export function UserFormModal({
         <button
           onClick={handleSubmit}
           disabled={isPending}
-          className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-60"
         >
           {isPending && (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />

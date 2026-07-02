@@ -135,7 +135,7 @@ export default async function StrukPage({
         <PrintButton />
         <a
           href="/kasir"
-          className="flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] text-base font-semibold text-white"
+          className="flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)]"
         >
           Transaksi baru
         </a>

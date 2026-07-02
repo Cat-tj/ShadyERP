@@ -170,7 +170,7 @@ export function PosScreen({
               onClick={() => setActiveCategory("ALL")}
               className={`min-h-[40px] shrink-0 rounded-full px-4 text-sm font-medium ${
                 activeCategory === "ALL"
-                  ? "bg-[var(--color-primary)] text-white"
+                  ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
                   : "bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)]"
               }`}
             >
@@ -182,7 +182,7 @@ export function PosScreen({
                 onClick={() => setActiveCategory(category.id)}
                 className={`min-h-[40px] shrink-0 rounded-full px-4 text-sm font-medium ${
                   activeCategory === category.id
-                    ? "bg-[var(--color-primary)] text-white"
+                    ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
                     : "bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)]"
                 }`}
               >
@@ -224,7 +224,7 @@ export function PosScreen({
                       </span>
                     )}
                     {inCart && (
-                      <span className="mt-2 rounded-full bg-[var(--color-primary)] px-2 py-0.5 text-xs font-bold text-white">
+                      <span className="mt-2 rounded-full bg-[var(--color-primary)] px-2 py-0.5 text-xs font-bold text-[var(--color-on-primary)]">
                         {inCart.qty} di keranjang
                       </span>
                     )}
@@ -243,7 +243,7 @@ export function PosScreen({
       {cart.length > 0 && !showCartMobile && (
         <button
           onClick={() => setShowCartMobile(true)}
-          className="fixed inset-x-4 bottom-20 z-20 flex min-h-[52px] items-center justify-between rounded-lg bg-[var(--color-primary)] px-5 text-white shadow-lg md:hidden"
+          className="fixed inset-x-4 bottom-20 z-20 flex min-h-[52px] items-center justify-between rounded-lg bg-[var(--color-primary)] px-5 text-[var(--color-on-primary)] shadow-lg md:hidden"
         >
           <span className="text-sm font-medium">{cartCount} item</span>
           <span className="tabular-nums text-base font-bold">Lihat keranjang — {formatRupiah(total)}</span>
@@ -422,7 +422,7 @@ function CartPanel({
       <button
         onClick={onCheckout}
         disabled={cart.length === 0}
-        className="flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] text-base font-semibold text-white disabled:opacity-40"
+        className="flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] disabled:opacity-40"
       >
         Bayar — {formatRupiah(total)}
       </button>

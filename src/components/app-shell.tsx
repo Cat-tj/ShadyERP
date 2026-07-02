@@ -29,26 +29,26 @@ export function AppShell({
   return (
     <div className="flex min-h-screen w-full">
       {/* Sidebar desktop */}
-      <aside className="hidden w-64 shrink-0 flex-col border-r border-[var(--color-border)] bg-[var(--color-surface)] md:flex">
-        <div className="flex h-16 items-center gap-2 border-b border-[var(--color-border)] px-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-primary)] text-sm font-bold text-white">
+      <aside className="glass-surface sticky top-0 hidden h-screen w-64 shrink-0 flex-col rounded-none border-y-0 border-l-0 md:flex">
+        <div className="flex h-16 items-center gap-3 border-b border-[var(--color-gold-soft)] px-5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-primary)] font-display text-sm font-semibold text-[var(--color-on-primary)]">
             {tenantName.slice(0, 1).toUpperCase()}
           </div>
           <div className="min-w-0">
-            <p className="truncate text-sm font-bold text-[var(--color-text)]">{tenantName}</p>
+            <p className="truncate font-display text-sm font-semibold text-[var(--color-text)]">{tenantName}</p>
           </div>
         </div>
-        <nav className="flex-1 space-y-1 px-3 py-4">
+        <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {items.map((item) => {
             const active = pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex min-h-[48px] items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors ${
+                className={`flex min-h-[48px] items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors duration-150 ${
                   active
-                    ? "bg-[var(--color-primary)] text-white"
-                    : "text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+                    ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                    : "text-[var(--color-text)] hover:bg-white/40"
                 }`}
               >
                 <span className="text-base" aria-hidden>
@@ -59,12 +59,12 @@ export function AppShell({
             );
           })}
         </nav>
-        <div className="border-t border-[var(--color-border)] p-4">
+        <div className="border-t border-[var(--color-gold-soft)] p-4">
           <p className="truncate text-sm font-semibold text-[var(--color-text)]">{userName}</p>
           <p className="text-xs text-[var(--color-text-secondary)]">{ROLE_LABEL[role]}</p>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
-            className="mt-3 min-h-[40px] w-full rounded-lg border border-[var(--color-border)] text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+            className="mt-3 min-h-[40px] w-full rounded-lg border border-[var(--color-border)] bg-white/40 text-sm font-medium text-[var(--color-text)] transition-colors duration-150 hover:bg-white/70"
           >
             Keluar
           </button>
@@ -73,35 +73,35 @@ export function AppShell({
 
       <div className="flex min-h-screen flex-1 flex-col">
         {/* Topbar mobile & tablet */}
-        <header className="flex h-14 items-center justify-between border-b border-[var(--color-border)] bg-[var(--color-surface)] px-4 md:hidden">
+        <header className="glass-surface sticky top-0 z-10 flex h-14 items-center justify-between rounded-none border-x-0 border-t-0 px-4 md:hidden">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-primary)] text-xs font-bold text-white">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-primary)] font-display text-xs font-semibold text-[var(--color-on-primary)]">
               {tenantName.slice(0, 1).toUpperCase()}
             </div>
-            <p className="truncate text-sm font-bold text-[var(--color-text)]">{tenantName}</p>
+            <p className="truncate font-display text-sm font-semibold text-[var(--color-text)]">{tenantName}</p>
           </div>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             aria-label="Keluar"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)]"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-white/40"
           >
             ⏻
           </button>
         </header>
 
-        <main className="flex-1 overflow-y-auto bg-[var(--color-bg)] px-4 py-5 pb-24 md:px-8 md:py-8 md:pb-8">
+        <main className="flex-1 overflow-y-auto px-4 py-5 pb-24 md:px-8 md:py-8 md:pb-8">
           {children}
         </main>
 
         {/* Bottom nav mobile */}
-        <nav className="fixed inset-x-0 bottom-0 z-10 flex border-t border-[var(--color-border)] bg-[var(--color-surface)] md:hidden">
+        <nav className="glass-surface fixed inset-x-0 bottom-0 z-10 flex rounded-none border-x-0 border-b-0 md:hidden">
           {bottomItems.map((item) => {
             const active = pathname.startsWith(item.href);
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium ${
+                className={`flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors duration-150 ${
                   active ? "text-[var(--color-primary)]" : "text-[var(--color-text-secondary)]"
                 }`}
               >

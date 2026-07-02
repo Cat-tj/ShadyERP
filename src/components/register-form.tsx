@@ -41,7 +41,7 @@ function Field({
         required
         placeholder={placeholder}
         autoComplete={autoComplete}
-        className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+        className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-white/70 px-4 text-base text-[var(--color-text)] outline-none transition-colors duration-150 focus:border-[var(--color-primary)] focus:bg-white focus:ring-2 focus:ring-[var(--color-primary)]/20"
       />
     </div>
   );
@@ -69,7 +69,7 @@ export function RegisterForm() {
           name="businessType"
           required
           defaultValue="FNB"
-          className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+          className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-white/70 px-4 text-base text-[var(--color-text)] outline-none transition-colors duration-150 focus:border-[var(--color-primary)] focus:bg-white focus:ring-2 focus:ring-[var(--color-primary)]/20"
         >
           {BUSINESS_TYPES.map((type) => (
             <option key={type.value} value={type.value}>
@@ -94,7 +94,7 @@ export function RegisterForm() {
       <button
         type="submit"
         disabled={isPending}
-        className="mt-2 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-white transition-opacity hover:opacity-90 disabled:opacity-60"
+        className="mt-2 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-60"
       >
         {isPending && (
           <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />

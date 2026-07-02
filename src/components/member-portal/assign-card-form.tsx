@@ -39,7 +39,7 @@ export function AssignCardForm({ memberId }: { memberId: string }) {
         <button
           onClick={handleSubmit}
           disabled={isPending || !serialNumber.trim()}
-          className="min-h-[44px] rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-white disabled:opacity-50"
+          className="min-h-[44px] rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)] disabled:opacity-50"
         >
           {isPending ? "..." : "Hubungkan"}
         </button>

@@ -25,7 +25,7 @@ export default async function AbsensiTimPage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div>
-        <h1 className="text-2xl font-bold text-[var(--color-text)]">Kelola tim</h1>
+        <h1 className="font-display text-2xl font-semibold text-[var(--color-text)]">Kelola tim</h1>
         <p className="text-sm text-[var(--color-text-secondary)]">Atur jadwal kerja dan pantau absensi timmu.</p>
       </div>
 

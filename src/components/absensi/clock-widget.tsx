@@ -134,7 +134,7 @@ export function ClockWidget({
           <button
             onClick={() => fileInputRef.current?.click()}
             disabled={busy || !outletId}
-            className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-white disabled:opacity-60"
+            className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] disabled:opacity-60"
           >
             {busy && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}
             {busy ? "Memproses..." : "📸 Absen masuk"}
@@ -161,7 +161,7 @@ export function ClockWidget({
           <button
             onClick={handleClockOut}
             disabled={busy}
-            className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-danger)] text-base font-semibold text-white disabled:opacity-60"
+            className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-danger)] text-base font-semibold text-[var(--color-on-primary)] disabled:opacity-60"
           >
             {busy && <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />}
             {busy ? "Memproses..." : "Absen pulang"}

@@ -36,7 +36,7 @@ export default async function BatchDetailPage({
     <div className="mx-auto max-w-5xl">
       <div className="mb-4 flex items-center justify-between print:hidden">
         <div>
-          <h1 className="text-xl font-bold text-[var(--color-text)]">
+          <h1 className="font-display text-xl font-semibold text-[var(--color-text)]">
             Batch {cards[0].serialNumber.split("-")[0]}
           </h1>
           <p className="text-sm text-[var(--color-text-secondary)]">{cards.length} kartu siap cetak</p>

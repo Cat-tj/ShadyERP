@@ -14,7 +14,7 @@ export default async function MemberPage({
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-[var(--color-text)]">Member</h1>
+        <h1 className="font-display text-2xl font-semibold text-[var(--color-text)]">Member</h1>
       </div>
 
       <form action="/member" className="flex gap-2">
@@ -27,7 +27,7 @@ export default async function MemberPage({
         />
         <button
           type="submit"
-          className="min-h-[48px] rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-white"
+          className="min-h-[48px] rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)]"
         >
           Cari
         </button>

@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { redeemPointsAction } from "@/app/q/[uid]/actions";
 import { formatRupiah, formatTanggalPendek } from "@/lib/format";
 import { REDEEM_RATE_RUPIAH_PER_POINT } from "@/lib/loyalty";
+import { GlassPanel } from "@/components/ui/glass-panel";
 
 export type MemberProfileData = {
   id: string;
@@ -44,22 +45,22 @@ export function MemberProfile({ uid, data }: { uid: string; data: MemberProfileD
 
   return (
     <div className="w-full max-w-sm">
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-center">
-        <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-primary)] text-xl font-bold text-white">
+      <GlassPanel strong className="rounded-xl p-6 text-center">
+        <div className="mx-auto mb-2 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-primary)] font-display text-xl font-semibold text-[var(--color-on-primary)]">
           {data.name.slice(0, 1).toUpperCase()}
         </div>
-        <h1 className="text-lg font-bold text-[var(--color-text)]">{data.name}</h1>
+        <h1 className="font-display text-xl font-semibold tracking-tight text-[var(--color-text)]">{data.name}</h1>
         <p className="text-xs text-[var(--color-text-secondary)]">
           Member sejak {formatTanggalPendek(data.joinedAt)}
         </p>
 
         <div className="mt-4 grid grid-cols-2 gap-3">
-          <div className="rounded-lg bg-[var(--color-bg)] p-3">
-            <p className="text-2xl font-bold text-[var(--color-text)]">{data.points}</p>
+          <div className="rounded-lg bg-white/50 p-3">
+            <p className="font-display text-2xl font-semibold text-[var(--color-text)]">{data.points}</p>
             <p className="text-xs text-[var(--color-text-secondary)]">Poin</p>
           </div>
-          <div className="rounded-lg bg-[var(--color-bg)] p-3">
-            <p className="tabular-nums text-2xl font-bold text-[var(--color-text)]">
+          <div className="rounded-lg bg-white/50 p-3">
+            <p className="font-display tabular-nums text-2xl font-semibold text-[var(--color-text)]">
               {formatRupiah(data.depositBalance)}
             </p>
             <p className="text-xs text-[var(--color-text-secondary)]">Saldo</p>
@@ -70,12 +71,12 @@ export function MemberProfile({ uid, data }: { uid: string; data: MemberProfileD
           <button
             onClick={() => setShowRedeem(true)}
             disabled={data.points <= 0}
-            className="mt-4 flex min-h-[48px] w-full items-center justify-center rounded-lg border border-[var(--color-border)] text-sm font-semibold text-[var(--color-text)] disabled:opacity-40"
+            className="mt-4 flex min-h-[48px] w-full items-center justify-center rounded-lg border border-[var(--color-border)] bg-white/40 text-sm font-semibold text-[var(--color-text)] transition-colors duration-150 hover:bg-white/70 disabled:opacity-40"
           >
             Tukar poin jadi saldo
           </button>
         ) : (
-          <div className="mt-4 rounded-lg bg-[var(--color-bg)] p-3 text-left">
+          <div className="mt-4 rounded-lg bg-white/50 p-3 text-left">
             {success ? (
               <p className="text-sm text-[var(--color-text)]">
                 Poin berhasil ditukar! Saldo kamu sudah bertambah.
@@ -98,12 +99,12 @@ export function MemberProfile({ uid, data }: { uid: string; data: MemberProfileD
                   value={points}
                   onChange={(e) => setPoints(e.target.value)}
                   placeholder={`Maks ${data.points}`}
-                  className="mb-2 min-h-[44px] w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+                  className="mb-2 min-h-[44px] w-full rounded-lg border border-[var(--color-border)] bg-white/70 px-3 text-sm tabular-nums outline-none transition-colors duration-150 focus:border-[var(--color-primary)] focus:bg-white"
                 />
                 <button
                   onClick={handleRedeem}
                   disabled={isPending}
-                  className="flex min-h-[44px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] text-sm font-semibold text-white disabled:opacity-60"
+                  className="flex min-h-[44px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] text-sm font-semibold text-[var(--color-on-primary)] disabled:opacity-60"
                 >
                   {isPending ? "Memproses..." : "Tukar sekarang"}
                 </button>
@@ -111,10 +112,10 @@ export function MemberProfile({ uid, data }: { uid: string; data: MemberProfileD
             )}
           </div>
         )}
-      </div>
+      </GlassPanel>
 
-      <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-        <h2 className="mb-2 text-sm font-bold text-[var(--color-text)]">Riwayat belanja</h2>
+      <GlassPanel strong className="mt-4 rounded-xl p-4">
+        <h2 className="mb-2 font-display text-sm font-semibold text-[var(--color-text)]">Riwayat belanja</h2>
         {data.sales.length === 0 ? (
           <p className="py-4 text-center text-sm text-[var(--color-text-secondary)]">Belum ada transaksi.</p>
         ) : (
@@ -134,7 +135,7 @@ export function MemberProfile({ uid, data }: { uid: string; data: MemberProfileD
             ))}
           </div>
         )}
-      </div>
+      </GlassPanel>
     </div>
   );
 }

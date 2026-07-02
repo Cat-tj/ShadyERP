@@ -140,7 +140,7 @@ export function JadwalManager({
         <button
           onClick={handleAdd}
           disabled={isPending}
-          className="mt-4 flex min-h-[48px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] text-sm font-semibold text-white disabled:opacity-60 sm:w-auto sm:px-6"
+          className="mt-4 flex min-h-[48px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] text-sm font-semibold text-[var(--color-on-primary)] disabled:opacity-60 sm:w-auto sm:px-6"
         >
           {isPending ? "Menyimpan..." : "Tambah jadwal"}
         </button>
