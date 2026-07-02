@@ -75,7 +75,7 @@ export function AppShell({
 
       <div className="flex min-h-screen flex-1 flex-col">
         {/* Topbar mobile & tablet */}
-        <header className="glass-surface sticky top-0 z-10 flex h-14 items-center justify-between rounded-none border-x-0 border-t-0 px-4 md:hidden">
+        <header className="glass-nav sticky top-0 z-10 flex h-14 items-center justify-between rounded-none border-x-0 border-t-0 px-4 md:hidden">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-primary)] font-display text-xs font-semibold text-[var(--color-on-primary)]">
               {tenantName.slice(0, 1).toUpperCase()}
@@ -105,7 +105,7 @@ export function AppShell({
         </main>
 
         {/* Bottom nav mobile */}
-        <nav className="glass-surface fixed inset-x-0 bottom-0 z-10 flex rounded-none border-x-0 border-b-0 md:hidden">
+        <nav className="glass-nav fixed inset-x-0 bottom-0 z-10 flex rounded-none border-x-0 border-b-0 md:hidden">
           {bottomItems.map((item) => {
             const active = pathname.startsWith(item.href);
             const Icon = item.icon;
