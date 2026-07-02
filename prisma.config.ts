@@ -9,6 +9,9 @@ export default defineConfig({
     seed: "npx tsx prisma/seed.ts",
   },
   datasource: {
-    url: env("DATABASE_URL"),
+    // Migrasi butuh koneksi langsung (bukan lewat pgbouncer/transaction pooler),
+    // karena schema engine pakai advisory lock yang tidak didukung mode pooling.
+    // DIRECT_URL dipakai kalau ada (mis. Supabase); fallback ke DATABASE_URL untuk dev lokal.
+    url: process.env.DIRECT_URL ?? env("DATABASE_URL"),
   },
 });
