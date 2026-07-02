@@ -1,7 +1,9 @@
+import Link from "next/link";
 import { requireSession } from "@/server/require-session";
 import { getDashboardSummary } from "@/server/services/dashboard-service";
 import { formatTanggal } from "@/lib/format";
 import { GlassPanel } from "@/components/ui/glass-panel";
+import { navItemsForRole } from "@/lib/nav";
 
 const STAT_CARDS = [
   { key: "outletCount", label: "Outlet aktif", icon: "🏬" },
@@ -13,6 +15,7 @@ const STAT_CARDS = [
 export default async function DashboardPage() {
   const user = await requireSession();
   const summary = await getDashboardSummary(user.tenantId);
+  const quickLinks = navItemsForRole(user.role).filter((item) => item.href !== "/dashboard");
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
@@ -41,11 +44,24 @@ export default async function DashboardPage() {
       </div>
 
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-        <h2 className="font-display text-base font-semibold text-[var(--color-text)]">Mulai berjualan</h2>
+        <h2 className="font-display text-base font-semibold text-[var(--color-text)]">Aksi cepat</h2>
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-          Layar kasir, laporan omzet, dan kartu member akan hadir di tahap berikutnya. Untuk
-          sekarang, coba jelajahi menu di samping atau di bawah layar.
+          Pintasan ke menu yang paling sering dipakai.
         </p>
+        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {quickLinks.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="flex min-h-[48px] items-center gap-2 rounded-lg border border-[var(--color-border)] px-3 text-sm font-medium text-[var(--color-text)] transition-colors duration-150 hover:bg-[var(--color-bg)]"
+            >
+              <span className="text-base" aria-hidden>
+                {item.icon}
+              </span>
+              {item.label}
+            </Link>
+          ))}
+        </div>
       </div>
     </div>
   );
