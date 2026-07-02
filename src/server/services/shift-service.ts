@@ -1,0 +1,91 @@
+import { prisma } from "@/lib/prisma";
+
+/**
+ * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
+ */
+export async function getOpenShift(tenantId: string, userId: string) {
+  return prisma.cashierShift.findFirst({
+    where: { tenantId, userId, status: "OPEN" },
+    include: { outlet: true },
+  });
+}
+
+export async function openShift(input: {
+  tenantId: string;
+  userId: string;
+  outletId: string;
+  openingCash: number;
+}) {
+  const existing = await getOpenShift(input.tenantId, input.userId);
+  if (existing) {
+    throw new Error("Kamu masih punya shift yang terbuka. Tutup shift itu dulu sebelum buka yang baru.");
+  }
+
+  return prisma.cashierShift.create({
+    data: {
+      tenantId: input.tenantId,
+      userId: input.userId,
+      outletId: input.outletId,
+      openingCash: input.openingCash,
+      status: "OPEN",
+    },
+  });
+}
+
+export async function closeShift(input: {
+  tenantId: string;
+  shiftId: string;
+  closingCash: number;
+}) {
+  const shift = await prisma.cashierShift.findFirst({
+    where: { id: input.shiftId, tenantId: input.tenantId },
+  });
+  if (!shift) {
+    throw new Error("Shift tidak ditemukan.");
+  }
+  if (shift.status === "CLOSED") {
+    throw new Error("Shift ini sudah ditutup sebelumnya.");
+  }
+
+  const cashSalesTotal = await prisma.sale.aggregate({
+    where: {
+      tenantId: input.tenantId,
+      shiftId: shift.id,
+      status: "COMPLETED",
+      paymentMethod: "CASH",
+    },
+    _sum: { total: true },
+  });
+
+  const expectedCash = shift.openingCash + (cashSalesTotal._sum.total ?? 0);
+
+  return prisma.cashierShift.update({
+    where: { id: shift.id },
+    data: {
+      status: "CLOSED",
+      closedAt: new Date(),
+      closingCash: input.closingCash,
+      expectedCash,
+    },
+  });
+}
+
+export async function getShiftSummary(tenantId: string, shiftId: string) {
+  const shift = await prisma.cashierShift.findFirst({
+    where: { id: shiftId, tenantId },
+    include: { outlet: true, user: true },
+  });
+  if (!shift) return null;
+
+  const sales = await prisma.sale.findMany({
+    where: { tenantId, shiftId, status: "COMPLETED" },
+  });
+
+  const cashSales = sales.filter((sale) => sale.paymentMethod === "CASH");
+  const totalPenjualan = sales.reduce((sum, sale) => sum + sale.total, 0);
+  const totalPenjualanCash = cashSales.reduce((sum, sale) => sum + sale.total, 0);
+  const jumlahTransaksi = sales.length;
+  const jumlahTransaksiCash = cashSales.length;
+
+  return { shift, totalPenjualan, totalPenjualanCash, jumlahTransaksi, jumlahTransaksiCash };
+}

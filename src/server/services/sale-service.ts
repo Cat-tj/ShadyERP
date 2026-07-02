@@ -1,0 +1,221 @@
+import { prisma } from "@/lib/prisma";
+import { buildInvoiceNumber, buildInvoicePrefix } from "@/lib/invoice";
+import type { PaymentMethod } from "@prisma/client";
+
+/**
+ * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
+ */
+
+export type CartItemInput = {
+  productId: string;
+  qty: number;
+  discountAmount: number;
+};
+
+export type CreateSaleInput = {
+  tenantId: string;
+  outletId: string;
+  shiftId: string;
+  cashierId: string;
+  memberId?: string | null;
+  items: CartItemInput[];
+  discountAmount: number;
+  paymentMethod: PaymentMethod;
+  amountPaid: number;
+};
+
+export async function createSale(input: CreateSaleInput) {
+  if (input.items.length === 0) {
+    throw new Error("Keranjang masih kosong. Tambahkan produk dulu.");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const productIds = input.items.map((item) => item.productId);
+    const products = await tx.product.findMany({
+      where: { tenantId: input.tenantId, id: { in: productIds } },
+      include: { stocks: { where: { outletId: input.outletId } } },
+    });
+    const productMap = new Map(products.map((p) => [p.id, p]));
+
+    let subtotal = 0;
+    const itemsData: {
+      tenantId: string;
+      productId: string;
+      productName: string;
+      price: number;
+      qty: number;
+      discountAmount: number;
+      subtotal: number;
+    }[] = [];
+
+    for (const item of input.items) {
+      const product = productMap.get(item.productId);
+      if (!product || !product.isActive) {
+        throw new Error("Salah satu produk di keranjang sudah tidak tersedia. Muat ulang halaman.");
+      }
+      if (product.trackStock) {
+        const stockQty = product.stocks[0]?.qty ?? 0;
+        if (stockQty < item.qty) {
+          throw new Error(
+            `Stok ${product.name} tinggal ${stockQty} — kurangi jumlah atau perbarui stok.`
+          );
+        }
+      }
+      const itemSubtotal = product.price * item.qty - item.discountAmount;
+      subtotal += itemSubtotal;
+      itemsData.push({
+        tenantId: input.tenantId,
+        productId: product.id,
+        productName: product.name,
+        price: product.price,
+        qty: item.qty,
+        discountAmount: item.discountAmount,
+        subtotal: itemSubtotal,
+      });
+    }
+
+    const setting = await tx.tenantSetting.findUnique({ where: { tenantId: input.tenantId } });
+    const taxPercent = setting?.taxPercent ?? 0;
+    const afterDiscount = subtotal - input.discountAmount;
+    const taxAmount = Math.round((afterDiscount * taxPercent) / 100);
+    const total = afterDiscount + taxAmount;
+
+    if (input.paymentMethod === "CASH" && input.amountPaid < total) {
+      throw new Error("Uang diterima kurang dari total belanja.");
+    }
+    const changeAmount = input.paymentMethod === "CASH" ? input.amountPaid - total : 0;
+
+    const now = new Date();
+    const ymdPrefix = buildInvoicePrefix(input.outletId, now);
+    const countToday = await tx.sale.count({
+      where: { tenantId: input.tenantId, outletId: input.outletId, invoiceNumber: { startsWith: ymdPrefix } },
+    });
+    const invoiceNumber = buildInvoiceNumber(input.outletId, now, countToday + 1);
+
+    const sale = await tx.sale.create({
+      data: {
+        tenantId: input.tenantId,
+        outletId: input.outletId,
+        shiftId: input.shiftId,
+        cashierId: input.cashierId,
+        memberId: input.memberId ?? null,
+        invoiceNumber,
+        subtotal,
+        discountAmount: input.discountAmount,
+        taxAmount,
+        total,
+        paymentMethod: input.paymentMethod,
+        amountPaid: input.amountPaid,
+        changeAmount,
+        status: "COMPLETED",
+        items: { create: itemsData },
+      },
+      include: { items: true },
+    });
+
+    for (const item of input.items) {
+      const product = productMap.get(item.productId)!;
+      if (product.trackStock) {
+        await tx.productStock.update({
+          where: { productId_outletId: { productId: item.productId, outletId: input.outletId } },
+          data: { qty: { decrement: item.qty } },
+        });
+      }
+    }
+
+    if (input.memberId) {
+      const points = Math.floor(total / (setting?.pointsPerAmount ?? 10000));
+      if (points > 0) {
+        await tx.pointTransaction.create({
+          data: {
+            tenantId: input.tenantId,
+            memberId: input.memberId,
+            type: "EARN",
+            points,
+            saleId: sale.id,
+            note: `Poin dari transaksi ${invoiceNumber}`,
+          },
+        });
+        await tx.member.update({
+          where: { id: input.memberId },
+          data: { points: { increment: points } },
+        });
+      }
+    }
+
+    return sale;
+  });
+}
+
+export async function getSaleById(tenantId: string, saleId: string) {
+  return prisma.sale.findFirst({
+    where: { id: saleId, tenantId },
+    include: {
+      items: true,
+      outlet: true,
+      cashier: true,
+      member: true,
+    },
+  });
+}
+
+export async function listSales(tenantId: string, outletIds: string[], take = 50) {
+  return prisma.sale.findMany({
+    where: { tenantId, outletId: { in: outletIds } },
+    include: { cashier: true, member: true, items: true, outlet: true },
+    orderBy: { createdAt: "desc" },
+    take,
+  });
+}
+
+export async function voidSale(tenantId: string, saleId: string, reason: string) {
+  if (!reason.trim()) {
+    throw new Error("Alasan pembatalan wajib diisi.");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const sale = await tx.sale.findFirst({
+      where: { id: saleId, tenantId },
+      include: { items: true },
+    });
+    if (!sale) throw new Error("Transaksi tidak ditemukan.");
+    if (sale.status === "VOIDED") throw new Error("Transaksi ini sudah dibatalkan sebelumnya.");
+
+    for (const item of sale.items) {
+      const product = await tx.product.findUnique({ where: { id: item.productId } });
+      if (product?.trackStock) {
+        await tx.productStock.updateMany({
+          where: { productId: item.productId, outletId: sale.outletId },
+          data: { qty: { increment: item.qty } },
+        });
+      }
+    }
+
+    if (sale.memberId) {
+      const earnTx = await tx.pointTransaction.findFirst({
+        where: { saleId: sale.id, type: "EARN" },
+      });
+      if (earnTx && earnTx.points > 0) {
+        await tx.pointTransaction.create({
+          data: {
+            tenantId,
+            memberId: sale.memberId,
+            type: "ADJUST",
+            points: -earnTx.points,
+            saleId: sale.id,
+            note: `Pembatalan transaksi ${sale.invoiceNumber}`,
+          },
+        });
+        await tx.member.update({
+          where: { id: sale.memberId },
+          data: { points: { decrement: earnTx.points } },
+        });
+      }
+    }
+
+    return tx.sale.update({
+      where: { id: sale.id },
+      data: { status: "VOIDED", voidReason: reason },
+    });
+  });
+}
