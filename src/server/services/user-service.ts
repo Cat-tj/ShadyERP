@@ -85,6 +85,23 @@ export async function updateUser(
   });
 }
 
+export async function changeOwnPassword(
+  userId: string,
+  currentPassword: string,
+  newPassword: string
+) {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+  if (!user) throw new Error("Akun tidak ditemukan.");
+
+  const isValid = await bcrypt.compare(currentPassword, user.passwordHash);
+  if (!isValid) {
+    throw new Error("Password lama salah. Coba periksa lagi.");
+  }
+
+  const passwordHash = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+}
+
 export async function setUserActive(tenantId: string, id: string, isActive: boolean, actorId: string) {
   if (id === actorId && !isActive) {
     throw new Error("Kamu tidak bisa menonaktifkan akunmu sendiri.");

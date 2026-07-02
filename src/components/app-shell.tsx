@@ -60,8 +60,10 @@ export function AppShell({
           })}
         </nav>
         <div className="border-t border-[var(--color-gold-soft)] p-4">
-          <p className="truncate text-sm font-semibold text-[var(--color-text)]">{userName}</p>
-          <p className="text-xs text-[var(--color-text-secondary)]">{ROLE_LABEL[role]}</p>
+          <Link href="/akun" className="block hover:opacity-80">
+            <p className="truncate text-sm font-semibold text-[var(--color-text)]">{userName}</p>
+            <p className="text-xs text-[var(--color-text-secondary)]">{ROLE_LABEL[role]}</p>
+          </Link>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             className="mt-3 min-h-[40px] w-full rounded-lg border border-[var(--color-border)] bg-white/40 text-sm font-medium text-[var(--color-text)] transition-colors duration-150 hover:bg-white/70"
@@ -80,13 +82,22 @@ export function AppShell({
             </div>
             <p className="truncate font-display text-sm font-semibold text-[var(--color-text)]">{tenantName}</p>
           </div>
-          <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
-            aria-label="Keluar"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-white/40"
-          >
-            ⏻
-          </button>
+          <div className="flex items-center gap-1">
+            <Link
+              href="/akun"
+              aria-label="Akun saya"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-white/40"
+            >
+              👤
+            </Link>
+            <button
+              onClick={() => signOut({ callbackUrl: "/login" })}
+              aria-label="Keluar"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-white/40"
+            >
+              ⏻
+            </button>
+          </div>
         </header>
 
         <main className="flex-1 overflow-y-auto px-4 py-5 pb-24 md:px-8 md:py-8 md:pb-8">

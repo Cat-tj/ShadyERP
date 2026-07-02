@@ -4,6 +4,7 @@ import { requireSession } from "@/server/require-session";
 import { getMemberDetail } from "@/server/services/member-service";
 import { formatRupiah, formatTanggal } from "@/lib/format";
 import { AssignCardForm } from "@/components/member-portal/assign-card-form";
+import { MemberIdentitySection } from "@/components/member/member-identity-section";
 
 const POINT_TYPE_LABEL: Record<string, string> = {
   EARN: "Dapat poin",
@@ -34,16 +35,15 @@ export default async function MemberDetailPage({
       </Link>
 
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-        <h1 className="font-display text-2xl font-semibold text-[var(--color-text)]">{member.name}</h1>
-        <p className="text-sm text-[var(--color-text-secondary)]">
-          {member.phone}
-          {member.email ? ` · ${member.email}` : ""} · Member sejak {formatTanggal(member.joinedAt)}
-        </p>
-        {member.uidCard && (
-          <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
-            Kartu: {member.uidCard.serialNumber}
-          </p>
-        )}
+        <MemberIdentitySection
+          memberId={member.id}
+          name={member.name}
+          phone={member.phone}
+          email={member.email}
+          joinedLabel={formatTanggal(member.joinedAt)}
+          cardSerial={member.uidCard?.serialNumber ?? null}
+          canManage={canManage}
+        />
 
         <div className="mt-4 grid grid-cols-2 gap-3">
           <div className="rounded-lg bg-[var(--color-bg)] p-3">

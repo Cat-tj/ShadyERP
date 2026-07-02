@@ -74,6 +74,32 @@ export async function getMemberPublicProfile(memberId: string) {
   return { member, sales };
 }
 
+export async function updateMemberInfo(
+  tenantId: string,
+  memberId: string,
+  input: { name: string; phone: string; email?: string | null }
+) {
+  const name = input.name.trim();
+  const phone = input.phone.trim();
+  if (!name) throw new Error("Nama wajib diisi.");
+  if (!phone) throw new Error("Nomor HP wajib diisi.");
+
+  const member = await prisma.member.findFirst({ where: { id: memberId, tenantId } });
+  if (!member) throw new Error("Member tidak ditemukan.");
+
+  const duplicate = await prisma.member.findFirst({
+    where: { tenantId, phone, NOT: { id: memberId } },
+  });
+  if (duplicate) {
+    throw new Error("Nomor HP ini sudah dipakai member lain.");
+  }
+
+  return prisma.member.update({
+    where: { id: memberId },
+    data: { name, phone, email: input.email?.trim() || null },
+  });
+}
+
 export async function redeemPoints(memberId: string, points: number) {
   if (!Number.isFinite(points) || points <= 0) {
     throw new Error("Jumlah poin tidak valid.");
