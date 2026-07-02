@@ -89,3 +89,21 @@ export async function registerTenant(input: RegisterTenantInput) {
 
   return result;
 }
+
+export type TenantSettingInput = {
+  taxPercent: number;
+  pointsPerAmount: number;
+  receiptFooter: string | null;
+};
+
+export async function getTenantSetting(tenantId: string) {
+  return prisma.tenantSetting.findUnique({ where: { tenantId } });
+}
+
+export async function updateTenantSetting(tenantId: string, input: TenantSettingInput) {
+  return prisma.tenantSetting.upsert({
+    where: { tenantId },
+    create: { tenantId, ...input },
+    update: input,
+  });
+}
