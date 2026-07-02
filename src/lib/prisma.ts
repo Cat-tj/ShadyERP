@@ -1,19 +1,16 @@
-import path from "node:path";
-import { PrismaBetterSqlite3 } from "@prisma/adapter-better-sqlite3";
+import { PrismaPg } from "@prisma/adapter-pg";
 import { PrismaClient } from "@prisma/client";
 
 const globalForPrisma = globalThis as unknown as {
   prisma: PrismaClient | undefined;
 };
 
-function resolveSqliteUrl() {
-  const raw = process.env.DATABASE_URL ?? "file:./dev.db";
-  const relativePath = raw.replace(/^file:/, "");
-  return "file:" + path.resolve(process.cwd(), relativePath);
-}
-
 function createPrismaClient() {
-  const adapter = new PrismaBetterSqlite3({ url: resolveSqliteUrl() });
+  const connectionString = process.env.DATABASE_URL;
+  if (!connectionString) {
+    throw new Error("DATABASE_URL belum diatur. Cek file .env atau environment variable di Vercel.");
+  }
+  const adapter = new PrismaPg({ connectionString });
   return new PrismaClient({ adapter });
 }
 

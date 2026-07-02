@@ -1,14 +1,12 @@
 // Schema database ShadyERP — SaaS POS UMKM
-// Catatan: SQLite dipakai untuk pengembangan lokal (nol setup).
-// Skema ditulis agar mudah dipindah ke PostgreSQL saat deploy produksi
-// (semua id pakai String/cuid, tanpa fitur khusus SQLite).
+// PostgreSQL (mis. Supabase) untuk pengembangan maupun produksi.
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
 }
 
 // ================== TENANT & OUTLET ==================

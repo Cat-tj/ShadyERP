@@ -8,6 +8,7 @@ import type { JWT } from "next-auth/jwt";
  */
 export const authConfig: NextAuthConfig = {
   session: { strategy: "jwt" },
+  trustHost: true,
   pages: {
     signIn: "/login",
   },
