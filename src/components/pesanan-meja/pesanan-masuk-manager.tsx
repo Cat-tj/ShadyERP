@@ -208,6 +208,10 @@ function PaymentSheet({
   const [amountInput, setAmountInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [splitCount, setSplitCount] = useState("");
+
+  const splitN = Math.max(0, Math.floor(Number(splitCount) || 0));
+  const perPerson = splitN > 1 ? Math.ceil(total / splitN) : 0;
 
   const amountPaid = method === "CASH" ? Number(amountInput) || 0 : total;
   const change = method === "CASH" ? Math.max(0, amountPaid - total) : 0;
@@ -245,6 +249,31 @@ function PaymentSheet({
           <p className="text-sm text-[var(--color-text-secondary)]">Total tagihan</p>
           <p className="tabular-nums text-3xl font-bold text-[var(--color-text)]">{formatRupiah(total)}</p>
         </div>
+
+        <div className="mt-3 flex items-center gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+          <label htmlFor="splitCount" className="shrink-0 text-sm text-[var(--color-text-secondary)]">
+            Patungan untuk
+          </label>
+          <input
+            id="splitCount"
+            type="number"
+            inputMode="numeric"
+            min={0}
+            value={splitCount}
+            onChange={(event) => setSplitCount(event.target.value)}
+            placeholder="0"
+            className="h-9 w-16 rounded-md border border-[var(--color-border)] px-2 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+          />
+          <span className="shrink-0 text-sm text-[var(--color-text-secondary)]">orang</span>
+          {splitN > 1 && (
+            <span className="ml-auto shrink-0 tabular-nums text-sm font-bold text-[var(--color-primary)]">
+              {formatRupiah(perPerson)}/orang
+            </span>
+          )}
+        </div>
+        <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+          Hanya kalkulator pembagian — pembayaran tetap dicatat sebagai satu transaksi.
+        </p>
 
         {error && (
           <div className="mt-4 rounded-lg bg-[var(--color-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning-text)]">

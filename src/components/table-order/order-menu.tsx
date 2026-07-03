@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { formatRupiah } from "@/lib/format";
 import { submitOrderAction } from "@/app/pesan/[qrToken]/actions";
 import { VariantPickerModal, type VariantGroupOption } from "@/components/kasir/variant-picker-modal";
@@ -18,6 +19,16 @@ export type MenuProduct = {
 };
 
 export type MenuCategory = { id: string; name: string };
+
+export type OpenBillItem = {
+  id: string;
+  productName: string;
+  variantLabel: string | null;
+  price: number;
+  qty: number;
+};
+
+export type OpenBill = { items: OpenBillItem[] };
 
 export type CartLine = {
   cartKey: string;
@@ -37,13 +48,16 @@ export function OrderMenu({
   outletName,
   products,
   categories,
+  openBill,
 }: {
   qrToken: string;
   tableName: string;
   outletName: string;
   products: MenuProduct[];
   categories: MenuCategory[];
+  openBill: OpenBill | null;
 }) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("ALL");
   const [cart, setCart] = useState<CartLine[]>([]);
@@ -131,6 +145,7 @@ export function OrderMenu({
             onClick={() => {
               setCart([]);
               setSubmitted(false);
+              router.refresh();
             }}
             className="mt-5 flex min-h-[48px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)]"
           >
@@ -149,6 +164,34 @@ export function OrderMenu({
       </div>
 
       <div className="mx-auto max-w-2xl px-4 py-4 pb-28">
+        {openBill && openBill.items.length > 0 && (
+          <div className="mb-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <p className="text-sm font-bold text-[var(--color-text)]">Pesanan meja ini (belum dibayar)</p>
+            <div className="mt-2 flex flex-col gap-1">
+              {openBill.items.map((item) => (
+                <div key={item.id} className="flex items-center justify-between gap-2 text-sm">
+                  <span className="min-w-0 truncate text-[var(--color-text-secondary)]">
+                    {item.qty}× {item.productName}
+                    {item.variantLabel && ` · ${item.variantLabel}`}
+                  </span>
+                  <span className="shrink-0 tabular-nums text-[var(--color-text-secondary)]">
+                    {formatRupiah(item.price * item.qty)}
+                  </span>
+                </div>
+              ))}
+            </div>
+            <div className="mt-2 flex justify-between border-t border-[var(--color-border)] pt-2 text-sm font-bold text-[var(--color-text)]">
+              <span>Total sejauh ini</span>
+              <span className="tabular-nums">
+                {formatRupiah(openBill.items.reduce((sum, item) => sum + item.price * item.qty, 0))}
+              </span>
+            </div>
+            <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+              Pesan lagi di bawah, nanti digabung jadi satu tagihan. Bayar di kasir kalau sudah selesai.
+            </p>
+          </div>
+        )}
+
         <input
           type="search"
           value={search}

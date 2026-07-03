@@ -95,6 +95,28 @@ export async function createOrder(
       throw new Error("Pilih minimal satu menu dengan jumlah lebih dari 0.");
     }
 
+    // Open bill/tab: kalau meja ini masih punya pesanan yang belum dibayar,
+    // gabungkan pesanan baru ke situ (satu tagihan per meja) alih-alih bikin
+    // TableOrder baru — supaya pelanggan bisa pesan berkali-kali lalu bayar
+    // sekali di akhir.
+    const openOrder = await tx.tableOrder.findFirst({
+      where: { tenantId: table.tenantId, tableId: table.id, status: { in: ["PENDING", "ACCEPTED", "READY"] } },
+      orderBy: { createdAt: "desc" },
+    });
+
+    if (openOrder) {
+      await tx.tableOrderItem.createMany({
+        data: itemsData.map((item) => ({ ...item, tableOrderId: openOrder.id })),
+      });
+      return tx.tableOrder.update({
+        where: { id: openOrder.id },
+        // Susulan pesanan baru berarti ada yang perlu dimasak lagi, jadi
+        // status dikembalikan ke PENDING walau tadinya sudah READY/ACCEPTED.
+        data: { status: "PENDING" },
+        include: { items: true },
+      });
+    }
+
     return tx.tableOrder.create({
       data: {
         tenantId: table.tenantId,
@@ -106,6 +128,21 @@ export async function createOrder(
       },
       include: { items: true },
     });
+  });
+}
+
+/**
+ * Dipakai halaman publik /pesan/[qrToken] untuk menampilkan tagihan berjalan
+ * (open bill) meja ini kalau sudah ada pesanan yang belum dibayar — supaya
+ * pelanggan tahu apa saja yang sudah dipesan sebelum menambah pesanan lagi.
+ */
+export async function getOpenOrderForTable(qrToken: string) {
+  const table = await prisma.table.findUnique({ where: { qrToken } });
+  if (!table) return null;
+  return prisma.tableOrder.findFirst({
+    where: { tenantId: table.tenantId, tableId: table.id, status: { in: ["PENDING", "ACCEPTED", "READY"] } },
+    include: { items: true },
+    orderBy: { createdAt: "desc" },
   });
 }
 

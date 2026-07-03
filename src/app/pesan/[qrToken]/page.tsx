@@ -1,5 +1,6 @@
 import { getTableByQrToken } from "@/server/services/table-service";
 import { listProductsWithStock, listCategories } from "@/server/services/product-service";
+import { getOpenOrderForTable } from "@/server/services/table-order-service";
 import { OrderMenu } from "@/components/table-order/order-menu";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { AlertTriangleIcon } from "@/components/ui/icons";
@@ -51,9 +52,10 @@ export default async function OrderPage({
     );
   }
 
-  const [products, categories] = await Promise.all([
+  const [products, categories, openOrder] = await Promise.all([
     listProductsWithStock(table.tenantId, table.outletId),
     listCategories(table.tenantId),
+    getOpenOrderForTable(qrToken),
   ]);
   const activeProducts = products.filter((product) => product.isActive);
 
@@ -62,6 +64,19 @@ export default async function OrderPage({
       qrToken={qrToken}
       tableName={table.name}
       outletName={table.outlet.name}
+      openBill={
+        openOrder
+          ? {
+              items: openOrder.items.map((item) => ({
+                id: item.id,
+                productName: item.productName,
+                variantLabel: item.variantLabel,
+                price: item.price,
+                qty: item.qty,
+              })),
+            }
+          : null
+      }
       products={activeProducts.map((product) => ({
         id: product.id,
         name: product.name,
