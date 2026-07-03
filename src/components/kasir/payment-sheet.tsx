@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { formatRupiah } from "@/lib/format";
 import { createSaleAction, type CreateSalePayload } from "@/app/(app)/kasir/actions";
+import { queueSale } from "@/lib/offline-queue";
 import { MemberPicker, type MemberOption } from "@/components/kasir/member-picker";
 import { XIcon } from "@/components/ui/icons";
 
@@ -37,6 +38,7 @@ export function PaymentSheet({
   const [amountInput, setAmountInput] = useState("");
   const [member, setMember] = useState<MemberOption | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [queuedOffline, setQueuedOffline] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   const amountPaid = method === "CASH" ? Number(amountInput) || 0 : total;
@@ -47,20 +49,62 @@ export function PaymentSheet({
   function handleSubmit() {
     setError(null);
     startTransition(async () => {
-      const result = await createSaleAction({
+      const payload: CreateSalePayload = {
         items,
         discountAmount,
         paymentMethod: method,
         amountPaid,
         memberId: member?.id ?? null,
-      });
-      if (result.error) {
-        setError(result.error);
-        return;
+      };
+
+      try {
+        const result = await createSaleAction(payload);
+        if (result.error) {
+          setError(result.error);
+          return;
+        }
+        onSuccess();
+        router.push(`/kasir/struk/${result.saleId}`);
+      } catch {
+        // Panggilan ke server gagal total (bukan error validasi/stok dari
+        // server) — kemungkinan besar sedang offline.
+        if (method === "DEPOSIT") {
+          setError(
+            "Sedang offline — bayar pakai saldo deposit tidak bisa diantre, pilih metode lain dulu."
+          );
+          return;
+        }
+        await queueSale(payload);
+        setQueuedOffline(true);
       }
-      onSuccess();
-      router.push(`/kasir/struk/${result.saleId}`);
     });
+  }
+
+  if (queuedOffline) {
+    return (
+      <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/40 sm:items-center sm:justify-center">
+        <div className="w-full rounded-t-2xl bg-[var(--color-bg)] p-6 text-center sm:max-w-sm sm:rounded-2xl">
+          <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full bg-[var(--color-warning-bg)] text-2xl">
+            📶
+          </div>
+          <h2 className="font-display text-lg font-semibold text-[var(--color-text)]">
+            Tersimpan offline
+          </h2>
+          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+            Internet sedang terputus. Transaksi {formatRupiah(total)} disimpan di HP ini dan akan
+            otomatis dikirim & dicatat begitu koneksi kembali.
+          </p>
+          <button
+            onClick={() => {
+              onSuccess();
+            }}
+            className="mt-5 flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)]"
+          >
+            Transaksi baru
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

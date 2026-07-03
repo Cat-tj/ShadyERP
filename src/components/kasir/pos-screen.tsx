@@ -5,6 +5,7 @@ import Link from "next/link";
 import { formatRupiah } from "@/lib/format";
 import { computeBestPromoDiscount, type PromoForCalc } from "@/lib/promo";
 import { PaymentSheet } from "@/components/kasir/payment-sheet";
+import { OfflineSyncBanner } from "@/components/kasir/offline-sync-banner";
 import { VariantPickerModal, type VariantGroupOption } from "@/components/kasir/variant-picker-modal";
 import { XIcon } from "@/components/ui/icons";
 
@@ -170,6 +171,7 @@ export function PosScreen({
 
   return (
     <div className="flex h-full flex-col">
+      <OfflineSyncBanner />
       <div className="mb-4 flex items-center justify-between">
         <div>
           <h1 className="text-xl font-bold text-[var(--color-text)]">Kasir</h1>
