@@ -9,6 +9,21 @@ datasource db {
   provider = "postgresql"
 }
 
+// ================== SUPER ADMIN (LINTAS TENANT) ==================
+
+/// SATU-SATUNYA model yang SENGAJA tidak punya tenantId — ini akun untuk
+/// pemilik platform (Altora), bukan pengguna tenant mana pun. Sesinya
+/// TERPISAH TOTAL dari NextAuth (lihat src/lib/super-admin-session.ts) supaya
+/// tidak pernah bisa tertukar dengan sesi User biasa. Dipakai untuk memantau
+/// semua tenant, suspend/aktifkan, dan mengonfirmasi pembayaran langganan.
+model SuperAdmin {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+}
+
 // ================== TENANT & OUTLET ==================
 
 enum BusinessType {

@@ -27,6 +27,11 @@ export async function loginAction(
     return {};
   } catch (error) {
     if (error instanceof AuthError) {
+      if ((error as { code?: string }).code === "tenant_suspended") {
+        return {
+          error: "Akun toko ini sedang nonaktif (langganan tertunda). Hubungi admin Altora.",
+        };
+      }
       return { error: "Email atau kata sandi salah. Coba periksa lagi." };
     }
     throw error;
