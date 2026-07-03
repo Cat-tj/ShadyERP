@@ -10,6 +10,7 @@ import {
   TrendingDownIcon,
   BellIcon,
   FlameIcon,
+  CalendarIcon,
 } from "@/components/ui/icons";
 
 export type Role = "OWNER" | "MANAGER" | "STAFF";
@@ -27,6 +28,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/kasir", label: "Kasir", icon: ReceiptIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true },
   { href: "/pesanan-meja", label: "Pesanan Meja", icon: BellIcon, roles: ["OWNER", "MANAGER", "STAFF"] },
   { href: "/dapur", label: "Dapur", icon: FlameIcon, roles: ["OWNER", "MANAGER", "STAFF"] },
+  { href: "/booking", label: "Booking", icon: CalendarIcon, roles: ["OWNER", "MANAGER", "STAFF"] },
   { href: "/produk", label: "Produk", icon: PackageIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true },
   { href: "/member", label: "Member", icon: UsersIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true },
   { href: "/absensi", label: "Absensi", icon: MapPinIcon, roles: ["OWNER", "MANAGER", "STAFF"] },

@@ -77,6 +77,7 @@ model Tenant {
   productVariantOptions ProductVariantOption[]
   auditLogs            AuditLog[]
   promos               Promo[]
+  bookings             Booking[]
   setting              TenantSetting?
 }
 
@@ -104,6 +105,7 @@ model Outlet {
   transfersTo      StockTransfer[]   @relation("StockTransferToOutlet")
   tables           Table[]
   tableOrders      TableOrder[]
+  bookings         Booking[]
 
   @@index([tenantId])
 }
@@ -142,6 +144,7 @@ model User {
   expensesCreated      Expense[]
   stockTransfers       StockTransfer[]
   auditLogs            AuditLog[]
+  bookingsAssigned     Booking[]
 
   @@index([tenantId])
 }
@@ -806,6 +809,49 @@ model Promo {
   category Category? @relation(fields: [categoryId], references: [id])
 
   @@index([tenantId])
+}
+
+// ================== BOOKING / APPOINTMENT ==================
+
+enum BookingType {
+  APPOINTMENT // janji potong rambut dsb, biasanya di tempat
+  DELIVERY // pesan untuk diantar / dipanggil ke acara
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  DONE
+  CANCELLED
+}
+
+/// Booking dicatat staff saat pelanggan menelepon/datang minta jadwal —
+/// TIDAK ada halaman publik self-booking (di luar skop saat ini). Cocok
+/// untuk barbershop (janji potong rambut) maupun F&B (pesan diantar/dibawa
+/// ke acara).
+model Booking {
+  id              String        @id @default(cuid())
+  tenantId        String
+  outletId        String
+  type            BookingType   @default(APPOINTMENT)
+  customerName    String
+  customerPhone   String?
+  serviceName     String
+  scheduledAt     DateTime
+  durationMinutes Int           @default(60)
+  staffUserId     String?
+  status          BookingStatus @default(PENDING)
+  note            String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  staff  User?  @relation(fields: [staffUserId], references: [id])
+
+  @@index([tenantId])
+  @@index([outletId])
+  @@index([staffUserId])
 }
 
 // ================== PENGATURAN TENANT ==================
