@@ -150,3 +150,66 @@ export async function getStockAdjustments(tenantId: string, take = 100) {
     take,
   });
 }
+
+export async function transferStock(
+  tenantId: string,
+  productId: string,
+  fromOutletId: string,
+  toOutletId: string,
+  qty: number,
+  transferredById: string,
+  note?: string
+) {
+  if (fromOutletId === toOutletId) {
+    throw new Error("Outlet asal dan tujuan tidak boleh sama.");
+  }
+  if (!Number.isFinite(qty) || qty <= 0) {
+    throw new Error("Jumlah transfer tidak valid.");
+  }
+
+  const product = await prisma.product.findFirst({ where: { id: productId, tenantId } });
+  if (!product) throw new Error("Produk tidak ditemukan.");
+  if (!product.trackStock) throw new Error("Produk ini tidak melacak stok.");
+
+  return prisma.$transaction(async (tx) => {
+    const fromStock = await tx.productStock.findUnique({
+      where: { productId_outletId: { productId, outletId: fromOutletId } },
+    });
+    const availableQty = fromStock?.qty ?? 0;
+    if (qty > availableQty) {
+      throw new Error(`Stok di outlet asal tidak cukup. Tersedia ${availableQty}, diminta ${qty}.`);
+    }
+
+    await tx.productStock.update({
+      where: { productId_outletId: { productId, outletId: fromOutletId } },
+      data: { qty: { decrement: qty } },
+    });
+
+    await tx.productStock.upsert({
+      where: { productId_outletId: { productId, outletId: toOutletId } },
+      create: { tenantId, productId, outletId: toOutletId, qty },
+      update: { qty: { increment: qty } },
+    });
+
+    return tx.stockTransfer.create({
+      data: {
+        tenantId,
+        productId,
+        fromOutletId,
+        toOutletId,
+        transferredById,
+        qty,
+        note: note?.trim() || null,
+      },
+    });
+  });
+}
+
+export async function getStockTransfers(tenantId: string, take = 100) {
+  return prisma.stockTransfer.findMany({
+    where: { tenantId },
+    include: { product: true, fromOutlet: true, toOutlet: true, transferredBy: true },
+    orderBy: { createdAt: "desc" },
+    take,
+  });
+}

@@ -85,6 +85,12 @@ export function ProdukManager({
           >
             Riwayat stok
           </Link>
+          <Link
+            href="/produk/transfer-stok"
+            className="flex min-h-[44px] items-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+          >
+            Transfer stok
+          </Link>
           <button
             onClick={openCreate}
             className="min-h-[44px] rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)]"

@@ -52,6 +52,7 @@ model Tenant {
   shiftSchedules    ShiftSchedule[]
   attendances       Attendance[]
   stockAdjustments  StockAdjustment[]
+  stockTransfers    StockTransfer[]
   expenses          Expense[]
   setting           TenantSetting?
 }
@@ -76,6 +77,8 @@ model Outlet {
   attendances      Attendance[]
   stockAdjustments StockAdjustment[]
   expenses         Expense[]
+  transfersFrom    StockTransfer[]   @relation("StockTransferFromOutlet")
+  transfersTo      StockTransfer[]   @relation("StockTransferToOutlet")
 
   @@index([tenantId])
 }
@@ -112,6 +115,7 @@ model User {
   shiftSchedules       ShiftSchedule[]
   stockAdjustments     StockAdjustment[]
   expensesCreated      Expense[]
+  stockTransfers       StockTransfer[]
 
   @@index([tenantId])
 }
@@ -267,6 +271,7 @@ model Product {
   stocks           ProductStock[]
   saleItems        SaleItem[]
   stockAdjustments StockAdjustment[]
+  stockTransfers   StockTransfer[]
 
   @@index([tenantId])
   @@index([categoryId])
@@ -312,6 +317,31 @@ model StockAdjustment {
   @@index([tenantId])
   @@index([productId])
   @@index([outletId])
+}
+
+/// Transfer stok manual antar outlet dalam tenant yang sama. Mengurangi stok
+/// outlet asal dan menambah stok outlet tujuan secara atomik.
+model StockTransfer {
+  id              String   @id @default(cuid())
+  tenantId        String
+  productId       String
+  fromOutletId    String
+  toOutletId      String
+  transferredById String
+  qty             Int
+  note            String?
+  createdAt       DateTime @default(now())
+
+  tenant        Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product       Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  fromOutlet    Outlet  @relation("StockTransferFromOutlet", fields: [fromOutletId], references: [id], onDelete: Cascade)
+  toOutlet      Outlet  @relation("StockTransferToOutlet", fields: [toOutletId], references: [id], onDelete: Cascade)
+  transferredBy User    @relation(fields: [transferredById], references: [id])
+
+  @@index([tenantId])
+  @@index([productId])
+  @@index([fromOutletId])
+  @@index([toOutletId])
 }
 
 // ================== SHIFT KASIR ==================
@@ -525,9 +555,9 @@ model Expense {
   spentAt     DateTime        @default(now())
   createdAt   DateTime        @default(now())
 
-  tenant    Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  outlet    Outlet  @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  createdBy User    @relation(fields: [createdById], references: [id])
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet    Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  createdBy User   @relation(fields: [createdById], references: [id])
 
   @@index([tenantId])
   @@index([outletId])

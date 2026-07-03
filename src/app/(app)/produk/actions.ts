@@ -10,6 +10,7 @@ import {
   updateProduct,
   setProductActive,
   setProductStock,
+  transferStock,
   type ProductInput,
 } from "@/server/services/product-service";
 
@@ -106,6 +107,27 @@ export async function updateStockAction(
     return { error: error instanceof Error ? error.message : "Gagal memperbarui stok." };
   }
   revalidatePath("/produk");
+  revalidatePath("/produk/riwayat-stok");
+  revalidatePath("/kasir");
+  return { success: true };
+}
+
+export async function transferStockAction(
+  productId: string,
+  fromOutletId: string,
+  toOutletId: string,
+  qty: number,
+  note?: string
+): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  if (!Number.isFinite(qty) || qty <= 0) return { error: "Jumlah transfer tidak valid." };
+  try {
+    await transferStock(user.tenantId, productId, fromOutletId, toOutletId, qty, user.id, note);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal transfer stok." };
+  }
+  revalidatePath("/produk");
+  revalidatePath("/produk/transfer-stok");
   revalidatePath("/produk/riwayat-stok");
   revalidatePath("/kasir");
   return { success: true };
