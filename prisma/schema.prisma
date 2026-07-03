@@ -50,29 +50,30 @@ model Tenant {
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
-  outlets           Outlet[]
-  users             User[]
-  uidBatches        UidBatch[]
-  uidCards          UidCard[]
-  members           Member[]
-  pointTransactions PointTransaction[]
-  categories        Category[]
-  products          Product[]
-  productStocks     ProductStock[]
-  cashierShifts     CashierShift[]
-  sales             Sale[]
-  saleItems         SaleItem[]
-  saleReturns       SaleReturn[]
-  saleReturnItems   SaleReturnItem[]
-  shiftSchedules    ShiftSchedule[]
-  attendances       Attendance[]
-  stockAdjustments  StockAdjustment[]
-  stockTransfers    StockTransfer[]
-  expenses          Expense[]
-  tables            Table[]
-  tableOrders       TableOrder[]
-  tableOrderItems   TableOrderItem[]
-  setting           TenantSetting?
+  outlets              Outlet[]
+  users                User[]
+  uidBatches           UidBatch[]
+  uidCards             UidCard[]
+  members              Member[]
+  pointTransactions    PointTransaction[]
+  categories           Category[]
+  products             Product[]
+  productStocks        ProductStock[]
+  cashierShifts        CashierShift[]
+  sales                Sale[]
+  saleItems            SaleItem[]
+  saleReturns          SaleReturn[]
+  saleReturnItems      SaleReturnItem[]
+  shiftSchedules       ShiftSchedule[]
+  attendances          Attendance[]
+  stockAdjustments     StockAdjustment[]
+  stockTransfers       StockTransfer[]
+  expenses             Expense[]
+  tables               Table[]
+  tableOrders          TableOrder[]
+  tableOrderItems      TableOrderItem[]
+  subscriptionRequests SubscriptionRequest[]
+  setting              TenantSetting?
 }
 
 model Outlet {
@@ -662,6 +663,32 @@ model TableOrderItem {
 
   @@index([tenantId])
   @@index([tableOrderId])
+}
+
+// ================== BILLING & LANGGANAN ==================
+
+enum SubscriptionRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+/// Permintaan upgrade paket dari Owner. Pembayaran dilakukan manual (transfer)
+/// di luar sistem — super-admin platform yang mengonfirmasi lewat panel
+/// /superadmin setelah memverifikasi dana masuk, baru Tenant.plan berubah.
+model SubscriptionRequest {
+  id            String                    @id @default(cuid())
+  tenantId      String
+  requestedPlan Plan
+  status        SubscriptionRequestStatus @default(PENDING)
+  note          String?
+  reviewNote    String?
+  createdAt     DateTime                  @default(now())
+  reviewedAt    DateTime?
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
 }
 
 // ================== PENGATURAN TENANT ==================

@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { assertCanAddProduct } from "@/server/services/billing-service";
 
 /**
  * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
@@ -67,6 +68,7 @@ export type ProductInput = {
 };
 
 export async function createProduct(tenantId: string, input: ProductInput) {
+  await assertCanAddProduct(tenantId);
   return prisma.product.create({
     data: {
       tenantId,

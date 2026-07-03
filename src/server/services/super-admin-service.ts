@@ -46,3 +46,39 @@ export async function setTenantActiveBySuperAdmin(tenantId: string, isActive: bo
   if (!tenant) throw new Error("Tenant tidak ditemukan.");
   return prisma.tenant.update({ where: { id: tenantId }, data: { isActive } });
 }
+
+export async function listPendingSubscriptionRequests() {
+  return prisma.subscriptionRequest.findMany({
+    where: { status: "PENDING" },
+    include: { tenant: true },
+    orderBy: { createdAt: "asc" },
+  });
+}
+
+export async function reviewSubscriptionRequest(
+  requestId: string,
+  approve: boolean,
+  reviewNote?: string
+) {
+  return prisma.$transaction(async (tx) => {
+    const request = await tx.subscriptionRequest.findUnique({ where: { id: requestId } });
+    if (!request) throw new Error("Permintaan tidak ditemukan.");
+    if (request.status !== "PENDING") throw new Error("Permintaan ini sudah diproses.");
+
+    await tx.subscriptionRequest.update({
+      where: { id: requestId },
+      data: {
+        status: approve ? "APPROVED" : "REJECTED",
+        reviewNote: reviewNote?.trim() || null,
+        reviewedAt: new Date(),
+      },
+    });
+
+    if (approve) {
+      await tx.tenant.update({
+        where: { id: request.tenantId },
+        data: { plan: request.requestedPlan, isActive: true },
+      });
+    }
+  });
+}

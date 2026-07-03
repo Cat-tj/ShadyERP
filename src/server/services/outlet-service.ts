@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { assertCanAddOutlet } from "@/server/services/billing-service";
 
 /**
  * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
@@ -39,6 +40,7 @@ export type OutletInput = {
 };
 
 export async function createOutlet(tenantId: string, input: OutletInput) {
+  await assertCanAddOutlet(tenantId);
   return prisma.outlet.create({
     data: { tenantId, name: input.name, address: input.address, phone: input.phone },
   });

@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import { assertCanAddUser } from "@/server/services/billing-service";
 import type { UserRole } from "@prisma/client";
 
 /**
@@ -27,6 +28,7 @@ export async function createUser(tenantId: string, input: UserInput) {
   if (!input.password) {
     throw new Error("Kata sandi wajib diisi untuk karyawan baru.");
   }
+  await assertCanAddUser(tenantId);
   const email = input.email.toLowerCase().trim();
   const existing = await prisma.user.findUnique({ where: { email } });
   if (existing) {

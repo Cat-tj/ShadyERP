@@ -9,6 +9,7 @@ const TABS = [
   { href: "/pengaturan/bisnis", label: "Bisnis" },
   { href: "/pengaturan/kartu", label: "Kartu" },
   { href: "/pengaturan/meja", label: "Meja" },
+  { href: "/pengaturan/langganan", label: "Langganan" },
 ];
 
 export function SettingsTabs() {
