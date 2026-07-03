@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { todayRangeJakarta } from "@/lib/date-range";
+import { getExpenseSummary } from "@/server/services/expense-service";
 
 /**
  * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
@@ -55,7 +56,10 @@ export async function getSalesSummary(tenantId: string, outletIds: string[], day
     }
   }
 
-  return { totalOmzet, totalTransaksi, rataRataTransaksi, estimasiUntung };
+  const { totalExpense } = await getExpenseSummary(tenantId, outletIds, days);
+  const untungBersih = estimasiUntung - totalExpense;
+
+  return { totalOmzet, totalTransaksi, rataRataTransaksi, estimasiUntung, totalExpense, untungBersih };
 }
 
 export async function getDailyTrend(tenantId: string, outletIds: string[], days: number) {

@@ -180,3 +180,23 @@ export function TrendingUpIcon(props: IconProps) {
     </svg>
   );
 }
+
+export function TrendingDownIcon(props: IconProps) {
+  return (
+    <svg {...base} className="h-5 w-5" {...props}>
+      <path d="M3 7l6 6 4-4 8 8" />
+      <path d="M15 17h6v-6" />
+    </svg>
+  );
+}
+
+export function TrashIcon(props: IconProps) {
+  return (
+    <svg {...base} className="h-5 w-5" {...props}>
+      <path d="M4 7h16" />
+      <path d="M9 7V5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2v2" />
+      <path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13" />
+      <path d="M10 11v6M14 11v6" />
+    </svg>
+  );
+}

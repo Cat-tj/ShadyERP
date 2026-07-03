@@ -7,6 +7,7 @@ import {
   MapPinIcon,
   BarChartIcon,
   SettingsIcon,
+  TrendingDownIcon,
 } from "@/components/ui/icons";
 
 export type Role = "OWNER" | "MANAGER" | "STAFF";
@@ -26,6 +27,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/member", label: "Member", icon: UsersIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true },
   { href: "/absensi", label: "Absensi", icon: MapPinIcon, roles: ["OWNER", "MANAGER", "STAFF"] },
   { href: "/laporan", label: "Laporan", icon: BarChartIcon, roles: ["OWNER", "MANAGER"] },
+  { href: "/pengeluaran", label: "Pengeluaran", icon: TrendingDownIcon, roles: ["OWNER", "MANAGER"] },
   { href: "/pengaturan", label: "Pengaturan", icon: SettingsIcon, roles: ["OWNER"], showOnBottomNav: true },
 ];
 

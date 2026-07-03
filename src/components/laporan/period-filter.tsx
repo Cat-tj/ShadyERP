@@ -6,13 +6,19 @@ const PERIODS = [
   { days: 90, label: "90 hari" },
 ];
 
-export function PeriodFilter({ activeDays }: { activeDays: number }) {
+export function PeriodFilter({
+  activeDays,
+  basePath = "/laporan",
+}: {
+  activeDays: number;
+  basePath?: string;
+}) {
   return (
     <div className="flex gap-2">
       {PERIODS.map((period) => (
         <Link
           key={period.days}
-          href={`/laporan?days=${period.days}`}
+          href={`${basePath}?days=${period.days}`}
           className={`min-h-[40px] rounded-full px-4 text-sm font-medium flex items-center ${
             activeDays === period.days
               ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"

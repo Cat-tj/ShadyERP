@@ -52,6 +52,7 @@ model Tenant {
   shiftSchedules    ShiftSchedule[]
   attendances       Attendance[]
   stockAdjustments  StockAdjustment[]
+  expenses          Expense[]
   setting           TenantSetting?
 }
 
@@ -74,6 +75,7 @@ model Outlet {
   shiftSchedules   ShiftSchedule[]
   attendances      Attendance[]
   stockAdjustments StockAdjustment[]
+  expenses         Expense[]
 
   @@index([tenantId])
 }
@@ -109,6 +111,7 @@ model User {
   attendances          Attendance[]
   shiftSchedules       ShiftSchedule[]
   stockAdjustments     StockAdjustment[]
+  expensesCreated      Expense[]
 
   @@index([tenantId])
 }
@@ -497,6 +500,37 @@ model Attendance {
   @@index([tenantId])
   @@index([outletId])
   @@index([userId])
+}
+
+// ================== PENGELUARAN OPERASIONAL ==================
+
+enum ExpenseCategory {
+  SEWA
+  GAJI
+  LISTRIK_AIR
+  BAHAN_BAKU
+  MARKETING
+  TRANSPORT
+  LAINNYA
+}
+
+model Expense {
+  id          String          @id @default(cuid())
+  tenantId    String
+  outletId    String
+  createdById String
+  category    ExpenseCategory
+  amount      Int
+  note        String?
+  spentAt     DateTime        @default(now())
+  createdAt   DateTime        @default(now())
+
+  tenant    Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet    Outlet  @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  createdBy User    @relation(fields: [createdById], references: [id])
+
+  @@index([tenantId])
+  @@index([outletId])
 }
 
 // ================== PENGATURAN TENANT ==================
