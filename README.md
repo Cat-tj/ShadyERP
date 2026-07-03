@@ -82,10 +82,68 @@ untuk menghitung untung bersih.
   sebagai penjualan biasa dan muncul di Kasir → Riwayat. Batalkan pesanan
   otomatis mengembalikan stok yang sempat direservasi.
 
+### Varian & topping produk
+Produk bisa punya grup varian (pilih 1 atau pilih banyak, wajib/opsional) dengan
+opsi yang menambah harga, mis. Ukuran (Reguler/Large), Level Gula, Topping.
+Muncul sebagai pemilih varian di Kasir maupun di halaman pesan QR meja; harga
+dan label varian yang dipilih disimpan sebagai snapshot di setiap transaksi.
+
+### Open bill per meja & patungan
+Pesanan QR meja yang belum dibayar digabung jadi satu tagihan berjalan per
+meja — pelanggan bisa pesan berkali-kali sebelum bayar sekali di akhir.
+Layar pembayaran staff punya kalkulator bagi rata (patungan) untuk menghitung
+porsi per orang (pembayarannya sendiri tetap satu transaksi).
+
+### Layar dapur (Kitchen Display)
+Halaman `/dapur` khusus menampilkan pesanan QR meja sebagai kartu besar dengan
+alur status baru → sedang dimasak → siap disajikan, auto-refresh, dan penanda
+visual untuk pesanan yang sudah lama menunggu.
+
+### Promo terjadwal
+Owner/Manager bisa bikin promo dengan jadwal hari & jam (mis. happy hour),
+berlaku untuk semua produk atau kategori tertentu, dengan syarat opsional
+minimal belanja. Promo yang jadwalnya cocok dengan waktu sekarang otomatis
+aktif di Kasir tanpa input manual (diskon terbesar yang dipakai, tidak
+ditumpuk).
+
+### Booking / appointment
+Halaman `/booking` untuk staff mencatat janji temu (mis. potong rambut di
+barbershop) atau pesanan yang diantar/dibawa ke acara, dengan jadwal per
+tanggal, penugasan staff, dan alur status menunggu → terkonfirmasi → selesai.
+
+### Mode offline POS
+Kalau internet putus saat checkout di Kasir, transaksi (kecuali bayar saldo
+deposit) disimpan dulu di IndexedDB lokal dan otomatis dikirim ulang begitu
+koneksi kembali. Transaksi yang gagal sinkron (mis. stok ternyata sudah habis
+dipakai transaksi lain selama offline) tetap mengantre dengan pesan error
+untuk diselesaikan manual — bukan dipaksa sukses.
+
+### Cetak struk fisik (printer thermal)
+Halaman struk punya tombol cetak lewat ESC/POS + aplikasi RawBT (Android) ke
+printer thermal Bluetooth/USB, selain cetak via dialog print browser.
+
+### Log audit & rate limiting
+Aksi sensitif (batalkan transaksi, retur, ubah harga produk, nonaktifkan
+produk, reset kata sandi karyawan) tercatat di **Pengaturan → Log audit**
+(siapa & kapan). Endpoint publik/sensitif (login, registrasi, pengiriman
+pesanan QR meja) dibatasi jumlah percobaan per menit untuk mencegah
+brute-force/spam.
+
+### Ekspor data
+Tombol "Ekspor CSV" di halaman Riwayat transaksi dan Laporan, hasilnya
+langsung terbaca benar di Excel/Google Sheets (CSV ber-BOM UTF-8).
+
 ### Pengaturan
 Karyawan, outlet, profil bisnis (nama, jenis usaha, pajak, poin per rupiah,
-footer struk), kartu member/karyawan, dan meja QR — semua di bawah `/pengaturan`
-(khusus Owner).
+footer struk), kartu member/karyawan, meja QR, dan promo — semua di bawah
+`/pengaturan` (khusus Owner, beberapa tab juga bisa diakses Manager).
+
+### Panel super-admin & langganan
+Panel `/superadmin` (sesi terpisah total dari akun tenant) untuk memantau
+semua tenant, omzet agregat, suspend/aktifkan tenant, dan mengonfirmasi
+permintaan upgrade paket. Tenant mengajukan upgrade & transfer manual lewat
+**Pengaturan → Langganan**; batas paket (jumlah outlet/karyawan/produk)
+ditegakkan otomatis di service layer.
 
 ### Progressive Web App (PWA)
 Bisa di-"Add to Home Screen" seperti aplikasi native (manifest + ikon adaptif).
@@ -174,7 +232,14 @@ Ringkasan model utama di `prisma/schema.prisma` (lihat file untuk relasi lengkap
 - **Member, PointTransaction, UidCard, UidBatch** — loyalitas & kartu QR.
 - **ShiftSchedule, Attendance** — jadwal & absensi.
 - **Expense** — pengeluaran operasional.
-- **Table, TableOrder, TableOrderItem** — meja QR dan pesanan mandiri pelanggan.
+- **Table, TableOrder, TableOrderItem** — meja QR dan pesanan mandiri pelanggan
+  (open bill: satu TableOrder per meja menampung banyak ronde pesanan sampai dibayar).
+- **ProductVariantGroup, ProductVariantOption** — varian & topping produk.
+- **Promo** — promo terjadwal (happy hour, diskon kategori, minimal belanja).
+- **Booking** — janji temu (barbershop dsb) & pesanan diantar/acara.
+- **AuditLog** — jejak aksi sensitif (void, retur, ubah harga, dst).
+- **SuperAdmin, SubscriptionRequest** — akun platform (lintas tenant) dan
+  permintaan upgrade paket langganan.
 - **TenantSetting** — pajak, poin per rupiah, footer struk.
 
 ---
@@ -259,17 +324,35 @@ Setelah menjalankan `npm run seed`, gunakan akun berikut (tenant "Kopi Nusantara
 
 ## Keterbatasan & belum dibangun
 
-Fitur berikut pernah dibahas tapi **belum** diimplementasikan:
+Fitur berikut pernah dibahas tapi **belum** diimplementasikan, atau sengaja
+dibangun dengan batasan tertentu:
 
-- **Kitchen display screen** — layar terpisah di dapur yang menampilkan antrian
-  pesanan (saat ini staff memantau semuanya lewat halaman Pesanan Masuk yang
-  sama, bisa dibuka di tablet dapur tapi belum ada tampilan khusus kitchen-display).
-- **Lupa password via email** — saat ini ganti password hanya bisa dilakukan
-  saat sudah login (halaman Akun); belum ada alur reset password lewat email
-  untuk yang lupa kata sandi.
-- **Integrasi payment gateway** — pembayaran QRIS/e-wallet di kasir maupun di
-  pemesanan QR meja dicatat manual oleh staff (tidak ada verifikasi otomatis ke
-  penyedia pembayaran seperti Midtrans/Xendit).
+- **Lupa password lewat email** — untuk karyawan biasa, admin (Owner) bisa
+  reset kata sandi langsung dari **Pengaturan → Karyawan**; belum ada alur
+  reset mandiri lewat email untuk yang lupa kata sandi (termasuk Owner sendiri
+  atau customer di portal member).
+- **Integrasi payment gateway** — pembayaran QRIS/e-wallet di kasir, pemesanan
+  QR meja, maupun upgrade paket langganan dicatat/dikonfirmasi manual oleh
+  staff/admin (tidak ada verifikasi otomatis ke penyedia pembayaran seperti
+  Midtrans/Xendit).
+- **Monitoring error (Sentry)** — belum diintegrasikan karena butuh akun/DSN
+  eksternal; saat ini error hanya terlihat di log server.
+- **Rate limiting in-memory** — pembatas percobaan login/registrasi/pesan QR
+  memakai penyimpanan in-memory per proses, cukup untuk deployment
+  single-instance tapi tidak efektif kalau di-deploy multi-instance/serverless
+  (state tidak dibagi antar instance). Perlu diganti ke penyimpanan bersama
+  (mis. Redis) untuk scale ke banyak instance.
+- **Mode offline POS tidak menjamin presisi stok** — reservasi stok atomik
+  cuma valid dengan koneksi live ke database; transaksi yang diantre offline
+  divalidasi ulang saat sinkron, dan bisa gagal (butuh penyelesaian manual
+  kasir) kalau stoknya keburu habis dipakai transaksi lain selama offline.
+- **Booking tanpa halaman self-service publik** — booking/appointment dicatat
+  manual oleh staff (mis. saat pelanggan telepon), belum ada halaman publik
+  untuk pelanggan booking sendiri.
+- **Printer thermal belum dites di perangkat fisik** — perintah ESC/POS untuk
+  RawBT dibangun sesuai standar EPSON-compatible tapi belum diverifikasi di
+  printer sungguhan; kalau hasil cetak berantakan, sesuaikan urutan perintah
+  di `src/lib/escpos.ts`.
 
 ---
 
