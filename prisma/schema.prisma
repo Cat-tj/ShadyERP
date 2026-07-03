@@ -76,6 +76,7 @@ model Tenant {
   productVariantGroups ProductVariantGroup[]
   productVariantOptions ProductVariantOption[]
   auditLogs            AuditLog[]
+  promos               Promo[]
   setting              TenantSetting?
 }
 
@@ -272,6 +273,7 @@ model Category {
 
   tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   products Product[]
+  promos   Promo[]
 
   @@index([tenantId])
 }
@@ -767,6 +769,43 @@ model AuditLog {
 
   @@index([tenantId])
   @@index([userId])
+}
+
+// ================== PROMO TERJADWAL ==================
+
+enum PromoDiscountType {
+  PERCENT
+  FIXED
+}
+
+enum PromoScope {
+  ALL
+  CATEGORY
+}
+
+/// Promo otomatis (happy hour, diskon kategori, minimal belanja) yang aktif
+/// sendiri sesuai jadwal — tidak perlu diinput manual oleh kasir. Dievaluasi
+/// dari waktu server saat kasir membuka halaman Kasir (lihat kasir-service).
+model Promo {
+  id            String            @id @default(cuid())
+  tenantId      String
+  name          String
+  discountType  PromoDiscountType
+  discountValue Int // persen (0-100) kalau PERCENT, Rupiah kalau FIXED
+  scope         PromoScope        @default(ALL)
+  categoryId    String?
+  minSpend      Int               @default(0) // 0 = tanpa syarat minimal belanja
+  daysOfWeek    Int[] // 0=Minggu..6=Sabtu; kosong = berlaku tiap hari
+  startTime     String // format "HH:mm", jam mulai
+  endTime       String // format "HH:mm", jam selesai
+  isActive      Boolean           @default(true)
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category Category? @relation(fields: [categoryId], references: [id])
+
+  @@index([tenantId])
 }
 
 // ================== PENGATURAN TENANT ==================

@@ -9,6 +9,7 @@ const TABS = [
   { href: "/pengaturan/bisnis", label: "Bisnis" },
   { href: "/pengaturan/kartu", label: "Kartu" },
   { href: "/pengaturan/meja", label: "Meja" },
+  { href: "/pengaturan/promo", label: "Promo" },
   { href: "/pengaturan/langganan", label: "Langganan" },
   { href: "/pengaturan/audit-log", label: "Log audit" },
 ];

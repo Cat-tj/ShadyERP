@@ -2,6 +2,7 @@ import { requireSession } from "@/server/require-session";
 import { getOpenShift } from "@/server/services/shift-service";
 import { listOutletsForUser } from "@/server/services/outlet-service";
 import { listProductsWithStock, listCategories } from "@/server/services/product-service";
+import { getActivePromosNow } from "@/server/services/promo-service";
 import { prisma } from "@/lib/prisma";
 import { OpenShiftForm } from "@/components/kasir/open-shift-form";
 import { PosScreen } from "@/components/kasir/pos-screen";
@@ -19,10 +20,11 @@ export default async function KasirPage() {
     );
   }
 
-  const [products, categories, setting] = await Promise.all([
+  const [products, categories, setting, activePromos] = await Promise.all([
     listProductsWithStock(user.tenantId, shift.outletId),
     listCategories(user.tenantId),
     prisma.tenantSetting.findUnique({ where: { tenantId: user.tenantId } }),
+    getActivePromosNow(user.tenantId),
   ]);
 
   const activeProducts = products.filter((product) => product.isActive);
@@ -52,6 +54,15 @@ export default async function KasirPage() {
         })),
       }))}
       categories={categories.map((category) => ({ id: category.id, name: category.name }))}
+      promos={activePromos.map((promo) => ({
+        id: promo.id,
+        name: promo.name,
+        discountType: promo.discountType,
+        discountValue: promo.discountValue,
+        scope: promo.scope,
+        categoryId: promo.categoryId,
+        minSpend: promo.minSpend,
+      }))}
     />
   );
 }

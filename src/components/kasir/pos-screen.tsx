@@ -3,6 +3,7 @@
 import { useMemo, useState } from "react";
 import Link from "next/link";
 import { formatRupiah } from "@/lib/format";
+import { computeBestPromoDiscount, type PromoForCalc } from "@/lib/promo";
 import { PaymentSheet } from "@/components/kasir/payment-sheet";
 import { VariantPickerModal, type VariantGroupOption } from "@/components/kasir/variant-picker-modal";
 import { XIcon } from "@/components/ui/icons";
@@ -19,6 +20,7 @@ export type PosProduct = {
 };
 
 export type PosCategory = { id: string; name: string };
+export type PosPromo = PromoForCalc;
 
 export type CartLine = {
   cartKey: string;
@@ -38,11 +40,13 @@ export function PosScreen({
   products,
   categories,
   taxPercent,
+  promos,
 }: {
   outletName: string;
   products: PosProduct[];
   categories: PosCategory[];
   taxPercent: number;
+  promos: PosPromo[];
 }) {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("ALL");
@@ -60,8 +64,19 @@ export function PosScreen({
     });
   }, [products, activeCategory, search]);
 
+  const productCategoryMap = useMemo(() => new Map(products.map((p) => [p.id, p.categoryId])), [products]);
+
   const subtotal = cart.reduce((sum, line) => sum + line.price * line.qty - line.discountAmount, 0);
-  const afterDiscount = Math.max(0, subtotal - cartDiscount);
+  const appliedPromo = useMemo(() => {
+    const promoCartLines = cart.map((line) => ({
+      productId: line.productId,
+      categoryId: productCategoryMap.get(line.productId) ?? null,
+      lineTotal: line.price * line.qty - line.discountAmount,
+    }));
+    return computeBestPromoDiscount(promos, promoCartLines, subtotal);
+  }, [cart, productCategoryMap, promos, subtotal]);
+  const promoDiscount = appliedPromo?.discountAmount ?? 0;
+  const afterDiscount = Math.max(0, subtotal - cartDiscount - promoDiscount);
   const taxAmount = Math.round((afterDiscount * taxPercent) / 100);
   const total = afterDiscount + taxAmount;
   const cartCount = cart.reduce((sum, line) => sum + line.qty, 0);
@@ -142,6 +157,7 @@ export function PosScreen({
       cartDiscount={cartDiscount}
       onCartDiscountChange={setCartDiscount}
       subtotal={subtotal}
+      appliedPromo={appliedPromo}
       taxAmount={taxAmount}
       total={total}
       taxPercent={taxPercent}
@@ -293,7 +309,7 @@ export function PosScreen({
         <PaymentSheet
           total={total}
           subtotal={subtotal}
-          discountAmount={cartDiscount}
+          discountAmount={cartDiscount + promoDiscount}
           taxAmount={taxAmount}
           items={cart.map((line) => ({
             productId: line.productId,
@@ -331,6 +347,7 @@ function CartPanel({
   cartDiscount,
   onCartDiscountChange,
   subtotal,
+  appliedPromo,
   taxAmount,
   total,
   taxPercent,
@@ -343,6 +360,7 @@ function CartPanel({
   cartDiscount: number;
   onCartDiscountChange: (value: number) => void;
   subtotal: number;
+  appliedPromo: { promoId: string; promoName: string; discountAmount: number } | null;
   taxAmount: number;
   total: number;
   taxPercent: number;
@@ -439,6 +457,13 @@ function CartPanel({
           className="h-9 w-28 rounded-md border border-[var(--color-border)] px-2 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
         />
       </div>
+
+      {appliedPromo && (
+        <div className="flex items-center justify-between gap-2 rounded-lg bg-[var(--color-warning-bg)] px-3 py-2 text-sm text-[var(--color-warning-text)]">
+          <span>🎉 Promo {appliedPromo.promoName}</span>
+          <span className="tabular-nums font-semibold">-{formatRupiah(appliedPromo.discountAmount)}</span>
+        </div>
+      )}
 
       <div className="flex flex-col gap-1 border-t border-[var(--color-border)] pt-3 text-sm">
         <div className="flex justify-between text-[var(--color-text-secondary)]">
