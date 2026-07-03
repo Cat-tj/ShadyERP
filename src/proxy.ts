@@ -8,7 +8,7 @@ const PUBLIC_PATHS = ["/login", "/register"];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
-  const isPublicPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+  const isPublicPath = pathname === "/" || PUBLIC_PATHS.some((path) => pathname.startsWith(path));
 
   if (!req.auth && !isPublicPath) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
