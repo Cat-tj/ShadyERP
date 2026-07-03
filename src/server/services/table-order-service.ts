@@ -114,7 +114,7 @@ export async function listIncomingOrders(tenantId: string, outletIds: string[]) 
     where: {
       tenantId,
       outletId: { in: outletIds },
-      status: { in: ["PENDING", "ACCEPTED"] },
+      status: { in: ["PENDING", "ACCEPTED", "READY"] },
     },
     include: { items: true, table: true, outlet: true },
     orderBy: { createdAt: "asc" },
@@ -130,6 +130,9 @@ export async function updateOrderStatus(tenantId: string, id: string, status: Ta
     }
     if (order.status === "CANCELLED") {
       throw new Error("Pesanan ini sudah dibatalkan.");
+    }
+    if (status === "DONE") {
+      throw new Error("Gunakan \"Proses Pembayaran\" untuk menandai pesanan selesai.");
     }
 
     if (status === "CANCELLED") {

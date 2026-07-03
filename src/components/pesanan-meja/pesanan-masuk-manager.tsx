@@ -30,7 +30,8 @@ export type OrderRow = {
 
 const STATUS_LABEL: Record<TableOrderStatus, string> = {
   PENDING: "Pesanan baru",
-  ACCEPTED: "Sedang diproses",
+  ACCEPTED: "Sedang dimasak",
+  READY: "Siap disajikan",
   DONE: "Selesai",
   CANCELLED: "Dibatalkan",
 };
@@ -144,7 +145,7 @@ export function PesananMasukManager({ orders }: { orders: OrderRow[] }) {
                       Terima
                     </button>
                   )}
-                  {order.status === "ACCEPTED" && (
+                  {(order.status === "ACCEPTED" || order.status === "READY") && (
                     <button
                       onClick={() => setPayingOrder(order)}
                       disabled={isPending}

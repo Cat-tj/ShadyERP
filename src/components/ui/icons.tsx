@@ -199,6 +199,14 @@ export function BellIcon(props: IconProps) {
   );
 }
 
+export function FlameIcon(props: IconProps) {
+  return (
+    <svg {...base} className="h-5 w-5" {...props}>
+      <path d="M12 2c1 3-3 4-3 8a3 3 0 0 0 6 0c1 1 2 2.5 2 4.5A5.5 5.5 0 0 1 6 14.5C6 9 12 7 12 2Z" />
+    </svg>
+  );
+}
+
 export function TrashIcon(props: IconProps) {
   return (
     <svg {...base} className="h-5 w-5" {...props}>

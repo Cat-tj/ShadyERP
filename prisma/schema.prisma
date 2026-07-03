@@ -659,6 +659,7 @@ model Table {
 enum TableOrderStatus {
   PENDING
   ACCEPTED
+  READY
   DONE
   CANCELLED
 }
