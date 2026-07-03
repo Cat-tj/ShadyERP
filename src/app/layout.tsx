@@ -1,6 +1,7 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter, JetBrains_Mono } from "next/font/google";
 import { SpeedInsights } from "@vercel/speed-insights/next";
+import { ServiceWorkerRegister } from "@/components/service-worker-register";
 import "./globals.css";
 
 const inter = Inter({
@@ -17,6 +18,15 @@ const jetbrainsMono = JetBrains_Mono({
 export const metadata: Metadata = {
   title: "Altora — Kasir & Manajemen Toko",
   description: "Aplikasi kasir, member, dan absensi untuk UMKM Indonesia.",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Altora",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#2563eb",
 };
 
 export default function RootLayout({
@@ -29,6 +39,7 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-[var(--color-bg)] text-[var(--color-text)]">
         {children}
         <SpeedInsights />
+        <ServiceWorkerRegister />
       </body>
     </html>
   );
