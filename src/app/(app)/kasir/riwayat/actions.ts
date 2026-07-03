@@ -9,7 +9,7 @@ export type VoidResult = { error?: string; success?: boolean };
 export async function voidSaleAction(saleId: string, reason: string): Promise<VoidResult> {
   const user = await requireRole(["OWNER", "MANAGER"]);
   try {
-    await voidSale(user.tenantId, saleId, reason);
+    await voidSale(user.tenantId, saleId, reason, user.id);
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal membatalkan transaksi." };
   }

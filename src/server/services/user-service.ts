@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
 import { assertCanAddUser } from "@/server/services/billing-service";
+import { recordAuditLog } from "@/server/services/audit-log-service";
 import type { UserRole } from "@prisma/client";
 
 /**
@@ -60,7 +61,8 @@ export async function createUser(tenantId: string, input: UserInput) {
 export async function updateUser(
   tenantId: string,
   id: string,
-  input: Omit<UserInput, "password"> & { password?: string }
+  input: Omit<UserInput, "password"> & { password?: string },
+  changedById: string
 ) {
   const user = await prisma.user.findFirst({ where: { id, tenantId } });
   if (!user) throw new Error("Karyawan tidak ditemukan.");
@@ -68,6 +70,16 @@ export async function updateUser(
   const passwordHash = input.password ? await bcrypt.hash(input.password, 10) : undefined;
 
   return prisma.$transaction(async (tx) => {
+    if (passwordHash) {
+      await recordAuditLog(
+        tx,
+        tenantId,
+        changedById,
+        "USER_PASSWORD_RESET",
+        `Reset kata sandi karyawan ${user.name}`
+      );
+    }
+
     await tx.user.update({
       where: { id },
       data: {

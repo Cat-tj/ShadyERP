@@ -1,6 +1,8 @@
 import { prisma } from "@/lib/prisma";
 import { buildInvoiceNumber, buildInvoicePrefix } from "@/lib/invoice";
 import { resolveVariantSelection } from "@/server/services/product-variant-service";
+import { recordAuditLog } from "@/server/services/audit-log-service";
+import { formatRupiah } from "@/lib/format";
 import type { PaymentMethod } from "@prisma/client";
 
 /**
@@ -224,7 +226,7 @@ export async function listSales(tenantId: string, outletIds: string[], take = 50
   });
 }
 
-export async function voidSale(tenantId: string, saleId: string, reason: string) {
+export async function voidSale(tenantId: string, saleId: string, reason: string, voidedById: string) {
   if (!reason.trim()) {
     throw new Error("Alasan pembatalan wajib diisi.");
   }
@@ -236,6 +238,14 @@ export async function voidSale(tenantId: string, saleId: string, reason: string)
     });
     if (!sale) throw new Error("Transaksi tidak ditemukan.");
     if (sale.status === "VOIDED") throw new Error("Transaksi ini sudah dibatalkan sebelumnya.");
+
+    await recordAuditLog(
+      tx,
+      tenantId,
+      voidedById,
+      "SALE_VOID",
+      `Membatalkan transaksi ${sale.invoiceNumber} (${formatRupiah(sale.total)}) — alasan: ${reason}`
+    );
 
     for (const item of sale.items) {
       const product = await tx.product.findUnique({ where: { id: item.productId } });
@@ -329,6 +339,14 @@ export async function processReturn(
     if (returnItemsData.length === 0) {
       throw new Error("Pilih minimal satu item dengan jumlah retur lebih dari 0.");
     }
+
+    await recordAuditLog(
+      tx,
+      tenantId,
+      processedById,
+      "SALE_RETURN",
+      `Retur ${returnItemsData.length} item dari transaksi ${sale.invoiceNumber} (${formatRupiah(totalRefund)}) — alasan: ${reason}`
+    );
 
     const saleReturn = await tx.saleReturn.create({
       data: {

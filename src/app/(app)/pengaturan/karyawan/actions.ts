@@ -32,7 +32,7 @@ export async function updateUserAction(
     return { error: "Kata sandi minimal 6 karakter." };
   }
   try {
-    await updateUser(user.tenantId, id, input);
+    await updateUser(user.tenantId, id, input, user.id);
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal mengubah karyawan." };
   }

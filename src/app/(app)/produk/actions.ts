@@ -83,7 +83,7 @@ export async function updateProductAction(id: string, input: ProductInput): Prom
   if (!input.name.trim()) return { error: "Nama produk wajib diisi." };
   if (!Number.isFinite(input.price) || input.price < 0) return { error: "Harga tidak valid." };
   try {
-    await updateProduct(user.tenantId, id, input);
+    await updateProduct(user.tenantId, id, input, user.id);
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal mengubah produk." };
   }
@@ -95,7 +95,7 @@ export async function updateProductAction(id: string, input: ProductInput): Prom
 export async function toggleProductActiveAction(id: string, isActive: boolean): Promise<ActionResult> {
   const user = await requireRole([...MANAGE_ROLES]);
   try {
-    await setProductActive(user.tenantId, id, isActive);
+    await setProductActive(user.tenantId, id, isActive, user.id);
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal mengubah status produk." };
   }

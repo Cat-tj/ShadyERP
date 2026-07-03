@@ -75,6 +75,7 @@ model Tenant {
   subscriptionRequests SubscriptionRequest[]
   productVariantGroups ProductVariantGroup[]
   productVariantOptions ProductVariantOption[]
+  auditLogs            AuditLog[]
   setting              TenantSetting?
 }
 
@@ -139,6 +140,7 @@ model User {
   stockAdjustments     StockAdjustment[]
   expensesCreated      Expense[]
   stockTransfers       StockTransfer[]
+  auditLogs            AuditLog[]
 
   @@index([tenantId])
 }
@@ -734,6 +736,36 @@ model SubscriptionRequest {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+}
+
+// ================== AUDIT LOG ==================
+
+enum AuditAction {
+  SALE_VOID
+  SALE_RETURN
+  PRODUCT_PRICE_CHANGE
+  PRODUCT_DEACTIVATE
+  PRODUCT_ACTIVATE
+  PRODUCT_DELETE
+  USER_PASSWORD_RESET
+}
+
+/// Jejak aksi sensitif: siapa melakukan apa dan kapan. Hanya dicatat untuk
+/// aksi yang berdampak ke uang/data (void, retur, ubah harga, nonaktifkan
+/// produk, dst) — bukan log aktivitas umum.
+model AuditLog {
+  id          String      @id @default(cuid())
+  tenantId    String
+  userId      String
+  action      AuditAction
+  description String
+  createdAt   DateTime    @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([userId])
 }
 
 // ================== PENGATURAN TENANT ==================

@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { assertCanAddProduct } from "@/server/services/billing-service";
+import { recordAuditLog } from "@/server/services/audit-log-service";
+import { formatRupiah } from "@/lib/format";
 
 /**
  * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
@@ -83,9 +85,25 @@ export async function createProduct(tenantId: string, input: ProductInput) {
   });
 }
 
-export async function updateProduct(tenantId: string, id: string, input: ProductInput) {
+export async function updateProduct(
+  tenantId: string,
+  id: string,
+  input: ProductInput,
+  changedById: string
+) {
   const product = await prisma.product.findFirst({ where: { id, tenantId } });
   if (!product) throw new Error("Produk tidak ditemukan.");
+
+  if (product.price !== input.price) {
+    await recordAuditLog(
+      prisma,
+      tenantId,
+      changedById,
+      "PRODUCT_PRICE_CHANGE",
+      `Ubah harga ${product.name}: ${formatRupiah(product.price)} → ${formatRupiah(input.price)}`
+    );
+  }
+
   return prisma.product.update({
     where: { id },
     data: {
@@ -98,9 +116,23 @@ export async function updateProduct(tenantId: string, id: string, input: Product
   });
 }
 
-export async function setProductActive(tenantId: string, id: string, isActive: boolean) {
+export async function setProductActive(
+  tenantId: string,
+  id: string,
+  isActive: boolean,
+  changedById: string
+) {
   const product = await prisma.product.findFirst({ where: { id, tenantId } });
   if (!product) throw new Error("Produk tidak ditemukan.");
+
+  await recordAuditLog(
+    prisma,
+    tenantId,
+    changedById,
+    isActive ? "PRODUCT_ACTIVATE" : "PRODUCT_DEACTIVATE",
+    `${isActive ? "Aktifkan" : "Nonaktifkan"} produk ${product.name}`
+  );
+
   return prisma.product.update({ where: { id }, data: { isActive } });
 }
 
