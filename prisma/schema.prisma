@@ -54,6 +54,9 @@ model Tenant {
   stockAdjustments  StockAdjustment[]
   stockTransfers    StockTransfer[]
   expenses          Expense[]
+  tables            Table[]
+  tableOrders       TableOrder[]
+  tableOrderItems   TableOrderItem[]
   setting           TenantSetting?
 }
 
@@ -79,6 +82,8 @@ model Outlet {
   expenses         Expense[]
   transfersFrom    StockTransfer[]   @relation("StockTransferFromOutlet")
   transfersTo      StockTransfer[]   @relation("StockTransferToOutlet")
+  tables           Table[]
+  tableOrders      TableOrder[]
 
   @@index([tenantId])
 }
@@ -272,6 +277,7 @@ model Product {
   saleItems        SaleItem[]
   stockAdjustments StockAdjustment[]
   stockTransfers   StockTransfer[]
+  tableOrderItems  TableOrderItem[]
 
   @@index([tenantId])
   @@index([categoryId])
@@ -561,6 +567,80 @@ model Expense {
 
   @@index([tenantId])
   @@index([outletId])
+}
+
+// ================== PESAN LEWAT QR MEJA ==================
+
+/// Meja fisik di outlet. `qrToken` adalah ULID unik yang dicetak jadi QR code
+/// dan dipakai di URL publik /pesan/[qrToken] — TIDAK boleh dipakai sebagai
+/// pengganti tenantId untuk query lain, hanya untuk resolve meja dari QR.
+model Table {
+  id        String   @id @default(cuid())
+  tenantId  String
+  outletId  String
+  name      String
+  qrToken   String   @unique
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  orders TableOrder[]
+
+  @@index([tenantId])
+  @@index([outletId])
+}
+
+enum TableOrderStatus {
+  PENDING
+  ACCEPTED
+  DONE
+  CANCELLED
+}
+
+/// Pesanan yang dikirim pelanggan lewat halaman publik /pesan/[qrToken].
+/// Pembayaran TIDAK terjadi di sini — staff yang memproses & menerima
+/// pembayaran manual di kasir seperti biasa, lalu menandai pesanan Selesai.
+model TableOrder {
+  id           String           @id @default(cuid())
+  tenantId     String
+  outletId     String
+  tableId      String
+  customerName String?
+  note         String?
+  status       TableOrderStatus @default(PENDING)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  table  Table  @relation(fields: [tableId], references: [id], onDelete: Cascade)
+
+  items TableOrderItem[]
+
+  @@index([tenantId])
+  @@index([outletId])
+  @@index([tableId])
+}
+
+model TableOrderItem {
+  id           String  @id @default(cuid())
+  tenantId     String
+  tableOrderId String
+  productId    String
+  productName  String // snapshot nama produk saat pesan
+  price        Int // snapshot harga saat pesan
+  qty          Int
+  note         String?
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tableOrder TableOrder @relation(fields: [tableOrderId], references: [id], onDelete: Cascade)
+  product    Product    @relation(fields: [productId], references: [id])
+
+  @@index([tenantId])
+  @@index([tableOrderId])
 }
 
 // ================== PENGATURAN TENANT ==================
