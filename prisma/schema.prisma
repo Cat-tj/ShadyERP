@@ -423,6 +423,7 @@ model Sale {
   items             SaleItem[]
   pointTransactions PointTransaction[]
   saleReturns       SaleReturn[]
+  tableOrder        TableOrder?
 
   @@index([tenantId])
   @@index([outletId])
@@ -601,13 +602,17 @@ enum TableOrderStatus {
 }
 
 /// Pesanan yang dikirim pelanggan lewat halaman publik /pesan/[qrToken].
-/// Pembayaran TIDAK terjadi di sini — staff yang memproses & menerima
-/// pembayaran manual di kasir seperti biasa, lalu menandai pesanan Selesai.
+/// Stok produk trackStock LANGSUNG dipotong (direservasi) secara atomik saat
+/// pesanan dibuat — supaya beberapa meja yang pesan barang sama persis di
+/// waktu bersamaan tidak sama-sama lolos padahal stoknya cuma cukup untuk satu.
+/// Saat staff menekan "Proses Pembayaran", transaksi (Sale) dibuat langsung dari
+/// item pesanan ini TANPA memotong stok lagi (sudah direservasi di awal).
 model TableOrder {
   id           String           @id @default(cuid())
   tenantId     String
   outletId     String
   tableId      String
+  saleId       String?          @unique
   customerName String?
   note         String?
   status       TableOrderStatus @default(PENDING)
@@ -617,6 +622,7 @@ model TableOrder {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
   table  Table  @relation(fields: [tableId], references: [id], onDelete: Cascade)
+  sale   Sale?  @relation(fields: [saleId], references: [id])
 
   items TableOrderItem[]
 

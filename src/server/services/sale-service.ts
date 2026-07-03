@@ -22,12 +22,19 @@ export type CreateSaleInput = {
   discountAmount: number;
   paymentMethod: PaymentMethod;
   amountPaid: number;
+  /**
+   * Set `false` kalau stok item-item ini SUDAH dipotong sebelumnya (mis. sudah
+   * direservasi saat pesanan QR meja dibuat) — supaya tidak dipotong dua kali.
+   * Default `true` untuk alur kasir normal.
+   */
+  deductStock?: boolean;
 };
 
 export async function createSale(input: CreateSaleInput) {
   if (input.items.length === 0) {
     throw new Error("Keranjang masih kosong. Tambahkan produk dulu.");
   }
+  const deductStock = input.deductStock ?? true;
 
   return prisma.$transaction(async (tx) => {
     const productIds = input.items.map((item) => item.productId);
@@ -53,7 +60,7 @@ export async function createSale(input: CreateSaleInput) {
       if (!product || !product.isActive) {
         throw new Error("Salah satu produk di keranjang sudah tidak tersedia. Muat ulang halaman.");
       }
-      if (product.trackStock) {
+      if (deductStock && product.trackStock) {
         const stockQty = product.stocks[0]?.qty ?? 0;
         if (stockQty < item.qty) {
           throw new Error(
@@ -129,13 +136,15 @@ export async function createSale(input: CreateSaleInput) {
       include: { items: true },
     });
 
-    for (const item of input.items) {
-      const product = productMap.get(item.productId)!;
-      if (product.trackStock) {
-        await tx.productStock.update({
-          where: { productId_outletId: { productId: item.productId, outletId: input.outletId } },
-          data: { qty: { decrement: item.qty } },
-        });
+    if (deductStock) {
+      for (const item of input.items) {
+        const product = productMap.get(item.productId)!;
+        if (product.trackStock) {
+          await tx.productStock.update({
+            where: { productId_outletId: { productId: item.productId, outletId: input.outletId } },
+            data: { qty: { decrement: item.qty } },
+          });
+        }
       }
     }
 

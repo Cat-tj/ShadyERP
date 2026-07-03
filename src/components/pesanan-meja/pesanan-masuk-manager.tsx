@@ -1,11 +1,12 @@
 "use client";
 
-import { useEffect, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { TableOrderStatus } from "@prisma/client";
+import type { TableOrderStatus, PaymentMethod } from "@prisma/client";
 import { formatRupiah, formatJam } from "@/lib/format";
-import { updateOrderStatusAction } from "@/app/(app)/pesanan-meja/actions";
+import { updateOrderStatusAction, completeOrderPaymentAction } from "@/app/(app)/pesanan-meja/actions";
 import { useToast, Toast } from "@/components/toast";
+import { XIcon } from "@/components/ui/icons";
 
 export type OrderItemRow = {
   id: string;
@@ -39,6 +40,7 @@ export function PesananMasukManager({ orders }: { orders: OrderRow[] }) {
   const router = useRouter();
   const { toastMessage, showToast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const [payingOrder, setPayingOrder] = useState<OrderRow | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => router.refresh(), REFRESH_INTERVAL_MS);
@@ -62,7 +64,8 @@ export function PesananMasukManager({ orders }: { orders: OrderRow[] }) {
       <div>
         <h1 className="font-display text-2xl font-semibold text-[var(--color-text)]">Pesanan Masuk</h1>
         <p className="text-sm text-[var(--color-text-secondary)]">
-          Pesanan yang dikirim pelanggan lewat QR meja. Proses pembayaran tetap dilakukan manual di kasir.
+          Pesanan yang dikirim pelanggan lewat QR meja. Stok sudah dipotong sejak pesanan dibuat — tekan
+          &quot;Proses Pembayaran&quot; saat pelanggan bayar, transaksi otomatis tercatat.
         </p>
       </div>
 
@@ -139,11 +142,11 @@ export function PesananMasukManager({ orders }: { orders: OrderRow[] }) {
                   )}
                   {order.status === "ACCEPTED" && (
                     <button
-                      onClick={() => updateStatus(order, "DONE")}
+                      onClick={() => setPayingOrder(order)}
                       disabled={isPending}
                       className="min-h-[40px] flex-1 rounded-lg bg-[var(--color-primary)] px-3 text-sm font-semibold text-[var(--color-on-primary)] disabled:opacity-40"
                     >
-                      Selesai
+                      Proses Pembayaran
                     </button>
                   )}
                   <button
@@ -160,7 +163,169 @@ export function PesananMasukManager({ orders }: { orders: OrderRow[] }) {
         </div>
       )}
 
+      {payingOrder && (
+        <PaymentSheet
+          order={payingOrder}
+          onClose={() => setPayingOrder(null)}
+          onSuccess={() => {
+            showToast(`${payingOrder.tableName}: pembayaran berhasil dicatat`);
+            setPayingOrder(null);
+            router.refresh();
+          }}
+        />
+      )}
+
       <Toast message={toastMessage} />
+    </div>
+  );
+}
+
+const QUICK_CASH = [20000, 50000, 100000];
+
+const PAYMENT_METHODS: { value: PaymentMethod; label: string }[] = [
+  { value: "CASH", label: "Tunai" },
+  { value: "QRIS", label: "QRIS" },
+  { value: "TRANSFER", label: "Transfer" },
+  { value: "EWALLET", label: "E-Wallet" },
+];
+
+function PaymentSheet({
+  order,
+  onClose,
+  onSuccess,
+}: {
+  order: OrderRow;
+  onClose: () => void;
+  onSuccess: () => void;
+}) {
+  const total = order.items.reduce((sum, item) => sum + item.price * item.qty, 0);
+  const [method, setMethod] = useState<PaymentMethod>("CASH");
+  const [amountInput, setAmountInput] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  const amountPaid = method === "CASH" ? Number(amountInput) || 0 : total;
+  const change = method === "CASH" ? Math.max(0, amountPaid - total) : 0;
+  const isCashInsufficient = method === "CASH" && amountPaid < total;
+
+  function handleSubmit() {
+    setError(null);
+    startTransition(async () => {
+      const result = await completeOrderPaymentAction(order.id, method, amountPaid);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      onSuccess();
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/40 sm:items-center sm:justify-center">
+      <div className="max-h-[90vh] w-full overflow-y-auto glass-surface-strong rounded-t-2xl p-5 sm:max-w-md sm:rounded-2xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-[var(--color-text)]">
+            Bayar · {order.tableName}
+          </h2>
+          <button
+            onClick={onClose}
+            aria-label="Tutup"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
+          >
+            <XIcon aria-hidden className="h-5 w-5" />
+          </button>
+        </div>
+
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-center">
+          <p className="text-sm text-[var(--color-text-secondary)]">Total tagihan</p>
+          <p className="tabular-nums text-3xl font-bold text-[var(--color-text)]">{formatRupiah(total)}</p>
+        </div>
+
+        {error && (
+          <div className="mt-4 rounded-lg bg-[var(--color-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning-text)]">
+            {error}
+          </div>
+        )}
+
+        <div className="mt-4">
+          <p className="mb-1.5 text-sm font-medium text-[var(--color-text)]">Metode pembayaran</p>
+          <div className="grid grid-cols-2 gap-2">
+            {PAYMENT_METHODS.map((option) => (
+              <button
+                key={option.value}
+                onClick={() => {
+                  setMethod(option.value);
+                  setAmountInput("");
+                }}
+                className={`min-h-[48px] rounded-lg border text-sm font-medium ${
+                  method === option.value
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                    : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {method === "CASH" ? (
+          <div className="mt-4">
+            <label htmlFor="amountPaid" className="mb-1.5 block text-sm font-medium text-[var(--color-text)]">
+              Uang diterima
+            </label>
+            <input
+              id="amountPaid"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={amountInput}
+              onChange={(event) => setAmountInput(event.target.value)}
+              placeholder="0"
+              className="min-h-[52px] w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xl font-bold tabular-nums text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+            />
+            <div className="mt-2 flex flex-wrap gap-2">
+              <button
+                onClick={() => setAmountInput(String(total))}
+                className="min-h-[40px] rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm font-medium text-[var(--color-text)]"
+              >
+                Uang pas
+              </button>
+              {QUICK_CASH.map((amount) => (
+                <button
+                  key={amount}
+                  onClick={() => setAmountInput(String(amount))}
+                  className="min-h-[40px] rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm font-medium text-[var(--color-text)]"
+                >
+                  {formatRupiah(amount)}
+                </button>
+              ))}
+            </div>
+            <div className="mt-3 flex items-center justify-between rounded-lg bg-[var(--color-surface)] px-4 py-3">
+              <span className="text-sm text-[var(--color-text-secondary)]">Kembalian</span>
+              <span className="tabular-nums text-lg font-bold text-[var(--color-text)]">
+                {formatRupiah(change)}
+              </span>
+            </div>
+          </div>
+        ) : (
+          <p className="mt-4 text-sm text-[var(--color-text-secondary)]">
+            Pastikan pembayaran {formatRupiah(total)} sudah diterima lewat{" "}
+            {PAYMENT_METHODS.find((m) => m.value === method)?.label} sebelum lanjut.
+          </p>
+        )}
+
+        <button
+          onClick={handleSubmit}
+          disabled={isPending || isCashInsufficient}
+          className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-40"
+        >
+          {isPending && (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)]" />
+          )}
+          {isPending ? "Menyimpan..." : `Selesaikan — ${formatRupiah(total)}`}
+        </button>
+      </div>
     </div>
   );
 }
