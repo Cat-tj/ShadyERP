@@ -9,7 +9,10 @@ import {
   updateStockAction,
 } from "@/app/(app)/produk/actions";
 import type { CategoryOption } from "@/components/produk/kategori-manager";
+import { VariantGroupsEditor, type VariantGroupRow } from "@/components/produk/variant-groups-editor";
 import { XIcon } from "@/components/ui/icons";
+
+export type { VariantGroupRow };
 
 export type OutletOption = { id: string; name: string };
 
@@ -21,6 +24,7 @@ export type EditingProduct = {
   cost: number | null;
   trackStock: boolean;
   stockByOutlet: Record<string, number>;
+  variantGroups: VariantGroupRow[];
 };
 
 export function ProductFormModal({
@@ -47,6 +51,7 @@ export function ProductFormModal({
   );
   const [stockNote, setStockNote] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   function handleSubmit() {
@@ -225,7 +230,21 @@ export function ProductFormModal({
               Simpan produk dulu, lalu atur stok awal lewat tombol &quot;Ubah&quot; pada produk ini.
             </p>
           )}
+
+          {product ? (
+            <VariantGroupsEditor productId={product.id} groups={product.variantGroups} onNotify={setInfo} />
+          ) : (
+            <p className="text-sm text-[var(--color-text-secondary)]">
+              Simpan produk dulu untuk menambahkan varian & topping (mis. Ukuran, Level Gula, Topping).
+            </p>
+          )}
         </div>
+
+        {info && (
+          <div className="mt-3 rounded-lg bg-[var(--color-bg)] px-4 py-2 text-xs text-[var(--color-text-secondary)]">
+            {info}
+          </div>
+        )}
 
         <button
           onClick={handleSubmit}

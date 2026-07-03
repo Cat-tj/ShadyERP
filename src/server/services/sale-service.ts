@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { buildInvoiceNumber, buildInvoicePrefix } from "@/lib/invoice";
+import { resolveVariantSelection } from "@/server/services/product-variant-service";
 import type { PaymentMethod } from "@prisma/client";
 
 /**
@@ -10,6 +11,14 @@ export type CartItemInput = {
   productId: string;
   qty: number;
   discountAmount: number;
+  /** Pilihan varian (mis. Large, Boba) — dipakai kasir POS, harga dihitung ulang dari opsi. */
+  variantOptionIds?: string[];
+  /**
+   * Dipakai saat Sale dibuat dari TableOrder yang item-itemnya SUDAH punya
+   * harga+label varian snapshot — supaya tidak dihitung ulang dari opsi lagi.
+   */
+  unitPriceOverride?: number;
+  variantLabel?: string | null;
 };
 
 export type CreateSaleInput = {
@@ -49,6 +58,7 @@ export async function createSale(input: CreateSaleInput) {
       tenantId: string;
       productId: string;
       productName: string;
+      variantLabel: string | null;
       price: number;
       qty: number;
       discountAmount: number;
@@ -68,13 +78,26 @@ export async function createSale(input: CreateSaleInput) {
           );
         }
       }
-      const itemSubtotal = product.price * item.qty - item.discountAmount;
+
+      let unitPrice = product.price;
+      let variantLabel: string | null = null;
+      if (item.unitPriceOverride !== undefined) {
+        unitPrice = item.unitPriceOverride;
+        variantLabel = item.variantLabel ?? null;
+      } else if (item.variantOptionIds && item.variantOptionIds.length > 0) {
+        const resolved = await resolveVariantSelection(tx, input.tenantId, product.id, item.variantOptionIds);
+        unitPrice = product.price + resolved.priceDelta;
+        variantLabel = resolved.label;
+      }
+
+      const itemSubtotal = unitPrice * item.qty - item.discountAmount;
       subtotal += itemSubtotal;
       itemsData.push({
         tenantId: input.tenantId,
         productId: product.id,
         productName: product.name,
-        price: product.price,
+        variantLabel,
+        price: unitPrice,
         qty: item.qty,
         discountAmount: item.discountAmount,
         subtotal: itemSubtotal,

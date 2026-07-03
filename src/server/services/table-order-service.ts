@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { createSale, type CartItemInput } from "@/server/services/sale-service";
+import { resolveVariantSelection } from "@/server/services/product-variant-service";
 import type { TableOrderStatus, PaymentMethod } from "@prisma/client";
 
 /**
@@ -16,7 +17,12 @@ import type { TableOrderStatus, PaymentMethod } from "@prisma/client";
  * memotong stok lagi (parameter `deductStock: false` di createSale).
  */
 
-export type CreateOrderItemInput = { productId: string; qty: number; note?: string };
+export type CreateOrderItemInput = {
+  productId: string;
+  qty: number;
+  note?: string;
+  variantOptionIds?: string[];
+};
 
 export async function createOrder(
   qrToken: string,
@@ -41,6 +47,7 @@ export async function createOrder(
       tenantId: string;
       productId: string;
       productName: string;
+      variantLabel: string | null;
       price: number;
       qty: number;
       note: string | null;
@@ -52,6 +59,13 @@ export async function createOrder(
         throw new Error("Salah satu menu yang dipilih sudah tidak tersedia. Muat ulang halaman.");
       }
       if (item.qty <= 0) continue;
+
+      const resolved = await resolveVariantSelection(
+        tx,
+        table.tenantId,
+        product.id,
+        item.variantOptionIds ?? []
+      );
 
       if (product.trackStock) {
         // Decrement atomik: cuma berhasil kalau stok yang tersisa masih cukup
@@ -70,7 +84,8 @@ export async function createOrder(
         tenantId: table.tenantId,
         productId: product.id,
         productName: product.name,
-        price: product.price,
+        variantLabel: resolved.label,
+        price: product.price + resolved.priceDelta,
         qty: item.qty,
         note: item.note?.trim() || null,
       });
@@ -172,6 +187,8 @@ export async function completeOrderPayment(
     productId: item.productId,
     qty: item.qty,
     discountAmount: 0,
+    unitPriceOverride: item.price,
+    variantLabel: item.variantLabel,
   }));
 
   const sale = await createSale({

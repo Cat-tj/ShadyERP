@@ -73,6 +73,8 @@ model Tenant {
   tableOrders          TableOrder[]
   tableOrderItems      TableOrderItem[]
   subscriptionRequests SubscriptionRequest[]
+  productVariantGroups ProductVariantGroup[]
+  productVariantOptions ProductVariantOption[]
   setting              TenantSetting?
 }
 
@@ -294,9 +296,50 @@ model Product {
   stockAdjustments StockAdjustment[]
   stockTransfers   StockTransfer[]
   tableOrderItems  TableOrderItem[]
+  variantGroups    ProductVariantGroup[]
 
   @@index([tenantId])
   @@index([categoryId])
+}
+
+enum VariantGroupType {
+  SINGLE // pilih 1 opsi, mis. Ukuran
+  MULTIPLE // pilih banyak opsi, mis. Topping
+}
+
+/// Grup varian per produk, mis. "Ukuran" (SINGLE, wajib) atau "Topping" (MULTIPLE, opsional).
+model ProductVariantGroup {
+  id        String            @id @default(cuid())
+  tenantId  String
+  productId String
+  name      String
+  type      VariantGroupType  @default(SINGLE)
+  required  Boolean           @default(false)
+  sortOrder Int               @default(0)
+  createdAt DateTime          @default(now())
+
+  tenant  Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
+  options ProductVariantOption[]
+
+  @@index([tenantId])
+  @@index([productId])
+}
+
+/// Opsi dalam satu grup varian, mis. "Large" (+5000) di grup "Ukuran".
+model ProductVariantOption {
+  id             String @id @default(cuid())
+  tenantId       String
+  variantGroupId String
+  name           String
+  priceDelta     Int    @default(0) // Rupiah, bisa 0 atau positif; ditambahkan ke harga produk
+  sortOrder      Int    @default(0)
+
+  tenant       Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  variantGroup ProductVariantGroup @relation(fields: [variantGroupId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([variantGroupId])
 }
 
 model ProductStock {
@@ -453,7 +496,8 @@ model SaleItem {
   saleId         String
   productId      String
   productName    String // snapshot nama produk saat transaksi
-  price          Int // snapshot harga saat transaksi
+  variantLabel   String? // snapshot pilihan varian, mis. "Large, Less Sugar, Boba"
+  price          Int // snapshot harga saat transaksi (sudah termasuk priceDelta varian)
   qty            Int
   discountAmount Int    @default(0)
   subtotal       Int
@@ -653,7 +697,8 @@ model TableOrderItem {
   tableOrderId String
   productId    String
   productName  String // snapshot nama produk saat pesan
-  price        Int // snapshot harga saat pesan
+  variantLabel String? // snapshot pilihan varian, mis. "Large, Less Sugar, Boba"
+  price        Int // snapshot harga saat pesan (sudah termasuk priceDelta varian)
   qty          Int
   note         String?
 

@@ -28,6 +28,17 @@ export default async function ProdukPage() {
         stockByOutlet: Object.fromEntries(
           product.stocks.map((stock) => [stock.outletId, stock.qty])
         ),
+        variantGroups: product.variantGroups.map((group) => ({
+          id: group.id,
+          name: group.name,
+          type: group.type,
+          required: group.required,
+          options: group.options.map((option) => ({
+            id: option.id,
+            name: option.name,
+            priceDelta: option.priceDelta,
+          })),
+        })),
       }))}
     />
   );

@@ -11,6 +11,7 @@ import { XIcon } from "@/components/ui/icons";
 export type OrderItemRow = {
   id: string;
   productName: string;
+  variantLabel: string | null;
   price: number;
   qty: number;
   note: string | null;
@@ -110,6 +111,9 @@ export function PesananMasukManager({ orders }: { orders: OrderRow[] }) {
                     <div key={item.id} className="flex items-center justify-between gap-2 text-sm">
                       <span className="min-w-0 truncate text-[var(--color-text)]">
                         {item.qty}× {item.productName}
+                        {item.variantLabel && (
+                          <span className="text-[var(--color-text-secondary)]"> · {item.variantLabel}</span>
+                        )}
                         {item.note && (
                           <span className="text-[var(--color-text-secondary)]"> ({item.note})</span>
                         )}

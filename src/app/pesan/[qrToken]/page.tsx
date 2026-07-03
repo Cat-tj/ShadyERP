@@ -70,6 +70,17 @@ export default async function OrderPage({
         categoryName: product.category?.name ?? null,
         trackStock: product.trackStock,
         stockQty: product.stockQty,
+        variantGroups: product.variantGroups.map((group) => ({
+          id: group.id,
+          name: group.name,
+          type: group.type,
+          required: group.required,
+          options: group.options.map((option) => ({
+            id: option.id,
+            name: option.name,
+            priceDelta: option.priceDelta,
+          })),
+        })),
       }))}
       categories={categories.map((category) => ({ id: category.id, name: category.name }))}
     />

@@ -13,8 +13,19 @@ import {
   transferStock,
   type ProductInput,
 } from "@/server/services/product-service";
+import {
+  createVariantGroup,
+  updateVariantGroup,
+  deleteVariantGroup,
+  createVariantOption,
+  updateVariantOption,
+  deleteVariantOption,
+  type VariantGroupInput,
+  type VariantOptionInput,
+} from "@/server/services/product-variant-service";
 
 export type ActionResult = { error?: string; success?: boolean };
+export type CreateResult = ActionResult & { id?: string };
 
 const MANAGE_ROLES = ["OWNER", "MANAGER"] as const;
 
@@ -108,6 +119,90 @@ export async function updateStockAction(
   }
   revalidatePath("/produk");
   revalidatePath("/produk/riwayat-stok");
+  revalidatePath("/kasir");
+  return { success: true };
+}
+
+export async function createVariantGroupAction(
+  productId: string,
+  input: VariantGroupInput
+): Promise<CreateResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  if (!input.name.trim()) return { error: "Nama grup varian wajib diisi." };
+  let group;
+  try {
+    group = await createVariantGroup(user.tenantId, productId, input);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal menambah grup varian." };
+  }
+  revalidatePath("/produk");
+  revalidatePath("/kasir");
+  return { success: true, id: group.id };
+}
+
+export async function updateVariantGroupAction(id: string, input: VariantGroupInput): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  if (!input.name.trim()) return { error: "Nama grup varian wajib diisi." };
+  try {
+    await updateVariantGroup(user.tenantId, id, input);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal mengubah grup varian." };
+  }
+  revalidatePath("/produk");
+  revalidatePath("/kasir");
+  return { success: true };
+}
+
+export async function deleteVariantGroupAction(id: string): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  try {
+    await deleteVariantGroup(user.tenantId, id);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal menghapus grup varian." };
+  }
+  revalidatePath("/produk");
+  revalidatePath("/kasir");
+  return { success: true };
+}
+
+export async function createVariantOptionAction(
+  variantGroupId: string,
+  input: VariantOptionInput
+): Promise<CreateResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  if (!input.name.trim()) return { error: "Nama opsi varian wajib diisi." };
+  let option;
+  try {
+    option = await createVariantOption(user.tenantId, variantGroupId, input);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal menambah opsi varian." };
+  }
+  revalidatePath("/produk");
+  revalidatePath("/kasir");
+  return { success: true, id: option.id };
+}
+
+export async function updateVariantOptionAction(id: string, input: VariantOptionInput): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  if (!input.name.trim()) return { error: "Nama opsi varian wajib diisi." };
+  try {
+    await updateVariantOption(user.tenantId, id, input);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal mengubah opsi varian." };
+  }
+  revalidatePath("/produk");
+  revalidatePath("/kasir");
+  return { success: true };
+}
+
+export async function deleteVariantOptionAction(id: string): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  try {
+    await deleteVariantOption(user.tenantId, id);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal menghapus opsi varian." };
+  }
+  revalidatePath("/produk");
   revalidatePath("/kasir");
   return { success: true };
 }

@@ -28,7 +28,7 @@ export function PaymentSheet({
   subtotal: number;
   discountAmount: number;
   taxAmount: number;
-  items: { productId: string; qty: number; discountAmount: number }[];
+  items: { productId: string; qty: number; discountAmount: number; variantOptionIds?: string[] }[];
   onClose: () => void;
   onSuccess: () => void;
 }) {

@@ -76,7 +76,12 @@ export default async function StrukPage({
           {sale.items.map((item) => (
             <div key={item.id} className="text-sm">
               <div className="flex justify-between text-[var(--color-text)]">
-                <span>{item.productName}</span>
+                <span>
+                  {item.productName}
+                  {item.variantLabel && (
+                    <span className="text-[var(--color-text-secondary)]"> · {item.variantLabel}</span>
+                  )}
+                </span>
                 <span className="tabular-nums">{formatRupiah(item.subtotal)}</span>
               </div>
               <p className="tabular-nums text-xs text-[var(--color-text-secondary)]">

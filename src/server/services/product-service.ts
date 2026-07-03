@@ -38,6 +38,7 @@ export async function listProductsWithStock(tenantId: string, outletId: string) 
     include: {
       category: true,
       stocks: { where: { outletId } },
+      variantGroups: { include: { options: { orderBy: { sortOrder: "asc" } } }, orderBy: { sortOrder: "asc" } },
     },
     orderBy: { name: "asc" },
   });
@@ -54,6 +55,7 @@ export async function listProductsFull(tenantId: string) {
     include: {
       category: true,
       stocks: { include: { outlet: true } },
+      variantGroups: { include: { options: { orderBy: { sortOrder: "asc" } } }, orderBy: { sortOrder: "asc" } },
     },
     orderBy: { name: "asc" },
   });

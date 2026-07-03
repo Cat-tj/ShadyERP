@@ -25,6 +25,7 @@ export default async function PesananMejaPage() {
         items: order.items.map((item) => ({
           id: item.id,
           productName: item.productName,
+          variantLabel: item.variantLabel,
           price: item.price,
           qty: item.qty,
           note: item.note,

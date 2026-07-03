@@ -10,6 +10,7 @@ import {
   ProductFormModal,
   type EditingProduct,
   type OutletOption,
+  type VariantGroupRow,
 } from "@/components/produk/product-form-modal";
 import { useToast, Toast } from "@/components/toast";
 
@@ -23,6 +24,7 @@ export type ProductRow = {
   trackStock: boolean;
   isActive: boolean;
   stockByOutlet: Record<string, number>;
+  variantGroups: VariantGroupRow[];
 };
 
 export function ProdukManager({
@@ -37,24 +39,32 @@ export function ProdukManager({
   const router = useRouter();
   const { toastMessage, showToast } = useToast();
   const [modalOpen, setModalOpen] = useState(false);
-  const [editing, setEditing] = useState<EditingProduct | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
+  // Diambil ulang dari `products` (bukan snapshot) supaya varian/topping tetap
+  // sinkron begitu router.refresh() jalan setelah CRUD varian di dalam modal.
+  const editingProduct = editingId ? (products.find((p) => p.id === editingId) ?? null) : null;
+  const editing: EditingProduct | null = editingProduct
+    ? {
+        id: editingProduct.id,
+        name: editingProduct.name,
+        categoryId: editingProduct.categoryId,
+        price: editingProduct.price,
+        cost: editingProduct.cost,
+        trackStock: editingProduct.trackStock,
+        stockByOutlet: editingProduct.stockByOutlet,
+        variantGroups: editingProduct.variantGroups,
+      }
+    : null;
+
   function openCreate() {
-    setEditing(null);
+    setEditingId(null);
     setModalOpen(true);
   }
 
   function openEdit(product: ProductRow) {
-    setEditing({
-      id: product.id,
-      name: product.name,
-      categoryId: product.categoryId,
-      price: product.price,
-      cost: product.cost,
-      trackStock: product.trackStock,
-      stockByOutlet: product.stockByOutlet,
-    });
+    setEditingId(product.id);
     setModalOpen(true);
   }
 

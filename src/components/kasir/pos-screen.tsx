@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import Link from "next/link";
 import { formatRupiah } from "@/lib/format";
 import { PaymentSheet } from "@/components/kasir/payment-sheet";
+import { VariantPickerModal, type VariantGroupOption } from "@/components/kasir/variant-picker-modal";
 import { XIcon } from "@/components/ui/icons";
 
 export type PosProduct = {
@@ -14,11 +15,13 @@ export type PosProduct = {
   categoryName: string | null;
   trackStock: boolean;
   stockQty: number;
+  variantGroups: VariantGroupOption[];
 };
 
 export type PosCategory = { id: string; name: string };
 
 export type CartLine = {
+  cartKey: string;
   productId: string;
   name: string;
   price: number;
@@ -26,6 +29,8 @@ export type CartLine = {
   discountAmount: number;
   trackStock: boolean;
   stockQty: number;
+  variantOptionIds: string[];
+  variantLabel: string | null;
 };
 
 export function PosScreen({
@@ -45,6 +50,7 @@ export function PosScreen({
   const [cartDiscount, setCartDiscount] = useState(0);
   const [showCartMobile, setShowCartMobile] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [variantPickerProduct, setVariantPickerProduct] = useState<PosProduct | null>(null);
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
@@ -60,56 +66,69 @@ export function PosScreen({
   const total = afterDiscount + taxAmount;
   const cartCount = cart.reduce((sum, line) => sum + line.qty, 0);
 
-  function addToCart(product: PosProduct) {
+  function addLineToCart(
+    product: PosProduct,
+    variantOptionIds: string[],
+    priceDelta: number,
+    variantLabel: string | null
+  ) {
+    const cartKey = `${product.id}::${[...variantOptionIds].sort().join(",")}`;
     setCart((prev) => {
-      const existing = prev.find((line) => line.productId === product.id);
+      const existing = prev.find((line) => line.cartKey === cartKey);
       const currentQty = existing?.qty ?? 0;
       if (product.trackStock && currentQty + 1 > product.stockQty) {
         return prev;
       }
       if (existing) {
-        return prev.map((line) =>
-          line.productId === product.id ? { ...line, qty: line.qty + 1 } : line
-        );
+        return prev.map((line) => (line.cartKey === cartKey ? { ...line, qty: line.qty + 1 } : line));
       }
       return [
         ...prev,
         {
+          cartKey,
           productId: product.id,
           name: product.name,
-          price: product.price,
+          price: product.price + priceDelta,
           qty: 1,
           discountAmount: 0,
           trackStock: product.trackStock,
           stockQty: product.stockQty,
+          variantOptionIds,
+          variantLabel,
         },
       ];
     });
   }
 
-  function updateQty(productId: string, qty: number) {
+  function addToCart(product: PosProduct) {
+    if (product.variantGroups.length > 0) {
+      setVariantPickerProduct(product);
+      return;
+    }
+    addLineToCart(product, [], 0, null);
+  }
+
+  function updateQty(cartKey: string, qty: number) {
     setCart((prev) => {
-      if (qty <= 0) return prev.filter((line) => line.productId !== productId);
+      if (qty <= 0) return prev.filter((line) => line.cartKey !== cartKey);
       return prev.map((line) => {
-        if (line.productId !== productId) return line;
+        if (line.cartKey !== cartKey) return line;
         const clamped = line.trackStock ? Math.min(qty, line.stockQty) : qty;
         return { ...line, qty: clamped };
       });
     });
   }
 
-  function updateLineDiscount(productId: string, discountAmount: number) {
+  function updateLineDiscount(cartKey: string, discountAmount: number) {
     setCart((prev) =>
       prev.map((line) =>
-        line.productId === productId
-          ? { ...line, discountAmount: Math.max(0, discountAmount) }
-          : line
+        line.cartKey === cartKey ? { ...line, discountAmount: Math.max(0, discountAmount) } : line
       )
     );
   }
 
-  function removeLine(productId: string) {
-    setCart((prev) => prev.filter((line) => line.productId !== productId));
+  function removeLine(cartKey: string) {
+    setCart((prev) => prev.filter((line) => line.cartKey !== cartKey));
   }
 
   function resetCart() {
@@ -203,10 +222,10 @@ export function PosScreen({
           ) : (
             <div className="grid grid-cols-2 gap-3 pb-28 sm:grid-cols-3 md:pb-0 lg:grid-cols-4">
               {filteredProducts.map((product) => {
-                const inCart = cart.find((line) => line.productId === product.id);
+                const linesForProduct = cart.filter((line) => line.productId === product.id);
+                const qtyInCart = linesForProduct.reduce((sum, line) => sum + line.qty, 0);
                 const outOfStock = product.trackStock && product.stockQty <= 0;
-                const atStockLimit =
-                  product.trackStock && (inCart?.qty ?? 0) >= product.stockQty;
+                const atStockLimit = product.trackStock && qtyInCart >= product.stockQty;
                 return (
                   <button
                     key={product.id}
@@ -225,9 +244,9 @@ export function PosScreen({
                         {outOfStock ? "Stok habis" : `Stok ${product.stockQty}`}
                       </span>
                     )}
-                    {inCart && (
+                    {qtyInCart > 0 && (
                       <span className="mt-2 rounded-full bg-[var(--color-primary)] px-2 py-0.5 text-xs font-bold text-[var(--color-on-primary)]">
-                        {inCart.qty} di keranjang
+                        {qtyInCart} di keranjang
                       </span>
                     )}
                   </button>
@@ -280,12 +299,26 @@ export function PosScreen({
             productId: line.productId,
             qty: line.qty,
             discountAmount: line.discountAmount,
+            variantOptionIds: line.variantOptionIds,
           }))}
           onClose={() => setShowPayment(false)}
           onSuccess={() => {
             resetCart();
             setShowPayment(false);
             setShowCartMobile(false);
+          }}
+        />
+      )}
+
+      {variantPickerProduct && (
+        <VariantPickerModal
+          productName={variantPickerProduct.name}
+          basePrice={variantPickerProduct.price}
+          groups={variantPickerProduct.variantGroups}
+          onClose={() => setVariantPickerProduct(null)}
+          onConfirm={({ optionIds, priceDelta, label }) => {
+            addLineToCart(variantPickerProduct, optionIds, priceDelta, label);
+            setVariantPickerProduct(null);
           }}
         />
       )}
@@ -313,9 +346,9 @@ function CartPanel({
   taxAmount: number;
   total: number;
   taxPercent: number;
-  onUpdateQty: (productId: string, qty: number) => void;
-  onUpdateLineDiscount: (productId: string, discount: number) => void;
-  onRemoveLine: (productId: string) => void;
+  onUpdateQty: (cartKey: string, qty: number) => void;
+  onUpdateLineDiscount: (cartKey: string, discount: number) => void;
+  onRemoveLine: (cartKey: string) => void;
   onCheckout: () => void;
 }) {
   return (
@@ -329,16 +362,19 @@ function CartPanel({
       ) : (
         <div className="flex flex-col gap-3">
           {cart.map((line) => (
-            <div key={line.productId} className="border-b border-[var(--color-border)] pb-3 last:border-0">
+            <div key={line.cartKey} className="border-b border-[var(--color-border)] pb-3 last:border-0">
               <div className="flex items-start justify-between gap-2">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-[var(--color-text)]">{line.name}</p>
+                  {line.variantLabel && (
+                    <p className="truncate text-xs text-[var(--color-text-secondary)]">{line.variantLabel}</p>
+                  )}
                   <p className="tabular-nums text-xs text-[var(--color-text-secondary)]">
                     {formatRupiah(line.price)} / item
                   </p>
                 </div>
                 <button
-                  onClick={() => onRemoveLine(line.productId)}
+                  onClick={() => onRemoveLine(line.cartKey)}
                   aria-label={`Hapus ${line.name}`}
                   className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)]"
                 >
@@ -348,7 +384,7 @@ function CartPanel({
               <div className="mt-2 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => onUpdateQty(line.productId, line.qty - 1)}
+                    onClick={() => onUpdateQty(line.cartKey, line.qty - 1)}
                     className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-text)]"
                     aria-label="Kurangi jumlah"
                   >
@@ -356,7 +392,7 @@ function CartPanel({
                   </button>
                   <span className="w-6 text-center tabular-nums text-sm font-semibold">{line.qty}</span>
                   <button
-                    onClick={() => onUpdateQty(line.productId, line.qty + 1)}
+                    onClick={() => onUpdateQty(line.cartKey, line.qty + 1)}
                     disabled={line.trackStock && line.qty >= line.stockQty}
                     className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-text)] disabled:opacity-40"
                     aria-label="Tambah jumlah"
@@ -369,16 +405,16 @@ function CartPanel({
                 </span>
               </div>
               <div className="mt-1.5 flex items-center gap-1.5">
-                <label className="text-xs text-[var(--color-text-secondary)]" htmlFor={`disc-${line.productId}`}>
+                <label className="text-xs text-[var(--color-text-secondary)]" htmlFor={`disc-${line.cartKey}`}>
                   Diskon item
                 </label>
                 <input
-                  id={`disc-${line.productId}`}
+                  id={`disc-${line.cartKey}`}
                   type="number"
                   min={0}
                   inputMode="numeric"
                   value={line.discountAmount || ""}
-                  onChange={(event) => onUpdateLineDiscount(line.productId, Number(event.target.value) || 0)}
+                  onChange={(event) => onUpdateLineDiscount(line.cartKey, Number(event.target.value) || 0)}
                   placeholder="0"
                   className="h-8 w-24 rounded-md border border-[var(--color-border)] px-2 text-xs tabular-nums outline-none focus:border-[var(--color-primary)]"
                 />
