@@ -21,10 +21,13 @@ export async function getSalesSummary(tenantId: string, outletIds: string[], day
       status: "COMPLETED",
       createdAt: { gte: start, lt: end },
     },
-    select: { total: true },
+    select: { total: true, saleReturns: { select: { totalRefund: true } } },
   });
 
-  const totalOmzet = sales.reduce((sum, s) => sum + s.total, 0);
+  const totalOmzet = sales.reduce(
+    (sum, s) => sum + s.total - s.saleReturns.reduce((r, sr) => r + sr.totalRefund, 0),
+    0
+  );
   const totalTransaksi = sales.length;
   const rataRataTransaksi = totalTransaksi > 0 ? Math.round(totalOmzet / totalTransaksi) : 0;
 
@@ -33,7 +36,7 @@ export async function getSalesSummary(tenantId: string, outletIds: string[], day
       tenantId,
       sale: { outletId: { in: outletIds }, status: "COMPLETED", createdAt: { gte: start, lt: end } },
     },
-    select: { qty: true, price: true, productId: true },
+    select: { qty: true, returnedQty: true, price: true, productId: true },
   });
 
   const productIds = [...new Set(items.map((i) => i.productId))];
@@ -46,8 +49,9 @@ export async function getSalesSummary(tenantId: string, outletIds: string[], day
   let estimasiUntung = 0;
   for (const item of items) {
     const cost = costMap.get(item.productId);
-    if (cost != null) {
-      estimasiUntung += (item.price - cost) * item.qty;
+    const sellableQty = item.qty - item.returnedQty;
+    if (cost != null && sellableQty > 0) {
+      estimasiUntung += (item.price - cost) * sellableQty;
     }
   }
 
@@ -64,7 +68,7 @@ export async function getDailyTrend(tenantId: string, outletIds: string[], days:
       status: "COMPLETED",
       createdAt: { gte: start, lt: end },
     },
-    select: { total: true, createdAt: true },
+    select: { total: true, createdAt: true, saleReturns: { select: { totalRefund: true } } },
   });
 
   const buckets = new Map<string, number>();
@@ -76,7 +80,8 @@ export async function getDailyTrend(tenantId: string, outletIds: string[], days:
   for (const sale of sales) {
     const jakartaMs = sale.createdAt.getTime() + 7 * 60 * 60 * 1000;
     const key = new Date(jakartaMs).toISOString().slice(0, 10);
-    buckets.set(key, (buckets.get(key) ?? 0) + sale.total);
+    const netTotal = sale.total - sale.saleReturns.reduce((r, sr) => r + sr.totalRefund, 0);
+    buckets.set(key, (buckets.get(key) ?? 0) + netTotal);
   }
 
   return Array.from(buckets.entries()).map(([date, omzet]) => ({ date, omzet }));
@@ -90,14 +95,17 @@ export async function getTopProducts(tenantId: string, outletIds: string[], days
       tenantId,
       sale: { outletId: { in: outletIds }, status: "COMPLETED", createdAt: { gte: start, lt: end } },
     },
-    select: { productName: true, qty: true, subtotal: true },
+    select: { productName: true, qty: true, returnedQty: true, subtotal: true },
   });
 
   const map = new Map<string, { qty: number; omzet: number }>();
   for (const item of items) {
+    const sellableQty = item.qty - item.returnedQty;
+    if (sellableQty <= 0) continue;
+    const netOmzet = Math.round((item.subtotal / item.qty) * sellableQty);
     const entry = map.get(item.productName) ?? { qty: 0, omzet: 0 };
-    entry.qty += item.qty;
-    entry.omzet += item.subtotal;
+    entry.qty += sellableQty;
+    entry.omzet += netOmzet;
     map.set(item.productName, entry);
   }
 
@@ -118,14 +126,17 @@ export async function getOutletComparison(tenantId: string, outletIds: string[],
       status: "COMPLETED",
       createdAt: { gte: start, lt: end },
     },
-    select: { outletId: true, total: true },
+    select: { outletId: true, total: true, saleReturns: { select: { totalRefund: true } } },
   });
 
   return outlets.map((outlet) => {
     const outletSales = sales.filter((s) => s.outletId === outlet.id);
     return {
       outletName: outlet.name,
-      omzet: outletSales.reduce((sum, s) => sum + s.total, 0),
+      omzet: outletSales.reduce(
+        (sum, s) => sum + s.total - s.saleReturns.reduce((r, sr) => r + sr.totalRefund, 0),
+        0
+      ),
       transaksi: outletSales.length,
     };
   });

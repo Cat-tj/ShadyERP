@@ -178,6 +178,7 @@ export async function getSaleById(tenantId: string, saleId: string) {
       outlet: true,
       cashier: true,
       member: true,
+      saleReturns: { include: { items: true, processedBy: true }, orderBy: { createdAt: "desc" } },
     },
   });
 }
@@ -240,5 +241,126 @@ export async function voidSale(tenantId: string, saleId: string, reason: string)
       where: { id: sale.id },
       data: { status: "VOIDED", voidReason: reason },
     });
+  });
+}
+
+export type ReturnItemInput = { saleItemId: string; qty: number };
+
+/**
+ * Retur sebagian item dari transaksi yang sudah selesai. Beda dengan voidSale
+ * (membatalkan seluruh transaksi) — ini cuma mengembalikan sebagian item.
+ */
+export async function processReturn(
+  tenantId: string,
+  saleId: string,
+  processedById: string,
+  items: ReturnItemInput[],
+  reason: string
+) {
+  if (!reason.trim()) {
+    throw new Error("Alasan retur wajib diisi.");
+  }
+  if (items.length === 0) {
+    throw new Error("Pilih minimal satu item untuk diretur.");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const sale = await tx.sale.findFirst({
+      where: { id: saleId, tenantId },
+      include: { items: true },
+    });
+    if (!sale) throw new Error("Transaksi tidak ditemukan.");
+    if (sale.status === "VOIDED") {
+      throw new Error("Transaksi ini sudah dibatalkan, tidak bisa diretur.");
+    }
+
+    const saleItemMap = new Map(sale.items.map((i) => [i.id, i]));
+    let totalRefund = 0;
+    const returnItemsData: { tenantId: string; saleItemId: string; qty: number; refundAmount: number }[] = [];
+
+    for (const input of items) {
+      const saleItem = saleItemMap.get(input.saleItemId);
+      if (!saleItem) throw new Error("Item transaksi tidak ditemukan.");
+      if (input.qty <= 0) continue;
+      const sisaBisaDiretur = saleItem.qty - saleItem.returnedQty;
+      if (input.qty > sisaBisaDiretur) {
+        throw new Error(
+          `${saleItem.productName}: maksimal bisa diretur ${sisaBisaDiretur}, kamu masukkan ${input.qty}.`
+        );
+      }
+      const netPerUnit = saleItem.subtotal / saleItem.qty;
+      const refundAmount = Math.round(netPerUnit * input.qty);
+      totalRefund += refundAmount;
+      returnItemsData.push({ tenantId, saleItemId: saleItem.id, qty: input.qty, refundAmount });
+    }
+
+    if (returnItemsData.length === 0) {
+      throw new Error("Pilih minimal satu item dengan jumlah retur lebih dari 0.");
+    }
+
+    const saleReturn = await tx.saleReturn.create({
+      data: {
+        tenantId,
+        saleId: sale.id,
+        processedById,
+        reason,
+        totalRefund,
+        items: { create: returnItemsData },
+      },
+      include: { items: true },
+    });
+
+    for (const returnItem of returnItemsData) {
+      const saleItem = saleItemMap.get(returnItem.saleItemId)!;
+      await tx.saleItem.update({
+        where: { id: saleItem.id },
+        data: { returnedQty: { increment: returnItem.qty } },
+      });
+      const product = await tx.product.findUnique({ where: { id: saleItem.productId } });
+      if (product?.trackStock) {
+        await tx.productStock.updateMany({
+          where: { productId: saleItem.productId, outletId: sale.outletId },
+          data: { qty: { increment: returnItem.qty } },
+        });
+      }
+    }
+
+    if (sale.memberId && sale.paymentMethod === "DEPOSIT" && totalRefund > 0) {
+      await tx.member.update({
+        where: { id: sale.memberId },
+        data: { depositBalance: { increment: totalRefund } },
+      });
+    }
+
+    if (sale.memberId && sale.total > 0) {
+      const earnTx = await tx.pointTransaction.findFirst({
+        where: { saleId: sale.id, type: "EARN" },
+      });
+      if (earnTx && earnTx.points > 0) {
+        const pointsToReverse = Math.floor((earnTx.points * totalRefund) / sale.total);
+        if (pointsToReverse > 0) {
+          const member = await tx.member.findUnique({ where: { id: sale.memberId } });
+          const actualReverse = Math.min(pointsToReverse, member?.points ?? 0);
+          if (actualReverse > 0) {
+            await tx.pointTransaction.create({
+              data: {
+                tenantId,
+                memberId: sale.memberId,
+                type: "ADJUST",
+                points: -actualReverse,
+                saleId: sale.id,
+                note: `Koreksi poin dari retur transaksi ${sale.invoiceNumber}`,
+              },
+            });
+            await tx.member.update({
+              where: { id: sale.memberId },
+              data: { points: { decrement: actualReverse } },
+            });
+          }
+        }
+      }
+    }
+
+    return saleReturn;
   });
 }

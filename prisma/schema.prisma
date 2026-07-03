@@ -47,6 +47,8 @@ model Tenant {
   cashierShifts     CashierShift[]
   sales             Sale[]
   saleItems         SaleItem[]
+  saleReturns       SaleReturn[]
+  saleReturnItems   SaleReturnItem[]
   shiftSchedules    ShiftSchedule[]
   attendances       Attendance[]
   setting           TenantSetting?
@@ -83,26 +85,27 @@ enum UserRole {
 }
 
 model User {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   tenantId     String
   name         String
-  email        String    @unique
+  email        String   @unique
   phone        String?
   passwordHash String
-  role         UserRole  @default(STAFF)
+  role         UserRole @default(STAFF)
   pin          String? // PIN 6 digit, opsional (untuk kunci cepat kasir)
-  isActive     Boolean   @default(true)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  userOutlets       UserOutlet[]
-  uidCardsAssigned  UidCard[]       @relation("EmployeeCard")
-  cashierShifts     CashierShift[]
-  salesAsCashier    Sale[]          @relation("SaleCashier")
-  attendances       Attendance[]
-  shiftSchedules    ShiftSchedule[]
+  userOutlets          UserOutlet[]
+  uidCardsAssigned     UidCard[]       @relation("EmployeeCard")
+  cashierShifts        CashierShift[]
+  salesAsCashier       Sale[]          @relation("SaleCashier")
+  saleReturnsProcessed SaleReturn[]    @relation("SaleReturnProcessedBy")
+  attendances          Attendance[]
+  shiftSchedules       ShiftSchedule[]
 
   @@index([tenantId])
 }
@@ -138,12 +141,12 @@ enum UidCardStatus {
 }
 
 model UidBatch {
-  id            String      @id @default(cuid())
-  tenantId      String
-  cardType      UidCardType
-  quantity      Int
-  serialPrefix  String
-  createdAt     DateTime    @default(now())
+  id           String      @id @default(cuid())
+  tenantId     String
+  cardType     UidCardType
+  quantity     Int
+  serialPrefix String
+  createdAt    DateTime    @default(now())
 
   tenant Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   cards  UidCard[]
@@ -165,10 +168,10 @@ model UidCard {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  tenant       Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant       Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   batch        UidBatch? @relation(fields: [batchId], references: [id])
-  member       Member?  @relation(fields: [memberId], references: [id])
-  employeeUser User?    @relation("EmployeeCard", fields: [employeeUserId], references: [id])
+  member       Member?   @relation(fields: [memberId], references: [id])
+  employeeUser User?     @relation("EmployeeCard", fields: [employeeUserId], references: [id])
 
   @@unique([tenantId, serialNumber])
   @@index([tenantId])
@@ -206,14 +209,14 @@ enum PointTransactionType {
 }
 
 model PointTransaction {
-  id        String                @id @default(cuid())
+  id        String               @id @default(cuid())
   tenantId  String
   memberId  String
   type      PointTransactionType
   points    Int // bisa negatif untuk REDEEM/ADJUST
   saleId    String?
   note      String?
-  createdAt DateTime              @default(now())
+  createdAt DateTime             @default(now())
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
@@ -239,18 +242,18 @@ model Category {
 }
 
 model Product {
-  id          String   @id @default(cuid())
-  tenantId    String
-  categoryId  String?
-  name        String
-  sku         String?
-  price       Int // Rupiah, tanpa sen
-  cost        Int?
-  imageUrl    String?
-  trackStock  Boolean  @default(true)
-  isActive    Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id         String   @id @default(cuid())
+  tenantId   String
+  categoryId String?
+  name       String
+  sku        String?
+  price      Int // Rupiah, tanpa sen
+  cost       Int?
+  imageUrl   String?
+  trackStock Boolean  @default(true)
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category Category? @relation(fields: [categoryId], references: [id])
@@ -343,14 +346,15 @@ model Sale {
   createdAt      DateTime      @default(now())
   updatedAt      DateTime      @updatedAt
 
-  tenant Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  outlet Outlet        @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  shift  CashierShift? @relation(fields: [shiftId], references: [id])
-  cashier User         @relation("SaleCashier", fields: [cashierId], references: [id])
-  member Member?       @relation(fields: [memberId], references: [id])
+  tenant  Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet  Outlet        @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  shift   CashierShift? @relation(fields: [shiftId], references: [id])
+  cashier User          @relation("SaleCashier", fields: [cashierId], references: [id])
+  member  Member?       @relation(fields: [memberId], references: [id])
 
   items             SaleItem[]
   pointTransactions PointTransaction[]
+  saleReturns       SaleReturn[]
 
   @@index([tenantId])
   @@index([outletId])
@@ -364,17 +368,56 @@ model SaleItem {
   saleId         String
   productId      String
   productName    String // snapshot nama produk saat transaksi
-  price          Int    // snapshot harga saat transaksi
+  price          Int // snapshot harga saat transaksi
   qty            Int
   discountAmount Int    @default(0)
   subtotal       Int
+  returnedQty    Int    @default(0) // akumulasi qty yang sudah diretur, tidak boleh melebihi qty
 
   tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
 
+  saleReturnItems SaleReturnItem[]
+
   @@index([tenantId])
   @@index([saleId])
+}
+
+/// Retur sebagian dari transaksi yang sudah selesai (COMPLETED) — beda dengan
+/// void (Sale.status VOIDED) yang membatalkan seluruh transaksi.
+model SaleReturn {
+  id            String   @id @default(cuid())
+  tenantId      String
+  saleId        String
+  processedById String
+  reason        String
+  totalRefund   Int
+  createdAt     DateTime @default(now())
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sale        Sale             @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  processedBy User             @relation("SaleReturnProcessedBy", fields: [processedById], references: [id])
+  items       SaleReturnItem[]
+
+  @@index([tenantId])
+  @@index([saleId])
+}
+
+model SaleReturnItem {
+  id           String @id @default(cuid())
+  tenantId     String
+  saleReturnId String
+  saleItemId   String
+  qty          Int
+  refundAmount Int
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  saleReturn SaleReturn @relation(fields: [saleReturnId], references: [id], onDelete: Cascade)
+  saleItem   SaleItem   @relation(fields: [saleItemId], references: [id])
+
+  @@index([tenantId])
+  @@index([saleReturnId])
 }
 
 // ================== ABSENSI & JADWAL ==================
@@ -405,7 +448,7 @@ enum AttendanceStatus {
 }
 
 model Attendance {
-  id              String            @id @default(cuid())
+  id              String           @id @default(cuid())
   tenantId        String
   outletId        String
   userId          String
@@ -414,9 +457,9 @@ model Attendance {
   clockInPhotoUrl String?
   lat             Float?
   lng             Float?
-  status          AttendanceStatus  @default(PRESENT)
-  createdAt       DateTime          @default(now())
-  updatedAt       DateTime          @updatedAt
+  status          AttendanceStatus @default(PRESENT)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
@@ -430,12 +473,12 @@ model Attendance {
 // ================== PENGATURAN TENANT ==================
 
 model TenantSetting {
-  id               String  @id @default(cuid())
-  tenantId         String  @unique
-  taxPercent       Int     @default(0)
-  pointsPerAmount  Int     @default(10000) // 1 poin per Rp10.000
-  receiptFooter    String?
-  updatedAt        DateTime @updatedAt
+  id              String   @id @default(cuid())
+  tenantId        String   @unique
+  taxPercent      Int      @default(0)
+  pointsPerAmount Int      @default(10000) // 1 poin per Rp10.000
+  receiptFooter   String?
+  updatedAt       DateTime @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }

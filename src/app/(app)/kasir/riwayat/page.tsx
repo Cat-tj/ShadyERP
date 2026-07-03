@@ -22,6 +22,13 @@ export default async function RiwayatPage() {
     status: sale.status,
     voidReason: sale.voidReason,
     createdAt: sale.createdAt.toISOString(),
+    items: sale.items.map((item) => ({
+      id: item.id,
+      productName: item.productName,
+      qty: item.qty,
+      returnedQty: item.returnedQty,
+      subtotal: item.subtotal,
+    })),
   }));
 
   return (

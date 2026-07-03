@@ -82,6 +82,11 @@ export default async function StrukPage({
                 {item.qty} x {formatRupiah(item.price)}
                 {item.discountAmount > 0 ? ` (diskon ${formatRupiah(item.discountAmount)})` : ""}
               </p>
+              {item.returnedQty > 0 && (
+                <p className="text-xs text-[var(--color-warning-text)]">
+                  {item.returnedQty} item sudah diretur
+                </p>
+              )}
             </div>
           ))}
         </div>
@@ -120,6 +125,24 @@ export default async function StrukPage({
             </div>
           )}
         </div>
+
+        {sale.saleReturns.length > 0 && (
+          <>
+            <div className="my-4 border-t border-dashed border-[var(--color-border)]" />
+            <div className="flex flex-col gap-2 print:hidden">
+              <p className="text-sm font-bold text-[var(--color-text)]">Riwayat retur</p>
+              {sale.saleReturns.map((saleReturn) => (
+                <div key={saleReturn.id} className="rounded-lg bg-[var(--color-bg)] p-2 text-xs text-[var(--color-text-secondary)]">
+                  <div className="flex justify-between text-[var(--color-text)]">
+                    <span>{formatTanggal(saleReturn.createdAt)}, {formatJam(saleReturn.createdAt)}</span>
+                    <span className="tabular-nums font-semibold">-{formatRupiah(saleReturn.totalRefund)}</span>
+                  </div>
+                  <p>Oleh {saleReturn.processedBy.name} · {saleReturn.reason}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
 
         {setting?.receiptFooter && (
           <>
