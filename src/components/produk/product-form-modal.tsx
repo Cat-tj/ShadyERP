@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   createProductAction,
   updateProductAction,
@@ -44,6 +45,7 @@ export function ProductFormModal({
   const [stockByOutlet, setStockByOutlet] = useState<Record<string, string>>(
     Object.fromEntries(outlets.map((outlet) => [outlet.id, String(product?.stockByOutlet[outlet.id] ?? 0)]))
   );
+  const [stockNote, setStockNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -88,7 +90,7 @@ export function ProductFormModal({
           for (const outlet of outlets) {
             const qty = Number(stockByOutlet[outlet.id] ?? 0);
             if (Number.isFinite(qty) && qty >= 0) {
-              await updateStockAction(productId, outlet.id, qty);
+              await updateStockAction(productId, outlet.id, qty, stockNote.trim() || undefined);
             }
           }
         }
@@ -204,6 +206,18 @@ export function ProductFormModal({
                   />
                 </div>
               ))}
+              <input
+                value={stockNote}
+                onChange={(event) => setStockNote(event.target.value)}
+                placeholder="Catatan perubahan stok (opsional), mis. restock supplier"
+                className="min-h-[44px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+              />
+              <Link
+                href="/produk/riwayat-stok"
+                className="text-xs font-medium text-[var(--color-primary)]"
+              >
+                Lihat riwayat perubahan stok →
+              </Link>
             </div>
           )}
           {trackStock && !product && (

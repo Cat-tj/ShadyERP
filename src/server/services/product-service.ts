@@ -104,14 +104,49 @@ export async function setProductStock(
   tenantId: string,
   productId: string,
   outletId: string,
-  qty: number
+  qty: number,
+  changedById: string,
+  note?: string
 ) {
   const product = await prisma.product.findFirst({ where: { id: productId, tenantId } });
   if (!product) throw new Error("Produk tidak ditemukan.");
 
-  return prisma.productStock.upsert({
-    where: { productId_outletId: { productId, outletId } },
-    create: { tenantId, productId, outletId, qty },
-    update: { qty },
+  return prisma.$transaction(async (tx) => {
+    const existing = await tx.productStock.findUnique({
+      where: { productId_outletId: { productId, outletId } },
+    });
+    const previousQty = existing?.qty ?? 0;
+
+    const stock = await tx.productStock.upsert({
+      where: { productId_outletId: { productId, outletId } },
+      create: { tenantId, productId, outletId, qty },
+      update: { qty },
+    });
+
+    if (qty !== previousQty) {
+      await tx.stockAdjustment.create({
+        data: {
+          tenantId,
+          productId,
+          outletId,
+          changedById,
+          previousQty,
+          newQty: qty,
+          delta: qty - previousQty,
+          note: note?.trim() || null,
+        },
+      });
+    }
+
+    return stock;
+  });
+}
+
+export async function getStockAdjustments(tenantId: string, take = 100) {
+  return prisma.stockAdjustment.findMany({
+    where: { tenantId },
+    include: { product: true, outlet: true, changedBy: true },
+    orderBy: { createdAt: "desc" },
+    take,
   });
 }

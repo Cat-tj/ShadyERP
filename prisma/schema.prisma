@@ -51,6 +51,7 @@ model Tenant {
   saleReturnItems   SaleReturnItem[]
   shiftSchedules    ShiftSchedule[]
   attendances       Attendance[]
+  stockAdjustments  StockAdjustment[]
   setting           TenantSetting?
 }
 
@@ -66,12 +67,13 @@ model Outlet {
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  userOutlets    UserOutlet[]
-  productStocks  ProductStock[]
-  cashierShifts  CashierShift[]
-  sales          Sale[]
-  shiftSchedules ShiftSchedule[]
-  attendances    Attendance[]
+  userOutlets      UserOutlet[]
+  productStocks    ProductStock[]
+  cashierShifts    CashierShift[]
+  sales            Sale[]
+  shiftSchedules   ShiftSchedule[]
+  attendances      Attendance[]
+  stockAdjustments StockAdjustment[]
 
   @@index([tenantId])
 }
@@ -100,12 +102,13 @@ model User {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   userOutlets          UserOutlet[]
-  uidCardsAssigned     UidCard[]       @relation("EmployeeCard")
+  uidCardsAssigned     UidCard[]         @relation("EmployeeCard")
   cashierShifts        CashierShift[]
-  salesAsCashier       Sale[]          @relation("SaleCashier")
-  saleReturnsProcessed SaleReturn[]    @relation("SaleReturnProcessedBy")
+  salesAsCashier       Sale[]            @relation("SaleCashier")
+  saleReturnsProcessed SaleReturn[]      @relation("SaleReturnProcessedBy")
   attendances          Attendance[]
   shiftSchedules       ShiftSchedule[]
+  stockAdjustments     StockAdjustment[]
 
   @@index([tenantId])
 }
@@ -258,8 +261,9 @@ model Product {
   tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category Category? @relation(fields: [categoryId], references: [id])
 
-  stocks    ProductStock[]
-  saleItems SaleItem[]
+  stocks           ProductStock[]
+  saleItems        SaleItem[]
+  stockAdjustments StockAdjustment[]
 
   @@index([tenantId])
   @@index([categoryId])
@@ -279,6 +283,31 @@ model ProductStock {
 
   @@unique([productId, outletId])
   @@index([tenantId])
+  @@index([outletId])
+}
+
+/// Jejak audit perubahan stok manual (lewat halaman Produk > Ubah).
+/// Perubahan stok otomatis dari penjualan/void/retur TIDAK dicatat di sini
+/// karena sudah punya jejaknya sendiri lewat Sale/SaleReturn.
+model StockAdjustment {
+  id          String   @id @default(cuid())
+  tenantId    String
+  productId   String
+  outletId    String
+  changedById String
+  previousQty Int
+  newQty      Int
+  delta       Int
+  note        String?
+  createdAt   DateTime @default(now())
+
+  tenant    Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  outlet    Outlet  @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  changedBy User    @relation(fields: [changedById], references: [id])
+
+  @@index([tenantId])
+  @@index([productId])
   @@index([outletId])
 }
 

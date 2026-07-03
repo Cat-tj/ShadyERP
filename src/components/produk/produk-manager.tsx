@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { formatRupiah } from "@/lib/format";
 import { toggleProductActiveAction } from "@/app/(app)/produk/actions";
 import { KategoriManager, type CategoryOption } from "@/components/produk/kategori-manager";
@@ -77,12 +78,20 @@ export function ProdukManager({
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-semibold text-[var(--color-text)]">Produk</h1>
-        <button
-          onClick={openCreate}
-          className="min-h-[44px] rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)]"
-        >
-          + Tambah produk
-        </button>
+        <div className="flex gap-2">
+          <Link
+            href="/produk/riwayat-stok"
+            className="flex min-h-[44px] items-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+          >
+            Riwayat stok
+          </Link>
+          <button
+            onClick={openCreate}
+            className="min-h-[44px] rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)]"
+          >
+            + Tambah produk
+          </button>
+        </div>
       </div>
 
       <KategoriManager categories={categories} onNotify={showToast} />

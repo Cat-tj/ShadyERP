@@ -95,16 +95,18 @@ export async function toggleProductActiveAction(id: string, isActive: boolean): 
 export async function updateStockAction(
   productId: string,
   outletId: string,
-  qty: number
+  qty: number,
+  note?: string
 ): Promise<ActionResult> {
   const user = await requireRole([...MANAGE_ROLES]);
   if (!Number.isFinite(qty) || qty < 0) return { error: "Jumlah stok tidak valid." };
   try {
-    await setProductStock(user.tenantId, productId, outletId, qty);
+    await setProductStock(user.tenantId, productId, outletId, qty, user.id, note);
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal memperbarui stok." };
   }
   revalidatePath("/produk");
+  revalidatePath("/produk/riwayat-stok");
   revalidatePath("/kasir");
   return { success: true };
 }
