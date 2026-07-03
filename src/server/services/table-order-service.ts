@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { createSale, type CartItemInput } from "@/server/services/sale-service";
-import { resolveVariantSelection } from "@/server/services/product-variant-service";
+import { computeVariantSelection, loadVariantGroupsByProduct } from "@/server/services/product-variant-service";
 import type { TableOrderStatus, PaymentMethod } from "@prisma/client";
 
 /**
@@ -32,103 +32,112 @@ export async function createOrder(
     throw new Error("Keranjang masih kosong. Pilih menu dulu.");
   }
 
-  return prisma.$transaction(async (tx) => {
-    const table = await tx.table.findUnique({ where: { qrToken } });
-    if (!table) throw new Error("Meja tidak ditemukan. Coba scan ulang QR-nya.");
-    if (!table.isActive) throw new Error("Meja ini sedang tidak aktif. Panggil staff untuk bantuan.");
+  return prisma.$transaction(
+    async (tx) => {
+      const table = await tx.table.findUnique({ where: { qrToken } });
+      if (!table) throw new Error("Meja tidak ditemukan. Coba scan ulang QR-nya.");
+      if (!table.isActive) throw new Error("Meja ini sedang tidak aktif. Panggil staff untuk bantuan.");
 
-    const productIds = input.items.map((item) => item.productId);
-    const products = await tx.product.findMany({
-      where: { tenantId: table.tenantId, id: { in: productIds } },
-    });
-    const productMap = new Map(products.map((p) => [p.id, p]));
+      const productIds = input.items.map((item) => item.productId);
+      // Product + grup varian di-fetch sekaligus buat semua item (bukan per-item
+      // di dalam loop) supaya jumlah round-trip DB di dalam transaksi ini tidak
+      // ikut membengkak seiring banyaknya item di keranjang — tiap round-trip
+      // tambahan menambah risiko transaksi kena timeout.
+      const [products, variantGroupsByProduct] = await Promise.all([
+        tx.product.findMany({ where: { tenantId: table.tenantId, id: { in: productIds } } }),
+        loadVariantGroupsByProduct(tx, table.tenantId, productIds),
+      ]);
+      const productMap = new Map(products.map((p) => [p.id, p]));
 
-    const itemsData: {
-      tenantId: string;
-      productId: string;
-      productName: string;
-      variantLabel: string | null;
-      price: number;
-      qty: number;
-      note: string | null;
-    }[] = [];
+      const itemsData: {
+        tenantId: string;
+        productId: string;
+        productName: string;
+        variantLabel: string | null;
+        price: number;
+        qty: number;
+        note: string | null;
+      }[] = [];
 
-    for (const item of input.items) {
-      const product = productMap.get(item.productId);
-      if (!product || !product.isActive) {
-        throw new Error("Salah satu menu yang dipilih sudah tidak tersedia. Muat ulang halaman.");
-      }
-      if (item.qty <= 0) continue;
-
-      const resolved = await resolveVariantSelection(
-        tx,
-        table.tenantId,
-        product.id,
-        item.variantOptionIds ?? []
-      );
-
-      if (product.trackStock) {
-        // Decrement atomik: cuma berhasil kalau stok yang tersisa masih cukup
-        // PERSIS pada saat ini. Kalau meja lain barusan menghabiskannya, ini
-        // gagal (count 0) dan kita tolak pesanannya — tidak overselling.
-        const result = await tx.productStock.updateMany({
-          where: { productId: item.productId, outletId: table.outletId, qty: { gte: item.qty } },
-          data: { qty: { decrement: item.qty } },
-        });
-        if (result.count === 0) {
-          throw new Error(`${product.name} baru saja habis dipesan meja lain. Coba menu lain ya.`);
+      for (const item of input.items) {
+        const product = productMap.get(item.productId);
+        if (!product || !product.isActive) {
+          throw new Error("Salah satu menu yang dipilih sudah tidak tersedia. Muat ulang halaman.");
         }
+        if (item.qty <= 0) continue;
+
+        const resolved = computeVariantSelection(
+          variantGroupsByProduct.get(item.productId) ?? [],
+          item.variantOptionIds ?? []
+        );
+
+        if (product.trackStock) {
+          // Decrement atomik: cuma berhasil kalau stok yang tersisa masih cukup
+          // PERSIS pada saat ini. Kalau meja lain barusan menghabiskannya, ini
+          // gagal (count 0) dan kita tolak pesanannya — tidak overselling.
+          const result = await tx.productStock.updateMany({
+            where: { productId: item.productId, outletId: table.outletId, qty: { gte: item.qty } },
+            data: { qty: { decrement: item.qty } },
+          });
+          if (result.count === 0) {
+            throw new Error(`${product.name} baru saja habis dipesan meja lain. Coba menu lain ya.`);
+          }
+        }
+
+        itemsData.push({
+          tenantId: table.tenantId,
+          productId: product.id,
+          productName: product.name,
+          variantLabel: resolved.label,
+          price: product.price + resolved.priceDelta,
+          qty: item.qty,
+          note: item.note?.trim() || null,
+        });
       }
 
-      itemsData.push({
-        tenantId: table.tenantId,
-        productId: product.id,
-        productName: product.name,
-        variantLabel: resolved.label,
-        price: product.price + resolved.priceDelta,
-        qty: item.qty,
-        note: item.note?.trim() || null,
+      if (itemsData.length === 0) {
+        throw new Error("Pilih minimal satu menu dengan jumlah lebih dari 0.");
+      }
+
+      // Open bill/tab: kalau meja ini masih punya pesanan yang belum dibayar,
+      // gabungkan pesanan baru ke situ (satu tagihan per meja) alih-alih bikin
+      // TableOrder baru — supaya pelanggan bisa pesan berkali-kali lalu bayar
+      // sekali di akhir.
+      const openOrder = await tx.tableOrder.findFirst({
+        where: { tenantId: table.tenantId, tableId: table.id, status: { in: ["PENDING", "ACCEPTED", "READY"] } },
+        orderBy: { createdAt: "desc" },
       });
-    }
 
-    if (itemsData.length === 0) {
-      throw new Error("Pilih minimal satu menu dengan jumlah lebih dari 0.");
-    }
+      if (openOrder) {
+        await tx.tableOrderItem.createMany({
+          data: itemsData.map((item) => ({ ...item, tableOrderId: openOrder.id })),
+        });
+        return tx.tableOrder.update({
+          where: { id: openOrder.id },
+          // Susulan pesanan baru berarti ada yang perlu dimasak lagi, jadi
+          // status dikembalikan ke PENDING walau tadinya sudah READY/ACCEPTED.
+          data: { status: "PENDING" },
+          include: { items: true },
+        });
+      }
 
-    // Open bill/tab: kalau meja ini masih punya pesanan yang belum dibayar,
-    // gabungkan pesanan baru ke situ (satu tagihan per meja) alih-alih bikin
-    // TableOrder baru — supaya pelanggan bisa pesan berkali-kali lalu bayar
-    // sekali di akhir.
-    const openOrder = await tx.tableOrder.findFirst({
-      where: { tenantId: table.tenantId, tableId: table.id, status: { in: ["PENDING", "ACCEPTED", "READY"] } },
-      orderBy: { createdAt: "desc" },
-    });
-
-    if (openOrder) {
-      await tx.tableOrderItem.createMany({
-        data: itemsData.map((item) => ({ ...item, tableOrderId: openOrder.id })),
-      });
-      return tx.tableOrder.update({
-        where: { id: openOrder.id },
-        // Susulan pesanan baru berarti ada yang perlu dimasak lagi, jadi
-        // status dikembalikan ke PENDING walau tadinya sudah READY/ACCEPTED.
-        data: { status: "PENDING" },
+      return tx.tableOrder.create({
+        data: {
+          tenantId: table.tenantId,
+          outletId: table.outletId,
+          tableId: table.id,
+          customerName: input.customerName?.trim() || null,
+          note: input.note?.trim() || null,
+          items: { create: itemsData },
+        },
         include: { items: true },
       });
-    }
-
-    return tx.tableOrder.create({
-      data: {
-        tenantId: table.tenantId,
-        outletId: table.outletId,
-        tableId: table.id,
-        customerName: input.customerName?.trim() || null,
-        note: input.note?.trim() || null,
-        items: { create: itemsData },
-      },
-      include: { items: true },
-    });
-  });
+    },
+    // Timeout default Prisma (5s) gampang kelewat kalau keranjang isinya banyak
+    // item (tiap item butuh 1 round-trip productStock.updateMany) ditambah
+    // latensi jaringan ke DB — dinaikkan jadi 15s sebagai pengaman.
+    { timeout: 15000 }
+  );
 }
 
 /**
@@ -173,10 +182,15 @@ export async function updateOrderStatus(tenantId: string, id: string, status: Ta
     }
 
     if (status === "CANCELLED") {
-      // Kembalikan stok yang sempat direservasi saat pesanan dibuat.
+      // Kembalikan stok yang sempat direservasi saat pesanan dibuat. Produk
+      // di-fetch sekaligus (bukan per-item) supaya jumlah round-trip DB di
+      // dalam transaksi ini tidak ikut membengkak seiring banyaknya item.
+      const products = await tx.product.findMany({
+        where: { id: { in: order.items.map((item) => item.productId) } },
+      });
+      const trackStockIds = new Set(products.filter((p) => p.trackStock).map((p) => p.id));
       for (const item of order.items) {
-        const product = await tx.product.findUnique({ where: { id: item.productId } });
-        if (product?.trackStock) {
+        if (trackStockIds.has(item.productId)) {
           await tx.productStock.updateMany({
             where: { productId: item.productId, outletId: order.outletId },
             data: { qty: { increment: item.qty } },
@@ -186,7 +200,7 @@ export async function updateOrderStatus(tenantId: string, id: string, status: Ta
     }
 
     return tx.tableOrder.update({ where: { id }, data: { status } });
-  });
+  }, { timeout: 15000 });
 }
 
 export type CompleteOrderPaymentInput = {

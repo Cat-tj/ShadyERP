@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { buildInvoiceNumber, buildInvoicePrefix } from "@/lib/invoice";
-import { resolveVariantSelection } from "@/server/services/product-variant-service";
+import { computeVariantSelection, loadVariantGroupsByProduct } from "@/server/services/product-variant-service";
 import { recordAuditLog } from "@/server/services/audit-log-service";
 import { formatRupiah } from "@/lib/format";
 import type { PaymentMethod } from "@prisma/client";
@@ -49,10 +49,16 @@ export async function createSale(input: CreateSaleInput) {
 
   return prisma.$transaction(async (tx) => {
     const productIds = input.items.map((item) => item.productId);
-    const products = await tx.product.findMany({
-      where: { tenantId: input.tenantId, id: { in: productIds } },
-      include: { stocks: { where: { outletId: input.outletId } } },
-    });
+    // Produk + grup varian di-fetch sekaligus buat semua item (bukan per-item
+    // di dalam loop) supaya jumlah round-trip DB di dalam transaksi ini tidak
+    // ikut membengkak seiring banyaknya item di keranjang.
+    const [products, variantGroupsByProduct] = await Promise.all([
+      tx.product.findMany({
+        where: { tenantId: input.tenantId, id: { in: productIds } },
+        include: { stocks: { where: { outletId: input.outletId } } },
+      }),
+      loadVariantGroupsByProduct(tx, input.tenantId, productIds),
+    ]);
     const productMap = new Map(products.map((p) => [p.id, p]));
 
     let subtotal = 0;
@@ -87,7 +93,10 @@ export async function createSale(input: CreateSaleInput) {
         unitPrice = item.unitPriceOverride;
         variantLabel = item.variantLabel ?? null;
       } else if (item.variantOptionIds && item.variantOptionIds.length > 0) {
-        const resolved = await resolveVariantSelection(tx, input.tenantId, product.id, item.variantOptionIds);
+        const resolved = computeVariantSelection(
+          variantGroupsByProduct.get(product.id) ?? [],
+          item.variantOptionIds
+        );
         unitPrice = product.price + resolved.priceDelta;
         variantLabel = resolved.label;
       }
@@ -201,7 +210,7 @@ export async function createSale(input: CreateSaleInput) {
     }
 
     return sale;
-  });
+  }, { timeout: 15000 });
 }
 
 export async function getSaleById(tenantId: string, saleId: string) {

@@ -91,22 +91,20 @@ export async function deleteVariantOption(tenantId: string, id: string) {
   return prisma.productVariantOption.delete({ where: { id } });
 }
 
+type VariantGroupWithOptions = Awaited<ReturnType<typeof listVariantGroupsForProducts>>[number];
+
 /**
- * Validasi pilihan varian pelanggan/kasir terhadap grup varian produk (wajib
- * diisi, opsi memang milik produk ini) lalu hitung total priceDelta & label
- * snapshot gabungan (mis. "Large, Boba"). Dipakai sale-service & table-order-service
- * supaya logikanya tidak dobel.
+ * Bagian murni (tanpa query) dari resolveVariantSelection — dipisah supaya
+ * checkout dengan banyak item bisa fetch semua grup varian dalam SATU query
+ * lewat listVariantGroupsForProducts, lalu panggil fungsi ini per item dari
+ * hasil yang sudah di tangan. Ini penting di dalam transaksi interaktif
+ * (createOrder, createSale): tiap round-trip DB tambahan ikut menambah risiko
+ * transaksi kena timeout kalau keranjang isinya banyak item.
  */
-export async function resolveVariantSelection(
-  db: Prisma.TransactionClient | typeof prisma,
-  tenantId: string,
-  productId: string,
+export function computeVariantSelection(
+  groups: VariantGroupWithOptions[],
   selectedOptionIds: string[]
-): Promise<{ priceDelta: number; label: string | null }> {
-  const groups = await db.productVariantGroup.findMany({
-    where: { tenantId, productId },
-    include: { options: true },
-  });
+): { priceDelta: number; label: string | null } {
   if (groups.length === 0) {
     if (selectedOptionIds.length > 0) {
       throw new Error("Produk ini tidak punya varian.");
@@ -140,4 +138,48 @@ export async function resolveVariantSelection(
   }
 
   return { priceDelta, label: labelParts.length > 0 ? labelParts.join(", ") : null };
+}
+
+/**
+ * Fetch semua grup varian untuk sekumpulan produk dalam SATU query, dikelompokkan
+ * per productId — dipakai bareng computeVariantSelection supaya checkout dengan
+ * N item cuma perlu 1 round-trip DB, bukan N.
+ */
+export async function loadVariantGroupsByProduct(
+  db: Prisma.TransactionClient | typeof prisma,
+  tenantId: string,
+  productIds: string[]
+): Promise<Map<string, VariantGroupWithOptions[]>> {
+  const groups = await db.productVariantGroup.findMany({
+    where: { tenantId, productId: { in: productIds } },
+    include: { options: true },
+  });
+  const map = new Map<string, VariantGroupWithOptions[]>();
+  for (const group of groups) {
+    const existing = map.get(group.productId);
+    if (existing) {
+      existing.push(group);
+    } else {
+      map.set(group.productId, [group]);
+    }
+  }
+  return map;
+}
+
+/**
+ * Versi single-item (1 query per panggilan) — dipertahankan untuk pemakaian
+ * di luar loop checkout. Untuk checkout dengan banyak item, pakai
+ * loadVariantGroupsByProduct + computeVariantSelection supaya cuma 1 query total.
+ */
+export async function resolveVariantSelection(
+  db: Prisma.TransactionClient | typeof prisma,
+  tenantId: string,
+  productId: string,
+  selectedOptionIds: string[]
+): Promise<{ priceDelta: number; label: string | null }> {
+  const groups = await db.productVariantGroup.findMany({
+    where: { tenantId, productId },
+    include: { options: true },
+  });
+  return computeVariantSelection(groups, selectedOptionIds);
 }
