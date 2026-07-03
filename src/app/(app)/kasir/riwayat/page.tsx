@@ -33,7 +33,15 @@ export default async function RiwayatPage() {
 
   return (
     <div className="mx-auto max-w-3xl">
-      <h1 className="mb-4 text-2xl font-bold text-[var(--color-text)]">Riwayat transaksi</h1>
+      <div className="mb-4 flex items-center justify-between gap-3">
+        <h1 className="text-2xl font-bold text-[var(--color-text)]">Riwayat transaksi</h1>
+        <a
+          href="/api/export/transaksi"
+          className="flex min-h-[40px] items-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+        >
+          Ekspor CSV
+        </a>
+      </div>
       <RiwayatList sales={rows} canVoid={user.role === "OWNER" || user.role === "MANAGER"} />
     </div>
   );
