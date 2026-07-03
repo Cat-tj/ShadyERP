@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireSession } from "@/server/require-session";
 import { listMembers } from "@/server/services/member-service";
 import { formatRupiah, formatTanggalPendek } from "@/lib/format";
@@ -45,7 +46,7 @@ export default async function MemberPage({
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
             {members.map((member) => (
-              <a
+              <Link
                 key={member.id}
                 href={`/member/${member.id}`}
                 className="flex items-center justify-between gap-3 p-4 hover:bg-[var(--color-bg)]"
@@ -63,7 +64,7 @@ export default async function MemberPage({
                     {formatRupiah(member.depositBalance)}
                   </p>
                 </div>
-              </a>
+              </Link>
             ))}
           </div>
         )}

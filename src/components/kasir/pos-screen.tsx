@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import Link from "next/link";
 import { formatRupiah } from "@/lib/format";
 import { PaymentSheet } from "@/components/kasir/payment-sheet";
 import { XIcon } from "@/components/ui/icons";
@@ -140,18 +141,18 @@ export function PosScreen({
           <p className="text-sm text-[var(--color-text-secondary)]">{outletName}</p>
         </div>
         <div className="flex gap-2">
-          <a
+          <Link
             href="/kasir/riwayat"
             className="min-h-[40px] rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)] flex items-center"
           >
             Riwayat
-          </a>
-          <a
+          </Link>
+          <Link
             href="/kasir/tutup"
             className="min-h-[40px] rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)] flex items-center"
           >
             Tutup shift
-          </a>
+          </Link>
         </div>
       </div>
 

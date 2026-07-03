@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/server/require-session";
 import { getShiftSummary } from "@/server/services/shift-service";
@@ -62,12 +63,12 @@ export default async function ShiftSelesaiPage({
               : "Uang di laci kurang dari catatan. Coba periksa lagi hitungannya."}
         </p>
 
-        <a
+        <Link
           href="/kasir"
           className="mt-5 flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)]"
         >
           Kembali ke kasir
-        </a>
+        </Link>
       </div>
     </div>
   );

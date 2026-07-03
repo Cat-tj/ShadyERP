@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createBatchAction } from "@/app/(app)/pengaturan/kartu/actions";
 import { formatTanggal } from "@/lib/format";
@@ -123,12 +124,12 @@ export function KartuManager({ batches }: { batches: BatchRow[] }) {
                   </p>
                   <p className="text-xs text-[var(--color-text-secondary)]">Dibuat {formatTanggal(batch.createdAt)}</p>
                 </div>
-                <a
+                <Link
                   href={`/pengaturan/kartu/${batch.id}`}
                   className="min-h-[36px] rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] flex items-center hover:bg-[var(--color-bg)]"
                 >
                   Lihat & cetak
-                </a>
+                </Link>
               </div>
             ))}
           </div>

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { requireSession } from "@/server/require-session";
 import { listOutletsForUser } from "@/server/services/outlet-service";
 import { getTodayAttendance, listRecentAttendance } from "@/server/services/attendance-service";
@@ -21,12 +22,12 @@ export default async function AbsensiPage() {
       <div className="flex items-center justify-between">
         <h1 className="font-display text-2xl font-semibold text-[var(--color-text)]">Absensi</h1>
         {(user.role === "OWNER" || user.role === "MANAGER") && (
-          <a
+          <Link
             href="/absensi/tim"
             className="min-h-[40px] rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] flex items-center hover:bg-[var(--color-surface)]"
           >
             Kelola tim
-          </a>
+          </Link>
         )}
       </div>
 

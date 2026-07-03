@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSession } from "@/server/require-session";
 import { getSaleById } from "@/server/services/sale-service";
@@ -156,12 +157,12 @@ export default async function StrukPage({
 
       <div className="mt-4 flex flex-col gap-2 print:hidden">
         <PrintButton />
-        <a
+        <Link
           href="/kasir"
           className="flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)]"
         >
           Transaksi baru
-        </a>
+        </Link>
       </div>
     </div>
   );
