@@ -4,6 +4,7 @@ import { z } from "zod";
 import { AuthError } from "next-auth";
 import { signIn } from "@/lib/auth";
 import { registerTenant } from "@/server/services/tenant-service";
+import { checkRateLimit, getClientIp, formatRetryMessage } from "@/lib/rate-limit";
 
 export type RegisterState = {
   error?: string;
@@ -22,6 +23,12 @@ export async function registerAction(
   _prevState: RegisterState,
   formData: FormData
 ): Promise<RegisterState> {
+  const ip = await getClientIp();
+  const limit = checkRateLimit(`register:ip:${ip}`, 5, 60_000);
+  if (!limit.allowed) {
+    return { error: formatRetryMessage(limit.retryAfterMs) };
+  }
+
   const parsed = registerSchema.safeParse({
     businessName: formData.get("businessName"),
     businessType: formData.get("businessType"),

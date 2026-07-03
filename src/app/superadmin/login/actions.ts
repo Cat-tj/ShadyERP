@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { verifySuperAdminCredentials } from "@/server/services/super-admin-service";
 import { createSuperAdminSessionCookie, SUPER_ADMIN_COOKIE_NAME } from "@/lib/super-admin-session";
+import { checkRateLimit, getClientIp, formatRetryMessage } from "@/lib/rate-limit";
 
 export type SuperAdminLoginState = { error?: string };
 
@@ -16,6 +17,12 @@ export async function superAdminLoginAction(
 
   if (!email || !password) {
     return { error: "Email dan kata sandi wajib diisi." };
+  }
+
+  const ip = await getClientIp();
+  const limit = checkRateLimit(`superadmin-login:ip:${ip}`, 10, 60_000);
+  if (!limit.allowed) {
+    return { error: formatRetryMessage(limit.retryAfterMs) };
   }
 
   const admin = await verifySuperAdminCredentials(email, password);
