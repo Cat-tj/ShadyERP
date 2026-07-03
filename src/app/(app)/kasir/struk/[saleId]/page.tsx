@@ -4,7 +4,9 @@ import { requireSession } from "@/server/require-session";
 import { getSaleById } from "@/server/services/sale-service";
 import { prisma } from "@/lib/prisma";
 import { formatRupiah, formatTanggal, formatJam } from "@/lib/format";
+import { buildReceiptEscPos, escPosToRawBtUrl } from "@/lib/escpos";
 import { PrintButton } from "@/components/kasir/print-button";
+import { PrintRawBtButton } from "@/components/kasir/print-rawbt-button";
 
 const PAYMENT_LABEL: Record<string, string> = {
   CASH: "Tunai",
@@ -30,6 +32,31 @@ export default async function StrukPage({
   if (!sale) {
     notFound();
   }
+
+  const rawBtUrl = escPosToRawBtUrl(
+    buildReceiptEscPos({
+      tenantName: tenant?.name ?? "",
+      outletName: sale.outlet.name,
+      invoiceNumber: sale.invoiceNumber,
+      dateLabel: `${formatTanggal(sale.createdAt)}, ${formatJam(sale.createdAt)}`,
+      cashierName: sale.cashier.name,
+      memberName: sale.member?.name ?? null,
+      items: sale.items.map((item) => ({
+        name: item.variantLabel ? `${item.productName} (${item.variantLabel})` : item.productName,
+        qty: item.qty,
+        price: item.price,
+        subtotal: item.subtotal,
+      })),
+      subtotal: sale.subtotal,
+      discountAmount: sale.discountAmount,
+      taxAmount: sale.taxAmount,
+      total: sale.total,
+      paymentMethod: PAYMENT_LABEL[sale.paymentMethod] ?? sale.paymentMethod,
+      amountPaid: sale.amountPaid,
+      changeAmount: sale.paymentMethod === "CASH" ? sale.changeAmount : 0,
+      footerNote: setting?.receiptFooter ?? null,
+    })
+  );
 
   return (
     <div className="mx-auto max-w-sm">
@@ -161,6 +188,10 @@ export default async function StrukPage({
       </div>
 
       <div className="mt-4 flex flex-col gap-2 print:hidden">
+        <PrintRawBtButton rawBtUrl={rawBtUrl} />
+        <p className="text-center text-xs text-[var(--color-text-secondary)]">
+          Butuh aplikasi RawBT terpasang & printer thermal terhubung (Bluetooth/USB) di HP Android.
+        </p>
         <PrintButton />
         <Link
           href="/kasir"
