@@ -83,6 +83,12 @@ model Tenant {
   reorderPoints        StockReorderPoint[]
   stockBatches         StockBatch[]
   warehouseLocations   WarehouseLocation[]
+  suppliers            Supplier[]
+  supplierContracts    SupplierPricingContract[]
+  purchaseOrders       PurchaseOrder[]
+  stockReceipts        StockReceipt[]
+  stockCounts          StockCount[]
+  productCostHistory   ProductCostHistory[]
   setting              TenantSetting?
 }
 
@@ -108,12 +114,14 @@ model Outlet {
   expenses          Expense[]
   transfersFrom     StockTransfer[]   @relation("StockTransferFromOutlet")
   transfersTo       StockTransfer[]   @relation("StockTransferToOutlet")
-  tables            Table[]
-  tableOrders       TableOrder[]
-  bookings          Booking[]
-  reorderPoints     StockReorderPoint[]
-  stockBatches      StockBatch[]
-  warehouseLocations WarehouseLocation[]
+  tables              Table[]
+  tableOrders         TableOrder[]
+  bookings            Booking[]
+  reorderPoints       StockReorderPoint[]
+  stockBatches        StockBatch[]
+  warehouseLocations  WarehouseLocation[]
+  stockReceipts       StockReceipt[]
+  stockCounts         StockCount[]
 
   @@index([tenantId])
 }
@@ -150,9 +158,16 @@ model User {
   shiftSchedules       ShiftSchedule[]
   stockAdjustments     StockAdjustment[]
   expensesCreated      Expense[]
-  stockTransfers       StockTransfer[]
-  auditLogs            AuditLog[]
-  bookingsAssigned     Booking[]
+  stockTransfers            StockTransfer[]
+  auditLogs                 AuditLog[]
+  bookingsAssigned          Booking[]
+  purchaseOrdersApproved    PurchaseOrder[]
+  stockReceiptsReceived     StockReceipt[]           @relation("StockReceiptReceivedBy")
+  stockReceiptsChecked      StockReceipt[]           @relation("StockReceiptCheckedBy")
+  stockCountsStarted        StockCount[]             @relation("StockCountStartedBy")
+  stockCountsCompleted      StockCount[]             @relation("StockCountCompletedBy")
+  stockCountsVerified       StockCount[]             @relation("StockCountVerifiedBy")
+  costHistoryChanges        ProductCostHistory[]
 
   @@index([tenantId])
 }
@@ -306,14 +321,19 @@ model Product {
   tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category Category? @relation(fields: [categoryId], references: [id])
 
-  stocks            ProductStock[]
-  saleItems         SaleItem[]
-  stockAdjustments  StockAdjustment[]
-  stockTransfers    StockTransfer[]
-  tableOrderItems   TableOrderItem[]
-  variantGroups     ProductVariantGroup[]
-  reorderPoints     StockReorderPoint[]
-  stockBatches      StockBatch[]
+  stocks                ProductStock[]
+  saleItems             SaleItem[]
+  stockAdjustments      StockAdjustment[]
+  stockTransfers        StockTransfer[]
+  tableOrderItems       TableOrderItem[]
+  variantGroups         ProductVariantGroup[]
+  reorderPoints         StockReorderPoint[]
+  stockBatches          StockBatch[]
+  supplierContracts     SupplierPricingContract[]
+  purchaseOrderItems    PurchaseOrderItem[]
+  stockReceiptItems     StockReceiptItem[]
+  stockCountItems       StockCountItem[]
+  costHistory           ProductCostHistory[]
 
   @@index([tenantId])
   @@index([categoryId])
@@ -929,6 +949,244 @@ model WarehouseLocation {
 
   @@unique([outletId, code])
   @@index([tenantId])
+}
+
+// ================== SUPPLIER & PURCHASE MANAGEMENT ==================
+
+enum SupplierStatus {
+  ACTIVE
+  INACTIVE
+  BLACKLISTED
+}
+
+model Supplier {
+  id             String          @id @default(cuid())
+  tenantId       String
+  name           String
+  address        String?
+  city           String?
+  phone          String?
+  email          String?
+  contactPerson  String?
+  paymentTerms   String? // "Net 30", "COD", "DP 50%", dll
+  taxId          String? // NPWP
+  rating         Int? // 1-5 bintang
+  notes          String?
+  status         SupplierStatus  @default(ACTIVE)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  tenant              Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  purchaseOrders      PurchaseOrder[]
+  pricingContracts    SupplierPricingContract[]
+
+  @@index([tenantId])
+}
+
+/// Harga khusus supplier per produk dengan minimal order.
+model SupplierPricingContract {
+  id           String   @id @default(cuid())
+  tenantId     String
+  supplierId   String
+  productId    String
+  unitPrice    Int      // Rupiah per unit
+  minQty       Int      @default(1) // Minimal order quantity
+  leadDays     Int      @default(3) // Berapa hari pengiriman
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([supplierId, productId])
+  @@index([tenantId])
+  @@index([productId])
+}
+
+enum PurchaseOrderStatus {
+  DRAFT
+  SENT
+  CONFIRMED
+  PARTIALLY_RECEIVED
+  RECEIVED
+  CANCELLED
+}
+
+model PurchaseOrder {
+  id              String                @id @default(cuid())
+  tenantId        String
+  supplierId      String
+  poNumber        String // Auto: PO-20250704-001
+  status          PurchaseOrderStatus   @default(DRAFT)
+  sentAt          DateTime?
+  expectedAt      DateTime?
+  receivedAt      DateTime?
+  totalAmount     Int // Rupiah, calculated
+  approvedById    String? // User yang approve
+  rejectionNote   String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  tenant        Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplier      Supplier             @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  approvedBy    User?                @relation(fields: [approvedById], references: [id])
+  items         PurchaseOrderItem[]
+  stockReceipts StockReceipt[]
+
+  @@index([tenantId])
+  @@index([supplierId])
+  @@index([status])
+}
+
+model PurchaseOrderItem {
+  id              String   @id @default(cuid())
+  poId            String
+  productId       String
+  qty             Int
+  unitPrice       Int // Rupiah
+  subtotal        Int // qty * unitPrice
+  qtyReceived     Int @default(0)
+  createdAt       DateTime @default(now())
+
+  po      PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([poId])
+  @@index([productId])
+}
+
+enum StockReceiptStatus {
+  PENDING // Goods masuk, belum QC
+  PARTIAL_QC // Sebagian sudah QC
+  COMPLETED // Semua QC selesai, stok masuk
+  REJECTED // Ada yang reject
+}
+
+/// Goods received dari supplier (linked ke PurchaseOrder).
+model StockReceipt {
+  id              String               @id @default(cuid())
+  tenantId        String
+  poId            String
+  outletId        String
+  receiptNumber   String // Auto: GR-20250704-001
+  status          StockReceiptStatus   @default(PENDING)
+  receivedAt      DateTime             @default(now())
+  completedAt     DateTime?
+  receivedById    String?
+  checkedById     String?
+  notes           String?
+  createdAt       DateTime             @default(now())
+  updatedAt       DateTime             @updatedAt
+
+  tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  po           PurchaseOrder        @relation(fields: [poId], references: [id], onDelete: Cascade)
+  outlet       Outlet               @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  receivedBy   User?                @relation("StockReceiptReceivedBy", fields: [receivedById], references: [id])
+  checkedBy    User?                @relation("StockReceiptCheckedBy", fields: [checkedById], references: [id])
+  items        StockReceiptItem[]
+
+  @@index([tenantId])
+  @@index([poId])
+  @@index([outletId])
+}
+
+enum QCStatus {
+  PENDING // Belum QC
+  PASSED // Lolos QC
+  PARTIAL_DEFECT // Ada yang rusak
+  REJECTED // Semua reject
+}
+
+model StockReceiptItem {
+  id           String    @id @default(cuid())
+  receiptId    String
+  productId    String
+  qtyReceived  Int // Dari PO
+  qtyAccepted  Int @default(0) // Lolos QC
+  qtyDefect    Int @default(0) // Rusak/bermasalah
+  qcStatus     QCStatus  @default(PENDING)
+  qcNotes      String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  receipt StockReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  product Product      @relation(fields: [productId], references: [id])
+
+  @@index([receiptId])
+  @@index([productId])
+}
+
+enum StockCountStatus {
+  DRAFT // Belum mulai count
+  IN_PROGRESS // Sedang di-count
+  COMPLETED // Selesai count
+  VERIFIED // Admin sudah verify adjustment
+}
+
+/// Physical inventory count (opname).
+model StockCount {
+  id              String          @id @default(cuid())
+  tenantId        String
+  outletId        String
+  countDate       DateTime
+  countNumber     String // Auto: SC-20250704-001
+  status          StockCountStatus @default(DRAFT)
+  startedBy       String?
+  completedBy     String?
+  verifiedBy      String?
+  totalVariance   Int @default(0) // Total nilai variance Rupiah
+  notes           String?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet      Outlet           @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  startedByUser User?           @relation("StockCountStartedBy", fields: [startedBy], references: [id])
+  completedByUser User?         @relation("StockCountCompletedBy", fields: [completedBy], references: [id])
+  verifiedByUser User?          @relation("StockCountVerifiedBy", fields: [verifiedBy], references: [id])
+  items       StockCountItem[]
+
+  @@index([tenantId])
+  @@index([outletId])
+  @@index([countDate])
+}
+
+model StockCountItem {
+  id            String  @id @default(cuid())
+  countId       String
+  productId     String
+  systemQty     Int // Qty di sistem
+  physicalQty   Int @default(0) // Qty hasil count fisik
+  variance      Int @default(0) // physicalQty - systemQty
+  varianceValue Int @default(0) // variance * harga jual
+  notes         String?
+
+  count   StockCount @relation(fields: [countId], references: [id], onDelete: Cascade)
+  product Product    @relation(fields: [productId], references: [id])
+
+  @@index([countId])
+  @@index([productId])
+}
+
+/// Track setiap perubahan harga/cost produk dari supplier.
+model ProductCostHistory {
+  id        String   @id @default(cuid())
+  tenantId  String
+  productId String
+  previousCost Int?
+  newCost   Int
+  reason    String? // "Supplier price change", "Manual adjustment", dll
+  changedBy String? // User yang ubah
+  createdAt DateTime @default(now())
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id])
+  user    User?   @relation(fields: [changedBy], references: [id])
+
+  @@index([tenantId])
+  @@index([productId])
 }
 
 // ================== PENGATURAN TENANT ==================
