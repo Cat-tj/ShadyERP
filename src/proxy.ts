@@ -25,6 +25,6 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
-    "/((?!api/auth|_next/static|_next/image|favicon\\.ico|manifest\\.webmanifest|sw\\.js|icon\\.svg|icon-192\\.png|icon-512\\.png|icon-maskable-512\\.png|apple-icon\\.png|q/|pesan/|superadmin/|superadmin$|akun-nonaktif).*)",
+    "/((?!api/auth|_next/static|_next/image|favicon\\.ico|manifest\\.webmanifest|sw\\.js|icon\\.svg|icon-192\\.png|icon-512\\.png|icon-maskable-512\\.png|apple-icon\\.png|auth/|q/|pesan/|superadmin/|superadmin$|akun-nonaktif).*)",
   ],
 };
