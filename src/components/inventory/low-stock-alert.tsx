@@ -1,7 +1,7 @@
 "use client";
 
 import { GlassPanel } from "@/components/ui/glass-panel";
-import { AlertCircleIcon } from "@/components/ui/icons";
+import { AlertTriangleIcon } from "@/components/ui/icons";
 
 interface LowStockItem {
   productId: string;
@@ -37,7 +37,7 @@ export function LowStockAlert({ items, isLoading }: LowStockAlertProps) {
       {criticalItems.length > 0 && (
         <GlassPanel className="rounded-xl border border-red-500/30 bg-red-500/5 p-4">
           <div className="flex gap-3">
-            <AlertCircleIcon className="h-5 w-5 shrink-0 text-red-600" />
+            <AlertTriangleIcon className="h-5 w-5 shrink-0 text-red-600" />
             <div className="flex-1">
               <p className="font-medium text-red-600">Stok Habis ({criticalItems.length})</p>
               <div className="mt-2 space-y-1">
@@ -55,7 +55,7 @@ export function LowStockAlert({ items, isLoading }: LowStockAlertProps) {
       {warningItems.length > 0 && (
         <GlassPanel className="rounded-xl border border-yellow-500/30 bg-yellow-500/5 p-4">
           <div className="flex gap-3">
-            <AlertCircleIcon className="h-5 w-5 shrink-0 text-yellow-600" />
+            <AlertTriangleIcon className="h-5 w-5 shrink-0 text-yellow-600" />
             <div className="flex-1">
               <p className="font-medium text-yellow-600">Stok Menipis ({warningItems.length})</p>
               <div className="mt-2 space-y-1">
