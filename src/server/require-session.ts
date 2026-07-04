@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -11,6 +12,34 @@ export type SessionUser = {
   email: string;
 };
 
+type TenantAuthState = {
+  user: SessionUser;
+  tenant: { isActive: boolean; name: string; disabledModules: string[] } | null;
+};
+
+/**
+ * (app)/layout.tsx SELALU manggil salah satu fungsi di file ini, lalu tiap
+ * page di dalamnya biasanya manggil lagi (requireSession/requireRole/
+ * requireModule) — tanpa cache ini jadi 2x auth()+query tenant per request
+ * (sekali dari layout, sekali dari page), padahal hasilnya identik.
+ *
+ * React cache() memoize per render-request: dipanggil berkali-kali dengan
+ * argumen sama dalam satu request cuma benar-benar jalan sekali.
+ */
+const getAuthState = cache(async (): Promise<TenantAuthState> => {
+  const session = await auth();
+  if (!session?.user?.tenantId) {
+    redirect("/login");
+  }
+
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: session.user.tenantId },
+    select: { isActive: true, name: true, disabledModules: true },
+  });
+
+  return { user: session.user as SessionUser, tenant };
+});
+
 /**
  * Panggil ini di setiap Server Component / Server Action yang butuh data tenant.
  * Mengembalikan tenantId dari sesi login — JANGAN PERNAH menerima tenantId dari
@@ -21,23 +50,14 @@ export type SessionUser = {
  * JWT-nya masih berlaku — bukan cuma memblokir login baru.
  */
 export async function requireSession(): Promise<SessionUser> {
-  const session = await auth();
-  if (!session?.user?.tenantId) {
-    redirect("/login");
-  }
-
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: session.user.tenantId },
-    select: { isActive: true },
-  });
+  const { user, tenant } = await getAuthState();
   if (!tenant?.isActive) {
     // /akun-nonaktif sengaja dikecualikan dari proxy.ts (middleware) supaya
     // tidak terjadi redirect loop dengan aturan "sudah login tapi buka
     // /login -> lempar ke /pilih-aplikasi" di proxy.ts.
     redirect("/akun-nonaktif");
   }
-
-  return session.user as SessionUser;
+  return user;
 }
 
 export async function requireRole(roles: SessionUser["role"][]): Promise<SessionUser> {
@@ -49,29 +69,19 @@ export async function requireRole(roles: SessionUser["role"][]): Promise<Session
 }
 
 /**
- * Sama seperti requireSession(), tapi sekalian ambil name+disabledModules
- * tenant dalam SATU query (bukan dua query terpisah). Dipakai di
- * (app)/layout.tsx yang jalan di SETIAP navigasi — menghindari 1 round-trip
- * DB ekstra per halaman.
+ * Sama seperti requireSession(), tapi sekalian kembalikan name+disabledModules
+ * tenant yang sudah ke-fetch (lihat getAuthState di atas) — tanpa query
+ * tambahan. Dipakai di (app)/layout.tsx.
  */
 export async function requireSessionWithTenant(): Promise<{
   user: SessionUser;
   tenant: { name: string; disabledModules: string[] } | null;
 }> {
-  const session = await auth();
-  if (!session?.user?.tenantId) {
-    redirect("/login");
-  }
-
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: session.user.tenantId },
-    select: { isActive: true, name: true, disabledModules: true },
-  });
+  const { user, tenant } = await getAuthState();
   if (!tenant?.isActive) {
     redirect("/akun-nonaktif");
   }
-
-  return { user: session.user as SessionUser, tenant };
+  return { user, tenant };
 }
 
 /**
@@ -81,15 +91,7 @@ export async function requireSessionWithTenant(): Promise<{
  * ikut ke-lempar balik — dia yang harus nyalain lagi dari Pengaturan.
  */
 export async function requireModule(moduleKey: ModuleKey): Promise<SessionUser> {
-  const session = await auth();
-  if (!session?.user?.tenantId) {
-    redirect("/login");
-  }
-
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: session.user.tenantId },
-    select: { isActive: true, disabledModules: true },
-  });
+  const { user, tenant } = await getAuthState();
   if (!tenant?.isActive) {
     redirect("/akun-nonaktif");
   }
@@ -98,5 +100,5 @@ export async function requireModule(moduleKey: ModuleKey): Promise<SessionUser> 
   if (!enabled.has(moduleKey)) {
     redirect("/pilih-aplikasi");
   }
-  return session.user as SessionUser;
+  return user;
 }
