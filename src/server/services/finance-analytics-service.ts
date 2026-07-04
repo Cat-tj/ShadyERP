@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { startOfMonth, endOfMonth, subMonths } from "date-fns";
+import { startOfMonth, endOfMonth, subMonths } from "@/lib/date-range";
 
 /**
  * Financial Analysis service
@@ -48,13 +48,13 @@ export async function getProfitAndLoss(
     where: {
       tenantId,
       ...(outletId && { outletId }),
-      isCancelled: false,
+      status: "COMPLETED",
       createdAt: { gte: startDate, lte: endDate },
     },
-    _sum: { totalAmount: true },
+    _sum: { total: true },
   });
 
-  const revenue = salesData._sum.totalAmount ?? 0;
+  const revenue = salesData._sum.total ?? 0;
 
   // COGS - didapat dari cost product * quantity sold
   const cogsData = await prisma.saleItem.aggregate({
@@ -62,11 +62,11 @@ export async function getProfitAndLoss(
       sale: {
         tenantId,
         ...(outletId && { outletId }),
-        isCancelled: false,
+        status: "COMPLETED",
         createdAt: { gte: startDate, lte: endDate },
       },
     },
-    _sum: { quantity: true },
+    _sum: { qty: true },
   });
 
   // Estimate COGS: ambil total quantity sold, multiply dengan average cost
@@ -75,7 +75,7 @@ export async function getProfitAndLoss(
     _avg: { cost: true },
   });
 
-  const cogs = (cogsData._sum.quantity ?? 0) * (avgCost._avg.cost ?? 0);
+  const cogs = (cogsData._sum.qty ?? 0) * (avgCost._avg.cost ?? 0);
   const grossProfit = revenue - cogs;
   const grossMargin = revenue > 0 ? Math.round((grossProfit / revenue) * 10000) / 100 : 0;
 
@@ -137,7 +137,7 @@ export async function getProfitByCategory(
               sale: {
                 tenantId,
                 ...(outletId && { outletId }),
-                isCancelled: false,
+                status: "COMPLETED",
                 createdAt: { gte: startDate, lte: endDate },
               },
             },
@@ -155,8 +155,8 @@ export async function getProfitByCategory(
     cat.products.forEach((prod) => {
       prod.saleItems.forEach((item) => {
         revenue += item.subtotal;
-        cogs += (prod.cost ?? 0) * item.quantity;
-        qtySold += item.quantity;
+        cogs += (prod.cost ?? 0) * item.qty;
+        qtySold += item.qty;
       });
     });
 
@@ -191,10 +191,10 @@ export async function getCashFlowTrend(tenantId: string, outletId?: string, mont
         where: {
           tenantId,
           ...(outletId && { outletId }),
-          isCancelled: false,
+          status: "COMPLETED",
           createdAt: { gte: startDate, lte: endDate },
         },
-        _sum: { totalAmount: true },
+        _sum: { total: true },
       }),
       prisma.expense.aggregate({
         where: {
@@ -206,7 +206,7 @@ export async function getCashFlowTrend(tenantId: string, outletId?: string, mont
       }),
     ]);
 
-    const cashIn = income._sum.totalAmount ?? 0;
+    const cashIn = income._sum.total ?? 0;
     const cashOut = expenses._sum.amount ?? 0;
 
     data.push({

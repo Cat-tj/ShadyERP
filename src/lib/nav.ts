@@ -8,6 +8,7 @@ import {
   BarChartIcon,
   SettingsIcon,
   TrendingDownIcon,
+  TrendingUpIcon,
   BellIcon,
   FlameIcon,
   CalendarIcon,
@@ -43,14 +44,17 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/stock-receipt", label: "Barang Masuk", icon: PackageIcon, roles: ["OWNER", "MANAGER"], module: "kasir", hub: "kasir" },
   { href: "/stock-count", label: "Opname", icon: SettingsIcon, roles: ["OWNER", "MANAGER"], module: "kasir", hub: "kasir" },
   { href: "/member", label: "Member", icon: UsersIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "member", hub: "kasir" },
+  { href: "/kpi/analitik", label: "Analitik", icon: BarChartIcon, roles: ["OWNER", "MANAGER"], module: "kasir", hub: "kasir" },
 
   // ===== Tim =====
   { href: "/tim", label: "Beranda", icon: HomeIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "hr", hub: "tim" },
   { href: "/absensi", label: "Absensi", icon: MapPinIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "hr", hub: "tim" },
+  { href: "/tim/analitik", label: "Analitik Tim", icon: BarChartIcon, roles: ["OWNER", "MANAGER"], module: "hr", hub: "tim" },
 
   // ===== Finance =====
   { href: "/finance/laporan", label: "Laporan", icon: BarChartIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "keuangan", hub: "finance" },
   { href: "/finance/pengeluaran", label: "Pengeluaran", icon: TrendingDownIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "keuangan", hub: "finance" },
+  { href: "/finance/analitik", label: "Analitik Lanjutan", icon: TrendingUpIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
 
   // ===== Admin =====
   { href: "/pengaturan", label: "Pengaturan", icon: SettingsIcon, roles: ["OWNER"], showOnBottomNav: true, hub: "admin" },

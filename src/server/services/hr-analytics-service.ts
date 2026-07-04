@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { startOfMonth, endOfMonth, subDays } from "date-fns";
+import { subDays } from "@/lib/date-range";
 
 /**
  * HR Analytics service
@@ -31,12 +31,9 @@ export async function getAttendanceTrends(tenantId: string, period = 30) {
       const total = user.attendances.length;
       if (total === 0) return null;
 
-      const onTime = user.attendances.filter((a) => {
-        const schedule = a.shiftStart; // simplified - should check schedule
-        return new Date(a.createdAt) <= new Date(schedule);
-      }).length;
-
-      const late = total - onTime;
+      // Status LATE/PRESENT sudah dihitung saat clock-in (lihat attendance-service.clockIn)
+      const late = user.attendances.filter((a) => a.status === "LATE").length;
+      const onTime = total - late;
       const absent = 0; // Kalau tidak ada attendance record untuk scheduled day
 
       return {
@@ -94,34 +91,30 @@ export async function getOvertimeAnalysis(tenantId: string, outletId?: string, p
 // ============ TEAM PERFORMANCE ============
 
 export async function getTeamPerformance(tenantId: string, outletId?: string) {
+  const since = subDays(new Date(), 30);
+
   const users = await prisma.user.findMany({
     where: {
       tenantId,
       role: { in: ["STAFF", "MANAGER"] },
-      ...(outletId && { outlets: { some: { outletId } } }),
+      ...(outletId && { userOutlets: { some: { outletId } } }),
     },
     include: {
       attendances: {
-        where: {
-          createdAt: {
-            gte: subDays(new Date(), 30),
-          },
-        },
+        where: { createdAt: { gte: since } },
       },
-      sales: {
+      salesAsCashier: {
         where: {
-          createdAt: {
-            gte: subDays(new Date(), 30),
-          },
-          isCancelled: false,
+          createdAt: { gte: since },
+          status: "COMPLETED",
         },
       },
     },
   });
 
   return users.map((user) => {
-    const totalSales = user.sales.reduce((sum, sale) => sum + sale.totalAmount, 0);
-    const saleCount = user.sales.length;
+    const totalSales = user.salesAsCashier.reduce((sum, sale) => sum + sale.total, 0);
+    const saleCount = user.salesAsCashier.length;
     const avgSale = saleCount > 0 ? Math.round(totalSales / saleCount) : 0;
     const attendanceRate = 0; // would need to calculate based on scheduled shifts
 
@@ -200,7 +193,7 @@ export async function getPayrollSummary(tenantId: string, outletId?: string, yea
     where: {
       tenantId,
       role: { in: ["STAFF", "MANAGER"] },
-      ...(outletId && { outlets: { some: { outletId } } }),
+      ...(outletId && { userOutlets: { some: { outletId } } }),
     },
     include: {
       attendances: {
@@ -250,31 +243,31 @@ export async function getStaffComparison(tenantId: string, outletId?: string, pe
     where: {
       tenantId,
       role: { in: ["STAFF", "MANAGER"] },
-      ...(outletId && { outlets: { some: { outletId } } }),
+      ...(outletId && { userOutlets: { some: { outletId } } }),
     },
     include: {
       attendances: {
         where: { createdAt: { gte: startDate } },
       },
-      sales: {
-        where: { createdAt: { gte: startDate }, isCancelled: false },
+      salesAsCashier: {
+        where: { createdAt: { gte: startDate }, status: "COMPLETED" },
       },
     },
   });
 
   return stats
     .map((staff) => {
-      const totalRevenue = staff.sales.reduce((sum, s) => sum + s.totalAmount, 0);
-      const avgTransaction = staff.sales.length > 0 ? Math.round(totalRevenue / staff.sales.length) : 0;
+      const totalRevenue = staff.salesAsCashier.reduce((sum, s) => sum + s.total, 0);
+      const avgTransaction = staff.salesAsCashier.length > 0 ? Math.round(totalRevenue / staff.salesAsCashier.length) : 0;
 
       return {
         staffId: staff.id,
         staffName: staff.name,
         attendanceDays: staff.attendances.length,
-        transactionCount: staff.sales.length,
+        transactionCount: staff.salesAsCashier.length,
         totalRevenue,
         avgTransaction,
-        efficiency: staff.attendances.length > 0 ? Math.round(staff.sales.length / staff.attendances.length) : 0,
+        efficiency: staff.attendances.length > 0 ? Math.round(staff.salesAsCashier.length / staff.attendances.length) : 0,
       };
     })
     .sort((a, b) => b.totalRevenue - a.totalRevenue);

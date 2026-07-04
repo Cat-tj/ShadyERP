@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { startOfDay, endOfDay, startOfMonth, endOfMonth, subDays } from "date-fns";
+import { startOfDay, endOfDay, subDays } from "@/lib/date-range";
 
 /**
  * KPI & Advanced Analytics service
@@ -13,18 +13,15 @@ export async function getSalesVelocityByHour(tenantId: string, outletId?: string
   const today = startOfDay(new Date());
   const tomorrow = endOfDay(new Date());
 
-  const query = prisma.sale.groupBy({
-    by: ["createdAt"],
+  const sales = await prisma.sale.findMany({
     where: {
       tenantId,
       ...(outletId && { outletId }),
       createdAt: { gte: today, lte: tomorrow },
-      isCancelled: false,
+      status: "COMPLETED",
     },
-    _sum: { totalAmount: true },
+    select: { createdAt: true, total: true },
   });
-
-  const sales = await query;
 
   // Group by hour
   const hourlyData: Record<number, { hour: number; sales: number; count: number }> = {};
@@ -34,7 +31,7 @@ export async function getSalesVelocityByHour(tenantId: string, outletId?: string
 
   sales.forEach((sale) => {
     const hour = new Date(sale.createdAt).getHours();
-    hourlyData[hour].sales += sale._sum.totalAmount ?? 0;
+    hourlyData[hour].sales += sale.total;
     hourlyData[hour].count += 1;
   });
 
@@ -55,9 +52,9 @@ export async function getStockTurnoverByProduct(
   const sales = await prisma.saleItem.groupBy({
     by: ["productId"],
     where: {
-      sale: { tenantId, outletId, isCancelled: false, createdAt: { gte: startDate, lte: endDate } },
+      sale: { tenantId, outletId, status: "COMPLETED", createdAt: { gte: startDate, lte: endDate } },
     },
-    _sum: { quantity: true, subtotal: true },
+    _sum: { qty: true, subtotal: true },
   });
 
   const turnoverData = await Promise.all(
@@ -67,7 +64,7 @@ export async function getStockTurnoverByProduct(
         include: { stocks: { where: { outletId } } },
       });
 
-      const totalQtySold = sale._sum.quantity ?? 0;
+      const totalQtySold = sale._sum.qty ?? 0;
       const currentStock = product?.stocks[0]?.qty ?? 0;
       const avgStock = (currentStock + totalQtySold) / 2 || 1; // Avoid division by zero
       const turnoverRate = Math.round((totalQtySold / avgStock) * 100) / 100;
@@ -94,13 +91,15 @@ export async function getMemberRetentionRate(tenantId: string, daysThreshold = 3
 
   const [totalMembers, activeMembers] = await Promise.all([
     prisma.member.count({ where: { tenantId } }),
-    prisma.pointTransaction.groupBy({
-      by: ["memberId"],
-      where: {
-        tenantId,
-        createdAt: { gte: cutoffDate },
-      },
-    }).then((result) => result.length),
+    prisma.pointTransaction
+      .groupBy({
+        by: ["memberId"],
+        where: {
+          tenantId,
+          createdAt: { gte: cutoffDate },
+        },
+      })
+      .then((result) => result.length),
   ]);
 
   const retentionRate = totalMembers > 0 ? Math.round((activeMembers / totalMembers) * 100) : 0;
@@ -120,29 +119,29 @@ export async function getRevenueByCategory(tenantId: string, outletId?: string, 
   const startDate = subDays(new Date(), period);
 
   const revenue = await prisma.saleItem.groupBy({
-    by: ["product"],
+    by: ["productId"],
     where: {
       sale: {
         tenantId,
         ...(outletId && { outletId }),
-        isCancelled: false,
+        status: "COMPLETED",
         createdAt: { gte: startDate },
       },
     },
-    _sum: { subtotal: true, quantity: true },
+    _sum: { subtotal: true, qty: true },
   });
 
   const categoryData = await Promise.all(
     revenue.map(async (item) => {
       const product = await prisma.product.findUnique({
-        where: { id: item.product },
+        where: { id: item.productId },
         include: { category: true },
       });
       return {
         categoryId: product?.categoryId,
         categoryName: product?.category?.name ?? "Tanpa Kategori",
         revenue: item._sum.subtotal ?? 0,
-        qtySold: item._sum.quantity ?? 0,
+        qtySold: item._sum.qty ?? 0,
       };
     })
   );
@@ -180,11 +179,11 @@ export async function getTopProductsByRevenue(
       sale: {
         tenantId,
         ...(outletId && { outletId }),
-        isCancelled: false,
+        status: "COMPLETED",
         createdAt: { gte: startDate },
       },
     },
-    _sum: { subtotal: true, quantity: true },
+    _sum: { subtotal: true, qty: true },
     orderBy: { _sum: { subtotal: "desc" } },
     take: limit,
   });
@@ -198,8 +197,8 @@ export async function getTopProductsByRevenue(
         productId: item.productId,
         productName: product?.name,
         revenue: item._sum.subtotal ?? 0,
-        qtySold: item._sum.quantity ?? 0,
-        avgPrice: item._sum.quantity ? Math.round((item._sum.subtotal ?? 0) / item._sum.quantity) : 0,
+        qtySold: item._sum.qty ?? 0,
+        avgPrice: item._sum.qty ? Math.round((item._sum.subtotal ?? 0) / item._sum.qty) : 0,
       };
     })
   );
@@ -221,16 +220,16 @@ export async function getOutletComparison(tenantId: string, period = 30) {
           where: {
             tenantId,
             outletId: outlet.id,
-            isCancelled: false,
+            status: "COMPLETED",
             createdAt: { gte: startDate },
           },
-          _sum: { totalAmount: true },
+          _sum: { total: true },
         }),
         prisma.sale.count({
           where: {
             tenantId,
             outletId: outlet.id,
-            isCancelled: false,
+            status: "COMPLETED",
             createdAt: { gte: startDate },
           },
         }),
@@ -239,21 +238,21 @@ export async function getOutletComparison(tenantId: string, period = 30) {
             sale: {
               tenantId,
               outletId: outlet.id,
-              isCancelled: false,
+              status: "COMPLETED",
               createdAt: { gte: startDate },
             },
           },
-          _sum: { quantity: true },
+          _sum: { qty: true },
         }),
       ]);
 
       return {
         outletId: outlet.id,
         outletName: outlet.name,
-        revenue: totalSales._sum.totalAmount ?? 0,
+        revenue: totalSales._sum.total ?? 0,
         transactionCount: saleCount,
-        itemsSold: totalItems._sum.quantity ?? 0,
-        avgTransaction: saleCount > 0 ? Math.round((totalSales._sum.totalAmount ?? 0) / saleCount) : 0,
+        itemsSold: totalItems._sum.qty ?? 0,
+        avgTransaction: saleCount > 0 ? Math.round((totalSales._sum.total ?? 0) / saleCount) : 0,
       };
     })
   );

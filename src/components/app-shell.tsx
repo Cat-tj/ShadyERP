@@ -50,6 +50,11 @@ export function AppShell({
 
   const items = navItemsForHub(role, activeHub.key, enabledModules);
   const bottomItems = items.filter((item) => item.showOnBottomNav).slice(0, 5);
+  // Beberapa href saling jadi prefix (mis. /kpi & /kpi/analitik) — hanya item
+  // dengan prefix TERPANJANG yang cocok yang boleh nyala, biar tidak dobel.
+  const activeHref = items
+    .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
   // Halaman fitur (mis. /absensi, /laporan) ikut warna modulnya sendiri; halaman
   // netral (Pengaturan, Akun) tetap pakai warna brand default dari globals.css.
   const currentModule = getModuleForPath(pathname);
@@ -85,7 +90,7 @@ export function AppShell({
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
           {items.map((item) => {
-            const active = pathname.startsWith(item.href);
+            const active = item.href === activeHref;
             const Icon = item.icon;
             const itemModule = item.module ? MODULE_MAP[item.module] : null;
             return (
@@ -185,7 +190,7 @@ export function AppShell({
         {/* Bottom nav mobile */}
         <nav className="glass-nav fixed inset-x-0 bottom-0 z-10 flex rounded-none border-x-0 border-b-0 md:hidden">
           {bottomItems.map((item) => {
-            const active = pathname.startsWith(item.href);
+            const active = item.href === activeHref;
             const Icon = item.icon;
             const itemModule = item.module ? MODULE_MAP[item.module] : null;
             const activeColor = itemModule?.color ?? activeHub.color;
