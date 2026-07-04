@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 
-// Backward compatibility: redirect old dashboard path to new kpi path
+// Backward compatibility: old bookmarked /dashboard links now land on the hub picker.
 export default function DashboardRedirect() {
-  redirect("/kpi");
+  redirect("/pilih-aplikasi");
 }

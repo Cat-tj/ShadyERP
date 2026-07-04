@@ -55,7 +55,7 @@ export async function registerAction(
     await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirectTo: "/dashboard",
+      redirectTo: "/pilih-aplikasi",
     });
     return {};
   } catch (error) {

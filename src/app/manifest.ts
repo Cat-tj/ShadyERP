@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
     name: "Altora — Kasir & Manajemen Toko",
     short_name: "Altora",
     description: "Aplikasi kasir, member, dan absensi untuk UMKM Indonesia.",
-    start_url: "/dashboard",
+    start_url: "/pilih-aplikasi",
     display: "standalone",
     background_color: "#f5f7fa",
     theme_color: "#2563eb",

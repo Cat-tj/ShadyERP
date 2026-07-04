@@ -7,7 +7,7 @@ import "./landing.css";
 export default async function RootPage() {
   const session = await auth();
   if (session?.user) {
-    redirect("/dashboard");
+    redirect("/pilih-aplikasi");
   }
 
   return (

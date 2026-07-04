@@ -4,7 +4,7 @@ import { getDashboardSummary } from "@/server/services/dashboard-service";
 import { getEnabledModules } from "@/server/services/tenant-service";
 import { formatTanggal } from "@/lib/format";
 import { GlassPanel } from "@/components/ui/glass-panel";
-import { navItemsForRole } from "@/lib/nav";
+import { navItemsForHub } from "@/lib/nav";
 import { BuildingIcon, BriefcaseIcon, PackageIcon, UsersIcon } from "@/components/ui/icons";
 
 const STAT_CARDS = [
@@ -20,7 +20,7 @@ export default async function KpiPage() {
     getDashboardSummary(user.tenantId),
     getEnabledModules(user.tenantId),
   ]);
-  const quickLinks = navItemsForRole(user.role, enabledModules).filter((item) => item.href !== "/kpi");
+  const quickLinks = navItemsForHub(user.role, "kasir", enabledModules).filter((item) => item.href !== "/kpi");
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">

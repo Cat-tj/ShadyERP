@@ -14,6 +14,7 @@ import {
   BriefcaseIcon,
 } from "@/components/ui/icons";
 import type { ModuleKey } from "@/lib/modules";
+import type { HubKey } from "@/lib/hubs";
 
 export type Role = "OWNER" | "MANAGER" | "STAFF";
 
@@ -23,27 +24,39 @@ export type NavItem = {
   icon: ComponentType<SVGProps<SVGSVGElement>>;
   roles: Role[];
   showOnBottomNav?: boolean;
-  /** Modul pemilik item ini (lihat src/lib/modules.ts). Kosong = selalu tampil, tidak pernah di-gate. */
+  /** Modul pemilik item ini (lihat src/lib/modules.ts). Kosong = tidak pernah di-gate modul. */
   module?: ModuleKey;
+  /** Hub/"aplikasi" pemilik item ini (lihat src/lib/hubs.ts). "all" = tampil di sidebar hub manapun. */
+  hub: HubKey | "all";
 };
 
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/kpi", label: "Beranda", icon: HomeIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "kasir" },
-  { href: "/kasir", label: "Kasir", icon: ReceiptIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "kasir" },
-  { href: "/pesanan-meja", label: "Pesanan Meja", icon: BellIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "pesanan-digital" },
-  { href: "/dapur", label: "Dapur", icon: FlameIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "pesanan-digital" },
-  { href: "/booking", label: "Booking", icon: CalendarIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "booking" },
-  { href: "/inventory", label: "Inventori", icon: PackageIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "kasir" },
-  { href: "/supplier", label: "Supplier", icon: UsersIcon, roles: ["OWNER", "MANAGER"], module: "kasir" },
-  { href: "/purchase-order", label: "Pembelian", icon: ReceiptIcon, roles: ["OWNER", "MANAGER"], module: "kasir" },
-  { href: "/stock-receipt", label: "Barang Masuk", icon: PackageIcon, roles: ["OWNER", "MANAGER"], module: "kasir" },
-  { href: "/stock-count", label: "Opname", icon: SettingsIcon, roles: ["OWNER", "MANAGER"], module: "kasir" },
-  { href: "/member", label: "Member", icon: UsersIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "member" },
-  { href: "/absensi", label: "Absensi", icon: MapPinIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "hr" },
-  { href: "/dokumen", label: "Dokumen", icon: BriefcaseIcon, roles: ["OWNER", "MANAGER", "STAFF"] },
-  { href: "/finance/laporan", label: "Laporan", icon: BarChartIcon, roles: ["OWNER", "MANAGER"], module: "keuangan" },
-  { href: "/finance/pengeluaran", label: "Pengeluaran", icon: TrendingDownIcon, roles: ["OWNER", "MANAGER"], module: "keuangan" },
-  { href: "/pengaturan", label: "Pengaturan", icon: SettingsIcon, roles: ["OWNER"], showOnBottomNav: true },
+  // ===== Kasir & Operasional =====
+  { href: "/kpi", label: "Beranda", icon: HomeIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "kasir", hub: "kasir" },
+  { href: "/kasir", label: "Kasir", icon: ReceiptIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "kasir", hub: "kasir" },
+  { href: "/pesanan-meja", label: "Pesanan Meja", icon: BellIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "pesanan-digital", hub: "kasir" },
+  { href: "/dapur", label: "Dapur", icon: FlameIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "pesanan-digital", hub: "kasir" },
+  { href: "/booking", label: "Booking", icon: CalendarIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "booking", hub: "kasir" },
+  { href: "/inventory", label: "Inventori", icon: PackageIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "kasir", hub: "kasir" },
+  { href: "/supplier", label: "Supplier", icon: UsersIcon, roles: ["OWNER", "MANAGER"], module: "kasir", hub: "kasir" },
+  { href: "/purchase-order", label: "Pembelian", icon: ReceiptIcon, roles: ["OWNER", "MANAGER"], module: "kasir", hub: "kasir" },
+  { href: "/stock-receipt", label: "Barang Masuk", icon: PackageIcon, roles: ["OWNER", "MANAGER"], module: "kasir", hub: "kasir" },
+  { href: "/stock-count", label: "Opname", icon: SettingsIcon, roles: ["OWNER", "MANAGER"], module: "kasir", hub: "kasir" },
+  { href: "/member", label: "Member", icon: UsersIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "member", hub: "kasir" },
+
+  // ===== Tim =====
+  { href: "/tim", label: "Beranda", icon: HomeIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "hr", hub: "tim" },
+  { href: "/absensi", label: "Absensi", icon: MapPinIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "hr", hub: "tim" },
+
+  // ===== Finance =====
+  { href: "/finance/laporan", label: "Laporan", icon: BarChartIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "keuangan", hub: "finance" },
+  { href: "/finance/pengeluaran", label: "Pengeluaran", icon: TrendingDownIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "keuangan", hub: "finance" },
+
+  // ===== Admin =====
+  { href: "/pengaturan", label: "Pengaturan", icon: SettingsIcon, roles: ["OWNER"], showOnBottomNav: true, hub: "admin" },
+
+  // ===== Lintas hub (tampil di semua sidebar) =====
+  { href: "/dokumen", label: "Dokumen", icon: BriefcaseIcon, roles: ["OWNER", "MANAGER", "STAFF"], hub: "all" },
 ];
 
 export function navItemsForRole(role: Role, enabledModules?: Set<ModuleKey>): NavItem[] {
@@ -51,4 +64,18 @@ export function navItemsForRole(role: Role, enabledModules?: Set<ModuleKey>): Na
     (item) =>
       item.roles.includes(role) && (!item.module || !enabledModules || enabledModules.has(item.module))
   );
+}
+
+export function navItemsForHub(role: Role, hub: HubKey, enabledModules?: Set<ModuleKey>): NavItem[] {
+  return navItemsForRole(role, enabledModules).filter((item) => item.hub === hub || item.hub === "all");
+}
+
+/** Hub mana saja yang punya minimal 1 item nav untuk role ini — dipakai halaman pemilihan hub. */
+export function hubsAvailableForRole(role: Role, enabledModules?: Set<ModuleKey>): Set<HubKey> {
+  const items = navItemsForRole(role, enabledModules);
+  const hubs = new Set<HubKey>();
+  for (const item of items) {
+    if (item.hub !== "all") hubs.add(item.hub);
+  }
+  return hubs;
 }

@@ -129,6 +129,7 @@ const ROUTE_MODULE_MAP: { prefix: string; module: ModuleKey }[] = [
   { prefix: "/booking", module: "booking" },
   { prefix: "/member", module: "member" },
   { prefix: "/absensi", module: "hr" },
+  { prefix: "/tim", module: "hr" },
   // Keep old paths for backwards compatibility (redirect via middleware if needed)
   { prefix: "/dashboard", module: "kasir" },
   { prefix: "/produk", module: "kasir" },

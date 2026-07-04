@@ -33,7 +33,7 @@ export async function requireSession(): Promise<SessionUser> {
   if (!tenant?.isActive) {
     // /akun-nonaktif sengaja dikecualikan dari proxy.ts (middleware) supaya
     // tidak terjadi redirect loop dengan aturan "sudah login tapi buka
-    // /login -> lempar ke /dashboard" di proxy.ts.
+    // /login -> lempar ke /pilih-aplikasi" di proxy.ts.
     redirect("/akun-nonaktif");
   }
 
@@ -43,7 +43,7 @@ export async function requireSession(): Promise<SessionUser> {
 export async function requireRole(roles: SessionUser["role"][]): Promise<SessionUser> {
   const user = await requireSession();
   if (!roles.includes(user.role)) {
-    redirect("/dashboard");
+    redirect("/pilih-aplikasi");
   }
   return user;
 }
@@ -62,7 +62,7 @@ export async function requireModule(moduleKey: ModuleKey): Promise<SessionUser> 
   });
   const enabled = resolveEnabledModules(tenant?.disabledModules ?? []);
   if (!enabled.has(moduleKey)) {
-    redirect("/dashboard");
+    redirect("/pilih-aplikasi");
   }
   return user;
 }

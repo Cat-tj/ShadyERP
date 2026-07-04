@@ -1,17 +1,21 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { navItemsForRole, type Role } from "@/lib/nav";
-import { UserIcon, PowerIcon } from "@/components/ui/icons";
+import { navItemsForHub, type Role } from "@/lib/nav";
+import { UserIcon, PowerIcon, GridIcon } from "@/components/ui/icons";
 import { resolveEnabledModules, getModuleForPath, MODULE_MAP } from "@/lib/modules";
+import { HUBS, HUB_MAP, getHubForPath, type HubKey } from "@/lib/hubs";
 
 const ROLE_LABEL: Record<Role, string> = {
   OWNER: "Pemilik",
   MANAGER: "Manajer",
   STAFF: "Staf",
 };
+
+const ACTIVE_HUB_STORAGE_KEY = "altora:activeHub";
 
 export function AppShell({
   userName,
@@ -28,7 +32,23 @@ export function AppShell({
 }) {
   const pathname = usePathname();
   const enabledModules = resolveEnabledModules(disabledModules);
-  const items = navItemsForRole(role, enabledModules);
+
+  const pathHub = getHubForPath(pathname);
+  const [storedHubKey, setStoredHubKey] = useState<HubKey | null>(null);
+
+  useEffect(() => {
+    if (pathHub) {
+      localStorage.setItem(ACTIVE_HUB_STORAGE_KEY, pathHub.key);
+      setStoredHubKey(pathHub.key);
+      return;
+    }
+    const saved = localStorage.getItem(ACTIVE_HUB_STORAGE_KEY) as HubKey | null;
+    if (saved && HUB_MAP[saved]) setStoredHubKey(saved);
+  }, [pathHub]);
+
+  const activeHub = pathHub ?? (storedHubKey ? HUB_MAP[storedHubKey] : null) ?? HUBS[0];
+
+  const items = navItemsForHub(role, activeHub.key, enabledModules);
   const bottomItems = items.filter((item) => item.showOnBottomNav).slice(0, 5);
   // Halaman fitur (mis. /absensi, /laporan) ikut warna modulnya sendiri; halaman
   // netral (Pengaturan, Akun) tetap pakai warna brand default dari globals.css.
@@ -50,11 +70,17 @@ export function AppShell({
       {/* Sidebar desktop */}
       <aside className="glass-surface sticky top-0 hidden h-screen w-64 shrink-0 flex-col rounded-none border-y-0 border-l-0 md:flex">
         <div className="flex h-16 items-center gap-3 border-b border-[var(--color-gold-soft)] px-5">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-primary)] font-display text-sm font-semibold text-[var(--color-on-primary)]">
+          <div
+            className="flex h-9 w-9 items-center justify-center rounded-lg font-display text-sm font-semibold text-white"
+            style={{ backgroundColor: activeHub.color }}
+          >
             {tenantName.slice(0, 1).toUpperCase()}
           </div>
           <div className="min-w-0">
             <p className="truncate font-display text-sm font-semibold text-[var(--color-text)]">{tenantName}</p>
+            <p className="truncate text-xs font-medium" style={{ color: activeHub.color }}>
+              {activeHub.label}
+            </p>
           </div>
         </div>
         <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
@@ -69,26 +95,33 @@ export function AppShell({
                 style={
                   active && itemModule
                     ? { backgroundColor: itemModule.color, color: "#fff" }
-                    : undefined
+                    : active
+                      ? { backgroundColor: activeHub.color, color: "#fff" }
+                      : undefined
                 }
                 className={`flex min-h-[48px] items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors duration-150 ${
-                  active
-                    ? itemModule
-                      ? ""
-                      : "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
-                    : "text-[var(--color-text)] hover:bg-white/40"
+                  active ? "" : "text-[var(--color-text)] hover:bg-white/40"
                 }`}
               >
                 <Icon
                   aria-hidden
                   className="h-5 w-5 shrink-0"
-                  style={!active && itemModule ? { color: itemModule.color } : undefined}
+                  style={!active ? { color: itemModule?.color ?? activeHub.color } : undefined}
                 />
                 {item.label}
               </Link>
             );
           })}
         </nav>
+        <div className="border-t border-[var(--color-gold-soft)] p-3">
+          <Link
+            href="/pilih-aplikasi"
+            className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 text-sm font-medium text-[var(--color-text)] hover:bg-white/40"
+          >
+            <GridIcon aria-hidden className="h-5 w-5 shrink-0 text-[var(--color-text-secondary)]" />
+            Ganti Aplikasi
+          </Link>
+        </div>
         <div className="border-t border-[var(--color-gold-soft)] p-4">
           <Link href="/akun" className="block hover:opacity-80">
             <p className="truncate text-sm font-semibold text-[var(--color-text)]">{userName}</p>
@@ -107,12 +140,27 @@ export function AppShell({
         {/* Topbar mobile & tablet */}
         <header className="glass-nav sticky top-0 z-10 flex h-14 items-center justify-between rounded-none border-x-0 border-t-0 px-4 md:hidden">
           <div className="flex items-center gap-2">
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--color-primary)] font-display text-xs font-semibold text-[var(--color-on-primary)]">
+            <div
+              className="flex h-8 w-8 items-center justify-center rounded-lg font-display text-xs font-semibold text-white"
+              style={{ backgroundColor: activeHub.color }}
+            >
               {tenantName.slice(0, 1).toUpperCase()}
             </div>
-            <p className="truncate font-display text-sm font-semibold text-[var(--color-text)]">{tenantName}</p>
+            <div className="min-w-0">
+              <p className="truncate font-display text-sm font-semibold text-[var(--color-text)]">{tenantName}</p>
+              <p className="truncate text-[10px] font-medium leading-none" style={{ color: activeHub.color }}>
+                {activeHub.label}
+              </p>
+            </div>
           </div>
           <div className="flex items-center gap-1">
+            <Link
+              href="/pilih-aplikasi"
+              aria-label="Ganti aplikasi"
+              className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-white/40"
+            >
+              <GridIcon aria-hidden className="h-5 w-5" />
+            </Link>
             <Link
               href="/akun"
               aria-label="Akun saya"
@@ -140,7 +188,7 @@ export function AppShell({
             const active = pathname.startsWith(item.href);
             const Icon = item.icon;
             const itemModule = item.module ? MODULE_MAP[item.module] : null;
-            const activeColor = itemModule?.color ?? "var(--color-primary)";
+            const activeColor = itemModule?.color ?? activeHub.color;
             return (
               <Link
                 key={item.href}
