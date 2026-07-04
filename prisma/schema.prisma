@@ -89,6 +89,7 @@ model Tenant {
   stockReceipts        StockReceipt[]
   stockCounts          StockCount[]
   productCostHistory   ProductCostHistory[]
+  documents            Document[]
   setting              TenantSetting?
 }
 
@@ -168,6 +169,10 @@ model User {
   stockCountsCompleted      StockCount[]             @relation("StockCountCompletedBy")
   stockCountsVerified       StockCount[]             @relation("StockCountVerifiedBy")
   costHistoryChanges        ProductCostHistory[]
+  documentsUploaded         Document[]               @relation("DocumentUploader")
+  documentVersions          DocumentVersion[]
+  documentSignings          DocumentSigner[]
+  documentAccess            DocumentAccess[]
 
   @@index([tenantId])
 }
@@ -1200,4 +1205,105 @@ model TenantSetting {
   updatedAt       DateTime @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+// ================== DOKUMEN & E-SIGN ==================
+
+enum DocumentStatus {
+  DRAFT
+  PENDING_SIGNATURE
+  IN_PROGRESS
+  SIGNED
+  REJECTED
+  EXPIRED
+}
+
+enum SignerStatus {
+  PENDING
+  SIGNED
+  REJECTED
+  SKIPPED
+}
+
+enum DocumentAccessLevel {
+  OWNER
+  EDITOR
+  VIEWER
+  SIGNER
+}
+
+model Document {
+  id            String            @id @default(cuid())
+  tenantId      String
+  name          String
+  description   String?
+  fileUrl       String // Supabase Storage URL
+  status        DocumentStatus    @default(DRAFT)
+  uploadedBy    String
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+  expiresAt     DateTime?
+
+  // Relations
+  versions      DocumentVersion[]
+  signers       DocumentSigner[]
+  accessControl DocumentAccess[]
+
+  uploader      User              @relation("DocumentUploader", fields: [uploadedBy], references: [id], onDelete: Cascade)
+  tenant        Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([uploadedBy])
+  @@index([status])
+}
+
+model DocumentVersion {
+  id         String   @id @default(cuid())
+  documentId String
+  version    Int      @default(1)
+  fileUrl    String
+  createdAt  DateTime @default(now())
+  createdBy  String
+
+  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  creator    User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, version])
+  @@index([documentId])
+}
+
+model DocumentSigner {
+  id           String       @id @default(cuid())
+  documentId   String
+  userId       String
+  sequence     Int          // Urutan signing (1, 2, 3, dst)
+  status       SignerStatus @default(PENDING)
+  signedAt     DateTime?
+  signatureData String?     // Canvas signature data (base64)
+  rejectionReason String?
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  document     Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  signer       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, userId])
+  @@index([documentId])
+  @@index([userId])
+  @@index([status])
+}
+
+model DocumentAccess {
+  id       String                @id @default(cuid())
+  documentId String
+  userId   String?               // NULL jika untuk role
+  role     String?               // OWNER/MANAGER/STAFF atau null jika specific user
+  level    DocumentAccessLevel   @default(VIEWER)
+  createdAt DateTime             @default(now())
+
+  document Document              @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([documentId, userId])
+  @@index([documentId])
 }

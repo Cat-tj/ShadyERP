@@ -11,6 +11,7 @@ import {
   BellIcon,
   FlameIcon,
   CalendarIcon,
+  BriefcaseIcon,
 } from "@/components/ui/icons";
 import type { ModuleKey } from "@/lib/modules";
 
@@ -39,6 +40,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/stock-count", label: "Opname", icon: SettingsIcon, roles: ["OWNER", "MANAGER"], module: "kasir" },
   { href: "/member", label: "Member", icon: UsersIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "member" },
   { href: "/absensi", label: "Absensi", icon: MapPinIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "hr" },
+  { href: "/dokumen", label: "Dokumen", icon: BriefcaseIcon, roles: ["OWNER", "MANAGER", "STAFF"] },
   { href: "/finance/laporan", label: "Laporan", icon: BarChartIcon, roles: ["OWNER", "MANAGER"], module: "keuangan" },
   { href: "/finance/pengeluaran", label: "Pengeluaran", icon: TrendingDownIcon, roles: ["OWNER", "MANAGER"], module: "keuangan" },
   { href: "/pengaturan", label: "Pengaturan", icon: SettingsIcon, roles: ["OWNER"], showOnBottomNav: true },
