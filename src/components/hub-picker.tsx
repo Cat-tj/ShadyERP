@@ -1,11 +1,26 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { HUBS, type HubDef, type HubKey } from "@/lib/hubs";
 import { PowerIcon } from "@/components/ui/icons";
 
 const ACTIVE_HUB_STORAGE_KEY = "altora:activeHub";
+
+function useGreeting() {
+  // Dihitung setelah mount (bukan saat render server) supaya jam server &
+  // klien yang beda timezone tidak bikin hydration mismatch.
+  const [greeting, setGreeting] = useState("Selamat datang");
+  useEffect(() => {
+    const h = new Date().getHours();
+    if (h < 11) setGreeting("Selamat pagi");
+    else if (h < 15) setGreeting("Selamat siang");
+    else if (h < 19) setGreeting("Selamat sore");
+    else setGreeting("Selamat malam");
+  }, []);
+  return greeting;
+}
 
 export function HubPicker({
   hubKeys,
@@ -17,59 +32,104 @@ export function HubPicker({
   tenantName: string;
 }) {
   const router = useRouter();
+  const greeting = useGreeting();
+  const [enteringKey, setEnteringKey] = useState<HubKey | null>(null);
   // Komponen ikon (fungsi React) tidak boleh lewat batas Server->Client sebagai
   // prop — makanya cuma key (string) yang dikirim, objek HubDef lengkap
   // (termasuk ikonnya) di-resolve di sini, di dalam client component.
   const hubs: HubDef[] = HUBS.filter((hub) => hubKeys.includes(hub.key));
 
   function enterHub(hub: HubDef) {
+    setEnteringKey(hub.key);
     localStorage.setItem(ACTIVE_HUB_STORAGE_KEY, hub.key);
     router.push(hub.homeHref);
   }
 
   return (
-    <div className="flex min-h-screen w-full flex-col items-center justify-center bg-[var(--color-bg)] px-4 py-10">
-      <div className="w-full max-w-3xl">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <p className="text-sm text-[var(--color-text-secondary)]">{tenantName}</p>
-            <h1 className="font-display text-2xl font-semibold text-[var(--color-text)] sm:text-3xl">
-              Halo, {userName.split(" ")[0]} — mau buka aplikasi apa?
+    <div className="relative flex min-h-screen w-full flex-col items-center justify-center overflow-hidden px-4 py-14">
+      {/* Wash gradient lembut, warna diambil dari hub pertama biar tetap "hidup" tanpa hardcode satu warna */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          backgroundImage: `
+            radial-gradient(60rem 40rem at 12% -10%, ${hubs[0]?.colorSoft ?? "rgba(37,99,235,0.10)"} 0%, transparent 60%),
+            radial-gradient(50rem 34rem at 100% 10%, ${hubs[1]?.colorSoft ?? "rgba(22,163,74,0.08)"} 0%, transparent 55%),
+            linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg) 40%, var(--color-bg-secondary) 100%)
+          `,
+        }}
+      />
+
+      <div className="relative z-10 w-full max-w-4xl">
+        <div className="mb-10 flex items-start justify-between gap-4">
+          <div className="animate-[fadeInUp_0.5s_ease-out_forwards]">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-[var(--color-text-secondary)]">
+              {tenantName}
+            </p>
+            <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-[var(--color-text)] sm:text-4xl">
+              {greeting}, {userName.split(" ")[0]}
             </h1>
+            <p className="mt-1.5 text-sm text-[var(--color-text-secondary)] sm:text-base">
+              Pilih aplikasi yang mau dibuka.
+            </p>
           </div>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}
             aria-label="Keluar"
-            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)]"
+            className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]"
           >
             <PowerIcon aria-hidden className="h-5 w-5" />
           </button>
         </div>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {hubs.map((hub) => {
+          {hubs.map((hub, i) => {
             const Icon = hub.icon;
+            const isEntering = enteringKey === hub.key;
             return (
               <button
                 key={hub.key}
                 onClick={() => enterHub(hub)}
-                className="group flex flex-col items-start gap-4 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6 text-left transition-all hover:-translate-y-0.5 hover:shadow-lg"
+                disabled={enteringKey !== null}
+                style={{ animationDelay: `${80 + i * 70}ms` }}
+                className="group relative flex animate-[fadeInUp_0.5s_ease-out_forwards] flex-col items-start gap-5 overflow-hidden rounded-2xl border border-[var(--color-border)]/70 bg-[var(--color-surface)]/80 p-7 text-left opacity-0 shadow-[var(--shadow-soft-sm)] backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-transparent hover:shadow-[var(--shadow-soft)] disabled:pointer-events-none disabled:opacity-40"
               >
+                {/* Aksen gradient tipis yang nongol pas hover, warnanya ikut hub */}
                 <div
-                  className="flex h-12 w-12 items-center justify-center rounded-xl text-white transition-transform group-hover:scale-105"
-                  style={{ backgroundColor: hub.color }}
-                >
-                  <Icon aria-hidden className="h-6 w-6" />
+                  aria-hidden
+                  className="pointer-events-none absolute inset-0 opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                  style={{ backgroundImage: `linear-gradient(135deg, ${hub.colorSoft} 0%, transparent 65%)` }}
+                />
+
+                <div className="relative flex w-full items-start justify-between">
+                  <div
+                    className="flex items-center justify-center rounded-2xl text-white shadow-sm transition-transform duration-300 group-hover:scale-105"
+                    style={{
+                      backgroundImage: `linear-gradient(135deg, ${hub.color} 0%, ${hub.colorDark} 100%)`,
+                      width: "3.25rem",
+                      height: "3.25rem",
+                    }}
+                  >
+                    <Icon aria-hidden className="h-6 w-6" />
+                  </div>
+                  {isEntering && (
+                    <span className="h-5 w-5 animate-spin rounded-full border-2 border-[var(--color-border)] border-t-[var(--color-text)]" />
+                  )}
                 </div>
-                <div>
+
+                <div className="relative">
                   <h2 className="font-display text-lg font-semibold text-[var(--color-text)]">{hub.label}</h2>
-                  <p className="mt-1 text-sm text-[var(--color-text-secondary)]">{hub.description}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-[var(--color-text-secondary)]">{hub.description}</p>
                 </div>
+
                 <span
-                  className="mt-auto text-sm font-medium transition-opacity group-hover:opacity-70"
+                  className="relative mt-auto flex items-center gap-1 text-sm font-medium transition-all duration-300 group-hover:gap-2"
                   style={{ color: hub.color }}
                 >
-                  Buka →
+                  Buka
+                  <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-0.5">
+                    →
+                  </span>
                 </span>
               </button>
             );

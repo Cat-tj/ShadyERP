@@ -100,6 +100,19 @@ body {
     linear-gradient(180deg, var(--color-bg-secondary) 0%, var(--color-bg) 45%, var(--color-bg-secondary) 100%);
 }
 
+/* Entrance halus buat kartu/heading (mis. halaman pilih hub) — dipicu via
+   className Tailwind arbitrary: animate-[fadeInUp_0.5s_ease-out_forwards] */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .glass-surface,
   .glass-surface-strong {
