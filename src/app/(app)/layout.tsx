@@ -1,5 +1,4 @@
-import { requireSession } from "@/server/require-session";
-import { prisma } from "@/lib/prisma";
+import { requireSessionWithTenant } from "@/server/require-session";
 import { AppShell } from "@/components/app-shell";
 
 export default async function AppLayout({
@@ -7,11 +6,7 @@ export default async function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const user = await requireSession();
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: user.tenantId },
-    select: { name: true, disabledModules: true },
-  });
+  const { user, tenant } = await requireSessionWithTenant();
 
   return (
     <AppShell

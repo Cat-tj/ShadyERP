@@ -49,20 +49,54 @@ export async function requireRole(roles: SessionUser["role"][]): Promise<Session
 }
 
 /**
+ * Sama seperti requireSession(), tapi sekalian ambil name+disabledModules
+ * tenant dalam SATU query (bukan dua query terpisah). Dipakai di
+ * (app)/layout.tsx yang jalan di SETIAP navigasi — menghindari 1 round-trip
+ * DB ekstra per halaman.
+ */
+export async function requireSessionWithTenant(): Promise<{
+  user: SessionUser;
+  tenant: { name: string; disabledModules: string[] } | null;
+}> {
+  const session = await auth();
+  if (!session?.user?.tenantId) {
+    redirect("/login");
+  }
+
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: session.user.tenantId },
+    select: { isActive: true, name: true, disabledModules: true },
+  });
+  if (!tenant?.isActive) {
+    redirect("/akun-nonaktif");
+  }
+
+  return { user: session.user as SessionUser, tenant };
+}
+
+/**
  * Panggil di layout.tsx tiap route yang termasuk modul non-core (mis. /booking,
  * /absensi) supaya akses URL langsung tetap diblokir walau link-nya sudah
  * disembunyikan dari sidebar. Owner yang barusan mematikan modulnya sendiri
  * ikut ke-lempar balik — dia yang harus nyalain lagi dari Pengaturan.
  */
 export async function requireModule(moduleKey: ModuleKey): Promise<SessionUser> {
-  const user = await requireSession();
+  const session = await auth();
+  if (!session?.user?.tenantId) {
+    redirect("/login");
+  }
+
   const tenant = await prisma.tenant.findUnique({
-    where: { id: user.tenantId },
-    select: { disabledModules: true },
+    where: { id: session.user.tenantId },
+    select: { isActive: true, disabledModules: true },
   });
-  const enabled = resolveEnabledModules(tenant?.disabledModules ?? []);
+  if (!tenant?.isActive) {
+    redirect("/akun-nonaktif");
+  }
+
+  const enabled = resolveEnabledModules(tenant.disabledModules ?? []);
   if (!enabled.has(moduleKey)) {
     redirect("/pilih-aplikasi");
   }
-  return user;
+  return session.user as SessionUser;
 }
