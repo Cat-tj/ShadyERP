@@ -80,6 +80,9 @@ model Tenant {
   auditLogs            AuditLog[]
   promos               Promo[]
   bookings             Booking[]
+  reorderPoints        StockReorderPoint[]
+  stockBatches         StockBatch[]
+  warehouseLocations   WarehouseLocation[]
   setting              TenantSetting?
 }
 
@@ -95,19 +98,22 @@ model Outlet {
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  userOutlets      UserOutlet[]
-  productStocks    ProductStock[]
-  cashierShifts    CashierShift[]
-  sales            Sale[]
-  shiftSchedules   ShiftSchedule[]
-  attendances      Attendance[]
-  stockAdjustments StockAdjustment[]
-  expenses         Expense[]
-  transfersFrom    StockTransfer[]   @relation("StockTransferFromOutlet")
-  transfersTo      StockTransfer[]   @relation("StockTransferToOutlet")
-  tables           Table[]
-  tableOrders      TableOrder[]
-  bookings         Booking[]
+  userOutlets       UserOutlet[]
+  productStocks     ProductStock[]
+  cashierShifts     CashierShift[]
+  sales             Sale[]
+  shiftSchedules    ShiftSchedule[]
+  attendances       Attendance[]
+  stockAdjustments  StockAdjustment[]
+  expenses          Expense[]
+  transfersFrom     StockTransfer[]   @relation("StockTransferFromOutlet")
+  transfersTo       StockTransfer[]   @relation("StockTransferToOutlet")
+  tables            Table[]
+  tableOrders       TableOrder[]
+  bookings          Booking[]
+  reorderPoints     StockReorderPoint[]
+  stockBatches      StockBatch[]
+  warehouseLocations WarehouseLocation[]
 
   @@index([tenantId])
 }
@@ -300,12 +306,14 @@ model Product {
   tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category Category? @relation(fields: [categoryId], references: [id])
 
-  stocks           ProductStock[]
-  saleItems        SaleItem[]
-  stockAdjustments StockAdjustment[]
-  stockTransfers   StockTransfer[]
-  tableOrderItems  TableOrderItem[]
-  variantGroups    ProductVariantGroup[]
+  stocks            ProductStock[]
+  saleItems         SaleItem[]
+  stockAdjustments  StockAdjustment[]
+  stockTransfers    StockTransfer[]
+  tableOrderItems   TableOrderItem[]
+  variantGroups     ProductVariantGroup[]
+  reorderPoints     StockReorderPoint[]
+  stockBatches      StockBatch[]
 
   @@index([tenantId])
   @@index([categoryId])
@@ -854,6 +862,73 @@ model Booking {
   @@index([tenantId])
   @@index([outletId])
   @@index([staffUserId])
+}
+
+// ================== INVENTORY ENHANCEMENTS ==================
+
+/// Reorder point per produk per outlet — minimal stok yang harus dijaga.
+/// Kalau stok turun di bawah ini, tampilkan warning di dashboard.
+model StockReorderPoint {
+  id        String   @id @default(cuid())
+  tenantId  String
+  productId String
+  outletId  String
+  minQty    Int      @default(5) // minimal qty sebelum warning
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  outlet  Outlet  @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, outletId])
+  @@index([tenantId])
+}
+
+/// Stock batch/lot tracking untuk FMCG, makanan, farmasi.
+/// Catat batch number, exp date, dan kuantitas yang masuk per batch.
+model StockBatch {
+  id              String   @id @default(cuid())
+  tenantId        String
+  productId       String
+  outletId        String
+  batchNumber     String
+  expirationDate  DateTime?
+  qtyReceived     Int
+  qtyRemaining    Int
+  receivedDate    DateTime @default(now())
+  note            String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  outlet  Outlet  @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([productId])
+  @@index([outletId])
+  @@index([expirationDate])
+}
+
+/// Warehouse/toko location tracking — rak mana barang disimpan.
+/// Gunakan format sederhana: "Rak A1", "Freezer B", "Display 1", dll.
+model WarehouseLocation {
+  id        String   @id @default(cuid())
+  tenantId  String
+  outletId  String
+  code      String   // "A1", "B2", "Freezer", "Display", dll
+  name      String
+  capacity  Int?     // opsional: kapasitas lokasi
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
+
+  @@unique([outletId, code])
+  @@index([tenantId])
 }
 
 // ================== PENGATURAN TENANT ==================
