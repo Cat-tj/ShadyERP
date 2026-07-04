@@ -1,21 +1,56 @@
 # Altora — Kasir & Manajemen Toko untuk UMKM
 
 SaaS multi-tenant untuk UMKM Indonesia (coffee shop, restoran, barbershop, toko
-kecil): kasir/POS, manajemen produk & stok, member berkartu QR, absensi karyawan,
-laporan, dan pemesanan mandiri lewat QR meja — dalam satu aplikasi web.
+kecil): kasir/POS, manajemen produk & stok, pembelian ke supplier, member
+berkartu QR, absensi karyawan, laporan & analitik, dokumen & tanda tangan
+digital, dan pemesanan mandiri lewat QR meja — dalam satu aplikasi web yang
+dipecah jadi beberapa "aplikasi" (hub) supaya tidak berisik dipakai sehari-hari.
+
+📚 **Dokumentasi lebih dalam:** [docs/ARSITEKTUR.md](./docs/ARSITEKTUR.md)
+(sistem hub, sistem modul, isolasi multi-tenant, konvensi kode, catatan
+performa) dan [docs/SKEMA-DATABASE.md](./docs/SKEMA-DATABASE.md) (semua model
+data dijelaskan per domain, dengan diagram).
 
 ## Daftar isi
 
-1. [Fitur](#fitur)
-2. [Peran & hak akses](#peran--hak-akses)
-3. [Arsitektur teknis](#arsitektur-teknis)
-4. [Model data](#model-data)
-5. [Menjalankan secara lokal](#menjalankan-secara-lokal)
-6. [Skrip npm](#skrip-npm)
-7. [Deploy ke Vercel + Supabase](#deploy-ke-vercel--supabase)
-8. [Mulai pakai untuk bisnis asli](#mulai-pakai-untuk-bisnis-asli)
-9. [Akun demo](#akun-demo)
-10. [Keterbatasan & belum dibangun](#keterbatasan--belum-dibangun)
+1. [Konsep: Hub & Modul](#konsep-hub--modul)
+2. [Fitur](#fitur)
+3. [Peran & hak akses](#peran--hak-akses)
+4. [Arsitektur teknis](#arsitektur-teknis)
+5. [Model data](#model-data)
+6. [Menjalankan secara lokal](#menjalankan-secara-lokal)
+7. [Skrip npm](#skrip-npm)
+8. [Deploy ke Vercel + Supabase](#deploy-ke-vercel--supabase)
+9. [Mulai pakai untuk bisnis asli](#mulai-pakai-untuk-bisnis-asli)
+10. [Akun demo](#akun-demo)
+11. [Keterbatasan & belum dibangun](#keterbatasan--belum-dibangun)
+
+---
+
+## Konsep: Hub & Modul
+
+Setelah login, user mendarat di **`/pilih-aplikasi`** — bukan langsung ke
+dashboard. Dari situ user memilih mau buka "aplikasi" yang mana:
+
+| Hub | Isinya | Siapa yang lihat |
+| --- | --- | --- |
+| 🟣 **Kasir & Operasional** | Kasir, produk & stok, pembelian ke supplier, barang masuk (QC), opname stok, booking, pesanan meja QR, member | Owner, Manager, Staff |
+| 🔵 **Tim** | Beranda tim, absensi, analitik kehadiran & performa | Owner, Manager, Staff |
+| 🟢 **Finance** | Laporan, pengeluaran, analitik keuangan lanjutan | Owner, Manager |
+| ⚫ **Admin** | Pengaturan bisnis, karyawan, outlet, modul, langganan | Owner saja |
+
+Sidebar tiap hub **hanya** berisi menu hub itu — tidak ada link silang ke hub
+lain. Pindah hub harus lewat tombol "Ganti Aplikasi" yang membawa balik ke
+`/pilih-aplikasi`. **Dokumen** adalah pengecualian: fitur ini standalone, tidak
+terikat hub manapun, dan tetap muncul di sidebar semua hub.
+
+Terpisah dari konsep hub, ada **sistem modul** (`Pengaturan → Modul`): Owner
+bisa menyalakan/mematikan fitur non-inti (Booking, Pemesanan Digital, Member,
+HR, Keuangan, Promo) sesuai kebutuhan bisnisnya — kedai kopi kecil tidak perlu
+modul Booking, misalnya. Modul yang dimatikan otomatis hilang dari sidebar
+**dan** diblokir kalau diakses lewat URL langsung. Detail teknis kedua sistem
+ini ada di [docs/ARSITEKTUR.md § Sistem Hub](./docs/ARSITEKTUR.md#sistem-hub)
+dan [§ Sistem Modul](./docs/ARSITEKTUR.md#sistem-modul).
 
 ---
 
@@ -45,6 +80,23 @@ dari nol beserta akun Owner pertamanya.
 - **Transfer stok antar outlet** — pindahkan stok satu produk dari satu outlet ke
   outlet lain secara atomik dengan validasi stok cukup, tercatat di riwayat.
 
+### Pembelian & penerimaan barang (Procurement)
+Alur lengkap dari pesan ke supplier sampai stok masuk, di **Kasir & Operasional**:
+- **Supplier** — data vendor, kontak, syarat pembayaran, rating, dan kontrak
+  harga khusus per produk (dengan minimal order quantity).
+- **Purchase Order** — buat pesanan ke supplier, alur persetujuan
+  (Draft → Sesetujui/Dikirim → Dikonfirmasi supplier → Diterima).
+- **Barang Masuk** — penerimaan fisik barang dengan **Quality Control**
+  per item (jumlah lolos QC vs rusak dicatat terpisah); stok baru benar-benar
+  bertambah setelah QC selesai.
+- **Opname stok** — hitung fisik berkala, bandingkan dengan catatan sistem,
+  hasil selisih (variance) perlu diverifikasi Owner/Manager sebelum
+  mengoreksi stok.
+- **Riwayat harga modal** — jejak tiap kali harga modal produk berubah.
+
+Detail model & alur status lengkap ada di
+[docs/SKEMA-DATABASE.md §4](./docs/SKEMA-DATABASE.md#4-pembelian--penerimaan-barang-procurement).
+
 ### Member & loyalitas
 - Kartu member berbasis QR/ULID unik yang bisa dicetak per batch.
 - Halaman publik `/q/[uid]` (tanpa login) untuk pelanggan registrasi mandiri &
@@ -52,21 +104,51 @@ dari nol beserta akun Owner pertamanya.
 - Poin otomatis dari tiap transaksi (dapat dikonfigurasi Rp berapa per 1 poin),
   saldo deposit yang bisa dipakai sebagai metode bayar di kasir.
 
-### Karyawan, outlet & absensi
+### Karyawan, outlet & absensi (hub Tim)
 - Manajemen karyawan (Owner/Manager/Staff) dan outlet multi-cabang.
 - Absensi clock-in/out dengan foto & lokasi GPS, jadwal kerja per outlet, dan
   halaman "Kelola tim" untuk Owner/Manager memantau kehadiran timnya.
+- Beranda hub Tim: staff lihat status absen sendiri hari ini, Owner/Manager
+  lihat ringkasan tim (jumlah karyawan aktif, hadir hari ini, jadwal hari ini).
 
-### Laporan & analitik
+### Laporan & analitik (hub Finance)
 Omzet, jumlah transaksi, rata-rata transaksi, estimasi untung kotor & bersih
 (setelah dikurangi pengeluaran operasional), tren omzet harian, produk terlaris,
 dan perbandingan antar outlet — dengan filter periode 7/30/90 hari. Semua angka
 sudah dinetokan terhadap retur.
 
+### Analitik lanjutan (per hub)
+- **Analitik Kasir** (`/kpi/analitik`) — jam tersibuk (peak hours), produk
+  terlaris, omzet per kategori, perputaran stok per produk, retensi member,
+  perbandingan outlet.
+- **Analitik Tim** (`/tim/analitik`) — ketepatan waktu absen per karyawan,
+  kontribusi omzet per kasir, estimasi payroll bulanan (sederhana).
+- **Analitik Finance** (`/finance/analitik`) — laporan laba-rugi (P&L), tren
+  arus kas 6 bulan, laba per kategori produk, rasio keuangan, breakdown
+  pengeluaran.
+
 ### Pengeluaran operasional
 Catat pengeluaran non-penjualan (sewa, gaji, listrik & air, bahan baku,
 marketing, transport, lainnya) per outlet, muncul di Laporan sebagai pengurang
 untuk menghitung untung bersih.
+
+### Dokumen & tanda tangan digital (E-Sign)
+Fitur standalone (muncul di sidebar semua hub) untuk kelola dokumen bisnis:
+- Upload dokumen (PDF/Word/Excel/gambar, maks 8MB), tampilan grid dengan
+  filter status (Draft/Menunggu TTD/Selesai/Ditolak) dan badge warna per
+  tipe file.
+- **Tanda tangan berurutan** — pembuat dokumen menentukan siapa saja yang
+  harus tanda tangan dan urutannya; penandatangan ke-2 baru bisa tanda
+  tangan setelah ke-1 selesai.
+- Tanda tangan digital berbasis canvas (gambar langsung di layar, bukan
+  upload gambar tanda tangan).
+- Kontrol akses per dokumen (per user tertentu atau per role).
+- Preview PDF & gambar langsung di halaman; tipe file lain (Word/Excel)
+  disediakan tombol unduh.
+
+Detail model & keputusan desain (kenapa file disimpan sebagai base64, bukan
+object storage) ada di
+[docs/SKEMA-DATABASE.md §9](./docs/SKEMA-DATABASE.md#9-dokumen--e-sign).
 
 ### Pemesanan mandiri via QR meja
 - Owner membuat meja per outlet di **Pengaturan → Meja**, tiap meja dapat QR code
@@ -133,10 +215,10 @@ brute-force/spam.
 Tombol "Ekspor CSV" di halaman Riwayat transaksi dan Laporan, hasilnya
 langsung terbaca benar di Excel/Google Sheets (CSV ber-BOM UTF-8).
 
-### Pengaturan
+### Pengaturan (hub Admin)
 Karyawan, outlet, profil bisnis (nama, jenis usaha, pajak, poin per rupiah,
-footer struk), kartu member/karyawan, meja QR, dan promo — semua di bawah
-`/pengaturan` (khusus Owner, beberapa tab juga bisa diakses Manager).
+footer struk), kartu member/karyawan, meja QR, promo, dan toggle modul —
+semua di bawah `/pengaturan` (khusus Owner).
 
 ### Panel super-admin & langganan
 Panel `/superadmin` (sesi terpisah total dari akun tenant) untuk memantau
@@ -151,7 +233,10 @@ Service worker meng-cache aset statis (JS/CSS/font/ikon) secara `cache-first`
 begitu dimuat pertama kali, sehingga kunjungan berikutnya jauh lebih cepat —
 sementara halaman & data tetap `network-first` supaya tidak pernah menampilkan
 data toko yang basi. Terintegrasi dengan Vercel Speed Insights untuk memantau
-performa real-user di production.
+performa real-user di production. Endpoint `GET /api/health` tersedia untuk
+di-ping berkala oleh layanan cron eksternal supaya function & koneksi database
+tidak "tidur" saat idle (mitigasi cold start serverless — lihat
+[docs/ARSITEKTUR.md § Performa & operasional](./docs/ARSITEKTUR.md#performa--operasional)).
 
 ---
 
@@ -159,15 +244,16 @@ performa real-user di production.
 
 Ada tiga peran: **Owner**, **Manager**, **Staff**.
 
-| Halaman                          | Owner | Manager | Staff |
-| --------------------------------- | :---: | :-----: | :---: |
-| Beranda / Kasir / Member / Absensi | ✅ | ✅ | ✅ |
-| Pesanan Meja                       | ✅ | ✅ | ✅ |
-| Produk (+ riwayat stok, transfer stok) | ✅ | ✅ | ❌ |
-| Laporan                            | ✅ | ✅ | ❌ |
-| Pengeluaran                        | ✅ | ✅ | ❌ |
-| Kelola tim (absensi/tim)           | ✅ | ✅ | ❌ |
-| Pengaturan (karyawan, outlet, bisnis, kartu, meja) | ✅ | ❌ | ❌ |
+| Halaman/Hub                        | Owner | Manager | Staff |
+| ----------------------------------- | :---: | :-----: | :---: |
+| Beranda Kasir / Kasir / Member / Pesanan Meja | ✅ | ✅ | ✅ |
+| Beranda Tim / Absensi               | ✅ | ✅ | ✅ |
+| Produk, Inventori, Supplier, Pembelian, Barang Masuk, Opname | ✅ | ✅ | ❌ |
+| Analitik (Kasir/Tim/Finance)        | ✅ | ✅ | ❌ |
+| Laporan, Pengeluaran (hub Finance)  | ✅ | ✅ | ❌ |
+| Kelola tim (absensi/tim)            | ✅ | ✅ | ❌ |
+| Dokumen (standalone)                | ✅ | ✅ | ✅ |
+| Pengaturan (hub Admin)              | ✅ | ❌ | ❌ |
 
 Manager dan Staff hanya melihat outlet yang ditugaskan padanya (`UserOutlet`);
 Owner otomatis melihat semua outlet di tenant-nya.
@@ -184,21 +270,28 @@ dengan driver adapter `@prisma/adapter-pg` · PostgreSQL · Auth.js (NextAuth v5
 ```
 src/
   app/
-    (app)/            # Halaman yang butuh login, dibungkus AppShell (sidebar/nav)
+    (app)/            # Halaman yang butuh login, dibungkus AppShell (sidebar per hub)
+    pilih-aplikasi/    # Halaman pilih hub — DI LUAR (app)/, tanpa sidebar
     q/[uid]/           # Halaman publik kartu member (tanpa login)
     pesan/[qrToken]/   # Halaman publik menu pesan QR meja (tanpa login)
+    api/health/        # Endpoint publik keep-warm (lihat docs/ARSITEKTUR.md)
     login/, register/
   components/          # Client components, dikelompokkan per fitur
   server/
     services/          # Semua logika bisnis & akses database (lihat di bawah)
-    require-session.ts # Helper requireSession()/requireRole() untuk tiap halaman
-  lib/                  # Utilitas: format uang/tanggal, base URL, dsb.
+    require-session.ts # requireSession()/requireRole()/requireModule(), di-cache per-request
+  lib/
+    hubs.ts, nav.ts, modules.ts  # Definisi hub, menu sidebar, modul toggleable
+    format.ts, date-range.ts     # Utilitas format uang/tanggal (TANPA date-fns)
   proxy.ts              # Middleware Auth.js — daftar path publik ada di sini
 prisma/
   schema.prisma
   migrations/
   seed.ts               # Data demo
   scripts/clear-demo-data.ts
+docs/
+  ARSITEKTUR.md          # Sistem hub/modul, multi-tenant, caching, konvensi
+  SKEMA-DATABASE.md       # Semua model data dijelaskan per domain
 ```
 
 **Prinsip multi-tenant (WAJIB dipatuhi di semua kode baru):** setiap fungsi di
@@ -208,12 +301,16 @@ diambil dari input client (form/query param) — selalu dari sesi login lewat
 `requireSession()`/`requireRole()`. Dua pengecualian yang didokumentasikan
 eksplisit di kode: `getCardByUid()` dan `getTableByQrToken()`, yang memang publik
 dan menurunkan `tenantId` dari record yang di-resolve lewat token unik (ULID),
-bukan dari input langsung.
+bukan dari input langsung. Detail lengkap di
+[docs/ARSITEKTUR.md § Isolasi multi-tenant](./docs/ARSITEKTUR.md#isolasi-multi-tenant).
 
-**Pola umum satu fitur:** migrasi Prisma → fungsi di `server/services/*.ts` →
-Server Action di `app/.../actions.ts` (validasi + panggil service + `revalidatePath`)
-→ Server Component untuk fetch data awal → Client Component (`"use client"`) untuk
-interaktivitas, memanggil Server Action lewat `useTransition`.
+**Pola umum satu fitur:** migrasi Prisma (**dengan file migration-nya**, jangan
+cuma edit `schema.prisma`) → fungsi di `server/services/*.ts` → Server Action
+di `app/.../actions.ts` (validasi + panggil service + `revalidatePath`) →
+Server Component untuk fetch data awal → Client Component (`"use client"`)
+untuk interaktivitas, memanggil Server Action lewat `useTransition`. Detail
+lengkap tiap langkah di
+[docs/ARSITEKTUR.md § Pola menambah 1 fitur baru](./docs/ARSITEKTUR.md#pola-menambah-1-fitur-baru).
 
 **Uang** selalu Rupiah bulat (`Int`, bukan desimal) dan diformat lewat satu fungsi
 `formatRupiah()` di `src/lib/format.ts` — jangan format manual di tempat lain.
@@ -222,25 +319,31 @@ interaktivitas, memanggil Server Action lewat `useTransition`.
 
 ## Model data
 
-Ringkasan model utama di `prisma/schema.prisma` (lihat file untuk relasi lengkap):
+Ringkasan model utama di `prisma/schema.prisma` (60+ model) — lihat
+**[docs/SKEMA-DATABASE.md](./docs/SKEMA-DATABASE.md)** untuk penjelasan
+lengkap tiap model beserta diagram relasi per domain:
 
 - **Tenant, Outlet, User, UserOutlet** — struktur bisnis & akses multi-outlet.
-- **Product, Category, ProductStock, StockAdjustment, StockTransfer** — katalog
-  & pergerakan stok.
+- **Product, Category, ProductStock, StockAdjustment, StockTransfer,
+  ProductVariantGroup/Option** — katalog, varian, & pergerakan stok.
 - **CashierShift, Sale, SaleItem, SaleReturn, SaleReturnItem** — transaksi kasir
   dan retur sebagian.
+- **Supplier, SupplierPricingContract, PurchaseOrder, PurchaseOrderItem,
+  StockReceipt, StockReceiptItem, StockCount, StockCountItem,
+  ProductCostHistory** — alur pembelian, penerimaan barang (dengan QC), dan
+  opname stok fisik.
 - **Member, PointTransaction, UidCard, UidBatch** — loyalitas & kartu QR.
 - **ShiftSchedule, Attendance** — jadwal & absensi.
-- **Expense** — pengeluaran operasional.
+- **Expense, TenantSetting** — pengeluaran operasional & pengaturan tenant.
 - **Table, TableOrder, TableOrderItem** — meja QR dan pesanan mandiri pelanggan
   (open bill: satu TableOrder per meja menampung banyak ronde pesanan sampai dibayar).
-- **ProductVariantGroup, ProductVariantOption** — varian & topping produk.
 - **Promo** — promo terjadwal (happy hour, diskon kategori, minimal belanja).
 - **Booking** — janji temu (barbershop dsb) & pesanan diantar/acara.
+- **Document, DocumentVersion, DocumentSigner, DocumentAccess** — manajemen
+  dokumen & tanda tangan digital berurutan.
 - **AuditLog** — jejak aksi sensitif (void, retur, ubah harga, dst).
 - **SuperAdmin, SubscriptionRequest** — akun platform (lintas tenant) dan
   permintaan upgrade paket langganan.
-- **TenantSetting** — pajak, poin per rupiah, footer struk.
 
 ---
 
@@ -275,16 +378,30 @@ Buka http://localhost:3000.
 
 ## Deploy ke Vercel + Supabase
 
-1. Buat project baru di [Supabase](https://supabase.com/dashboard), ambil connection
-   string dari Settings → Database.
-2. Di Vercel, import repo ini lalu isi environment variables: `DATABASE_URL`
-   (connection string Supabase) dan `AUTH_SECRET` (string acak panjang).
-   `AUTH_URL`/`NEXTAUTH_URL` sengaja TIDAK diisi — Auth.js mendeteksi domain
-   otomatis dari request (`trustHost: true`), jadi tetap jalan baik di domain
-   produksi maupun preview URL.
-3. Build otomatis menjalankan `prisma generate && prisma migrate deploy` sebelum
-   `next build`, jadi skema database ikut ter-update tiap deploy.
-4. (Opsional) Jalankan `npm run seed` sekali secara manual dengan `DATABASE_URL`
+1. Buat project baru di [Supabase](https://supabase.com/dashboard), ambil
+   **dua** connection string dari Settings → Database: yang **pooler mode
+   transaction** (port `6543`, tambahkan `?pgbouncer=true`) untuk
+   `DATABASE_URL`, dan yang **direct** (port `5432`) untuk `DIRECT_URL`
+   (dipakai khusus saat `prisma migrate deploy`, karena schema engine butuh
+   advisory lock yang tidak didukung mode pooling).
+2. Di Vercel, import repo ini lalu isi environment variables: `DATABASE_URL`,
+   `DIRECT_URL`, dan `AUTH_SECRET` (string acak panjang). `AUTH_URL`/
+   `NEXTAUTH_URL` sengaja TIDAK diisi — Auth.js mendeteksi domain otomatis
+   dari request (`trustHost: true`), jadi tetap jalan baik di domain produksi
+   maupun preview URL.
+3. **Samakan region compute Vercel dengan region database Supabase** —
+   `vercel.json` di repo ini sudah set `"regions": ["sin1"]` (Singapura);
+   sesuaikan kalau project Supabase-mu ada di region lain. Region yang beda
+   bisa bikin tiap request lambat beberapa ratus milidetik cuma karena
+   jarak jaringan.
+4. Build otomatis menjalankan `prisma generate && prisma migrate deploy` sebelum
+   `next build`, jadi skema database ikut ter-update tiap deploy — **dengan
+   syarat migration-nya memang sudah punya file** (lihat catatan di
+   [docs/ARSITEKTUR.md § Pola menambah 1 fitur baru](./docs/ARSITEKTUR.md#pola-menambah-1-fitur-baru)).
+5. (Opsional tapi direkomendasikan) Daftarkan `https://<domain-kamu>/api/health`
+   ke layanan cron eksternal gratis (cron-job.org, UptimeRobot) tiap ~5 menit
+   supaya function & koneksi database tidak "tidur" saat idle (cold start).
+6. (Opsional) Jalankan `npm run seed` sekali secara manual dengan `DATABASE_URL`
    diarahkan ke Supabase, untuk mengisi data demo yang bisa dilihat sebelum
    mulai pakai data asli.
 
@@ -335,6 +452,11 @@ dibangun dengan batasan tertentu:
   QR meja, maupun upgrade paket langganan dicatat/dikonfirmasi manual oleh
   staff/admin (tidak ada verifikasi otomatis ke penyedia pembayaran seperti
   Midtrans/Xendit).
+- **Dokumen disimpan sebagai base64 di database, bukan object storage** —
+  cukup untuk volume dokumen wajar (kontrak, invoice) dengan batas 8MB per
+  file; kalau volume/ukuran dokumen membesar signifikan, ini kandidat
+  pertama untuk dipindah ke Supabase Storage/S3 (lihat
+  [docs/SKEMA-DATABASE.md §9](./docs/SKEMA-DATABASE.md#9-dokumen--e-sign)).
 - **Monitoring error (Sentry)** — belum diintegrasikan karena butuh akun/DSN
   eksternal; saat ini error hanya terlihat di log server.
 - **Rate limiting in-memory** — pembatas percobaan login/registrasi/pesan QR

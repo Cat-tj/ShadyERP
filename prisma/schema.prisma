@@ -1237,7 +1237,7 @@ model Document {
   tenantId      String
   name          String
   description   String?
-  fileUrl       String // Supabase Storage URL
+  fileUrl       String // Data URL base64 (lihat docs/SKEMA-DATABASE.md § Dokumen)
   status        DocumentStatus    @default(DRAFT)
   uploadedBy    String
   createdAt     DateTime          @default(now())
