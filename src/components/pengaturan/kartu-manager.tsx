@@ -117,8 +117,8 @@ export function KartuManager({ batches }: { batches: BatchRow[] }) {
         ) : (
           <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] divide-y divide-[var(--color-border)]">
             {batches.map((batch) => (
-              <div key={batch.id} className="flex items-center justify-between p-4">
-                <div>
+              <div key={batch.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
                   <p className="text-sm font-medium text-[var(--color-text)]">
                     {batch.serialPrefix} · {CARD_TYPE_LABEL[batch.cardType]} · {batch.cardCount} kartu
                   </p>
@@ -126,7 +126,7 @@ export function KartuManager({ batches }: { batches: BatchRow[] }) {
                 </div>
                 <Link
                   href={`/pengaturan/kartu/${batch.id}`}
-                  className="min-h-[36px] rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] flex items-center hover:bg-[var(--color-bg)]"
+                  className="min-h-[36px] w-full rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] flex items-center justify-center hover:bg-[var(--color-bg)] sm:w-auto"
                 >
                   Lihat & cetak
                 </Link>

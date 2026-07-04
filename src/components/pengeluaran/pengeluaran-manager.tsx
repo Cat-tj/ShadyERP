@@ -67,7 +67,7 @@ export function PengeluaranManager({
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
             {expenses.map((expense) => (
-              <div key={expense.id} className="flex items-start justify-between gap-3 p-4">
+              <div key={expense.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="text-sm font-semibold text-[var(--color-text)]">
                     {EXPENSE_CATEGORY_LABELS[expense.category]}
@@ -81,7 +81,7 @@ export function PengeluaranManager({
                     </p>
                   )}
                 </div>
-                <div className="flex shrink-0 items-center gap-3">
+                <div className="flex items-center gap-3">
                   <span className="tabular-nums text-sm font-bold text-[var(--color-danger)]">
                     -{formatRupiah(expense.amount)}
                   </span>

@@ -86,18 +86,18 @@ export function ProdukManager({
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="font-display text-2xl font-semibold text-[var(--color-text)]">Produk</h1>
-        <div className="flex gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row">
           <Link
             href="/produk/riwayat-stok"
-            className="flex min-h-[44px] items-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+            className="flex min-h-[44px] items-center justify-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
           >
             Riwayat stok
           </Link>
           <Link
             href="/produk/transfer-stok"
-            className="flex min-h-[44px] items-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+            className="flex min-h-[44px] items-center justify-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
           >
             Transfer stok
           </Link>
@@ -122,7 +122,7 @@ export function ProdukManager({
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
             {products.map((product) => (
-              <div key={product.id} className="flex items-center justify-between gap-3 p-4">
+              <div key={product.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-[var(--color-text)]">
                     {product.name}
@@ -137,20 +137,20 @@ export function ProdukManager({
                     {product.trackStock ? ` · Stok ${totalStock(product)}` : " · Tanpa stok"}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                   <span className="tabular-nums text-sm font-bold text-[var(--color-text)]">
                     {formatRupiah(product.price)}
                   </span>
                   <button
                     onClick={() => openEdit(product)}
-                    className="min-h-[36px] rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+                    className="min-h-[36px] flex-1 rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)] sm:flex-none"
                   >
                     Ubah
                   </button>
                   <button
                     onClick={() => toggleActive(product)}
                     disabled={isPending}
-                    className="min-h-[36px] rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)] disabled:opacity-40"
+                    className="min-h-[36px] flex-1 rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)] disabled:opacity-40 sm:flex-none"
                   >
                     {product.isActive ? "Sembunyikan" : "Aktifkan"}
                   </button>

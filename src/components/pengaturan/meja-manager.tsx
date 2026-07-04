@@ -172,7 +172,7 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
             {tables.map((table) => (
-              <div key={table.id} className="flex items-center justify-between gap-3 p-4">
+              <div key={table.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-[var(--color-text)]">
                     {table.name}
@@ -184,10 +184,10 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
                   </p>
                   <p className="truncate text-xs text-[var(--color-text-secondary)]">{table.outletName}</p>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Link
                     href={`/pengaturan/meja/${table.id}`}
-                    className="min-h-[36px] rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] flex items-center hover:bg-[var(--color-bg)]"
+                    className="min-h-[36px] flex-1 rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] flex items-center hover:bg-[var(--color-bg)] sm:flex-none"
                   >
                     Lihat QR
                   </Link>
@@ -196,14 +196,14 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
                       setEditing(table);
                       setModalOpen(true);
                     }}
-                    className="min-h-[36px] rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+                    className="min-h-[36px] flex-1 rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)] sm:flex-none"
                   >
                     Ubah
                   </button>
                   <button
                     onClick={() => toggleActive(table)}
                     disabled={isPending}
-                    className="min-h-[36px] rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)] disabled:opacity-40"
+                    className="min-h-[36px] flex-1 rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)] disabled:opacity-40 sm:flex-none"
                   >
                     {table.isActive ? "Nonaktifkan" : "Aktifkan"}
                   </button>

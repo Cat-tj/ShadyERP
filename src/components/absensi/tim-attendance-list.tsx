@@ -28,8 +28,8 @@ export function TimAttendanceList({ rows }: { rows: TeamAttendanceRow[] }) {
   return (
     <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] divide-y divide-[var(--color-border)]">
       {rows.map((row) => (
-        <div key={row.id} className="flex items-center justify-between p-4">
-          <div>
+        <div key={row.id} className="flex flex-col gap-2 p-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <p className="text-sm font-medium text-[var(--color-text)]">{row.userName}</p>
             <p className="text-xs text-[var(--color-text-secondary)]">
               {formatTanggal(row.createdAt)} · {row.outletName} ·{" "}
@@ -37,7 +37,7 @@ export function TimAttendanceList({ rows }: { rows: TeamAttendanceRow[] }) {
             </p>
           </div>
           <span
-            className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+            className={`w-fit rounded-full px-2.5 py-1 text-xs font-medium ${
               row.status === "LATE"
                 ? "bg-[var(--color-warning-bg)] text-[var(--color-warning-text)]"
                 : "bg-[var(--color-bg)] text-[var(--color-text-secondary)]"

@@ -86,7 +86,7 @@ export function KaryawanManager({
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
             {users.map((user) => (
-              <div key={user.id} className="flex items-center justify-between gap-3 p-4">
+              <div key={user.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-[var(--color-text)]">
                     {user.name}
@@ -101,17 +101,17 @@ export function KaryawanManager({
                     {user.outletNames.length > 0 ? ` · ${user.outletNames.join(", ")}` : ""}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => openEdit(user)}
-                    className="min-h-[36px] rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+                    className="min-h-[36px] flex-1 rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)] sm:flex-none"
                   >
                     Ubah
                   </button>
                   <button
                     onClick={() => toggleActive(user)}
                     disabled={isPending}
-                    className="min-h-[36px] rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)] disabled:opacity-40"
+                    className="min-h-[36px] flex-1 rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)] disabled:opacity-40 sm:flex-none"
                   >
                     {user.isActive ? "Nonaktifkan" : "Aktifkan"}
                   </button>

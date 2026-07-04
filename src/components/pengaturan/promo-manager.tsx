@@ -61,7 +61,7 @@ export function PromoManager({ promos, categories }: { promos: PromoRow[]; categ
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h2 className="text-sm font-bold text-[var(--color-text)]">Promo terjadwal</h2>
           <p className="text-xs text-[var(--color-text-secondary)]">
@@ -73,7 +73,7 @@ export function PromoManager({ promos, categories }: { promos: PromoRow[]; categ
             setEditing(null);
             setModalOpen(true);
           }}
-          className="min-h-[40px] shrink-0 rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)]"
+          className="min-h-[40px] w-full rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)] sm:w-auto"
         >
           + Promo
         </button>
@@ -88,7 +88,7 @@ export function PromoManager({ promos, categories }: { promos: PromoRow[]; categ
           {promos.map((promo) => (
             <div
               key={promo.id}
-              className="flex items-center justify-between gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4"
+              className="flex flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 sm:flex-row sm:items-center sm:justify-between"
             >
               <div className="min-w-0">
                 <p className="text-sm font-semibold text-[var(--color-text)]">
@@ -102,20 +102,20 @@ export function PromoManager({ promos, categories }: { promos: PromoRow[]; categ
                 <p className="text-xs text-[var(--color-text-secondary)]">{describeDiscount(promo)}</p>
                 <p className="text-xs text-[var(--color-text-secondary)]">{describeSchedule(promo)}</p>
               </div>
-              <div className="flex shrink-0 gap-2">
+              <div className="flex flex-wrap gap-2">
                 <button
                   onClick={() => {
                     setEditing(promo);
                     setModalOpen(true);
                   }}
-                  className="min-h-[36px] rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+                  className="min-h-[36px] flex-1 rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)] sm:flex-none"
                 >
                   Ubah
                 </button>
                 <button
                   onClick={() => remove(promo)}
                   disabled={isPending}
-                  className="min-h-[36px] rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-danger)] hover:bg-[var(--color-bg)] disabled:opacity-40"
+                  className="min-h-[36px] flex-1 rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-danger)] hover:bg-[var(--color-bg)] disabled:opacity-40 sm:flex-none"
                 >
                   Hapus
                 </button>

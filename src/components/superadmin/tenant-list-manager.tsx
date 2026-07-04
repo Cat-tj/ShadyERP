@@ -49,7 +49,7 @@ export function TenantListManager({ tenants }: { tenants: TenantRow[] }) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
           <p className="text-2xl font-bold text-[var(--color-text)]">{tenants.length}</p>
           <p className="text-xs text-[var(--color-text-secondary)]">Total tenant</p>
@@ -82,7 +82,7 @@ export function TenantListManager({ tenants }: { tenants: TenantRow[] }) {
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
             {filtered.map((tenant) => (
-              <div key={tenant.id} className="flex items-center justify-between gap-3 p-4">
+              <div key={tenant.id} className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-[var(--color-text)]">
                     {tenant.name}
@@ -97,14 +97,14 @@ export function TenantListManager({ tenants }: { tenants: TenantRow[] }) {
                     sejak {formatTanggalPendek(tenant.createdAt)}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-3">
+                <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                   <span className="tabular-nums text-sm font-bold text-[var(--color-text)]">
                     {formatRupiah(tenant.totalOmzet)}
                   </span>
                   <button
                     onClick={() => toggleActive(tenant)}
                     disabled={isPending}
-                    className="min-h-[36px] rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)] disabled:opacity-40"
+                    className="min-h-[36px] flex-1 rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)] disabled:opacity-40 sm:flex-none"
                   >
                     {tenant.isActive ? "Suspend" : "Aktifkan"}
                   </button>
