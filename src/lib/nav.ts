@@ -27,16 +27,16 @@ export type NavItem = {
 };
 
 export const NAV_ITEMS: NavItem[] = [
-  { href: "/dashboard", label: "Beranda", icon: HomeIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "kasir" },
+  { href: "/kpi", label: "Beranda", icon: HomeIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "kasir" },
   { href: "/kasir", label: "Kasir", icon: ReceiptIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "kasir" },
   { href: "/pesanan-meja", label: "Pesanan Meja", icon: BellIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "pesanan-digital" },
   { href: "/dapur", label: "Dapur", icon: FlameIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "pesanan-digital" },
   { href: "/booking", label: "Booking", icon: CalendarIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "booking" },
-  { href: "/produk", label: "Produk", icon: PackageIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "kasir" },
+  { href: "/inventory", label: "Inventori", icon: PackageIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "kasir" },
   { href: "/member", label: "Member", icon: UsersIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "member" },
   { href: "/absensi", label: "Absensi", icon: MapPinIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "hr" },
-  { href: "/laporan", label: "Laporan", icon: BarChartIcon, roles: ["OWNER", "MANAGER"], module: "keuangan" },
-  { href: "/pengeluaran", label: "Pengeluaran", icon: TrendingDownIcon, roles: ["OWNER", "MANAGER"], module: "keuangan" },
+  { href: "/finance/laporan", label: "Laporan", icon: BarChartIcon, roles: ["OWNER", "MANAGER"], module: "keuangan" },
+  { href: "/finance/pengeluaran", label: "Pengeluaran", icon: TrendingDownIcon, roles: ["OWNER", "MANAGER"], module: "keuangan" },
   { href: "/pengaturan", label: "Pengaturan", icon: SettingsIcon, roles: ["OWNER"], showOnBottomNav: true },
 ];
 
