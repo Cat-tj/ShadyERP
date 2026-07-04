@@ -5,7 +5,36 @@ import { useRouter } from "next/navigation";
 import { signDocumentAction, rejectDocumentAction } from "@/app/(app)/dokumen/actions";
 import { SignatureCapture } from "./signature-capture";
 import { useToast, Toast } from "@/components/toast";
-import { XIcon } from "@/components/ui/icons";
+import { XIcon, FileIcon } from "@/components/ui/icons";
+
+/** Browser cuma bisa render PDF/gambar inline; tipe lain (Word/Excel) dikasih tombol unduh saja. */
+function DocumentPreview({ fileUrl, name }: { fileUrl: string; name: string }) {
+  const mimeMatch = fileUrl.match(/^data:([^;]+);/);
+  const mimeType = mimeMatch?.[1] ?? "";
+
+  if (mimeType === "application/pdf") {
+    return <iframe src={fileUrl} className="h-[600px] w-full rounded-lg border border-[var(--color-border)]" title={name} />;
+  }
+
+  if (mimeType.startsWith("image/")) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={fileUrl} alt={name} className="mx-auto max-h-[600px] w-auto rounded-lg" />;
+  }
+
+  return (
+    <div className="flex flex-col items-center justify-center gap-3 rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-bg)] py-16">
+      <FileIcon aria-hidden className="h-10 w-10 text-[var(--color-text-secondary)]" />
+      <p className="text-sm text-[var(--color-text-secondary)]">Tipe file ini tidak bisa dipratinjau langsung.</p>
+      <a
+        href={fileUrl}
+        download={name}
+        className="min-h-[44px] rounded-lg bg-[var(--color-primary)] px-5 text-sm font-semibold leading-[44px] text-[var(--color-on-primary)]"
+      >
+        Unduh Dokumen
+      </a>
+    </div>
+  );
+}
 
 export type DocumentViewerProps = {
   document: any;
@@ -135,11 +164,7 @@ export function DocumentViewer({
       )}
 
       <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-        <iframe
-          src={document.fileUrl}
-          className="h-[600px] w-full rounded-lg border border-[var(--color-border)]"
-          title={document.name}
-        />
+        <DocumentPreview fileUrl={document.fileUrl} name={document.name} />
       </div>
 
       {canSign && pendingSigner && (

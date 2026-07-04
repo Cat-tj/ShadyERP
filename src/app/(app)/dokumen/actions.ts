@@ -21,9 +21,17 @@ export async function uploadDocumentAction(formData: FormData) {
       return { error: "File dan nama dokumen wajib" };
     }
 
-    // TODO: Upload file to Supabase Storage
-    // For now, using a placeholder URL
-    const fileUrl = `/uploads/${Date.now()}-${file.name}`;
+    const MAX_FILE_SIZE = 8 * 1024 * 1024; // 8MB — di bawah batas body Server Action (10mb)
+    if (file.size > MAX_FILE_SIZE) {
+      return { error: "Ukuran file maksimal 8MB" };
+    }
+
+    // Disimpan sebagai data URL langsung di kolom fileUrl (TEXT), pola yang
+    // sama dipakai untuk foto absensi — tidak butuh setup object storage
+    // terpisah. Cukup untuk dokumen berukuran wajar (kontrak, invoice, dll).
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const mimeType = file.type || "application/octet-stream";
+    const fileUrl = `data:${mimeType};base64,${buffer.toString("base64")}`;
 
     const doc = await createDocument(
       session.user.tenantId,
@@ -61,9 +69,6 @@ export async function deleteDocumentAction(documentId: string) {
     if (doc.uploadedBy !== session.user.id) {
       return { error: "Hanya pembuat dokumen yang bisa menghapus" };
     }
-
-    // TODO: Delete file from Supabase Storage
-    // await supabaseClient.storage.from("documents").remove([doc.fileUrl]);
 
     await updateDocumentStatus(session.user.tenantId, documentId, "EXPIRED");
 

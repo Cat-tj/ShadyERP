@@ -90,6 +90,7 @@ function DocumentUploadModal({
     setError(null);
     if (!name.trim()) return setError("Nama dokumen wajib diisi.");
     if (!file) return setError("File wajib dipilih.");
+    if (file.size > 8 * 1024 * 1024) return setError("Ukuran file maksimal 8MB.");
 
     startTransition(async () => {
       const formData = new FormData();
