@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import { ulid } from "ulid";
 import { prisma } from "@/lib/prisma";
 import type { BusinessType } from "@prisma/client";
+import { CORE_MODULE_KEYS, MODULES, resolveEnabledModules, type ModuleKey } from "@/lib/modules";
 
 export type RegisterTenantInput = {
   businessName: string;
@@ -105,5 +106,31 @@ export async function updateTenantSetting(tenantId: string, input: TenantSetting
     where: { tenantId },
     create: { tenantId, ...input },
     update: input,
+  });
+}
+
+/**
+ * Modul mana yang aktif buat tenant ini. Modul core selalu ikut walau tidak
+ * ada di database — lihat resolveEnabledModules di src/lib/modules.ts.
+ */
+export async function getEnabledModules(tenantId: string): Promise<Set<ModuleKey>> {
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId }, select: { disabledModules: true } });
+  if (!tenant) throw new Error("Tenant tidak ditemukan.");
+  return resolveEnabledModules(tenant.disabledModules);
+}
+
+/**
+ * Ganti daftar modul yang dimatikan. Cuma Owner yang boleh manggil ini (dicek
+ * di server action pemanggilnya). Modul core diabaikan kalau ikut terkirim —
+ * tidak pernah bisa dimatikan.
+ */
+export async function setDisabledModules(tenantId: string, disabledKeys: ModuleKey[]) {
+  const validKeys = new Set(MODULES.map((m) => m.key));
+  const coreKeys = new Set(CORE_MODULE_KEYS);
+  const cleaned = [...new Set(disabledKeys)].filter((key) => validKeys.has(key) && !coreKeys.has(key));
+
+  return prisma.tenant.update({
+    where: { id: tenantId },
+    data: { disabledModules: cleaned },
   });
 }

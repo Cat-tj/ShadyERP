@@ -7,6 +7,7 @@ const TABS = [
   { href: "/pengaturan/karyawan", label: "Karyawan" },
   { href: "/pengaturan/outlet", label: "Outlet" },
   { href: "/pengaturan/bisnis", label: "Bisnis" },
+  { href: "/pengaturan/modul", label: "Modul" },
   { href: "/pengaturan/kartu", label: "Kartu" },
   { href: "/pengaturan/meja", label: "Meja" },
   { href: "/pengaturan/promo", label: "Promo" },

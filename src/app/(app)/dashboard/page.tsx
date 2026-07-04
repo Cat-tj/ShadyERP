@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireSession } from "@/server/require-session";
 import { getDashboardSummary } from "@/server/services/dashboard-service";
+import { getEnabledModules } from "@/server/services/tenant-service";
 import { formatTanggal } from "@/lib/format";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { navItemsForRole } from "@/lib/nav";
@@ -15,8 +16,11 @@ const STAT_CARDS = [
 
 export default async function DashboardPage() {
   const user = await requireSession();
-  const summary = await getDashboardSummary(user.tenantId);
-  const quickLinks = navItemsForRole(user.role).filter((item) => item.href !== "/dashboard");
+  const [summary, enabledModules] = await Promise.all([
+    getDashboardSummary(user.tenantId),
+    getEnabledModules(user.tenantId),
+  ]);
+  const quickLinks = navItemsForRole(user.role, enabledModules).filter((item) => item.href !== "/dashboard");
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">

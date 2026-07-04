@@ -47,6 +47,8 @@ model Tenant {
   businessType BusinessType @default(OTHER)
   plan         Plan         @default(FREE)
   isActive     Boolean      @default(true)
+  /** Key modul (lihat src/lib/modules.ts) yang DIMATIKAN Owner. Modul core tidak pernah masuk sini. */
+  disabledModules String[] @default([])
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 

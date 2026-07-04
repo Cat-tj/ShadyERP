@@ -10,11 +10,16 @@ export default async function AppLayout({
   const user = await requireSession();
   const tenant = await prisma.tenant.findUnique({
     where: { id: user.tenantId },
-    select: { name: true },
+    select: { name: true, disabledModules: true },
   });
 
   return (
-    <AppShell userName={user.name} role={user.role} tenantName={tenant?.name ?? "Toko Saya"}>
+    <AppShell
+      userName={user.name}
+      role={user.role}
+      tenantName={tenant?.name ?? "Toko Saya"}
+      disabledModules={tenant?.disabledModules ?? []}
+    >
       {children}
     </AppShell>
   );

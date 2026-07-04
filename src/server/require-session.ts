@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { resolveEnabledModules, type ModuleKey } from "@/lib/modules";
 
 export type SessionUser = {
   id: string;
@@ -42,6 +43,25 @@ export async function requireSession(): Promise<SessionUser> {
 export async function requireRole(roles: SessionUser["role"][]): Promise<SessionUser> {
   const user = await requireSession();
   if (!roles.includes(user.role)) {
+    redirect("/dashboard");
+  }
+  return user;
+}
+
+/**
+ * Panggil di layout.tsx tiap route yang termasuk modul non-core (mis. /booking,
+ * /absensi) supaya akses URL langsung tetap diblokir walau link-nya sudah
+ * disembunyikan dari sidebar. Owner yang barusan mematikan modulnya sendiri
+ * ikut ke-lempar balik — dia yang harus nyalain lagi dari Pengaturan.
+ */
+export async function requireModule(moduleKey: ModuleKey): Promise<SessionUser> {
+  const user = await requireSession();
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: user.tenantId },
+    select: { disabledModules: true },
+  });
+  const enabled = resolveEnabledModules(tenant?.disabledModules ?? []);
+  if (!enabled.has(moduleKey)) {
     redirect("/dashboard");
   }
   return user;

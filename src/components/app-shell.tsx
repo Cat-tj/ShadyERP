@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { navItemsForRole, type Role } from "@/lib/nav";
 import { UserIcon, PowerIcon } from "@/components/ui/icons";
+import { resolveEnabledModules, getModuleForPath, MODULE_MAP } from "@/lib/modules";
 
 const ROLE_LABEL: Record<Role, string> = {
   OWNER: "Pemilik",
@@ -16,16 +17,28 @@ export function AppShell({
   userName,
   role,
   tenantName,
+  disabledModules,
   children,
 }: {
   userName: string;
   role: Role;
   tenantName: string;
+  disabledModules: string[];
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
-  const items = navItemsForRole(role);
+  const enabledModules = resolveEnabledModules(disabledModules);
+  const items = navItemsForRole(role, enabledModules);
   const bottomItems = items.filter((item) => item.showOnBottomNav).slice(0, 5);
+  // Halaman fitur (mis. /absensi, /laporan) ikut warna modulnya sendiri; halaman
+  // netral (Pengaturan, Akun) tetap pakai warna brand default dari globals.css.
+  const currentModule = getModuleForPath(pathname);
+  const contentThemeStyle = currentModule
+    ? ({
+        "--color-primary": currentModule.color,
+        "--color-primary-dark": currentModule.colorDark,
+      } as React.CSSProperties)
+    : undefined;
 
   return (
     <div className="flex min-h-screen w-full">
@@ -43,17 +56,29 @@ export function AppShell({
           {items.map((item) => {
             const active = pathname.startsWith(item.href);
             const Icon = item.icon;
+            const itemModule = item.module ? MODULE_MAP[item.module] : null;
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                style={
+                  active && itemModule
+                    ? { backgroundColor: itemModule.color, color: "#fff" }
+                    : undefined
+                }
                 className={`flex min-h-[48px] items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors duration-150 ${
                   active
-                    ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                    ? itemModule
+                      ? ""
+                      : "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
                     : "text-[var(--color-text)] hover:bg-white/40"
                 }`}
               >
-                <Icon aria-hidden className="h-5 w-5 shrink-0" />
+                <Icon
+                  aria-hidden
+                  className="h-5 w-5 shrink-0"
+                  style={!active && itemModule ? { color: itemModule.color } : undefined}
+                />
                 {item.label}
               </Link>
             );
@@ -100,7 +125,7 @@ export function AppShell({
           </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto px-4 py-5 pb-24 md:px-8 md:py-8 md:pb-8">
+        <main className="flex-1 overflow-y-auto px-4 py-5 pb-24 md:px-8 md:py-8 md:pb-8" style={contentThemeStyle}>
           {children}
         </main>
 
@@ -109,12 +134,15 @@ export function AppShell({
           {bottomItems.map((item) => {
             const active = pathname.startsWith(item.href);
             const Icon = item.icon;
+            const itemModule = item.module ? MODULE_MAP[item.module] : null;
+            const activeColor = itemModule?.color ?? "var(--color-primary)";
             return (
               <Link
                 key={item.href}
                 href={item.href}
+                style={{ color: active ? activeColor : undefined }}
                 className={`flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors duration-150 ${
-                  active ? "text-[var(--color-primary)]" : "text-[var(--color-text-secondary)]"
+                  active ? "" : "text-[var(--color-text-secondary)]"
                 }`}
               >
                 <Icon aria-hidden className="h-5 w-5" />
