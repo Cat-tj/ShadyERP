@@ -2,21 +2,25 @@
 
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
-import type { HubDef } from "@/lib/hubs";
+import { HUBS, type HubDef, type HubKey } from "@/lib/hubs";
 import { PowerIcon } from "@/components/ui/icons";
 
 const ACTIVE_HUB_STORAGE_KEY = "altora:activeHub";
 
 export function HubPicker({
-  hubs,
+  hubKeys,
   userName,
   tenantName,
 }: {
-  hubs: HubDef[];
+  hubKeys: HubKey[];
   userName: string;
   tenantName: string;
 }) {
   const router = useRouter();
+  // Komponen ikon (fungsi React) tidak boleh lewat batas Server->Client sebagai
+  // prop — makanya cuma key (string) yang dikirim, objek HubDef lengkap
+  // (termasuk ikonnya) di-resolve di sini, di dalam client component.
+  const hubs: HubDef[] = HUBS.filter((hub) => hubKeys.includes(hub.key));
 
   function enterHub(hub: HubDef) {
     localStorage.setItem(ACTIVE_HUB_STORAGE_KEY, hub.key);

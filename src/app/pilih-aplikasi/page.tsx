@@ -2,7 +2,6 @@ import { requireSession } from "@/server/require-session";
 import { prisma } from "@/lib/prisma";
 import { hubsAvailableForRole } from "@/lib/nav";
 import { resolveEnabledModules } from "@/lib/modules";
-import { HUBS } from "@/lib/hubs";
 import { HubPicker } from "@/components/hub-picker";
 
 export default async function PilihAplikasiPage() {
@@ -13,8 +12,7 @@ export default async function PilihAplikasiPage() {
   });
 
   const enabledModules = resolveEnabledModules(tenant?.disabledModules ?? []);
-  const availableHubKeys = hubsAvailableForRole(user.role, enabledModules);
-  const hubs = HUBS.filter((hub) => availableHubKeys.has(hub.key));
+  const availableHubKeys = Array.from(hubsAvailableForRole(user.role, enabledModules));
 
-  return <HubPicker hubs={hubs} userName={user.name} tenantName={tenant?.name ?? "Toko Saya"} />;
+  return <HubPicker hubKeys={availableHubKeys} userName={user.name} tenantName={tenant?.name ?? "Toko Saya"} />;
 }
