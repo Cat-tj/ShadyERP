@@ -26,6 +26,8 @@ export type ModuleDef = {
   core: boolean;
   color: string;
   colorDark: string;
+  /** Tint rgba tipis dari `color`, dipakai buat gradient wash di background halaman. */
+  colorSoft: string;
 };
 
 export const MODULES: ModuleDef[] = [
@@ -36,6 +38,7 @@ export const MODULES: ModuleDef[] = [
     core: true,
     color: "#a730a8",
     colorDark: "#7e2582",
+    colorSoft: "rgba(167, 48, 168, 0.12)",
   },
   {
     key: "pesanan-digital",
@@ -44,6 +47,7 @@ export const MODULES: ModuleDef[] = [
     core: false,
     color: "#ea580c",
     colorDark: "#c2410c",
+    colorSoft: "rgba(234, 88, 12, 0.12)",
   },
   {
     key: "booking",
@@ -52,6 +56,7 @@ export const MODULES: ModuleDef[] = [
     core: false,
     color: "#db2777",
     colorDark: "#be185d",
+    colorSoft: "rgba(219, 39, 119, 0.12)",
   },
   {
     key: "member",
@@ -60,6 +65,7 @@ export const MODULES: ModuleDef[] = [
     core: false,
     color: "#0d9488",
     colorDark: "#0f766e",
+    colorSoft: "rgba(13, 148, 136, 0.12)",
   },
   {
     key: "hr",
@@ -68,6 +74,7 @@ export const MODULES: ModuleDef[] = [
     core: false,
     color: "#2563eb",
     colorDark: "#1d4ed8",
+    colorSoft: "rgba(37, 99, 235, 0.12)",
   },
   {
     key: "keuangan",
@@ -76,6 +83,7 @@ export const MODULES: ModuleDef[] = [
     core: false,
     color: "#16a34a",
     colorDark: "#15803d",
+    colorSoft: "rgba(22, 163, 74, 0.12)",
   },
   {
     key: "promo",
@@ -84,6 +92,7 @@ export const MODULES: ModuleDef[] = [
     core: false,
     color: "#d97706",
     colorDark: "#b45309",
+    colorSoft: "rgba(217, 119, 6, 0.12)",
   },
 ];
 

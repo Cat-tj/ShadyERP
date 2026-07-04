@@ -39,9 +39,14 @@ export function AppShell({
         "--color-primary-dark": currentModule.colorDark,
       } as React.CSSProperties)
     : undefined;
+  const shellBackgroundStyle: React.CSSProperties | undefined = currentModule
+    ? {
+        backgroundImage: `radial-gradient(1100px 640px at 12% -8%, ${currentModule.colorSoft} 0%, transparent 60%), radial-gradient(900px 560px at 100% 0%, ${currentModule.colorSoft} 0%, transparent 55%)`,
+      }
+    : undefined;
 
   return (
-    <div className="flex min-h-screen w-full">
+    <div className="flex min-h-screen w-full" style={shellBackgroundStyle}>
       {/* Sidebar desktop */}
       <aside className="glass-surface sticky top-0 hidden h-screen w-64 shrink-0 flex-col rounded-none border-y-0 border-l-0 md:flex">
         <div className="flex h-16 items-center gap-3 border-b border-[var(--color-gold-soft)] px-5">
