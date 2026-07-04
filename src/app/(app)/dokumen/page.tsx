@@ -17,6 +17,7 @@ export default async function DokumenPage() {
     <DocumentManager
       documents={formattedDocs}
       users={users}
+      currentUserName={user.name}
     />
   );
 }

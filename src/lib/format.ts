@@ -45,3 +45,18 @@ const jamFormatter = new Intl.DateTimeFormat("id-ID", {
 export function formatJam(date: Date | string): string {
   return jamFormatter.format(new Date(date));
 }
+
+/** Contoh: formatRelativeTime(new Date(Date.now() - 5 * 60_000)) -> "5 menit lalu" */
+export function formatRelativeTime(date: Date | string): string {
+  const diffMs = Date.now() - new Date(date).getTime();
+  const diffSec = Math.max(0, Math.round(diffMs / 1000));
+
+  if (diffSec < 60) return "Baru saja";
+  const diffMin = Math.round(diffSec / 60);
+  if (diffMin < 60) return `${diffMin} menit lalu`;
+  const diffHour = Math.round(diffMin / 60);
+  if (diffHour < 24) return `${diffHour} jam lalu`;
+  const diffDay = Math.round(diffHour / 24);
+  if (diffDay < 7) return `${diffDay} hari lalu`;
+  return formatTanggalPendek(date);
+}
