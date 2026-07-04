@@ -94,7 +94,7 @@ export async function getSupplierStats(tenantId: string, supplierId: string) {
   const avgLeadTime = await prisma.purchaseOrder.aggregate({
     where: { tenantId, supplierId, receivedAt: { not: null }, sentAt: { not: null } },
     _avg: { totalAmount: true },
-  };
+  });
 
   return {
     supplier,

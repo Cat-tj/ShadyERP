@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/server/auth";
+import { auth } from "@/lib/auth";
 import {
   createStockCount,
   updateCountItems,

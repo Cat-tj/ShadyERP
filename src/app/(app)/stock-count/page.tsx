@@ -1,7 +1,7 @@
 import { requireRole } from "@/server/require-session";
 import { getStockCounts } from "@/server/services/stock-count-service";
 import { listAllOutlets } from "@/server/services/outlet-service";
-import { StockCountManager } from "@/components/stock-count/stock-count-manager";
+import { StockCountManager, type StockCountRow } from "@/components/stock-count/stock-count-manager";
 
 export default async function StockCountPage() {
   const user = await requireRole(["OWNER", "MANAGER"]);
@@ -11,16 +11,11 @@ export default async function StockCountPage() {
     listAllOutlets(user.tenantId),
   ]);
 
+  const formattedCounts = counts as StockCountRow[];
+
   return (
     <StockCountManager
-      counts={counts.map((count) => ({
-        id: count.id,
-        countNumber: count.countNumber,
-        outlet: count.outlet,
-        status: count.status,
-        countDate: count.countDate,
-        items: count.items,
-      }))}
+      counts={formattedCounts}
       outlets={outlets}
     />
   );

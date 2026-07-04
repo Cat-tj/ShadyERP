@@ -1,8 +1,8 @@
 import { requireRole } from "@/server/require-session";
 import { getPurchaseOrders } from "@/server/services/purchase-order-service";
 import { getSuppliers } from "@/server/services/supplier-service";
-import { listAllProducts } from "@/server/services/product-service";
-import { PurchaseOrderManager } from "@/components/purchase-order/purchase-order-manager";
+import { listProductsFull } from "@/server/services/product-service";
+import { PurchaseOrderManager, type PurchaseOrderRow } from "@/components/purchase-order/purchase-order-manager";
 
 export default async function PurchaseOrderPage() {
   const user = await requireRole(["OWNER", "MANAGER"]);
@@ -10,22 +10,14 @@ export default async function PurchaseOrderPage() {
   const [purchaseOrders, suppliers, products] = await Promise.all([
     getPurchaseOrders(user.tenantId),
     getSuppliers(user.tenantId),
-    listAllProducts(user.tenantId),
+    listProductsFull(user.tenantId),
   ]);
+
+  const formattedPOs = purchaseOrders as PurchaseOrderRow[];
 
   return (
     <PurchaseOrderManager
-      purchaseOrders={purchaseOrders.map((po) => ({
-        id: po.id,
-        poNumber: po.poNumber,
-        supplier: po.supplier,
-        status: po.status,
-        totalAmount: po.totalAmount,
-        sentAt: po.sentAt,
-        expectedAt: po.expectedAt,
-        createdAt: po.createdAt,
-        items: po.items,
-      }))}
+      purchaseOrders={formattedPOs}
       suppliers={suppliers}
       products={products}
     />

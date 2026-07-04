@@ -12,12 +12,12 @@ export default async function SupplierPage() {
       suppliers={suppliers.map((s) => ({
         id: s.id,
         name: s.name,
-        phone: s.phone,
-        email: s.email,
-        contactPerson: s.contactPerson,
-        paymentTerms: s.paymentTerms,
+        phone: s.phone ?? undefined,
+        email: s.email ?? undefined,
+        contactPerson: s.contactPerson ?? undefined,
+        paymentTerms: s.paymentTerms ?? undefined,
         status: s.status,
-        rating: s.rating,
+        rating: s.rating ?? undefined,
       }))}
     />
   );
