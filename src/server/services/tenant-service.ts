@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { ulid } from "ulid";
 import { prisma } from "@/lib/prisma";
-import type { BusinessType } from "@prisma/client";
+import type { BusinessType, Prisma } from "@prisma/client";
 import { CORE_MODULE_KEYS, MODULES, resolveEnabledModules, type ModuleKey } from "@/lib/modules";
 
 export type RegisterTenantInput = {
@@ -31,7 +31,7 @@ async function generateUniqueSlug(businessName: string) {
 }
 
 async function bootstrapTenantSampleData(
-  tx: any,
+  tx: Prisma.TransactionClient,
   tenantId: string,
   outletId: string,
   businessType: BusinessType
@@ -228,6 +228,7 @@ export type TenantSettingInput = {
   taxPercent: number;
   pointsPerAmount: number;
   receiptFooter: string | null;
+  staticQrisPayload?: string | null;
 };
 
 export async function getTenantSetting(tenantId: string) {

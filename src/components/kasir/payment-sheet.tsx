@@ -25,6 +25,7 @@ export function PaymentSheet({
   total,
   items,
   discountAmount,
+  staticQrisPayload,
   onClose,
   onSuccess,
 }: {
@@ -33,6 +34,7 @@ export function PaymentSheet({
   discountAmount: number;
   taxAmount: number;
   items: { productId: string; qty: number; discountAmount: number; variantOptionIds?: string[] }[];
+  staticQrisPayload: string | null;
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -43,7 +45,8 @@ export function PaymentSheet({
   const [error, setError] = useState<string | null>(null);
   const [queuedOffline, setQueuedOffline] = useState(false);
   const [staticQris, setStaticQris] = useState(() =>
-    typeof window === "undefined" ? "" : localStorage.getItem(STATIC_QRIS_STORAGE_KEY) ?? ""
+    staticQrisPayload ??
+    (typeof window === "undefined" ? "" : localStorage.getItem(STATIC_QRIS_STORAGE_KEY) ?? "")
   );
   const [qrisDataUrl, setQrisDataUrl] = useState<string | null>(null);
   const [qrisError, setQrisError] = useState<string | null>(null);
@@ -66,7 +69,7 @@ export function PaymentSheet({
       }
       if (!staticQris.trim()) {
         setQrisDataUrl(null);
-        setQrisError("Tempel payload QRIS statis usaha dulu. Nanti bisa diganti QRIS asli kamu.");
+        setQrisError("QRIS usaha belum disimpan. Scan QRIS di Pengaturan > Bisnis dulu.");
         return;
       }
 
@@ -286,11 +289,16 @@ export function PaymentSheet({
               <summary className="cursor-pointer text-sm font-medium text-[var(--color-text)]">
                 QRIS statis usaha
               </summary>
+              {staticQrisPayload?.trim() && (
+                <p className="mt-3 rounded-lg bg-[var(--color-bg)] px-3 py-2 text-xs text-[var(--color-text-secondary)]">
+                  QRIS dari Pengaturan Bisnis sudah aktif. Edit manual di sini hanya tersimpan di device kasir ini.
+                </p>
+              )}
               <textarea
                 value={staticQris}
                 onChange={(event) => saveStaticQris(event.target.value)}
                 rows={4}
-                placeholder="Placeholder: nanti tempel payload QRIS statis asli dari QR kamu di sini."
+                placeholder="Scan QRIS di Pengaturan > Bisnis, atau tempel payload QRIS statis di sini."
                 className="mt-3 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 font-mono text-xs text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
               />
               <p className="mt-2 text-xs text-[var(--color-text-secondary)]">

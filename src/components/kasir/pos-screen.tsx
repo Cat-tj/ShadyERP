@@ -41,12 +41,14 @@ export function PosScreen({
   products,
   categories,
   taxPercent,
+  staticQrisPayload,
   promos,
 }: {
   outletName: string;
   products: PosProduct[];
   categories: PosCategory[];
   taxPercent: number;
+  staticQrisPayload: string | null;
   promos: PosPromo[];
 }) {
   const [search, setSearch] = useState("");
@@ -321,6 +323,7 @@ export function PosScreen({
             discountAmount: line.discountAmount,
             variantOptionIds: line.variantOptionIds,
           }))}
+          staticQrisPayload={staticQrisPayload}
           onClose={() => setShowPayment(false)}
           onSuccess={() => {
             resetCart();

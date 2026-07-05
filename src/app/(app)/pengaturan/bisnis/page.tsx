@@ -11,6 +11,7 @@ export default async function BisnisSettingsPage() {
       taxPercent={setting?.taxPercent ?? 0}
       pointsPerAmount={setting?.pointsPerAmount ?? 10000}
       receiptFooter={setting?.receiptFooter ?? null}
+      staticQrisPayload={setting?.staticQrisPayload ?? null}
     />
   );
 }

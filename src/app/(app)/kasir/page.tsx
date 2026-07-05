@@ -33,6 +33,7 @@ export default async function KasirPage() {
     <PosScreen
       outletName={shift.outlet.name}
       taxPercent={setting?.taxPercent ?? 0}
+      staticQrisPayload={setting?.staticQrisPayload ?? null}
       products={activeProducts.map((product) => ({
         id: product.id,
         name: product.name,

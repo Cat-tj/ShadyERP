@@ -1335,6 +1335,7 @@ model TenantSetting {
   taxPercent       Int      @default(0)
   pointsPerAmount  Int      @default(10000) // 1 poin per Rp10.000
   receiptFooter    String?
+  staticQrisPayload String?
   enableParkingFee Boolean  @default(false)
   updatedAt        DateTime @updatedAt
 
