@@ -28,6 +28,12 @@ export type BookingRow = {
   durationMinutes: number;
   staffUserId: string | null;
   staffName: string | null;
+  pax: number | null;
+  eventAddress: string | null;
+  quotedAmount: number | null;
+  transportFee: number;
+  staffFee: number;
+  depositAmount: number;
   status: BookingStatus;
   note: string | null;
 };
@@ -153,6 +159,16 @@ export function BookingManager({
                         &quot;{booking.note}&quot;
                       </p>
                     )}
+                    {booking.type === "DELIVERY" && (
+                      <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
+                        {booking.pax ? `${booking.pax} pax · ` : ""}
+                        {booking.eventAddress ? `${booking.eventAddress} · ` : ""}
+                        {booking.quotedAmount
+                          ? `Deal Rp${booking.quotedAmount.toLocaleString("id-ID")}`
+                          : "Belum ada nominal deal"}
+                        {booking.depositAmount ? ` · DP Rp${booking.depositAmount.toLocaleString("id-ID")}` : ""}
+                      </p>
+                    )}
                   </div>
                   <span
                     className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
@@ -259,6 +275,12 @@ function BookingFormModal({
   );
   const [durationMinutes, setDurationMinutes] = useState(String(booking?.durationMinutes ?? 60));
   const [staffUserId, setStaffUserId] = useState(booking?.staffUserId ?? "");
+  const [pax, setPax] = useState(booking?.pax ? String(booking.pax) : "");
+  const [eventAddress, setEventAddress] = useState(booking?.eventAddress ?? "");
+  const [quotedAmount, setQuotedAmount] = useState(booking?.quotedAmount ? String(booking.quotedAmount) : "");
+  const [transportFee, setTransportFee] = useState(String(booking?.transportFee ?? 0));
+  const [staffFee, setStaffFee] = useState(String(booking?.staffFee ?? 0));
+  const [depositAmount, setDepositAmount] = useState(String(booking?.depositAmount ?? 0));
   const [note, setNote] = useState(booking?.note ?? "");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -271,6 +293,18 @@ function BookingFormModal({
     if (!scheduledAt) return setError("Tanggal & jam wajib diisi.");
     const duration = Number(durationMinutes);
     if (!Number.isFinite(duration) || duration <= 0) return setError("Durasi tidak valid.");
+    const parsedPax = pax ? Number(pax) : null;
+    const parsedQuoted = quotedAmount ? Number(quotedAmount) : null;
+    const parsedTransport = Number(transportFee) || 0;
+    const parsedStaffFee = Number(staffFee) || 0;
+    const parsedDeposit = Number(depositAmount) || 0;
+    if (
+      [parsedPax, parsedQuoted, parsedTransport, parsedStaffFee, parsedDeposit].some(
+        (value) => value !== null && (!Number.isFinite(value) || value < 0)
+      )
+    ) {
+      return setError("Nominal/jumlah event tidak valid.");
+    }
 
     startTransition(async () => {
       const input = {
@@ -282,6 +316,12 @@ function BookingFormModal({
         scheduledAt,
         durationMinutes: duration,
         staffUserId: staffUserId || null,
+        pax: type === "DELIVERY" ? parsedPax : null,
+        eventAddress: type === "DELIVERY" ? eventAddress.trim() || null : null,
+        quotedAmount: type === "DELIVERY" ? parsedQuoted : null,
+        transportFee: type === "DELIVERY" ? parsedTransport : 0,
+        staffFee: type === "DELIVERY" ? parsedStaffFee : 0,
+        depositAmount: type === "DELIVERY" ? parsedDeposit : 0,
         note: note.trim() || null,
       };
       const result = booking
@@ -416,6 +456,83 @@ function BookingFormModal({
               ))}
             </select>
           </div>
+
+          {type === "DELIVERY" && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-[var(--color-text)]">Pax / item</label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={pax}
+                    onChange={(event) => setPax(event.target.value)}
+                    placeholder="0"
+                    className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base tabular-nums outline-none focus:border-[var(--color-primary)]"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-[var(--color-text)]">Nominal deal</label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={quotedAmount}
+                    onChange={(event) => setQuotedAmount(event.target.value)}
+                    placeholder="0"
+                    className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base tabular-nums outline-none focus:border-[var(--color-primary)]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-[var(--color-text)]">Alamat acara</label>
+                <input
+                  value={eventAddress}
+                  onChange={(event) => setEventAddress(event.target.value)}
+                  placeholder="Alamat venue / titik antar"
+                  className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base outline-none focus:border-[var(--color-primary)]"
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-[var(--color-text)]">Transport</label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={transportFee}
+                    onChange={(event) => setTransportFee(event.target.value)}
+                    className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-[var(--color-text)]">Barista</label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={staffFee}
+                    onChange={(event) => setStaffFee(event.target.value)}
+                    className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-[var(--color-text)]">DP</label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={depositAmount}
+                    onChange={(event) => setDepositAmount(event.target.value)}
+                    className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+                  />
+                </div>
+              </div>
+            </>
+          )}
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-[var(--color-text)]">Catatan (opsional)</label>

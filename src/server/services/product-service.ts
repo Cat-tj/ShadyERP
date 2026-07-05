@@ -57,6 +57,7 @@ export async function listProductsFull(tenantId: string) {
     include: {
       category: true,
       stocks: { include: { outlet: true } },
+      reorderPoints: true,
       variantGroups: { include: { options: { orderBy: { sortOrder: "asc" } } }, orderBy: { sortOrder: "asc" } },
     },
     orderBy: { name: "asc" },
@@ -196,16 +197,7 @@ export async function transferStock(
   transferredById: string,
   note?: string
 ) {
-  if (fromOutletId === toOutletId) {
-    throw new Error("Outlet asal dan tujuan tidak boleh sama.");
-  }
-  if (!Number.isFinite(qty) || qty <= 0) {
-    throw new Error("Jumlah transfer tidak valid.");
-  }
-
-  const product = await prisma.product.findFirst({ where: { id: productId, tenantId } });
-  if (!product) throw new Error("Produk tidak ditemukan.");
-  if (!product.trackStock) throw new Error("Produk ini tidak melacak stok.");
+  await validateStockTransferInput(tenantId, productId, fromOutletId, toOutletId, qty);
 
   return prisma.$transaction(async (tx) => {
     const fromStock = await tx.productStock.findUnique({
@@ -234,17 +226,200 @@ export async function transferStock(
         fromOutletId,
         toOutletId,
         transferredById,
+        approvedById: transferredById,
+        sentById: transferredById,
+        receivedById: transferredById,
+        status: "RECEIVED",
         qty,
+        sentQty: qty,
+        receivedQty: qty,
         note: note?.trim() || null,
+        approvedAt: new Date(),
+        sentAt: new Date(),
+        receivedAt: new Date(),
       },
     });
+  });
+}
+
+async function validateStockTransferInput(
+  tenantId: string,
+  productId: string,
+  fromOutletId: string,
+  toOutletId: string,
+  qty: number
+) {
+  if (fromOutletId === toOutletId) {
+    throw new Error("Outlet asal dan tujuan tidak boleh sama.");
+  }
+  if (!Number.isFinite(qty) || qty <= 0) {
+    throw new Error("Jumlah transfer tidak valid.");
+  }
+
+  const product = await prisma.product.findFirst({ where: { id: productId, tenantId } });
+  if (!product) throw new Error("Produk tidak ditemukan.");
+  if (!product.trackStock) throw new Error("Produk ini tidak melacak stok.");
+}
+
+export async function requestStockTransfer(
+  tenantId: string,
+  productId: string,
+  fromOutletId: string,
+  toOutletId: string,
+  qty: number,
+  requestedById: string,
+  note?: string
+) {
+  await validateStockTransferInput(tenantId, productId, fromOutletId, toOutletId, qty);
+
+  return prisma.stockTransfer.create({
+    data: {
+      tenantId,
+      productId,
+      fromOutletId,
+      toOutletId,
+      transferredById: requestedById,
+      status: "REQUESTED",
+      qty,
+      note: note?.trim() || null,
+    },
+  });
+}
+
+export async function sendStockTransfer(
+  tenantId: string,
+  transferId: string,
+  sentById: string,
+  sentQty?: number
+) {
+  return prisma.$transaction(async (tx) => {
+    const transfer = await tx.stockTransfer.findFirst({
+      where: { id: transferId, tenantId },
+      include: { product: true },
+    });
+    if (!transfer) throw new Error("Transfer stok tidak ditemukan.");
+    if (transfer.status !== "REQUESTED") {
+      throw new Error("Transfer hanya bisa dikirim saat status masih request.");
+    }
+    if (!transfer.product.trackStock) throw new Error("Produk ini tidak melacak stok.");
+
+    const finalSentQty = sentQty ?? transfer.qty;
+    if (!Number.isFinite(finalSentQty) || finalSentQty <= 0) {
+      throw new Error("Jumlah kirim tidak valid.");
+    }
+    if (finalSentQty > transfer.qty) {
+      throw new Error("Jumlah kirim tidak boleh lebih besar dari jumlah request.");
+    }
+
+    const fromStock = await tx.productStock.findUnique({
+      where: { productId_outletId: { productId: transfer.productId, outletId: transfer.fromOutletId } },
+    });
+    const availableQty = fromStock?.qty ?? 0;
+    if (finalSentQty > availableQty) {
+      throw new Error(`Stok di outlet asal tidak cukup. Tersedia ${availableQty}, diminta ${finalSentQty}.`);
+    }
+
+    await tx.productStock.update({
+      where: { productId_outletId: { productId: transfer.productId, outletId: transfer.fromOutletId } },
+      data: { qty: { decrement: finalSentQty } },
+    });
+
+    return tx.stockTransfer.update({
+      where: { id: transfer.id },
+      data: {
+        status: "SENT",
+        approvedById: sentById,
+        sentById,
+        sentQty: finalSentQty,
+        approvedAt: new Date(),
+        sentAt: new Date(),
+      },
+    });
+  });
+}
+
+export async function receiveStockTransfer(
+  tenantId: string,
+  transferId: string,
+  receivedById: string,
+  receivedQty?: number
+) {
+  return prisma.$transaction(async (tx) => {
+    const transfer = await tx.stockTransfer.findFirst({
+      where: { id: transferId, tenantId },
+    });
+    if (!transfer) throw new Error("Transfer stok tidak ditemukan.");
+    if (transfer.status !== "SENT") {
+      throw new Error("Transfer hanya bisa diterima setelah dikirim.");
+    }
+
+    const sentQty = transfer.sentQty ?? transfer.qty;
+    const finalReceivedQty = receivedQty ?? sentQty;
+    if (!Number.isFinite(finalReceivedQty) || finalReceivedQty < 0) {
+      throw new Error("Jumlah terima tidak valid.");
+    }
+    if (finalReceivedQty > sentQty) {
+      throw new Error("Jumlah terima tidak boleh lebih besar dari jumlah kirim.");
+    }
+
+    await tx.productStock.upsert({
+      where: { productId_outletId: { productId: transfer.productId, outletId: transfer.toOutletId } },
+      create: {
+        tenantId,
+        productId: transfer.productId,
+        outletId: transfer.toOutletId,
+        qty: finalReceivedQty,
+      },
+      update: { qty: { increment: finalReceivedQty } },
+    });
+
+    return tx.stockTransfer.update({
+      where: { id: transfer.id },
+      data: {
+        status: "RECEIVED",
+        receivedById,
+        receivedQty: finalReceivedQty,
+        receivedAt: new Date(),
+      },
+    });
+  });
+}
+
+export async function rejectStockTransfer(
+  tenantId: string,
+  transferId: string,
+  rejectedById: string,
+  reason?: string
+) {
+  const transfer = await prisma.stockTransfer.findFirst({ where: { id: transferId, tenantId } });
+  if (!transfer) throw new Error("Transfer stok tidak ditemukan.");
+  if (transfer.status !== "REQUESTED") {
+    throw new Error("Transfer hanya bisa ditolak saat status masih request.");
+  }
+
+  return prisma.stockTransfer.update({
+    where: { id: transfer.id },
+    data: {
+      status: "REJECTED",
+      approvedById: rejectedById,
+      rejectReason: reason?.trim() || null,
+      rejectedAt: new Date(),
+    },
   });
 }
 
 export async function getStockTransfers(tenantId: string, take = 100) {
   return prisma.stockTransfer.findMany({
     where: { tenantId },
-    include: { product: true, fromOutlet: true, toOutlet: true, transferredBy: true },
+    include: {
+      product: true,
+      fromOutlet: true,
+      toOutlet: true,
+      transferredBy: true,
+      approvedBy: true,
+      sentBy: true,
+      receivedBy: true,
+    },
     orderBy: { createdAt: "desc" },
     take,
   });

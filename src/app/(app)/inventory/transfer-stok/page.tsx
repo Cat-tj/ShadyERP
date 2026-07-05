@@ -37,45 +37,23 @@ export default async function TransferStokPage() {
             product.stocks.map((stock) => [stock.outletId, stock.qty])
           ),
         }))}
+        transfers={transfers.map((transfer) => ({
+          id: transfer.id,
+          productName: transfer.product.name,
+          fromOutletName: transfer.fromOutlet.name,
+          toOutletName: transfer.toOutlet.name,
+          requestedByName: transfer.transferredBy.name,
+          sentByName: transfer.sentBy?.name ?? null,
+          receivedByName: transfer.receivedBy?.name ?? null,
+          status: transfer.status,
+          qty: transfer.qty,
+          sentQty: transfer.sentQty,
+          receivedQty: transfer.receivedQty,
+          note: transfer.note,
+          rejectReason: transfer.rejectReason,
+          createdLabel: `${formatTanggal(transfer.createdAt)}, ${formatJam(transfer.createdAt)}`,
+        }))}
       />
-
-      <div>
-        <h2 className="mb-3 text-base font-bold text-[var(--color-text)]">Riwayat transfer</h2>
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
-          {transfers.length === 0 ? (
-            <p className="px-6 py-16 text-center text-sm text-[var(--color-text-secondary)]">
-              Belum ada transfer stok. Riwayat akan muncul di sini setiap kali stok dipindah antar outlet.
-            </p>
-          ) : (
-            <div className="divide-y divide-[var(--color-border)]">
-              {transfers.map((transfer) => (
-                <div key={transfer.id} className="flex items-start justify-between gap-3 p-4">
-                  <div className="min-w-0">
-                    <p className="text-sm font-semibold text-[var(--color-text)]">
-                      {transfer.product.name}
-                    </p>
-                    <p className="text-xs text-[var(--color-text-secondary)]">
-                      {transfer.fromOutlet.name} → {transfer.toOutlet.name} · oleh{" "}
-                      {transfer.transferredBy.name} · {formatTanggal(transfer.createdAt)},{" "}
-                      {formatJam(transfer.createdAt)}
-                    </p>
-                    {transfer.note && (
-                      <p className="mt-1 text-xs italic text-[var(--color-text-secondary)]">
-                        &quot;{transfer.note}&quot;
-                      </p>
-                    )}
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="tabular-nums text-sm font-bold text-[var(--color-primary)]">
-                      {transfer.qty} unit
-                    </p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      </div>
     </div>
   );
 }

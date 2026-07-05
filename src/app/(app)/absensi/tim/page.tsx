@@ -38,6 +38,11 @@ export default async function AbsensiTimPage() {
           outletName: s.outlet.name,
           startAt: s.startAt.toISOString(),
           endAt: s.endAt.toISOString(),
+          workType: s.workType,
+          payType: s.payType,
+          shiftPay: s.shiftPay,
+          holidayBonus: s.holidayBonus,
+          note: s.note,
         }))}
       />
 

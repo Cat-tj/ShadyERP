@@ -11,8 +11,13 @@ import {
   setProductActive,
   setProductStock,
   transferStock,
+  requestStockTransfer,
+  sendStockTransfer,
+  receiveStockTransfer,
+  rejectStockTransfer,
   type ProductInput,
 } from "@/server/services/product-service";
+import { setReorderPoint } from "@/server/services/inventory-service";
 import {
   createVariantGroup,
   updateVariantGroup,
@@ -223,7 +228,105 @@ export async function transferStockAction(
   }
   revalidatePath("/produk");
   revalidatePath("/produk/transfer-stok");
+  revalidatePath("/inventory");
+  revalidatePath("/inventory/transfer-stok");
   revalidatePath("/produk/riwayat-stok");
   revalidatePath("/kasir");
+  return { success: true };
+}
+
+export async function requestStockTransferAction(
+  productId: string,
+  fromOutletId: string,
+  toOutletId: string,
+  qty: number,
+  note?: string
+): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  if (!Number.isFinite(qty) || qty <= 0) return { error: "Jumlah transfer tidak valid." };
+  try {
+    await requestStockTransfer(user.tenantId, productId, fromOutletId, toOutletId, qty, user.id, note);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal membuat request transfer stok." };
+  }
+  revalidatePath("/produk");
+  revalidatePath("/produk/transfer-stok");
+  revalidatePath("/inventory");
+  revalidatePath("/inventory/transfer-stok");
+  return { success: true };
+}
+
+export async function sendStockTransferAction(
+  transferId: string,
+  sentQty?: number
+): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  if (sentQty !== undefined && (!Number.isFinite(sentQty) || sentQty <= 0)) {
+    return { error: "Jumlah kirim tidak valid." };
+  }
+  try {
+    await sendStockTransfer(user.tenantId, transferId, user.id, sentQty);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal mengirim stok." };
+  }
+  revalidatePath("/produk");
+  revalidatePath("/produk/transfer-stok");
+  revalidatePath("/inventory");
+  revalidatePath("/inventory/transfer-stok");
+  revalidatePath("/kasir");
+  return { success: true };
+}
+
+export async function receiveStockTransferAction(
+  transferId: string,
+  receivedQty?: number
+): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  if (receivedQty !== undefined && (!Number.isFinite(receivedQty) || receivedQty < 0)) {
+    return { error: "Jumlah terima tidak valid." };
+  }
+  try {
+    await receiveStockTransfer(user.tenantId, transferId, user.id, receivedQty);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal menerima stok." };
+  }
+  revalidatePath("/produk");
+  revalidatePath("/produk/transfer-stok");
+  revalidatePath("/inventory");
+  revalidatePath("/inventory/transfer-stok");
+  revalidatePath("/kasir");
+  return { success: true };
+}
+
+export async function rejectStockTransferAction(
+  transferId: string,
+  reason?: string
+): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  try {
+    await rejectStockTransfer(user.tenantId, transferId, user.id, reason);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal menolak request transfer." };
+  }
+  revalidatePath("/produk/transfer-stok");
+  revalidatePath("/inventory/transfer-stok");
+  return { success: true };
+}
+
+export async function updateReorderPointAction(
+  productId: string,
+  outletId: string,
+  minQty: number
+): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  if (!Number.isFinite(minQty) || minQty < 0) return { error: "Batas stok minimum tidak valid." };
+  try {
+    await setReorderPoint(user.tenantId, productId, outletId, minQty);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal memperbarui batas stok minimum." };
+  }
+  revalidatePath("/produk");
+  revalidatePath("/inventory");
+  revalidatePath("/kpi");
   return { success: true };
 }

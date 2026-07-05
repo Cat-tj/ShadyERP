@@ -122,6 +122,78 @@ function initGalleryNav() {
   };
 }
 
+function initSpotlightCarousel() {
+  const root = document.querySelector<HTMLElement>(".altora-landing .spotlight-wrap");
+  const slides = Array.from(document.querySelectorAll<HTMLElement>(".altora-landing [data-spotlight-slide]"));
+  const dots = Array.from(document.querySelectorAll<HTMLButtonElement>(".altora-landing [data-spotlight-dot]"));
+  const prev = document.querySelector<HTMLButtonElement>(".altora-landing .spotlight-prev");
+  const next = document.querySelector<HTMLButtonElement>(".altora-landing .spotlight-next");
+  if (!root || slides.length === 0 || !prev || !next) return () => {};
+
+  let activeIndex = Math.max(0, slides.findIndex((slide) => slide.classList.contains("is-active")));
+  let transitionTimer: ReturnType<typeof setTimeout> | null = null;
+
+  function setActive(nextIndex: number) {
+    const normalized = (nextIndex + slides.length) % slides.length;
+    if (normalized === activeIndex) return;
+
+    const direction = normalized > activeIndex || (activeIndex === slides.length - 1 && normalized === 0) ? "next" : "prev";
+    root!.dataset.spotlightDirection = direction;
+    const previousIndex = activeIndex;
+    activeIndex = normalized;
+
+    if (transitionTimer) {
+      clearTimeout(transitionTimer);
+      transitionTimer = null;
+      slides.forEach((slide, index) => {
+        slide.classList.remove("is-leaving");
+        slide.hidden = index !== previousIndex;
+      });
+    }
+
+    slides.forEach((slide, index) => {
+      const isActive = index === activeIndex;
+      const isPrevious = index === previousIndex;
+      slide.hidden = !(isActive || isPrevious);
+      slide.classList.toggle("is-active", isActive);
+      slide.classList.toggle("is-leaving", isPrevious);
+    });
+
+    dots.forEach((dot, index) => {
+      const isActive = index === activeIndex;
+      dot.classList.toggle("is-active", isActive);
+      if (isActive) dot.setAttribute("aria-current", "true");
+      else dot.removeAttribute("aria-current");
+    });
+
+    transitionTimer = setTimeout(() => {
+      slides.forEach((slide, index) => {
+        slide.classList.remove("is-leaving");
+        slide.hidden = index !== activeIndex;
+      });
+      transitionTimer = null;
+    }, 520);
+  }
+
+  const onPrev = () => setActive(activeIndex - 1);
+  const onNext = () => setActive(activeIndex + 1);
+  const dotHandlers = dots.map((dot, index) => {
+    const handler = () => setActive(index);
+    dot.addEventListener("click", handler);
+    return { dot, handler };
+  });
+
+  prev.addEventListener("click", onPrev);
+  next.addEventListener("click", onNext);
+
+  return () => {
+    if (transitionTimer) clearTimeout(transitionTimer);
+    prev.removeEventListener("click", onPrev);
+    next.removeEventListener("click", onNext);
+    dotHandlers.forEach(({ dot, handler }) => dot.removeEventListener("click", handler));
+  };
+}
+
 export function LandingScripts() {
   useEffect(() => {
     const cleanups = [
@@ -134,12 +206,13 @@ export function LandingScripts() {
         perspective: 1400,
       }),
       initTilt(".altora-landing .spotlight-visual", ".altora-landing .phone", {
-        baseY: 8,
-        baseX: 2,
-        maxY: 10,
+        baseY: -18,
+        baseX: 6,
+        maxY: 8,
         maxX: 6,
-        perspective: 1200,
+        perspective: 1400,
       }),
+      initSpotlightCarousel(),
       initGalleryNav(),
     ];
     return () => cleanups.forEach((fn) => fn());

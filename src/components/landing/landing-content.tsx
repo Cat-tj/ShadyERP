@@ -1,3 +1,171 @@
+import Image from "next/image";
+
+type SpotlightSlide = {
+  label: string;
+  title: string;
+  body: string;
+  points: Array<{
+    title: string;
+    body: string;
+  }>;
+  screen: "qr" | "finance" | "absen" | "inventory";
+};
+
+const spotlightSlides: SpotlightSlide[] = [
+  {
+    label: "QR meja",
+    title: "Pelanggan pesan sendiri, tinggal scan meja.",
+    body:
+      "Cetak satu kode QR per meja, tempel di meja fisik. Pelanggan buka menu di HP masing-masing, pilih produk, pesan langsung tanpa nunggu dipanggil pelayan.",
+    screen: "qr",
+    points: [
+      {
+        title: "Pesan berkali-kali, bayar sekali.",
+        body: "Semua pesanan dari meja yang sama otomatis digabung jadi satu tagihan sampai pelanggan minta bayar.",
+      },
+      {
+        title: "Dapur lihat pesanan real-time.",
+        body: "Pesanan langsung muncul di layar kitchen display, kasir tinggal proses pembayaran saat selesai.",
+      },
+      {
+        title: "Stok kepotong otomatis.",
+        body: "Begitu pesanan masuk, stok langsung terkunci supaya stok antar meja tetap rapi.",
+      },
+    ],
+  },
+  {
+    label: "Finance",
+    title: "Uang masuk, keluar, dan laba harian kebaca jelas.",
+    body:
+      "Owner bisa lihat kas hari ini, pengeluaran, hutang supplier, metode bayar, dan ringkasan laba rugi tanpa buka spreadsheet terpisah.",
+    screen: "finance",
+    points: [
+      {
+        title: "Kas harian langsung cocok.",
+        body: "Penjualan POS, cash, QRIS, dan transfer diringkas per metode bayar untuk bantu tutup kas.",
+      },
+      {
+        title: "Pengeluaran tidak nyelip.",
+        body: "Biaya bahan, operasional, gaji, dan kas kecil bisa dicatat dengan kategori sederhana.",
+      },
+      {
+        title: "Laba rugi versi owner.",
+        body: "Bukan akuntansi berat, tapi cukup jelas untuk tahu usaha sedang sehat atau bocor.",
+      },
+    ],
+  },
+  {
+    label: "Absen",
+    title: "Shift, absensi, dan telat karyawan masuk satu layar.",
+    body:
+      "Tim bisa clock-in, owner bisa lihat siapa hadir, telat, izin, atau belum absen tanpa tanya manual di grup chat.",
+    screen: "absen",
+    points: [
+      {
+        title: "Clock-in cepat dari HP.",
+        body: "Karyawan masuk shift dengan catatan jam, outlet, dan status kehadiran.",
+      },
+      {
+        title: "Ringkasan telat dan izin.",
+        body: "Data telat, pulang cepat, izin, dan lembur bisa dilihat untuk evaluasi tim.",
+      },
+      {
+        title: "Cocok untuk multi-outlet.",
+        body: "Owner tetap bisa pantau kehadiran cabang tanpa harus ada di lokasi.",
+      },
+    ],
+  },
+  {
+    label: "Inventory",
+    title: "Stok bahan dan produk bergerak otomatis.",
+    body:
+      "Setiap penjualan, penerimaan stok, transfer antar outlet, dan stock opname masuk ke riwayat supaya stok tidak jadi tebak-tebakan.",
+    screen: "inventory",
+    points: [
+      {
+        title: "Stok menipis cepat ketahuan.",
+        body: "Produk yang perlu restock naik ke permukaan sebelum benar-benar habis.",
+      },
+      {
+        title: "Transfer antar outlet tercatat.",
+        body: "Barang pindah cabang punya jejak, jadi stok pusat dan outlet tetap sinkron.",
+      },
+      {
+        title: "Stock opname lebih ringan.",
+        body: "Selisih fisik dan sistem bisa dicatat tanpa bongkar laporan manual.",
+      },
+    ],
+  },
+];
+
+const spotlightPreviewByScreen: Record<
+  SpotlightSlide["screen"],
+  {
+    src: string;
+    alt: string;
+  }
+> = {
+  qr: {
+    src: "/landing-previews/qr-meja.png",
+    alt: "Screenshot asli halaman pesan QR meja Altora",
+  },
+  finance: {
+    src: "/landing-previews/finance.png",
+    alt: "Screenshot asli halaman ringkasan finance Altora",
+  },
+  absen: {
+    src: "/landing-previews/absen.png",
+    alt: "Screenshot asli halaman absensi Altora",
+  },
+  inventory: {
+    src: "/landing-previews/inventory.png",
+    alt: "Screenshot asli halaman inventori Altora",
+  },
+};
+
+function SpotlightPhone({ screen }: { screen: SpotlightSlide["screen"] }) {
+  const preview = spotlightPreviewByScreen[screen];
+
+  return (
+    <div className={`phone-stage phone-stage-${screen}`} role="img" aria-label={`Mockup iPhone 3D fitur ${screen} Altora`}>
+      <div className="phone-shadow" aria-hidden="true"></div>
+      {screen === "qr" ? (
+        <div className="qr-float-card" aria-hidden="true">
+          <span className="qr-label">QR Meja 04</span>
+          <span className="qr-box">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </span>
+        </div>
+      ) : (
+        <div className="feature-float-card" aria-hidden="true">
+          <span className="qr-label">{screen === "finance" ? "Kas hari ini" : screen === "absen" ? "Shift pagi" : "Stok aman"}</span>
+          <span className="feature-float-value">
+            {screen === "finance" ? "Rp3,4jt" : screen === "absen" ? "12 hadir" : "3 tipis"}
+          </span>
+          <span className="feature-float-bars">
+            <i></i><i></i><i></i>
+          </span>
+        </div>
+      )}
+      <div className="order-float-card" aria-hidden="true">
+        <span className="order-float-title">
+          {screen === "qr" ? "Masuk ke dapur" : screen === "finance" ? "Tutup kas" : screen === "absen" ? "Hadir" : "Restock"}
+        </span>
+        <span className="order-float-row">
+          <b>{screen === "qr" ? "Meja 04" : screen === "finance" ? "Rp3,4jt" : screen === "absen" ? "12/14" : "3 item"}</b>
+          <span>{screen === "qr" ? "2 item" : screen === "finance" ? "cocok" : screen === "absen" ? "masuk" : "tipis"}</span>
+        </span>
+      </div>
+      <div className="phone">
+        <div className="phone-island"></div>
+        <div className="phone-screen phone-screen-preview">
+          <Image className="phone-preview-image" src={preview.src} alt={preview.alt} fill sizes="274px" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function LandingContent() {
   return (
     <div className="altora-landing">
@@ -34,6 +202,9 @@ export function LandingContent() {
       <a className="navlink" href="#kontak">Kontak</a>
     </nav>
     <div className="nav-cta">
+      <a className="btn btn-ghost" href="/login">
+        Login
+      </a>
       <a className="btn btn-primary" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20tanya%20soal%20aplikasi%20kasirnya" target="_blank" rel="noopener">
         Chat WhatsApp
       </a>
@@ -75,6 +246,9 @@ export function LandingContent() {
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M3 6h18v12H3z"/><path d="m3 7 9 6 9-6"/></svg>
             Kirim Email
           </a>
+          <a className="btn btn-ghost" href="/login">
+            Login
+          </a>
         </div>
       </div>
 
@@ -103,6 +277,11 @@ export function LandingContent() {
                 <span className="dash-title">Kasir · Hari ini</span>
                 <span className="dash-live"><span className="badge-dot" aria-hidden="true"></span>Tersinkron</span>
               </div>
+              <div className="dash-app-tabs" aria-hidden="true">
+                <span className="dash-app-tab dash-app-active">POS</span>
+                <span className="dash-app-tab">Dapur</span>
+                <span className="dash-app-tab">Finance</span>
+              </div>
               <div className="dash-grid">
                 <div className="dash-tile">
                   <span className="dash-tile-label">Omzet hari ini</span>
@@ -124,6 +303,17 @@ export function LandingContent() {
                   <span className="dash-tile-value mono">5 aktif</span>
                   <span className="dash-tile-delta">2 siap disajikan</span>
                 </div>
+              </div>
+              <div className="live-order">
+                <div className="live-order-head">
+                  <span>Meja 04</span>
+                  <span className="live-order-status">Baru masuk</span>
+                </div>
+                <div className="live-order-row">
+                  <span>2× Kopi Susu · 1× Croissant</span>
+                  <span className="mono">57.600</span>
+                </div>
+                <div className="live-progress" aria-hidden="true"><span></span></div>
               </div>
               <div>
                 <span className="dash-chart-label">Omzet · 14 hari</span>
@@ -169,73 +359,64 @@ export function LandingContent() {
     </div>
   </div>
 
-  {/* QR MEJA SPOTLIGHT */}
+  {/* FEATURE SPOTLIGHT */}
   <section id="qr-meja" className="spotlight">
-    <div className="wrap spotlight-grid">
-      <div className="spotlight-copy reveal">
-        <span className="eyebrow">Fitur andalan</span>
-        <h2 className="gradient-text">Pelanggan pesan sendiri, tinggal scan meja.</h2>
-        <p className="lede">
-          Cetak satu kode QR per meja, tempel di meja fisik. Pelanggan buka menu di HP
-          masing-masing, pilih produk, pesan langsung — tanpa nunggu dipanggil pelayan.
-        </p>
-        <ul className="spotlight-points">
-          <li>
-            <span className="spotlight-point-mark">01</span>
-            <div>
-              <b>Pesan berkali-kali, bayar sekali.</b>
-              <p>Semua pesanan dari meja yang sama otomatis digabung jadi satu tagihan sampai pelanggan minta bayar.</p>
-            </div>
-          </li>
-          <li>
-            <span className="spotlight-point-mark">02</span>
-            <div>
-              <b>Dapur lihat pesanan real-time.</b>
-              <p>Pesanan langsung muncul di layar kitchen display — kasir tinggal proses pembayaran saat selesai.</p>
-            </div>
-          </li>
-          <li>
-            <span className="spotlight-point-mark">03</span>
-            <div>
-              <b>Stok kepotong otomatis.</b>
-              <p>Begitu pesanan masuk, stok langsung terkunci — dua meja nggak bisa rebutan barang yang sama.</p>
-            </div>
-          </li>
-        </ul>
+    <div className="wrap spotlight-wrap reveal">
+      <div className="spotlight-control-row">
+        <div>
+          <span className="eyebrow">Fitur andalan</span>
+        </div>
+        <div className="spotlight-arrows" aria-label="Navigasi fitur andalan">
+          <button className="spotlight-arrow spotlight-prev" type="button" aria-label="Fitur sebelumnya">‹</button>
+          <button className="spotlight-arrow spotlight-next" type="button" aria-label="Fitur berikutnya">›</button>
+        </div>
       </div>
 
-      <div className="spotlight-visual reveal">
-        <div className="phone">
-          <div className="phone-island"></div>
-          <div className="phone-screen">
-            <div className="ps-topbar">
-              <div className="ps-topbar-title">Kopi Nusantara — BSD</div>
-              <div className="ps-topbar-sub">Pesan dari Meja 04</div>
+      <div className="spotlight-slides">
+        {spotlightSlides.map((slide, index) => (
+          <article
+            className={`spotlight-slide ${index === 0 ? "is-active" : ""}`}
+            data-spotlight-slide
+            hidden={index !== 0}
+            key={slide.label}
+          >
+            <div className="spotlight-copy">
+              <span className="spotlight-kicker">{slide.label}</span>
+              <h2 className="gradient-text">{slide.title}</h2>
+              <p className="lede">{slide.body}</p>
+              <ul className="spotlight-points">
+                {slide.points.map((point, pointIndex) => (
+                  <li key={point.title}>
+                    <span className="spotlight-point-mark">{String(pointIndex + 1).padStart(2, "0")}</span>
+                    <div>
+                      <b>{point.title}</b>
+                      <p>{point.body}</p>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             </div>
-            <div className="ps-bill">
-              <div className="ps-bill-title">Pesanan meja ini (belum dibayar)</div>
-              <div className="ps-bill-row"><span>1× Es Teh Manis</span><span>8.000</span></div>
+
+            <div className="spotlight-visual">
+              <SpotlightPhone screen={slide.screen} />
             </div>
-            <div className="ps-search">Cari menu...</div>
-            <div className="ps-chips">
-              <span className="ps-chip ps-chip-active">Semua</span>
-              <span className="ps-chip">Kopi</span>
-              <span className="ps-chip">Makanan</span>
-            </div>
-            <div className="ps-grid">
-              <div className="ps-card"><span className="ps-card-name">Kopi Susu</span><span className="ps-card-price">18.000</span></div>
-              <div className="ps-card"><span className="ps-card-name">Croissant Coklat</span><span className="ps-card-price">28.000</span></div>
-              <div className="ps-card"><span className="ps-card-name">Americano</span><span className="ps-card-price">15.000</span></div>
-              <div className="ps-card"><span className="ps-card-name">Roti Bakar</span><span className="ps-card-price">22.000</span></div>
-            </div>
-            <div className="ps-cartbar"><span>2 item</span><span>Lihat keranjang — Rp64.000</span></div>
-            <div className="ps-tabbar">
-              <span className="ps-tab ps-tab-active"><span className="ps-tab-dot"></span>Menu</span>
-              <span className="ps-tab"><span className="ps-tab-dot"></span>Pesanan</span>
-              <span className="ps-tab"><span className="ps-tab-dot"></span>Akun</span>
-            </div>
-          </div>
-        </div>
+          </article>
+        ))}
+      </div>
+
+      <div className="spotlight-dots" aria-label="Pilih fitur andalan">
+        {spotlightSlides.map((slide, index) => (
+          <button
+            className={`spotlight-dot ${index === 0 ? "is-active" : ""}`}
+            type="button"
+            data-spotlight-dot
+            aria-label={`Tampilkan ${slide.label}`}
+            aria-current={index === 0 ? "true" : undefined}
+            key={slide.label}
+          >
+            <span>{slide.label}</span>
+          </button>
+        ))}
       </div>
     </div>
   </section>

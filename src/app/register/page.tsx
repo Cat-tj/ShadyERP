@@ -13,7 +13,7 @@ export default function RegisterPage() {
           "radial-gradient(1000px 620px at 8% -5%, rgba(47, 59, 163, 0.16) 0%, transparent 60%), radial-gradient(900px 560px at 100% 0%, rgba(242, 138, 78, 0.16) 0%, transparent 55%), radial-gradient(800px 700px at 50% 120%, rgba(167, 48, 168, 0.12) 0%, transparent 60%)",
       } as React.CSSProperties}
     >
-      <GlassPanel strong className="w-full max-w-sm rounded-2xl p-6 shadow-xl sm:p-8">
+      <GlassPanel strong className="w-full max-w-lg rounded-2xl p-6 shadow-xl sm:p-8">
         <div className="mb-6 flex flex-col items-center gap-3 text-center">
           <AltoraLogomark className="h-14 w-14 drop-shadow-sm" />
           <div className="flex flex-col gap-1">

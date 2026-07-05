@@ -47,17 +47,30 @@ export async function closeShift(input: {
     throw new Error("Shift ini sudah ditutup sebelumnya.");
   }
 
-  const cashSalesTotal = await prisma.sale.aggregate({
-    where: {
-      tenantId: input.tenantId,
-      shiftId: shift.id,
-      status: "COMPLETED",
-      paymentMethod: "CASH",
-    },
-    _sum: { total: true },
-  });
+  const [cashSalesTotal, totalCashback] = await Promise.all([
+    prisma.sale.aggregate({
+      where: {
+        tenantId: input.tenantId,
+        shiftId: shift.id,
+        status: "COMPLETED",
+        paymentMethod: "CASH",
+      },
+      _sum: { total: true },
+    }),
+    prisma.sale.aggregate({
+      where: {
+        tenantId: input.tenantId,
+        shiftId: shift.id,
+        status: "COMPLETED",
+      },
+      _sum: { cashbackAmount: true },
+    }),
+  ]);
 
-  const expectedCash = shift.openingCash + (cashSalesTotal._sum.total ?? 0);
+  const expectedCash =
+    shift.openingCash +
+    (cashSalesTotal._sum?.total ?? 0) -
+    (totalCashback._sum?.cashbackAmount ?? 0);
 
   return prisma.cashierShift.update({
     where: { id: shift.id },

@@ -7,6 +7,7 @@ import {
   createProductAction,
   updateProductAction,
   updateStockAction,
+  updateReorderPointAction,
 } from "@/app/(app)/produk/actions";
 import type { CategoryOption } from "@/components/produk/kategori-manager";
 import { VariantGroupsEditor, type VariantGroupRow } from "@/components/produk/variant-groups-editor";
@@ -24,6 +25,7 @@ export type EditingProduct = {
   cost: number | null;
   trackStock: boolean;
   stockByOutlet: Record<string, number>;
+  reorderPointByOutlet: Record<string, number>;
   variantGroups: VariantGroupRow[];
 };
 
@@ -48,6 +50,9 @@ export function ProductFormModal({
   const [trackStock, setTrackStock] = useState(product?.trackStock ?? true);
   const [stockByOutlet, setStockByOutlet] = useState<Record<string, string>>(
     Object.fromEntries(outlets.map((outlet) => [outlet.id, String(product?.stockByOutlet[outlet.id] ?? 0)]))
+  );
+  const [reorderPointByOutlet, setReorderPointByOutlet] = useState<Record<string, string>>(
+    Object.fromEntries(outlets.map((outlet) => [outlet.id, String(product?.reorderPointByOutlet[outlet.id] ?? 5)]))
   );
   const [stockNote, setStockNote] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -87,8 +92,6 @@ export function ProductFormModal({
       if (trackStock) {
         let productId = product?.id;
         if (!productId) {
-          // Produk baru: cari id-nya lewat revalidate tidak memberi id langsung,
-          // jadi stok awal untuk produk baru diatur lewat menu "Kelola stok" setelah tersimpan.
           productId = undefined;
         }
         if (productId) {
@@ -96,6 +99,10 @@ export function ProductFormModal({
             const qty = Number(stockByOutlet[outlet.id] ?? 0);
             if (Number.isFinite(qty) && qty >= 0) {
               await updateStockAction(productId, outlet.id, qty, stockNote.trim() || undefined);
+            }
+            const minQty = Number(reorderPointByOutlet[outlet.id] ?? 5);
+            if (Number.isFinite(minQty) && minQty >= 0) {
+              await updateReorderPointAction(productId, outlet.id, minQty);
             }
           }
         }
@@ -195,20 +202,40 @@ export function ProductFormModal({
 
           {trackStock && product && (
             <div className="flex flex-col gap-2">
-              <p className="text-sm font-medium text-[var(--color-text)]">Stok per outlet</p>
+              <div className="flex justify-between items-center text-xs font-semibold text-[var(--color-text)] mb-1">
+                <span>Outlet</span>
+                <div className="flex gap-8">
+                  <span className="w-20 text-center">Stok</span>
+                  <span className="w-20 text-center">Batas Min</span>
+                </div>
+              </div>
               {outlets.map((outlet) => (
                 <div key={outlet.id} className="flex items-center justify-between gap-3">
-                  <span className="text-sm text-[var(--color-text-secondary)]">{outlet.name}</span>
-                  <input
-                    type="number"
-                    inputMode="numeric"
-                    min={0}
-                    value={stockByOutlet[outlet.id] ?? "0"}
-                    onChange={(event) =>
-                      setStockByOutlet((prev) => ({ ...prev, [outlet.id]: event.target.value }))
-                    }
-                    className="h-10 w-24 rounded-md border border-[var(--color-border)] px-3 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
-                  />
+                  <span className="text-xs text-[var(--color-text-secondary)] truncate max-w-[140px]">{outlet.name}</span>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      value={stockByOutlet[outlet.id] ?? "0"}
+                      onChange={(event) =>
+                        setStockByOutlet((prev) => ({ ...prev, [outlet.id]: event.target.value }))
+                      }
+                      placeholder="Stok"
+                      className="h-9 w-20 rounded-md border border-[var(--color-border)] px-2 text-center text-xs tabular-nums outline-none focus:border-[var(--color-primary)] bg-[var(--color-surface)]"
+                    />
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      value={reorderPointByOutlet[outlet.id] ?? "5"}
+                      onChange={(event) =>
+                        setReorderPointByOutlet((prev) => ({ ...prev, [outlet.id]: event.target.value }))
+                      }
+                      placeholder="Min"
+                      className="h-9 w-20 rounded-md border border-[var(--color-border)] px-2 text-center text-xs tabular-nums outline-none focus:border-[var(--color-primary)] bg-[var(--color-surface)]"
+                    />
+                  </div>
                 </div>
               ))}
               <input

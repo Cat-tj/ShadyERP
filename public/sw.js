@@ -1,5 +1,6 @@
-const CACHE_VERSION = "altora-v1";
+const CACHE_VERSION = "altora-v2";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
+const PAGE_CACHE = `${CACHE_VERSION}-pages`;
 
 const PRECACHE_URLS = ["/icon-192.png", "/icon-512.png", "/manifest.webmanifest"];
 
@@ -54,10 +55,19 @@ self.addEventListener("fetch", (event) => {
   }
 
   // Halaman (HTML/navigasi) berisi data per-tenant yang harus selalu fresh,
-  // jadi network-first — cache cuma dipakai kalau benar-benar offline.
+  // jadi network-first. Response sukses tetap disimpan sebagai fallback supaya
+  // POS yang sudah pernah dibuka bisa tetap tampil saat koneksi putus.
   if (request.mode === "navigate") {
     event.respondWith(
-      fetch(request).catch(() => caches.match(request).then((cached) => cached ?? Response.error()))
+      fetch(request)
+        .then(async (response) => {
+          if (response.ok) {
+            const cache = await caches.open(PAGE_CACHE);
+            cache.put(request, response.clone());
+          }
+          return response;
+        })
+        .catch(() => caches.match(request).then((cached) => cached ?? Response.error()))
     );
   }
 });

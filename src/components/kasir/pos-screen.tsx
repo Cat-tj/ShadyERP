@@ -172,28 +172,28 @@ export function PosScreen({
   return (
     <div className="flex h-full flex-col">
       <OfflineSyncBanner />
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-xl font-bold text-[var(--color-text)]">Kasir</h1>
           <p className="text-sm text-[var(--color-text-secondary)]">{outletName}</p>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 sm:justify-end">
           <Link
             href="/kasir/riwayat"
-            className="min-h-[40px] rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)] flex items-center"
+            className="flex min-h-[40px] flex-1 items-center justify-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)] sm:flex-none"
           >
             Riwayat
           </Link>
           <Link
             href="/kasir/tutup"
-            className="min-h-[40px] rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)] flex items-center"
+            className="flex min-h-[40px] flex-1 items-center justify-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)] sm:flex-none"
           >
             Tutup shift
           </Link>
         </div>
       </div>
 
-      <div className="flex flex-1 gap-6 md:flex-row flex-col">
+      <div className="flex flex-1 flex-col gap-4 xl:flex-row xl:gap-6">
         {/* Grid produk */}
         <div className="flex-1 min-w-0">
           <input
@@ -238,7 +238,7 @@ export function PosScreen({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 pb-28 sm:grid-cols-3 md:pb-0 lg:grid-cols-4">
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-3 pb-28 xl:pb-0">
               {filteredProducts.map((product) => {
                 const linesForProduct = cart.filter((line) => line.productId === product.id);
                 const qtyInCart = linesForProduct.reduce((sum, line) => sum + line.qty, 0);
@@ -275,22 +275,24 @@ export function PosScreen({
         </div>
 
         {/* Cart desktop */}
-        <div className="hidden w-80 shrink-0 md:block">{cartPanel}</div>
+        <div className="hidden w-80 shrink-0 xl:block">{cartPanel}</div>
       </div>
 
       {/* Cart mobile: sticky bar + sheet */}
       {cart.length > 0 && !showCartMobile && (
         <button
           onClick={() => setShowCartMobile(true)}
-          className="fixed inset-x-4 bottom-20 z-20 flex min-h-[52px] items-center justify-between rounded-lg bg-[var(--color-primary)] px-5 text-[var(--color-on-primary)] shadow-lg md:hidden"
+          className="fixed inset-x-4 bottom-20 z-20 flex min-h-[52px] items-center justify-between gap-3 rounded-lg bg-[var(--color-primary)] px-5 text-[var(--color-on-primary)] shadow-lg lg:bottom-6 xl:hidden"
         >
-          <span className="text-sm font-medium">{cartCount} item</span>
-          <span className="tabular-nums text-base font-bold">Lihat keranjang — {formatRupiah(total)}</span>
+          <span className="shrink-0 text-sm font-medium">{cartCount} item</span>
+          <span className="min-w-0 truncate text-right tabular-nums text-base font-bold">
+            Lihat keranjang — {formatRupiah(total)}
+          </span>
         </button>
       )}
 
       {showCartMobile && (
-        <div className="fixed inset-0 z-30 flex flex-col justify-end bg-black/40 md:hidden">
+        <div className="fixed inset-0 z-30 flex flex-col justify-end bg-black/40 xl:hidden">
           <div className="max-h-[85vh] overflow-y-auto rounded-t-2xl bg-[var(--color-bg)] p-4">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="text-base font-bold text-[var(--color-text)]">Keranjang</h2>
@@ -372,7 +374,7 @@ function CartPanel({
   onCheckout: () => void;
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:sticky md:top-4">
+    <div className="flex flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 xl:sticky xl:top-4">
       <h2 className="hidden text-base font-bold text-[var(--color-text)] md:block">Keranjang</h2>
 
       {cart.length === 0 ? (

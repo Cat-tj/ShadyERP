@@ -23,6 +23,7 @@ export default async function KaryawanPage() {
         isActive: u.isActive,
         outletNames: u.userOutlets.map((uo) => uo.outlet.name),
         outletIds: u.userOutlets.map((uo) => uo.outletId),
+        jobTitle: u.jobTitle,
       }))}
     />
   );

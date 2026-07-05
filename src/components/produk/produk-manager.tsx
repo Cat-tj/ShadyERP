@@ -24,6 +24,7 @@ export type ProductRow = {
   trackStock: boolean;
   isActive: boolean;
   stockByOutlet: Record<string, number>;
+  reorderPointByOutlet: Record<string, number>;
   variantGroups: VariantGroupRow[];
 };
 
@@ -54,6 +55,7 @@ export function ProdukManager({
         cost: editingProduct.cost,
         trackStock: editingProduct.trackStock,
         stockByOutlet: editingProduct.stockByOutlet,
+        reorderPointByOutlet: editingProduct.reorderPointByOutlet,
         variantGroups: editingProduct.variantGroups,
       }
     : null;

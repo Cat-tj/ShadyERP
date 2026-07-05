@@ -16,7 +16,8 @@ export type ModuleKey =
   | "member"
   | "hr"
   | "keuangan"
-  | "promo";
+  | "promo"
+  | "resep";
 
 export type ModuleDef = {
   key: ModuleKey;
@@ -94,6 +95,15 @@ export const MODULES: ModuleDef[] = [
     colorDark: "#b45309",
     colorSoft: "rgba(217, 119, 6, 0.12)",
   },
+  {
+    key: "resep",
+    label: "Resep & Bahan Baku",
+    description: "Manajemen bahan baku dan resep makanan/minuman.",
+    core: false,
+    color: "#db2777",
+    colorDark: "#be185d",
+    colorSoft: "rgba(219, 39, 119, 0.12)",
+  },
 ];
 
 export const MODULE_MAP: Record<ModuleKey, ModuleDef> = Object.fromEntries(
@@ -114,6 +124,10 @@ const ROUTE_MODULE_MAP: { prefix: string; module: ModuleKey }[] = [
   { prefix: "/pengaturan/promo", module: "promo" },
   { prefix: "/pengaturan/meja", module: "pesanan-digital" },
   { prefix: "/pengaturan/kartu", module: "member" },
+  { prefix: "/finance/hutang-supplier", module: "keuangan" },
+  { prefix: "/finance/metode-bayar", module: "keuangan" },
+  { prefix: "/finance/laba-rugi", module: "keuangan" },
+  { prefix: "/finance/kas", module: "keuangan" },
   { prefix: "/finance/laporan", module: "keuangan" },
   { prefix: "/finance/pengeluaran", module: "keuangan" },
   { prefix: "/finance", module: "keuangan" },
@@ -121,11 +135,12 @@ const ROUTE_MODULE_MAP: { prefix: string; module: ModuleKey }[] = [
   { prefix: "/purchase-order", module: "kasir" },
   { prefix: "/stock-receipt", module: "kasir" },
   { prefix: "/stock-count", module: "kasir" },
+  { prefix: "/maintenance", module: "kasir" },
   { prefix: "/kpi", module: "kasir" },
   { prefix: "/kasir", module: "kasir" },
   { prefix: "/inventory", module: "kasir" },
   { prefix: "/pesanan-meja", module: "pesanan-digital" },
-  { prefix: "/dapur", module: "pesanan-digital" },
+  { prefix: "/command-center", module: "pesanan-digital" },
   { prefix: "/booking", module: "booking" },
   { prefix: "/member", module: "member" },
   { prefix: "/absensi", module: "hr" },

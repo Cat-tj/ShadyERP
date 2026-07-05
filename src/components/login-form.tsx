@@ -28,6 +28,7 @@ export function LoginForm() {
           required
           autoComplete="email"
           placeholder="nama@usaha.id"
+          defaultValue={state.values?.email ?? ""}
           className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-white/70 px-4 text-base text-[var(--color-text)] outline-none transition-colors duration-150 focus:border-[var(--color-primary)] focus:bg-white focus:ring-2 focus:ring-[var(--color-primary)]/20"
         />
       </div>

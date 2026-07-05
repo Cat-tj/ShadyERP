@@ -483,3 +483,25 @@ dibangun dengan batasan tertentu:
 Next.js 16 (App Router) + TypeScript + Tailwind CSS v4, Prisma ORM 7 dengan
 PostgreSQL (driver adapter `pg`), Auth.js (NextAuth v5) untuk login, Vercel
 Speed Insights untuk monitoring performa.
+
+---
+
+## Catatan Perubahan Terbaru (AI Agents / Developer Notes)
+
+### 1. Model & Skema Database Meja (`Table`)
+* Kolom baru yang ditambahkan pada skema `Table`:
+  * `floor` (Int, default: 1): Menentukan lantai penempatan meja (Lantai 1-3).
+  * `shape` (String, default: "SQUARE"): Menentukan bentuk meja fisik (`SQUARE` untuk kotak, `ROUND` untuk bulat, `RECTANGLE` untuk meja panjang).
+  * `capacity` (Int, default: 2): Kapasitas orang/kursi pada meja.
+* Prisma Client telah diregenerasi dan migrasi PostgreSQL Supabase telah diterapkan.
+
+### 2. Pengaturan Meja (Unified Workspace)
+* Halaman `/pengaturan/meja` menyatukan **Daftar Meja** dan **Desain Layout Visual** berdampingan (side-by-side) alih-alih memakai tab terpisah.
+* **Sinkronisasi Hover:** Mengarahkan kursor (hover) pada baris meja di daftar teks kiri akan otomatis meng-highlight meja terkait di grid layout visual kanan (dengan efek membesar `scale-[1.05]`, glowing border, dan `z-10`), begitu pula sebaliknya.
+* **Grid Dinamis:** Ditambahkan pengatur ukuran grid kolom (X) dan baris (Y) dari 4x4 hingga 12x12 yang dapat diubah secara real-time via antarmuka. Pilihan sel koordinat modal meja otomatis mengikuti batas area grid aktif. Ukuran grid in-memory dihitung otomatis saat dimuat berdasarkan koordinat meja terjauh (minimal awal 6x6).
+* **Mode Pindah:** Saat memindahkan posisi meja secara visual, lencana "Memindahkan..." berkedip di daftar teks kiri untuk memperjelas alur perpindahan meja antar koordinat atau antar lantai.
+
+### 3. Command Center Layar Penuh
+* Halaman `/command-center` dirancang untuk berjalan dalam mode full-screen (tanpa sidebar navigasi desktop, header mobile, atau bottom bar mobile) agar pas untuk monitor/tablet dapur.
+* Ditambahkan tombol **← Keluar Fullscreen** untuk mempermudah keluar dari halaman ini.
+* Halaman menyatukan **Daftar Antrean Masak** (kiri) dan **Peta Layout Meja** (kanan) berdampingan dalam satu layar tanpa tab pemisah.

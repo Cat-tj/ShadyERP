@@ -50,33 +50,33 @@ export default async function TimHomePage() {
       </div>
 
       {teamStats && (
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <GlassPanel className="rounded-xl p-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 text-[var(--color-primary)]">
               <UsersIcon aria-hidden className="h-5 w-5" />
             </div>
-            <p className="mt-3 font-mono-data tabular-nums text-2xl font-semibold text-[var(--color-text)]">
+            <p className="mt-3 font-mono-data tabular-nums text-xl font-semibold leading-tight text-[var(--color-text)] [overflow-wrap:anywhere] sm:text-2xl">
               {teamStats.totalStaff}
             </p>
-            <p className="text-xs text-[var(--color-text-secondary)]">Karyawan aktif</p>
+            <p className="mt-1 text-xs leading-snug text-[var(--color-text-secondary)]">Karyawan aktif</p>
           </GlassPanel>
           <GlassPanel className="rounded-xl p-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 text-[var(--color-primary)]">
               <MapPinIcon aria-hidden className="h-5 w-5" />
             </div>
-            <p className="mt-3 font-mono-data tabular-nums text-2xl font-semibold text-[var(--color-text)]">
+            <p className="mt-3 font-mono-data tabular-nums text-xl font-semibold leading-tight text-[var(--color-text)] [overflow-wrap:anywhere] sm:text-2xl">
               {teamStats.hadirHariIni}
             </p>
-            <p className="text-xs text-[var(--color-text-secondary)]">Hadir hari ini</p>
+            <p className="mt-1 text-xs leading-snug text-[var(--color-text-secondary)]">Hadir hari ini</p>
           </GlassPanel>
           <GlassPanel className="rounded-xl p-4">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 text-[var(--color-primary)]">
               <CalendarIcon aria-hidden className="h-5 w-5" />
             </div>
-            <p className="mt-3 font-mono-data tabular-nums text-2xl font-semibold text-[var(--color-text)]">
+            <p className="mt-3 font-mono-data tabular-nums text-xl font-semibold leading-tight text-[var(--color-text)] [overflow-wrap:anywhere] sm:text-2xl">
               {teamStats.jadwalHariIni}
             </p>
-            <p className="text-xs text-[var(--color-text-secondary)]">Jadwal hari ini</p>
+            <p className="mt-1 text-xs leading-snug text-[var(--color-text-secondary)]">Jadwal hari ini</p>
           </GlassPanel>
         </div>
       )}

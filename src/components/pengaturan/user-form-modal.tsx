@@ -14,6 +14,7 @@ export type EditingUser = {
   role: "OWNER" | "MANAGER" | "STAFF";
   pin: string | null;
   outletIds: string[];
+  jobTitle?: string | null;
 };
 
 const ROLE_OPTIONS: { value: EditingUser["role"]; label: string }[] = [
@@ -38,6 +39,7 @@ export function UserFormModal({
   const [email, setEmail] = useState(user?.email ?? "");
   const [role, setRole] = useState<EditingUser["role"]>(user?.role ?? "STAFF");
   const [pin, setPin] = useState(user?.pin ?? "");
+  const [jobTitle, setJobTitle] = useState(user?.jobTitle ?? "");
   const [password, setPassword] = useState("");
   const [outletIds, setOutletIds] = useState<string[]>(user?.outletIds ?? []);
   const [error, setError] = useState<string | null>(null);
@@ -61,6 +63,7 @@ export function UserFormModal({
             outletIds,
             pin: pin.trim() || null,
             password: password.trim() || undefined,
+            jobTitle: jobTitle.trim() || null,
           })
         : await createUserAction({
             name: name.trim(),
@@ -69,6 +72,7 @@ export function UserFormModal({
             outletIds,
             pin: pin.trim() || null,
             password: password.trim(),
+            jobTitle: jobTitle.trim() || null,
           });
 
       if (result.error) {
@@ -110,6 +114,16 @@ export function UserFormModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Nama lengkap"
+              className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+            />
+          </div>
+          
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-[var(--color-text)]">Pekerjaan / Spesialisasi</label>
+            <input
+              value={jobTitle}
+              onChange={(e) => setJobTitle(e.target.value)}
+              placeholder="Misal: Waitress, Barista, Chef, Kasir"
               className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
             />
           </div>

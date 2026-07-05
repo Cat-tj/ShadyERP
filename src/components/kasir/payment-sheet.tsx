@@ -1,14 +1,17 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import QRCode from "qrcode";
 import { formatRupiah } from "@/lib/format";
+import { buildDynamicQris } from "@/lib/qris-dynamic";
 import { createSaleAction, type CreateSalePayload } from "@/app/(app)/kasir/actions";
 import { queueSale } from "@/lib/offline-queue";
 import { MemberPicker, type MemberOption } from "@/components/kasir/member-picker";
 import { XIcon } from "@/components/ui/icons";
 
 const QUICK_CASH = [20000, 50000, 100000];
+const STATIC_QRIS_STORAGE_KEY = "altora-static-qris-placeholder";
 
 const PAYMENT_METHODS: { value: CreateSalePayload["paymentMethod"]; label: string }[] = [
   { value: "CASH", label: "Tunai" },
@@ -39,12 +42,63 @@ export function PaymentSheet({
   const [member, setMember] = useState<MemberOption | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [queuedOffline, setQueuedOffline] = useState(false);
+  const [staticQris, setStaticQris] = useState(() =>
+    typeof window === "undefined" ? "" : localStorage.getItem(STATIC_QRIS_STORAGE_KEY) ?? ""
+  );
+  const [qrisDataUrl, setQrisDataUrl] = useState<string | null>(null);
+  const [qrisError, setQrisError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const amountPaid = method === "CASH" ? Number(amountInput) || 0 : total;
   const change = method === "CASH" ? Math.max(0, amountPaid - total) : 0;
   const isCashInsufficient = method === "CASH" && amountPaid < total;
   const isDepositInsufficient = method === "DEPOSIT" && (!member || member.depositBalance < total);
+  const isQrisUnavailable = method === "QRIS" && (!staticQris.trim() || !qrisDataUrl || Boolean(qrisError));
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function generateQris() {
+      if (method !== "QRIS") {
+        setQrisDataUrl(null);
+        setQrisError(null);
+        return;
+      }
+      if (!staticQris.trim()) {
+        setQrisDataUrl(null);
+        setQrisError("Tempel payload QRIS statis usaha dulu. Nanti bisa diganti QRIS asli kamu.");
+        return;
+      }
+
+      try {
+        const dynamicPayload = buildDynamicQris(staticQris, total);
+        const dataUrl = await QRCode.toDataURL(dynamicPayload, {
+          errorCorrectionLevel: "M",
+          margin: 1,
+          scale: 7,
+        });
+        if (!cancelled) {
+          setQrisDataUrl(dataUrl);
+          setQrisError(null);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setQrisDataUrl(null);
+          setQrisError(err instanceof Error ? err.message : "Gagal membuat QRIS dinamis.");
+        }
+      }
+    }
+
+    generateQris();
+    return () => {
+      cancelled = true;
+    };
+  }, [method, staticQris, total]);
+
+  function saveStaticQris(value: string) {
+    setStaticQris(value);
+    localStorage.setItem(STATIC_QRIS_STORAGE_KEY, value);
+  }
 
   function handleSubmit() {
     setError(null);
@@ -203,6 +257,53 @@ export function PaymentSheet({
               </span>
             </div>
           </div>
+        ) : method === "QRIS" ? (
+          <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
+              <div className="flex min-h-[184px] flex-1 items-center justify-center rounded-xl bg-white p-3">
+                {qrisDataUrl ? (
+                  // Data URL dibuat client-side agar QRIS tetap bisa muncul saat ALTORA offline.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={qrisDataUrl} alt={`QRIS dinamis ${formatRupiah(total)}`} className="h-40 w-40" />
+                ) : (
+                  <div className="flex h-40 w-40 items-center justify-center rounded-lg border border-dashed border-[var(--color-border)] text-center text-xs text-[var(--color-text-secondary)]">
+                    QRIS dinamis muncul di sini
+                  </div>
+                )}
+              </div>
+              <div className="flex-1">
+                <p className="text-sm font-semibold text-[var(--color-text)]">QRIS dinamis manual</p>
+                <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+                  QR dibuat dari QRIS statis usaha dan nominal transaksi. Kasir tetap perlu cek bukti
+                  pembayaran lalu tekan selesai.
+                </p>
+                <p className="mt-3 text-xs font-medium text-[var(--color-text)]">Nominal QRIS</p>
+                <p className="tabular-nums text-xl font-bold text-[var(--color-primary)]">{formatRupiah(total)}</p>
+              </div>
+            </div>
+
+            <details className="mt-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+              <summary className="cursor-pointer text-sm font-medium text-[var(--color-text)]">
+                QRIS statis usaha
+              </summary>
+              <textarea
+                value={staticQris}
+                onChange={(event) => saveStaticQris(event.target.value)}
+                rows={4}
+                placeholder="Placeholder: nanti tempel payload QRIS statis asli dari QR kamu di sini."
+                className="mt-3 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 font-mono text-xs text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+              />
+              <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
+                Tersimpan di device kasir ini supaya tetap bisa dipakai saat offline.
+              </p>
+            </details>
+
+            {qrisError && (
+              <div className="mt-3 rounded-lg bg-[var(--color-warning-bg)] px-3 py-2 text-xs text-[var(--color-warning-text)]">
+                {qrisError}
+              </div>
+            )}
+          </div>
         ) : method === "DEPOSIT" ? (
           <div className="mt-4 flex items-center justify-between rounded-lg bg-[var(--color-surface)] px-4 py-3">
             <span className="text-sm text-[var(--color-text-secondary)]">Saldo {member?.name ?? "member"}</span>
@@ -228,7 +329,7 @@ export function PaymentSheet({
 
         <button
           onClick={handleSubmit}
-          disabled={isPending || isCashInsufficient || isDepositInsufficient}
+          disabled={isPending || isCashInsufficient || isDepositInsufficient || isQrisUnavailable}
           className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-40"
         >
           {isPending && (

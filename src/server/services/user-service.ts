@@ -23,6 +23,7 @@ export type UserInput = {
   outletIds: string[];
   pin?: string | null;
   password?: string;
+  jobTitle?: string | null;
 };
 
 export async function createUser(tenantId: string, input: UserInput) {
@@ -47,6 +48,7 @@ export async function createUser(tenantId: string, input: UserInput) {
         role: input.role,
         pin: input.pin || null,
         passwordHash,
+        jobTitle: input.jobTitle || null,
       },
     });
     if (input.outletIds.length > 0) {
@@ -86,6 +88,7 @@ export async function updateUser(
         name: input.name,
         role: input.role,
         pin: input.pin || null,
+        jobTitle: input.jobTitle || null,
         ...(passwordHash ? { passwordHash } : {}),
       },
     });

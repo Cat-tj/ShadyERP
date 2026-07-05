@@ -8,6 +8,13 @@ import { checkRateLimit, getClientIp, formatRetryMessage } from "@/lib/rate-limi
 
 export type RegisterState = {
   error?: string;
+  values?: {
+    businessName?: string;
+    businessType?: string;
+    outletName?: string;
+    ownerName?: string;
+    email?: string;
+  };
 };
 
 const registerSchema = z.object({
@@ -23,32 +30,52 @@ export async function registerAction(
   _prevState: RegisterState,
   formData: FormData
 ): Promise<RegisterState> {
+  const values = {
+    businessName: String(formData.get("businessName") ?? ""),
+    businessType: String(formData.get("businessType") ?? "FNB"),
+    outletName: String(formData.get("outletName") ?? ""),
+    ownerName: String(formData.get("ownerName") ?? ""),
+    email: String(formData.get("email") ?? ""),
+  };
+
+  const disabledModulesStr = String(formData.get("disabledModules") ?? "[]");
+  let disabledModules: string[] = [];
+  try {
+    disabledModules = JSON.parse(disabledModulesStr);
+  } catch (e) {}
+
+  const seedSampleData = formData.get("seedSampleData") === "true";
+
   const ip = await getClientIp();
   const limit = checkRateLimit(`register:ip:${ip}`, 5, 60_000);
   if (!limit.allowed) {
-    return { error: formatRetryMessage(limit.retryAfterMs) };
+    return { error: formatRetryMessage(limit.retryAfterMs), values };
   }
 
   const parsed = registerSchema.safeParse({
-    businessName: formData.get("businessName"),
-    businessType: formData.get("businessType"),
-    outletName: formData.get("outletName"),
-    ownerName: formData.get("ownerName"),
-    email: formData.get("email"),
+    businessName: values.businessName,
+    businessType: values.businessType,
+    outletName: values.outletName,
+    ownerName: values.ownerName,
+    email: values.email,
     password: formData.get("password"),
   });
 
   if (!parsed.success) {
-    return { error: parsed.error.issues[0]?.message ?? "Data belum lengkap." };
+    return { error: parsed.error.issues[0]?.message ?? "Data belum lengkap.", values };
   }
 
   try {
-    await registerTenant(parsed.data);
+    await registerTenant({
+      ...parsed.data,
+      disabledModules,
+      seedSampleData,
+    });
   } catch (error) {
     if (error instanceof Error) {
-      return { error: error.message };
+      return { error: error.message, values };
     }
-    return { error: "Gagal mendaftarkan usaha. Coba lagi." };
+    return { error: "Gagal mendaftarkan usaha. Coba lagi.", values };
   }
 
   try {
@@ -60,7 +87,7 @@ export async function registerAction(
     return {};
   } catch (error) {
     if (error instanceof AuthError) {
-      return { error: "Akun berhasil dibuat, tapi gagal masuk otomatis. Silakan masuk manual." };
+      return { error: "Akun berhasil dibuat, tapi gagal masuk otomatis. Silakan masuk manual.", values };
     }
     throw error;
   }

@@ -6,11 +6,19 @@ import { createTable, updateTable, setTableActive } from "@/server/services/tabl
 
 export type ActionResult = { error?: string; success?: boolean };
 
-export async function createTableAction(outletId: string, name: string): Promise<ActionResult> {
+export async function createTableAction(
+  outletId: string,
+  name: string,
+  posX?: number,
+  posY?: number,
+  floor?: number,
+  shape?: string,
+  capacity?: number
+): Promise<ActionResult> {
   const user = await requireRole(["OWNER"]);
   if (!name.trim()) return { error: "Nama meja wajib diisi." };
   try {
-    await createTable(user.tenantId, outletId, name);
+    await createTable(user.tenantId, outletId, name, posX, posY, floor, shape, capacity);
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal menambah meja." };
   }
@@ -18,11 +26,19 @@ export async function createTableAction(outletId: string, name: string): Promise
   return { success: true };
 }
 
-export async function updateTableAction(id: string, name: string): Promise<ActionResult> {
+export async function updateTableAction(
+  id: string,
+  name: string,
+  posX?: number,
+  posY?: number,
+  floor?: number,
+  shape?: string,
+  capacity?: number
+): Promise<ActionResult> {
   const user = await requireRole(["OWNER"]);
   if (!name.trim()) return { error: "Nama meja wajib diisi." };
   try {
-    await updateTable(user.tenantId, id, name);
+    await updateTable(user.tenantId, id, name, posX, posY, floor, shape, capacity);
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal mengubah meja." };
   }

@@ -80,6 +80,8 @@ model Tenant {
   auditLogs            AuditLog[]
   promos               Promo[]
   bookings             Booking[]
+  equipments           Equipment[]
+  equipmentMaintenanceLogs EquipmentMaintenanceLog[]
   reorderPoints        StockReorderPoint[]
   stockBatches         StockBatch[]
   warehouseLocations   WarehouseLocation[]
@@ -91,6 +93,9 @@ model Tenant {
   productCostHistory   ProductCostHistory[]
   documents            Document[]
   setting              TenantSetting?
+  productUoms          ProductUom[]
+  wholesalePrices      WholesalePrice[]
+  productRecipeItems   ProductRecipeItem[]
 }
 
 model Outlet {
@@ -118,6 +123,8 @@ model Outlet {
   tables              Table[]
   tableOrders         TableOrder[]
   bookings            Booking[]
+  equipments          Equipment[]
+  equipmentMaintenanceLogs EquipmentMaintenanceLog[]
   reorderPoints       StockReorderPoint[]
   stockBatches        StockBatch[]
   warehouseLocations  WarehouseLocation[]
@@ -143,6 +150,7 @@ model User {
   phone        String?
   passwordHash String
   role         UserRole @default(STAFF)
+  jobTitle     String?
   pin          String? // PIN 6 digit, opsional (untuk kunci cepat kasir)
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
@@ -159,9 +167,13 @@ model User {
   shiftSchedules       ShiftSchedule[]
   stockAdjustments     StockAdjustment[]
   expensesCreated      Expense[]
-  stockTransfers            StockTransfer[]
+  stockTransfersCreated     StockTransfer[]         @relation("StockTransferCreatedBy")
+  stockTransfersApproved    StockTransfer[]         @relation("StockTransferApprovedBy")
+  stockTransfersSent        StockTransfer[]         @relation("StockTransferSentBy")
+  stockTransfersReceived    StockTransfer[]         @relation("StockTransferReceivedBy")
   auditLogs                 AuditLog[]
   bookingsAssigned          Booking[]
+  equipmentMaintenanceLogs  EquipmentMaintenanceLog[]
   purchaseOrdersApproved    PurchaseOrder[]
   stockReceiptsReceived     StockReceipt[]           @relation("StockReceiptReceivedBy")
   stockReceiptsChecked      StockReceipt[]           @relation("StockReceiptCheckedBy")
@@ -339,6 +351,10 @@ model Product {
   stockReceiptItems     StockReceiptItem[]
   stockCountItems       StockCountItem[]
   costHistory           ProductCostHistory[]
+  uoms                  ProductUom[]
+  wholesalePrices       WholesalePrice[]
+  recipes               ProductRecipeItem[] @relation("ProductRecipe")
+  ingredients           ProductRecipeItem[] @relation("ProductIngredient")
 
   @@index([tenantId])
   @@index([categoryId])
@@ -426,8 +442,16 @@ model StockAdjustment {
   @@index([outletId])
 }
 
-/// Transfer stok manual antar outlet dalam tenant yang sama. Mengurangi stok
-/// outlet asal dan menambah stok outlet tujuan secara atomik.
+enum StockTransferStatus {
+  REQUESTED
+  SENT
+  RECEIVED
+  REJECTED
+  CANCELLED
+}
+
+/// Transfer stok antar outlet. Alur normal: request dibuat, stok outlet asal
+/// berkurang saat dikirim, lalu stok outlet tujuan bertambah saat diterima.
 model StockTransfer {
   id              String   @id @default(cuid())
   tenantId        String
@@ -435,17 +459,33 @@ model StockTransfer {
   fromOutletId    String
   toOutletId      String
   transferredById String
+  approvedById    String?
+  sentById        String?
+  receivedById    String?
+  status          StockTransferStatus @default(RECEIVED)
   qty             Int
+  sentQty         Int?
+  receivedQty     Int?
   note            String?
+  rejectReason    String?
   createdAt       DateTime @default(now())
+  approvedAt      DateTime?
+  sentAt          DateTime?
+  receivedAt      DateTime?
+  rejectedAt      DateTime?
+  cancelledAt     DateTime?
 
   tenant        Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   product       Product @relation(fields: [productId], references: [id], onDelete: Cascade)
   fromOutlet    Outlet  @relation("StockTransferFromOutlet", fields: [fromOutletId], references: [id], onDelete: Cascade)
   toOutlet      Outlet  @relation("StockTransferToOutlet", fields: [toOutletId], references: [id], onDelete: Cascade)
-  transferredBy User    @relation(fields: [transferredById], references: [id])
+  transferredBy User    @relation("StockTransferCreatedBy", fields: [transferredById], references: [id])
+  approvedBy    User?   @relation("StockTransferApprovedBy", fields: [approvedById], references: [id])
+  sentBy        User?   @relation("StockTransferSentBy", fields: [sentById], references: [id])
+  receivedBy    User?   @relation("StockTransferReceivedBy", fields: [receivedById], references: [id])
 
   @@index([tenantId])
+  @@index([status])
   @@index([productId])
   @@index([fromOutletId])
   @@index([toOutletId])
@@ -510,6 +550,9 @@ model Sale {
   paymentMethod  PaymentMethod
   amountPaid     Int
   changeAmount   Int           @default(0)
+  orderType      OrderType     @default(DINE_IN)
+  cashbackAmount Int           @default(0)
+  parkingFee     Int           @default(0)
   status         SaleStatus    @default(COMPLETED)
   voidReason     String?
   createdAt      DateTime      @default(now())
@@ -600,6 +643,12 @@ model ShiftSchedule {
   userId    String
   startAt   DateTime
   endAt     DateTime
+  workType  ShiftWorkType @default(REGULAR)
+  payType   ShiftPayType  @default(MONTHLY)
+  shiftPay  Int?
+  holidayBonus Int       @default(0)
+  overtimeNote String?
+  note      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -610,6 +659,17 @@ model ShiftSchedule {
   @@index([tenantId])
   @@index([outletId])
   @@index([userId])
+}
+
+enum ShiftWorkType {
+  REGULAR
+  OVERTIME
+  CASUAL
+}
+
+enum ShiftPayType {
+  MONTHLY
+  PER_SHIFT
 }
 
 enum AttendanceStatus {
@@ -684,6 +744,11 @@ model Table {
   name      String
   qrToken   String   @unique
   isActive  Boolean  @default(true)
+  posX      Int      @default(0)
+  posY      Int      @default(0)
+  floor     Int      @default(1)
+  shape     String   @default("SQUARE")
+  capacity  Int      @default(2)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -875,6 +940,12 @@ model Booking {
   scheduledAt     DateTime
   durationMinutes Int           @default(60)
   staffUserId     String?
+  pax             Int?
+  eventAddress    String?
+  quotedAmount    Int?
+  transportFee    Int           @default(0)
+  staffFee        Int           @default(0)
+  depositAmount   Int           @default(0)
   status          BookingStatus @default(PENDING)
   note            String?
   createdAt       DateTime      @default(now())
@@ -887,6 +958,68 @@ model Booking {
   @@index([tenantId])
   @@index([outletId])
   @@index([staffUserId])
+}
+
+// ================== MAINTENANCE ALAT ==================
+
+enum EquipmentStatus {
+  ACTIVE
+  NEEDS_REPAIR
+  REPAIRING
+  RETIRED
+}
+
+enum MaintenanceStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+model Equipment {
+  id          String          @id @default(cuid())
+  tenantId    String
+  outletId    String
+  name        String
+  category    String
+  serialNumber String?
+  status      EquipmentStatus @default(ACTIVE)
+  note        String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  logs   EquipmentMaintenanceLog[]
+
+  @@index([tenantId])
+  @@index([outletId])
+  @@index([status])
+}
+
+model EquipmentMaintenanceLog {
+  id            String            @id @default(cuid())
+  tenantId      String
+  outletId      String
+  equipmentId   String
+  reportedById  String
+  status        MaintenanceStatus @default(OPEN)
+  issue         String
+  actionTaken   String?
+  cost          Int               @default(0)
+  reportedAt    DateTime          @default(now())
+  resolvedAt    DateTime?
+  createdAt     DateTime          @default(now())
+  updatedAt     DateTime          @updatedAt
+
+  tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet     Outlet    @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  equipment  Equipment @relation(fields: [equipmentId], references: [id], onDelete: Cascade)
+  reportedBy User      @relation(fields: [reportedById], references: [id])
+
+  @@index([tenantId])
+  @@index([outletId])
+  @@index([equipmentId])
+  @@index([status])
 }
 
 // ================== INVENTORY ENHANCEMENTS ==================
@@ -1197,12 +1330,13 @@ model ProductCostHistory {
 // ================== PENGATURAN TENANT ==================
 
 model TenantSetting {
-  id              String   @id @default(cuid())
-  tenantId        String   @unique
-  taxPercent      Int      @default(0)
-  pointsPerAmount Int      @default(10000) // 1 poin per Rp10.000
-  receiptFooter   String?
-  updatedAt       DateTime @updatedAt
+  id               String   @id @default(cuid())
+  tenantId         String   @unique
+  taxPercent       Int      @default(0)
+  pointsPerAmount  Int      @default(10000) // 1 poin per Rp10.000
+  receiptFooter    String?
+  enableParkingFee Boolean  @default(false)
+  updatedAt        DateTime @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
@@ -1306,4 +1440,64 @@ model DocumentAccess {
 
   @@unique([documentId, userId])
   @@index([documentId])
+}
+
+enum OrderType {
+  DINE_IN
+  TAKEAWAY
+  GRABFOOD
+  GOFOOD
+  SHOPEEFOOD
+  DELIVERY_OTHER
+}
+
+model ProductUom {
+  id             String   @id @default(cuid())
+  tenantId       String
+  productId      String
+  name           String
+  conversionRate Int      @default(1)
+  price          Int?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([productId])
+}
+
+model WholesalePrice {
+  id        String   @id @default(cuid())
+  tenantId  String
+  productId String
+  minQty    Int      @default(1)
+  price     Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([productId])
+}
+
+model ProductRecipeItem {
+  id           String   @id @default(cuid())
+  tenantId     String
+  productId    String
+  ingredientId String
+  qty          Int      @default(1)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant     Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product    Product @relation("ProductRecipe", fields: [productId], references: [id], onDelete: Cascade)
+  ingredient Product @relation("ProductIngredient", fields: [ingredientId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([productId])
+  @@index([ingredientId])
 }

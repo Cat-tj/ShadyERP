@@ -15,6 +15,7 @@ export type UserRow = {
   isActive: boolean;
   outletNames: string[];
   outletIds: string[];
+  jobTitle?: string | null;
 };
 
 const ROLE_LABEL: Record<UserRow["role"], string> = {
@@ -49,6 +50,7 @@ export function KaryawanManager({
       role: user.role,
       pin: user.pin,
       outletIds: user.outletIds,
+      jobTitle: user.jobTitle,
     });
     setModalOpen(true);
   }
@@ -98,6 +100,7 @@ export function KaryawanManager({
                   </p>
                   <p className="truncate text-xs text-[var(--color-text-secondary)]">
                     {user.email} · {ROLE_LABEL[user.role]}
+                    {user.jobTitle ? ` (${user.jobTitle})` : ""}
                     {user.outletNames.length > 0 ? ` · ${user.outletNames.join(", ")}` : ""}
                   </p>
                 </div>

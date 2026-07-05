@@ -32,7 +32,7 @@ export default async function PengeluaranPage({
         <h1 className="font-display text-2xl font-semibold text-[var(--color-text)]">
           Pengeluaran
         </h1>
-        <PeriodFilter activeDays={days} basePath="/pengeluaran" />
+        <PeriodFilter activeDays={days} basePath="/finance/pengeluaran" />
       </div>
 
       <StatTile

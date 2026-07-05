@@ -9,9 +9,9 @@
  */
 
 import type { ComponentType, SVGProps } from "react";
-import { ReceiptIcon, UsersIcon, BarChartIcon, SettingsIcon } from "@/components/ui/icons";
+import { ReceiptIcon, UsersIcon, BarChartIcon, SettingsIcon, FlameIcon, BriefcaseIcon, GridIcon } from "@/components/ui/icons";
 
-export type HubKey = "kasir" | "tim" | "finance" | "admin";
+export type HubKey = "kasir" | "tim" | "finance" | "admin" | "command" | "dokumen";
 
 export type HubDef = {
   key: HubKey;
@@ -29,7 +29,7 @@ export const HUBS: HubDef[] = [
   {
     key: "kasir",
     label: "Kasir & Operasional",
-    description: "Transaksi, produk, stok, pembelian, booking, dan member.",
+    description: "Transaksi harian, pesanan meja, dapur, booking, dan akses cepat member.",
     color: "#a730a8",
     colorDark: "#7e2582",
     colorSoft: "rgba(167, 48, 168, 0.12)",
@@ -49,12 +49,12 @@ export const HUBS: HubDef[] = [
   {
     key: "finance",
     label: "Finance",
-    description: "Laporan omzet, analitik, dan pencatatan pengeluaran.",
+    description: "Ringkasan uang masuk/keluar, kas outlet, pengeluaran, dan laba rugi simple.",
     color: "#16a34a",
     colorDark: "#15803d",
     colorSoft: "rgba(22, 163, 74, 0.12)",
     icon: BarChartIcon,
-    homeHref: "/finance/laporan",
+    homeHref: "/finance",
   },
   {
     key: "admin",
@@ -65,6 +65,26 @@ export const HUBS: HubDef[] = [
     colorSoft: "rgba(87, 83, 78, 0.12)",
     icon: SettingsIcon,
     homeHref: "/pengaturan",
+  },
+  {
+    key: "command",
+    label: "Command Center",
+    description: "Pusat kendali operasional live: antrean pesanan, peta meja, staf hadir, dan peringatan stok.",
+    color: "#ea580c",
+    colorDark: "#c2410c",
+    colorSoft: "rgba(234, 88, 12, 0.12)",
+    icon: GridIcon,
+    homeHref: "/command-center",
+  },
+  {
+    key: "dokumen",
+    label: "Dokumen & Arsip",
+    description: "Manajemen surat, kontrak karyawan, invoice, dan dokumen pembelian.",
+    color: "#475569",
+    colorDark: "#334155",
+    colorSoft: "rgba(71, 85, 105, 0.12)",
+    icon: BriefcaseIcon,
+    homeHref: "/dokumen",
   },
 ];
 
@@ -77,13 +97,14 @@ const ROUTE_HUB_MAP: { prefix: string; hub: HubKey }[] = [
   // Kasir & Operasional
   { prefix: "/kasir", hub: "kasir" },
   { prefix: "/pesanan-meja", hub: "kasir" },
-  { prefix: "/dapur", hub: "kasir" },
+  { prefix: "/command-center", hub: "command" },
   { prefix: "/booking", hub: "kasir" },
   { prefix: "/inventory", hub: "kasir" },
   { prefix: "/supplier", hub: "kasir" },
   { prefix: "/purchase-order", hub: "kasir" },
   { prefix: "/stock-receipt", hub: "kasir" },
   { prefix: "/stock-count", hub: "kasir" },
+  { prefix: "/maintenance", hub: "kasir" },
   { prefix: "/member", hub: "kasir" },
   { prefix: "/kpi", hub: "kasir" },
   { prefix: "/produk", hub: "kasir" },
@@ -97,6 +118,8 @@ const ROUTE_HUB_MAP: { prefix: string; hub: HubKey }[] = [
   { prefix: "/pengeluaran", hub: "finance" },
   // Admin
   { prefix: "/pengaturan", hub: "admin" },
+  // Dokumen & Arsip
+  { prefix: "/dokumen", hub: "dokumen" },
 ];
 
 export function getHubForPath(pathname: string): HubDef | null {

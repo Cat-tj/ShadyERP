@@ -38,6 +38,12 @@ export default async function BookingPage() {
         durationMinutes: booking.durationMinutes,
         staffUserId: booking.staffUserId,
         staffName: booking.staff?.name ?? null,
+        pax: booking.pax,
+        eventAddress: booking.eventAddress,
+        quotedAmount: booking.quotedAmount,
+        transportFee: booking.transportFee,
+        staffFee: booking.staffFee,
+        depositAmount: booking.depositAmount,
         status: booking.status,
         note: booking.note,
       }))}

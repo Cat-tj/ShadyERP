@@ -21,6 +21,11 @@ export default async function MejaSettingsPage() {
         outletId: table.outletId,
         outletName: table.outlet.name,
         isActive: table.isActive,
+        posX: table.posX,
+        posY: table.posY,
+        floor: table.floor,
+        shape: table.shape,
+        capacity: table.capacity,
       }))}
     />
   );

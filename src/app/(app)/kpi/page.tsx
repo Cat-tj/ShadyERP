@@ -2,10 +2,13 @@ import Link from "next/link";
 import { requireSession } from "@/server/require-session";
 import { getDashboardSummary } from "@/server/services/dashboard-service";
 import { getEnabledModules } from "@/server/services/tenant-service";
+import { listOutletsForUser } from "@/server/services/outlet-service";
+import { getLowStockProducts } from "@/server/services/inventory-service";
 import { formatTanggal } from "@/lib/format";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { navItemsForHub } from "@/lib/nav";
 import { BuildingIcon, BriefcaseIcon, PackageIcon, UsersIcon } from "@/components/ui/icons";
+import { LowStockAlert } from "@/components/inventory/low-stock-alert";
 
 const STAT_CARDS = [
   { key: "outletCount", label: "Outlet aktif", icon: BuildingIcon },
@@ -16,11 +19,17 @@ const STAT_CARDS = [
 
 export default async function KpiPage() {
   const user = await requireSession();
-  const [summary, enabledModules] = await Promise.all([
+  const [summary, enabledModules, outlets] = await Promise.all([
     getDashboardSummary(user.tenantId),
     getEnabledModules(user.tenantId),
+    listOutletsForUser(user.tenantId, user.id, user.role),
   ]);
   const quickLinks = navItemsForHub(user.role, "kasir", enabledModules).filter((item) => item.href !== "/kpi");
+
+  const firstOutletId = outlets[0]?.id;
+  const lowStockItems = firstOutletId
+    ? await getLowStockProducts(user.tenantId, firstOutletId)
+    : [];
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
@@ -40,13 +49,22 @@ export default async function KpiPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 text-[var(--color-primary)]">
               <card.icon aria-hidden className="h-5 w-5" />
             </div>
-            <p className="mt-3 font-mono-data tabular-nums text-2xl font-semibold text-[var(--color-text)]">
+            <p className="mt-3 font-mono-data tabular-nums text-xl font-semibold leading-tight text-[var(--color-text)] [overflow-wrap:anywhere] sm:text-2xl">
               {summary[card.key]}
             </p>
-            <p className="text-xs text-[var(--color-text-secondary)]">{card.label}</p>
+            <p className="mt-1 text-xs leading-snug text-[var(--color-text-secondary)]">{card.label}</p>
           </GlassPanel>
         ))}
       </div>
+
+      {lowStockItems.length > 0 && (
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
+          <h2 className="font-display text-base font-semibold text-[var(--color-text)] mb-3">
+            Peringatan Stok Menipis ({outlets[0]?.name})
+          </h2>
+          <LowStockAlert items={lowStockItems} />
+        </div>
+      )}
 
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
         <h2 className="font-display text-base font-semibold text-[var(--color-text)]">Aksi cepat</h2>

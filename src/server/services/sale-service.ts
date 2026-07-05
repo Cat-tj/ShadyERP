@@ -3,7 +3,7 @@ import { buildInvoiceNumber, buildInvoicePrefix } from "@/lib/invoice";
 import { computeVariantSelection, loadVariantGroupsByProduct } from "@/server/services/product-variant-service";
 import { recordAuditLog } from "@/server/services/audit-log-service";
 import { formatRupiah } from "@/lib/format";
-import type { PaymentMethod } from "@prisma/client";
+import type { PaymentMethod, OrderType } from "@prisma/client";
 
 /**
  * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
@@ -33,6 +33,9 @@ export type CreateSaleInput = {
   discountAmount: number;
   paymentMethod: PaymentMethod;
   amountPaid: number;
+  orderType?: OrderType;
+  cashbackAmount?: number;
+  parkingFee?: number;
   /**
    * Set `false` kalau stok item-item ini SUDAH dipotong sebelumnya (mis. sudah
    * direservasi saat pesanan QR meja dibuat) — supaya tidak dipotong dua kali.
@@ -49,17 +52,33 @@ export async function createSale(input: CreateSaleInput) {
 
   return prisma.$transaction(async (tx) => {
     const productIds = input.items.map((item) => item.productId);
-    // Produk + grup varian di-fetch sekaligus buat semua item (bukan per-item
-    // di dalam loop) supaya jumlah round-trip DB di dalam transaksi ini tidak
-    // ikut membengkak seiring banyaknya item di keranjang.
-    const [products, variantGroupsByProduct] = await Promise.all([
+
+    // Fetch resep untuk produk-produk di keranjang
+    const recipes = await tx.productRecipeItem.findMany({
+      where: { tenantId: input.tenantId, productId: { in: productIds } },
+    });
+    const ingredientIds = recipes.map((r: any) => r.ingredientId);
+
+    // Fetch produk + stok produk dan stok bahan baku sekaligus
+    const [products, ingredientStocks, variantGroupsByProduct] = await Promise.all([
       tx.product.findMany({
         where: { tenantId: input.tenantId, id: { in: productIds } },
         include: { stocks: { where: { outletId: input.outletId } } },
       }),
+      tx.productStock.findMany({
+        where: { tenantId: input.tenantId, productId: { in: ingredientIds }, outletId: input.outletId },
+        include: { product: true },
+      }),
       loadVariantGroupsByProduct(tx, input.tenantId, productIds),
     ]);
+
     const productMap = new Map(products.map((p) => [p.id, p]));
+    const recipeMap = new Map<string, any[]>();
+    for (const r of recipes) {
+      if (!recipeMap.has(r.productId)) recipeMap.set(r.productId, []);
+      recipeMap.get(r.productId)!.push(r);
+    }
+    const ingredientStockMap = new Map(ingredientStocks.map((s) => [s.productId, s]));
 
     let subtotal = 0;
     const itemsData: {
@@ -78,12 +97,28 @@ export async function createSale(input: CreateSaleInput) {
       if (!product || !product.isActive) {
         throw new Error("Salah satu produk di keranjang sudah tidak tersedia. Muat ulang halaman.");
       }
-      if (deductStock && product.trackStock) {
-        const stockQty = product.stocks[0]?.qty ?? 0;
-        if (stockQty < item.qty) {
-          throw new Error(
-            `Stok ${product.name} tinggal ${stockQty} — kurangi jumlah atau perbarui stok.`
-          );
+
+      const productRecipes = recipeMap.get(item.productId);
+      if (deductStock) {
+        if (productRecipes && productRecipes.length > 0) {
+          for (const recipe of productRecipes) {
+            const ingStock = ingredientStockMap.get(recipe.ingredientId);
+            const ingQty = ingStock?.qty ?? 0;
+            const needed = recipe.qty * item.qty;
+            if (ingQty < needed) {
+              const ingName = ingStock?.product?.name ?? "Bahan baku";
+              throw new Error(
+                `Stok bahan baku ${ingName} tidak cukup (sisa ${ingQty}, butuh ${needed}) untuk membuat ${product.name}.`
+              );
+            }
+          }
+        } else if (product.trackStock) {
+          const stockQty = product.stocks[0]?.qty ?? 0;
+          if (stockQty < item.qty) {
+            throw new Error(
+              `Stok ${product.name} tinggal ${stockQty} — kurangi jumlah atau perbarui stok.`
+            );
+          }
         }
       }
 
@@ -164,6 +199,9 @@ export async function createSale(input: CreateSaleInput) {
         paymentMethod: input.paymentMethod,
         amountPaid,
         changeAmount,
+        orderType: input.orderType ?? "DINE_IN",
+        cashbackAmount: input.cashbackAmount ?? 0,
+        parkingFee: input.parkingFee ?? 0,
         status: "COMPLETED",
         items: { create: itemsData },
       },
@@ -173,7 +211,17 @@ export async function createSale(input: CreateSaleInput) {
     if (deductStock) {
       for (const item of input.items) {
         const product = productMap.get(item.productId)!;
-        if (product.trackStock) {
+        const productRecipes = recipeMap.get(item.productId);
+
+        if (productRecipes && productRecipes.length > 0) {
+          for (const recipe of productRecipes) {
+            const ingQty = recipe.qty * item.qty;
+            await tx.productStock.update({
+              where: { productId_outletId: { productId: recipe.ingredientId, outletId: input.outletId } },
+              data: { qty: { decrement: ingQty } },
+            });
+          }
+        } else if (product.trackStock) {
           await tx.productStock.update({
             where: { productId_outletId: { productId: item.productId, outletId: input.outletId } },
             data: { qty: { decrement: item.qty } },

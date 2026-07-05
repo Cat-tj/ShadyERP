@@ -6,6 +6,9 @@ import { checkRateLimit, getClientIp, formatRetryMessage } from "@/lib/rate-limi
 
 export type LoginState = {
   error?: string;
+  values?: {
+    email?: string;
+  };
 };
 
 export async function loginAction(
@@ -14,9 +17,10 @@ export async function loginAction(
 ): Promise<LoginState> {
   const email = String(formData.get("email") ?? "").trim();
   const password = String(formData.get("password") ?? "");
+  const values = { email };
 
   if (!email || !password) {
-    return { error: "Email dan kata sandi wajib diisi." };
+    return { error: "Email dan kata sandi wajib diisi.", values };
   }
 
   const ip = await getClientIp();
@@ -24,11 +28,11 @@ export async function loginAction(
   // akun target dari brute-force meski penyerang ganti-ganti IP).
   const ipLimit = checkRateLimit(`login:ip:${ip}`, 20, 60_000);
   if (!ipLimit.allowed) {
-    return { error: formatRetryMessage(ipLimit.retryAfterMs) };
+    return { error: formatRetryMessage(ipLimit.retryAfterMs), values };
   }
   const emailLimit = checkRateLimit(`login:email:${email.toLowerCase()}`, 5, 60_000);
   if (!emailLimit.allowed) {
-    return { error: formatRetryMessage(emailLimit.retryAfterMs) };
+    return { error: formatRetryMessage(emailLimit.retryAfterMs), values };
   }
 
   try {
@@ -43,9 +47,10 @@ export async function loginAction(
       if ((error as { code?: string }).code === "tenant_suspended") {
         return {
           error: "Akun toko ini sedang nonaktif (langganan tertunda). Hubungi admin Altora.",
+          values,
         };
       }
-      return { error: "Email atau kata sandi salah. Coba periksa lagi." };
+      return { error: "Email atau kata sandi salah. Coba periksa lagi.", values };
     }
     throw error;
   }

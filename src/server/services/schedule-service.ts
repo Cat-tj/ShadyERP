@@ -28,13 +28,39 @@ export type ScheduleInput = {
   outletId: string;
   startAt: Date;
   endAt: Date;
+  workType?: "REGULAR" | "OVERTIME" | "CASUAL";
+  payType?: "MONTHLY" | "PER_SHIFT";
+  shiftPay?: number | null;
+  holidayBonus?: number;
+  overtimeNote?: string | null;
+  note?: string | null;
 };
 
 export async function createSchedule(tenantId: string, input: ScheduleInput) {
   if (input.endAt <= input.startAt) {
     throw new Error("Jam selesai harus setelah jam mulai.");
   }
-  return prisma.shiftSchedule.create({ data: { tenantId, ...input } });
+  if (input.shiftPay !== null && input.shiftPay !== undefined && input.shiftPay < 0) {
+    throw new Error("Bayaran shift tidak valid.");
+  }
+  if (input.holidayBonus !== undefined && input.holidayBonus < 0) {
+    throw new Error("Bonus tanggal merah tidak valid.");
+  }
+  return prisma.shiftSchedule.create({
+    data: {
+      tenantId,
+      userId: input.userId,
+      outletId: input.outletId,
+      startAt: input.startAt,
+      endAt: input.endAt,
+      workType: input.workType ?? "REGULAR",
+      payType: input.payType ?? (input.workType === "CASUAL" ? "PER_SHIFT" : "MONTHLY"),
+      shiftPay: input.shiftPay ?? null,
+      holidayBonus: input.holidayBonus ?? 0,
+      overtimeNote: input.overtimeNote?.trim() || null,
+      note: input.note?.trim() || null,
+    },
+  });
 }
 
 export async function deleteSchedule(tenantId: string, id: string) {

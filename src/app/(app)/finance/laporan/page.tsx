@@ -43,9 +43,9 @@ export default async function LaporanPage({
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h1 className="font-display text-2xl font-semibold text-[var(--color-text)]">Laporan</h1>
+        <h1 className="font-display text-2xl font-semibold text-[var(--color-text)]">Penjualan</h1>
         <div className="flex items-center gap-2">
-          <PeriodFilter activeDays={days} />
+          <PeriodFilter activeDays={days} basePath="/finance/laporan" />
           <a
             href={`/api/export/laporan?days=${days}`}
             className="flex min-h-[40px] items-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"

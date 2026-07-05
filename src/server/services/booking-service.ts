@@ -18,8 +18,24 @@ export type BookingInput = {
   scheduledAt: Date;
   durationMinutes: number;
   staffUserId: string | null;
+  pax?: number | null;
+  eventAddress?: string | null;
+  quotedAmount?: number | null;
+  transportFee?: number;
+  staffFee?: number;
+  depositAmount?: number;
   note: string | null;
 };
+
+function validateBookingMoney(input: BookingInput) {
+  const amounts = [input.quotedAmount, input.transportFee, input.staffFee, input.depositAmount];
+  if (amounts.some((amount) => amount !== null && amount !== undefined && amount < 0)) {
+    throw new Error("Nominal booking tidak valid.");
+  }
+  if (input.pax !== null && input.pax !== undefined && input.pax < 0) {
+    throw new Error("Jumlah pax tidak valid.");
+  }
+}
 
 export async function listBookings(
   tenantId: string,
@@ -40,6 +56,7 @@ export async function listBookings(
 export async function createBooking(tenantId: string, input: BookingInput) {
   if (!input.customerName.trim()) throw new Error("Nama pelanggan wajib diisi.");
   if (!input.serviceName.trim()) throw new Error("Nama layanan/pesanan wajib diisi.");
+  validateBookingMoney(input);
   return prisma.booking.create({
     data: {
       tenantId,
@@ -51,6 +68,12 @@ export async function createBooking(tenantId: string, input: BookingInput) {
       scheduledAt: input.scheduledAt,
       durationMinutes: input.durationMinutes,
       staffUserId: input.staffUserId,
+      pax: input.pax ?? null,
+      eventAddress: input.eventAddress?.trim() || null,
+      quotedAmount: input.quotedAmount ?? null,
+      transportFee: input.transportFee ?? 0,
+      staffFee: input.staffFee ?? 0,
+      depositAmount: input.depositAmount ?? 0,
       note: input.note?.trim() || null,
     },
   });
@@ -61,6 +84,7 @@ export async function updateBooking(tenantId: string, id: string, input: Booking
   if (!booking) throw new Error("Booking tidak ditemukan.");
   if (!input.customerName.trim()) throw new Error("Nama pelanggan wajib diisi.");
   if (!input.serviceName.trim()) throw new Error("Nama layanan/pesanan wajib diisi.");
+  validateBookingMoney(input);
   return prisma.booking.update({
     where: { id },
     data: {
@@ -72,6 +96,12 @@ export async function updateBooking(tenantId: string, id: string, input: Booking
       scheduledAt: input.scheduledAt,
       durationMinutes: input.durationMinutes,
       staffUserId: input.staffUserId,
+      pax: input.pax ?? null,
+      eventAddress: input.eventAddress?.trim() || null,
+      quotedAmount: input.quotedAmount ?? null,
+      transportFee: input.transportFee ?? 0,
+      staffFee: input.staffFee ?? 0,
+      depositAmount: input.depositAmount ?? 0,
       note: input.note?.trim() || null,
     },
   });

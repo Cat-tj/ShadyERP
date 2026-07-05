@@ -14,6 +14,17 @@ export type ScheduleRow = {
   outletName: string;
   startAt: string;
   endAt: string;
+  workType: "REGULAR" | "OVERTIME" | "CASUAL";
+  payType: "MONTHLY" | "PER_SHIFT";
+  shiftPay: number | null;
+  holidayBonus: number;
+  note: string | null;
+};
+
+const WORK_TYPE_LABEL: Record<ScheduleRow["workType"], string> = {
+  REGULAR: "Reguler",
+  OVERTIME: "Lembur",
+  CASUAL: "Casual",
 };
 
 export function JadwalManager({
@@ -32,6 +43,10 @@ export function JadwalManager({
   const [date, setDate] = useState("");
   const [startTime, setStartTime] = useState("09:00");
   const [endTime, setEndTime] = useState("17:00");
+  const [workType, setWorkType] = useState<ScheduleRow["workType"]>("REGULAR");
+  const [shiftPay, setShiftPay] = useState("");
+  const [holidayBonus, setHolidayBonus] = useState("");
+  const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -43,15 +58,39 @@ export function JadwalManager({
     }
     const startAt = new Date(`${date}T${startTime}:00+07:00`);
     const endAt = new Date(`${date}T${endTime}:00+07:00`);
+    const shiftPayNumber = shiftPay ? Number(shiftPay) : null;
+    const holidayBonusNumber = holidayBonus ? Number(holidayBonus) : 0;
+    if (shiftPayNumber !== null && (!Number.isFinite(shiftPayNumber) || shiftPayNumber < 0)) {
+      setError("Bayaran shift tidak valid.");
+      return;
+    }
+    if (!Number.isFinite(holidayBonusNumber) || holidayBonusNumber < 0) {
+      setError("Bonus tanggal merah tidak valid.");
+      return;
+    }
 
     startTransition(async () => {
-      const result = await createScheduleAction({ userId, outletId, startAt, endAt });
+      const result = await createScheduleAction({
+        userId,
+        outletId,
+        startAt,
+        endAt,
+        workType,
+        payType: workType === "CASUAL" ? "PER_SHIFT" : "MONTHLY",
+        shiftPay: shiftPayNumber,
+        holidayBonus: holidayBonusNumber,
+        overtimeNote: workType === "OVERTIME" ? note.trim() || null : null,
+        note: note.trim() || null,
+      });
       if (result.error) {
         setError(result.error);
         return;
       }
       showToast("Jadwal ditambahkan");
       setDate("");
+      setShiftPay("");
+      setHolidayBonus("");
+      setNote("");
       router.refresh();
     });
   }
@@ -135,6 +174,55 @@ export function JadwalManager({
               className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
             />
           </div>
+          <div className="col-span-2 grid grid-cols-3 gap-2">
+            {(["REGULAR", "OVERTIME", "CASUAL"] as const).map((type) => (
+              <button
+                key={type}
+                type="button"
+                onClick={() => setWorkType(type)}
+                className={`min-h-[44px] rounded-lg border px-3 text-sm font-semibold ${
+                  workType === type
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                    : "border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)]"
+                }`}
+              >
+                {WORK_TYPE_LABEL[type]}
+              </button>
+            ))}
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-[var(--color-text)]">Bayaran shift</label>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={shiftPay}
+              onChange={(e) => setShiftPay(e.target.value)}
+              placeholder="0"
+              className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+            />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-[var(--color-text)]">Bonus libur</label>
+            <input
+              type="number"
+              inputMode="numeric"
+              min={0}
+              value={holidayBonus}
+              onChange={(e) => setHolidayBonus(e.target.value)}
+              placeholder="0"
+              className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+            />
+          </div>
+          <div className="col-span-2 flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-[var(--color-text)]">Catatan shift</label>
+            <input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="mis. casual lebaran, tembus 2 shift, runner kosong"
+              className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+            />
+          </div>
         </div>
 
         <button
@@ -161,6 +249,16 @@ export function JadwalManager({
                   <p className="text-xs text-[var(--color-text-secondary)]">
                     {formatTanggal(s.startAt)}, {formatJam(s.startAt)}–{formatJam(s.endAt)} · {s.outletName}
                   </p>
+                  <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                    {WORK_TYPE_LABEL[s.workType]} · {s.payType === "PER_SHIFT" ? "Per shift" : "Bulanan"}
+                    {s.shiftPay ? ` · Rp${s.shiftPay.toLocaleString("id-ID")}` : ""}
+                    {s.holidayBonus ? ` · bonus Rp${s.holidayBonus.toLocaleString("id-ID")}` : ""}
+                  </p>
+                  {s.note && (
+                    <p className="mt-1 text-xs italic text-[var(--color-text-secondary)]">
+                      &quot;{s.note}&quot;
+                    </p>
+                  )}
                 </div>
                 <button
                   onClick={() => handleDelete(s.id)}
