@@ -17,6 +17,9 @@ function removeTag(payload: string, targetTag: string) {
   let result = "";
 
   while (position < payload.length) {
+    if (payload.length - position < 4) {
+      break;
+    }
     const tagStart = position;
     const tag = payload.slice(position, position + 2);
     const rawLength = payload.slice(position + 2, position + 4);
@@ -52,16 +55,16 @@ export function buildDynamicQris(staticQris: string, amount: number) {
   const cleaned = staticQris.trim().replace(/\s+/g, "");
   if (!cleaned) throw new Error("QRIS statis belum diisi.");
 
-  const crcPosition = cleaned.indexOf(CRC_TAG);
-  if (crcPosition < 0) {
-    throw new Error("QRIS statis tidak valid: tag CRC 63 tidak ditemukan.");
+  const crcPosition = cleaned.length - 8;
+  if (crcPosition < 0 || cleaned.slice(crcPosition, crcPosition + 4) !== CRC_TAG) {
+    throw new Error("QRIS statis tidak valid: tag CRC 63 tidak ditemukan di akhir payload.");
   }
 
   const withoutAmount = removeTag(cleaned, "54");
   const amountValue = normalizeAmount(amount);
   const amountTag = `54${amountValue.length.toString().padStart(2, "0")}${amountValue}`;
-  const insertPosition = withoutAmount.indexOf(CRC_TAG);
-  if (insertPosition < 0) {
+  const insertPosition = withoutAmount.length - 8;
+  if (insertPosition < 0 || withoutAmount.slice(insertPosition, insertPosition + 4) !== CRC_TAG) {
     throw new Error("QRIS statis tidak valid: tag CRC 63 tidak ditemukan.");
   }
 

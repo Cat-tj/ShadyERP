@@ -76,8 +76,8 @@ function TableFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/40 sm:items-center sm:justify-center">
-      <div className="max-h-[90vh] w-full overflow-y-auto glass-surface-strong rounded-t-2xl p-5 sm:max-w-md sm:rounded-2xl">
+    <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/50 backdrop-blur-sm sm:items-center sm:justify-center">
+      <div className="max-h-[90vh] w-full overflow-y-auto bg-[var(--color-surface)] border border-[var(--color-border)] shadow-2xl rounded-t-3xl p-6 sm:max-w-md sm:rounded-3xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-[var(--color-text)]">
             {table ? "Ubah meja" : "Tambah meja"}
@@ -85,7 +85,7 @@ function TableFormModal({
           <button
             onClick={onClose}
             aria-label="Tutup"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] transition-colors cursor-pointer"
           >
             <XIcon aria-hidden className="h-5 w-5" />
           </button>
@@ -195,7 +195,7 @@ function TableFormModal({
         <button
           onClick={handleSubmit}
           disabled={isPending}
-          className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-40 cursor-pointer"
         >
           {isPending && (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)]" />
@@ -515,8 +515,8 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
 
       {/* Action Menu Modal for Table */}
       {actionMenuTable && (
-        <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/40 sm:items-center sm:justify-center">
-          <div className="max-h-[90vh] w-full overflow-y-auto glass-surface-strong rounded-t-2xl p-5 sm:max-w-xs sm:rounded-2xl text-center">
+        <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/50 backdrop-blur-sm sm:items-center sm:justify-center">
+          <div className="max-h-[90vh] w-full overflow-y-auto bg-[var(--color-surface)] border border-[var(--color-border)] shadow-2xl rounded-t-3xl p-6 sm:max-w-xs sm:rounded-3xl text-center">
             <h3 className="text-sm font-bold text-[var(--color-text)] mb-4">
               Aksi Meja: {actionMenuTable.name}
             </h3>
@@ -527,7 +527,7 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
                   setMovingTable(actionMenuTable);
                   setActionMenuTable(null);
                 }}
-                className="min-h-[44px] rounded-lg bg-[var(--color-primary)] text-sm font-semibold text-[var(--color-on-primary)] transition-all cursor-pointer"
+                className="min-h-[44px] rounded-xl bg-[var(--color-primary)] text-sm font-semibold text-[var(--color-on-primary)] transition-all cursor-pointer hover:opacity-90"
               >
                 Pindahkan Posisi
               </button>
@@ -539,7 +539,7 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
                   setModalOpen(true);
                   setActionMenuTable(null);
                 }}
-                className="min-h-[44px] rounded-lg border border-[var(--color-border)] bg-white/50 text-sm font-semibold text-[var(--color-text)] hover:bg-white transition-all cursor-pointer"
+                className="min-h-[44px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface)] transition-all cursor-pointer"
               >
                 Ubah Detail Nama
               </button>
@@ -549,14 +549,14 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
                   toggleActive(actionMenuTable);
                   setActionMenuTable(null);
                 }}
-                className="min-h-[44px] rounded-lg border border-[var(--color-border)] bg-white/50 text-sm font-semibold text-[var(--color-text)] hover:bg-white transition-all cursor-pointer"
+                className="min-h-[44px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface)] transition-all cursor-pointer"
               >
                 {actionMenuTable.isActive ? "Nonaktifkan" : "Aktifkan"}
               </button>
               <button
                 type="button"
                 onClick={() => setActionMenuTable(null)}
-                className="min-h-[44px] rounded-lg border border-dashed border-[var(--color-border)] text-sm font-medium text-[var(--color-text-secondary)] mt-2 cursor-pointer"
+                className="min-h-[44px] rounded-xl border border-dashed border-[var(--color-border)] text-sm font-medium text-[var(--color-text-secondary)] mt-2 cursor-pointer hover:bg-[var(--color-bg)] transition-colors"
               >
                 Batal
               </button>
