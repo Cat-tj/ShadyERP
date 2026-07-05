@@ -1,7 +1,13 @@
+import { Metadata } from "next";
 import { requireRole } from "@/server/require-session";
 import { listPromos } from "@/server/services/promo-service";
 import { listCategories } from "@/server/services/product-service";
 import { PromoManager } from "@/components/pengaturan/promo-manager";
+
+export const metadata: Metadata = {
+  title: "Kelola Program Promo & Diskon Otomatis - Altora",
+  description: "Kelola promo penjualan, program loyalitas pelanggan, diskon hari tertentu, minimal belanja, dan durasi jam aktif promo toko.",
+};
 
 export default async function PromoPage() {
   const user = await requireRole(["OWNER", "MANAGER"]);

@@ -1,3 +1,4 @@
+import { Metadata } from "next";
 import { requireSession } from "@/server/require-session";
 import { listOutletsForUser } from "@/server/services/outlet-service";
 import { listIncomingOrders } from "@/server/services/table-order-service";
@@ -5,6 +6,11 @@ import { listTables } from "@/server/services/table-service";
 import { getLowStockProducts } from "@/server/services/inventory-service";
 import { KitchenDisplay } from "@/components/dapur/kitchen-display";
 import { prisma } from "@/lib/prisma";
+
+export const metadata: Metadata = {
+  title: "Command Center Operasional Dapur & Layanan Meja - Altora",
+  description: "Dasbor pemantauan real-time dapur, monitor antrean pesanan masak, status ketersediaan meja makan, dan stok bahan baku resto.",
+};
 
 export default async function CommandCenterPage() {
   const user = await requireSession();

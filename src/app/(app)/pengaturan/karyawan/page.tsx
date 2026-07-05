@@ -1,7 +1,13 @@
+import { Metadata } from "next";
 import { requireRole } from "@/server/require-session";
 import { listUsers } from "@/server/services/user-service";
 import { listAllOutlets } from "@/server/services/outlet-service";
 import { KaryawanManager } from "@/components/pengaturan/karyawan-manager";
+
+export const metadata: Metadata = {
+  title: "Kelola Karyawan & Hak Akses Peran - Altora",
+  description: "Kelola daftar staf karyawan outlet, atur peran jabatan (Owner, Manager, Staff), tentukan penugasan outlet, dan kelola hak akses sistem POS.",
+};
 
 export default async function KaryawanPage() {
   const user = await requireRole(["OWNER"]);

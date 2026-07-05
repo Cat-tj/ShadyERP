@@ -1,7 +1,13 @@
+import { Metadata } from "next";
 import { requireRole } from "@/server/require-session";
 import { listTables } from "@/server/services/table-service";
 import { listAllOutlets } from "@/server/services/outlet-service";
 import { MejaManager } from "@/components/pengaturan/meja-manager";
+
+export const metadata: Metadata = {
+  title: "Desain & Tata Letak Meja Kustom - Altora",
+  description: "Desain denah meja restoran secara interaktif, atur kapasitas kursi, letak lantai, koordinat grid, dan bentuk meja fisik sesuai tata letak outlet.",
+};
 
 export default async function MejaSettingsPage() {
   const user = await requireRole(["OWNER"]);
