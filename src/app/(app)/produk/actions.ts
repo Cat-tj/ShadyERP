@@ -102,8 +102,13 @@ function validateProductInput(input: ProductInput) {
   if (!input.name.trim()) return "Nama produk wajib diisi.";
   if (!Number.isFinite(input.price) || input.price < 0) return "Harga tidak valid.";
   if (input.cost != null && (!Number.isFinite(input.cost) || input.cost < 0)) return "Modal tidak valid.";
-  if (!["GOODS", "SERVICE"].includes(input.kind)) return "Jenis produk tidak valid.";
-  if (input.kind === "SERVICE" && input.trackStock) return "Jasa tidak boleh memakai stok barang.";
+  const stockableKinds = ["GOODS", "ASSEMBLY"];
+  if (!["GOODS", "SERVICE", "ASSEMBLY", "NON_INVENTORY", "COST"].includes(input.kind)) {
+    return "Jenis produk tidak valid.";
+  }
+  if (!stockableKinds.includes(input.kind) && input.trackStock) {
+    return "Jenis produk ini tidak boleh memakai stok barang.";
+  }
   if (input.kind === "SERVICE" && (!input.serviceDurationMin || input.serviceDurationMin <= 0)) {
     return "Durasi layanan wajib diisi untuk produk jasa.";
   }

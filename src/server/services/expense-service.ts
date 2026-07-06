@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { ExpenseCategory } from "@prisma/client";
 import { todayRangeJakarta } from "@/lib/date-range";
+import { logExpenseToJournal } from "@/server/services/accounting-service";
 
 /**
  * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
@@ -27,7 +28,7 @@ export async function createExpense(tenantId: string, createdById: string, input
     throw new Error("Jumlah pengeluaran tidak valid.");
   }
 
-  return prisma.expense.create({
+  const expense = await prisma.expense.create({
     data: {
       tenantId,
       outletId: input.outletId,
@@ -38,6 +39,9 @@ export async function createExpense(tenantId: string, createdById: string, input
       spentAt: input.spentAt ?? new Date(),
     },
   });
+
+  await logExpenseToJournal(tenantId, expense.id);
+  return expense;
 }
 
 export async function listExpenses(tenantId: string, outletIds: string[], days: number) {

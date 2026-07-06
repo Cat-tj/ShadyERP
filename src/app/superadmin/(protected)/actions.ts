@@ -6,6 +6,8 @@ import {
   setTenantActiveBySuperAdmin,
   reviewSubscriptionRequest,
 } from "@/server/services/super-admin-service";
+import { setDisabledModules } from "@/server/services/tenant-service";
+import type { ModuleKey } from "@/lib/modules";
 
 export type ActionResult = { error?: string; success?: boolean };
 
@@ -31,5 +33,20 @@ export async function reviewSubscriptionRequestAction(
     return { error: error instanceof Error ? error.message : "Gagal memproses permintaan." };
   }
   revalidatePath("/superadmin");
+  return { success: true };
+}
+
+export async function setTenantModulesAction(
+  tenantId: string,
+  disabledKeys: ModuleKey[]
+): Promise<ActionResult> {
+  await requireSuperAdmin();
+  try {
+    await setDisabledModules(tenantId, disabledKeys);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal menyimpan modul tenant." };
+  }
+  revalidatePath("/superadmin");
+  revalidatePath("/", "layout");
   return { success: true };
 }

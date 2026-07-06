@@ -7,7 +7,6 @@ const TABS = [
   { href: "/pengaturan/karyawan", label: "Karyawan", module: "hr" },
   { href: "/pengaturan/outlet", label: "Outlet" },
   { href: "/pengaturan/bisnis", label: "Bisnis" },
-  { href: "/pengaturan/modul", label: "Modul" },
   { href: "/pengaturan/kartu", label: "Kartu", module: "member" },
   { href: "/pengaturan/meja", label: "Meja", module: "pesanan-digital" },
   { href: "/pengaturan/laundry", label: "Laundry", module: "laundry" },
@@ -26,17 +25,7 @@ export function SettingsTabs({ disabledModules = [] }: { disabledModules?: strin
         const active = pathname.startsWith(tab.href);
         const isDisabled = tab.module && disabledSet.has(tab.module);
 
-        if (isDisabled) {
-          return (
-            <span
-              key={tab.href}
-              title={`Modul ${tab.label} dinonaktifkan`}
-              className="min-h-[44px] shrink-0 border-b-2 border-transparent px-3 flex items-center text-sm font-medium text-[var(--color-text-secondary)]/40 cursor-not-allowed select-none"
-            >
-              {tab.label}
-            </span>
-          );
-        }
+        if (isDisabled) return null;
 
         return (
           <Link

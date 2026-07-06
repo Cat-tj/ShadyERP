@@ -16,6 +16,8 @@ import { XIcon } from "@/components/ui/icons";
 export type { VariantGroupRow };
 
 export type OutletOption = { id: string; name: string };
+type ProductKindOption = "GOODS" | "SERVICE" | "ASSEMBLY" | "NON_INVENTORY" | "COST";
+const STOCKABLE_KINDS = new Set<ProductKindOption>(["GOODS", "ASSEMBLY"]);
 
 export type EditingProduct = {
   id: string;
@@ -24,7 +26,7 @@ export type EditingProduct = {
   categoryId: string | null;
   price: number;
   cost: number | null;
-  kind: "GOODS" | "SERVICE";
+  kind: ProductKindOption;
   trackStock: boolean;
   trackExpiry: boolean;
   shelfLifeDays: number | null;
@@ -54,7 +56,7 @@ export function ProductFormModal({
   const [categoryId, setCategoryId] = useState(product?.categoryId ?? "");
   const [price, setPrice] = useState(product ? String(product.price) : "");
   const [cost, setCost] = useState(product?.cost ? String(product.cost) : "");
-  const [kind, setKind] = useState<"GOODS" | "SERVICE">(product?.kind ?? "GOODS");
+  const [kind, setKind] = useState<ProductKindOption>(product?.kind ?? "GOODS");
   const [trackStock, setTrackStock] = useState(product?.trackStock ?? true);
   const [trackExpiry, setTrackExpiry] = useState(product?.trackExpiry ?? false);
   const [shelfLifeDays, setShelfLifeDays] = useState(product?.shelfLifeDays ? String(product.shelfLifeDays) : "");
@@ -72,6 +74,11 @@ export function ProductFormModal({
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  function generateInternalSku() {
+    const prefix = kind === "SERVICE" ? "ALT-SVC" : "ALT-PRD";
+    setSku(`${prefix}-${Date.now().toString().slice(-10)}`);
+  }
 
   function handleSubmit() {
     setError(null);
@@ -93,8 +100,8 @@ export function ProductFormModal({
         price: priceNumber,
         cost: cost ? Number(cost) : null,
         kind,
-        trackStock: kind === "GOODS" ? trackStock : false,
-        trackExpiry: kind === "GOODS" && trackStock ? trackExpiry : false,
+        trackStock: STOCKABLE_KINDS.has(kind) ? trackStock : false,
+        trackExpiry: STOCKABLE_KINDS.has(kind) && trackStock ? trackExpiry : false,
         shelfLifeDays: shelfLifeDays ? Number(shelfLifeDays) : null,
         warrantyDays: warrantyDays ? Number(warrantyDays) : null,
         serviceDurationMin: kind === "SERVICE" ? Number(serviceDurationMin) || null : null,
@@ -182,27 +189,39 @@ export function ProductFormModal({
             </div>
             <div className="flex flex-col gap-1.5">
               <label className="text-sm font-medium text-[var(--color-text)]">SKU / Barcode</label>
-              <input
-                value={sku}
-                onChange={(event) => setSku(event.target.value)}
-                placeholder="8991234567890"
-                className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
-              />
+              <div className="flex gap-2">
+                <input
+                  value={sku}
+                  onChange={(event) => setSku(event.target.value)}
+                  placeholder="8991234567890"
+                  className="min-h-[48px] min-w-0 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+                />
+                <button
+                  type="button"
+                  onClick={generateInternalSku}
+                  className="min-h-[48px] rounded-lg border border-[var(--color-border)] px-3 text-xs font-semibold text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+                >
+                  Generate
+                </button>
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-1.5">
+          <div className="grid grid-cols-2 gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-1.5 sm:grid-cols-5">
             {[
               { value: "GOODS", label: "Barang", desc: "Retail, F&B, listrik" },
               { value: "SERVICE", label: "Jasa", desc: "Barbershop, layanan" },
+              { value: "ASSEMBLY", label: "Rakitan", desc: "Bundle/produksi" },
+              { value: "NON_INVENTORY", label: "Non-Stok", desc: "Biaya jual tanpa stok" },
+              { value: "COST", label: "Biaya", desc: "Internal/HPP" },
             ].map((option) => (
               <button
                 key={option.value}
                 type="button"
                 onClick={() => {
-                  const nextKind = option.value as "GOODS" | "SERVICE";
+                  const nextKind = option.value as ProductKindOption;
                   setKind(nextKind);
-                  if (nextKind === "SERVICE") {
+                  if (!STOCKABLE_KINDS.has(nextKind)) {
                     setTrackStock(false);
                     setTrackExpiry(false);
                   } else {
@@ -248,7 +267,7 @@ export function ProductFormModal({
             </div>
           </div>
 
-          {kind === "GOODS" ? (
+          {STOCKABLE_KINDS.has(kind) ? (
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
               <label className="flex items-center gap-2 text-sm font-medium text-[var(--color-text)]">
                 <input
@@ -306,7 +325,7 @@ export function ProductFormModal({
                 Expired cocok untuk makanan/minuman/FMCG. Garansi cocok untuk toko listrik dan elektronik.
               </p>
             </div>
-          ) : (
+          ) : kind === "SERVICE" ? (
             <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
               <label className="text-sm font-medium text-[var(--color-text)]">Durasi layanan</label>
               <div className="mt-2 flex items-center gap-2">
@@ -324,9 +343,20 @@ export function ProductFormModal({
                 Dipakai untuk barbershop/salon supaya layanan punya durasi standar.
               </p>
             </div>
+          ) : (
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+              <p className="text-sm font-semibold text-[var(--color-text)]">
+                {kind === "COST" ? "Item biaya internal" : "Item tanpa stok"}
+              </p>
+              <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+                {kind === "COST"
+                  ? "Dipakai untuk biaya rakitan, tenaga kerja, atau pencatatan HPP. Item biaya tidak tampil di POS."
+                  : "Cocok untuk ongkir, biaya layanan, atau item yang dijual tanpa mengurangi stok."}
+              </p>
+            </div>
           )}
 
-          {kind === "GOODS" && trackStock && product && (
+          {STOCKABLE_KINDS.has(kind) && trackStock && product && (
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center text-xs font-semibold text-[var(--color-text)] mb-1">
                 <span>Outlet</span>
@@ -378,7 +408,7 @@ export function ProductFormModal({
               </Link>
             </div>
           )}
-          {kind === "GOODS" && trackStock && !product && (
+          {STOCKABLE_KINDS.has(kind) && trackStock && !product && (
             <p className="text-sm text-[var(--color-text-secondary)]">
               Simpan produk dulu, lalu atur stok awal lewat tombol &quot;Ubah&quot; pada produk ini.
             </p>

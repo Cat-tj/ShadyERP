@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { requireSessionWithTenant } from "@/server/require-session";
 import { resolveEnabledModules } from "@/lib/modules";
 
@@ -14,16 +13,8 @@ export default async function KaryawanLayout({ children }: { children: React.Rea
         </div>
         <h2 className="font-display text-lg font-bold text-[var(--color-text)]">Modul Karyawan Tidak Aktif</h2>
         <p className="mt-2 text-sm text-[var(--color-text-secondary)] leading-relaxed">
-          Modul <strong>HR &amp; Kepegawaian</strong> saat ini dinonaktifkan untuk toko Anda. Aktifkan modul ini terlebih dahulu di tab Modul untuk mengelola karyawan dan hak akses.
+          Modul <strong>HR &amp; Kepegawaian</strong> saat ini belum aktif untuk toko Anda. Hubungi Superadmin Altora untuk mengaktifkan fitur ini.
         </p>
-        <div className="mt-6">
-          <Link
-            href="/pengaturan/modul"
-            className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-blue-600 px-5 text-sm font-semibold text-white hover:bg-blue-700 transition-colors cursor-pointer"
-          >
-            Aktifkan Modul
-          </Link>
-        </div>
       </div>
     );
   }

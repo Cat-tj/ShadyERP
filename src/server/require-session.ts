@@ -14,7 +14,7 @@ export type SessionUser = {
 
 type TenantAuthState = {
   user: SessionUser;
-  tenant: { isActive: boolean; name: string; disabledModules: string[] } | null;
+  tenant: { isActive: boolean; name: string; businessType: string; disabledModules: string[] } | null;
 };
 
 /**
@@ -34,7 +34,7 @@ const getAuthState = cache(async (): Promise<TenantAuthState> => {
 
   const tenant = await prisma.tenant.findUnique({
     where: { id: session.user.tenantId },
-    select: { isActive: true, name: true, disabledModules: true },
+    select: { isActive: true, name: true, businessType: true, disabledModules: true },
   });
 
   return { user: session.user as SessionUser, tenant };
@@ -75,7 +75,7 @@ export async function requireRole(roles: SessionUser["role"][]): Promise<Session
  */
 export async function requireSessionWithTenant(): Promise<{
   user: SessionUser;
-  tenant: { name: string; disabledModules: string[] } | null;
+  tenant: { name: string; businessType: string; disabledModules: string[] } | null;
 }> {
   const { user, tenant } = await getAuthState();
   if (!tenant?.isActive) {

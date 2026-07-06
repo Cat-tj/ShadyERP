@@ -36,6 +36,7 @@ export default async function SuperAdminPage() {
           businessType: tenant.businessType,
           plan: tenant.plan,
           isActive: tenant.isActive,
+          disabledModules: tenant.disabledModules,
           createdAt: tenant.createdAt.toISOString(),
           outletCount: tenant.outletCount,
           userCount: tenant.userCount,

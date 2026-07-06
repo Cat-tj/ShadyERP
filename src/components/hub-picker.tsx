@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { HUBS, type HubDef, type HubKey } from "@/lib/hubs";
 import { PowerIcon } from "@/components/ui/icons";
+import { BUSINESS_MODE_MAP, type BusinessModeKey } from "@/lib/business-modes";
 
 const ACTIVE_HUB_STORAGE_KEY = "altora:activeHub";
 
@@ -29,10 +30,12 @@ export function HubPicker({
   hubKeys,
   userName,
   tenantName,
+  businessMode,
 }: {
   hubKeys: HubKey[];
   userName: string;
   tenantName: string;
+  businessMode: BusinessModeKey;
 }) {
   const router = useRouter();
   const greeting = useGreeting();
@@ -41,6 +44,7 @@ export function HubPicker({
   // prop — makanya cuma key (string) yang dikirim, objek HubDef lengkap
   // (termasuk ikonnya) di-resolve di sini, di dalam client component.
   const hubs: HubDef[] = HUBS.filter((hub) => hubKeys.includes(hub.key));
+  const mode = BUSINESS_MODE_MAP[businessMode];
 
   function enterHub(hub: HubDef) {
     setEnteringKey(hub.key);
@@ -73,8 +77,18 @@ export function HubPicker({
               {greeting}, {userName.split(" ")[0]}
             </h1>
             <p className="mt-1.5 text-sm text-[var(--color-text-secondary)] sm:text-base">
-              Pilih aplikasi yang mau dibuka.
+              {mode.label} · {mode.description}
             </p>
+            <div className="mt-3 flex flex-wrap gap-2">
+              {mode.painKillers.map((item) => (
+                <span
+                  key={item}
+                  className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 text-xs font-semibold text-[var(--color-text-secondary)]"
+                >
+                  {item}
+                </span>
+              ))}
+            </div>
           </div>
           <button
             onClick={() => signOut({ callbackUrl: "/login" })}

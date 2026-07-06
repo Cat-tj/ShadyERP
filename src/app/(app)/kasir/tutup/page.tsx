@@ -21,8 +21,14 @@ export default async function TutupShiftPage() {
         openingCash={shift.openingCash}
         totalPenjualanCash={summary?.totalPenjualanCash ?? 0}
         jumlahTransaksiCash={summary?.jumlahTransaksiCash ?? 0}
+        totalPenjualanDigital={summary?.totalPenjualanDigital ?? 0}
+        jumlahTransaksiDigital={summary?.jumlahTransaksiDigital ?? 0}
+        totalCashback={summary?.totalCashback ?? 0}
         totalGesekTunai={summary?.totalGesekTunai ?? 0}
+        totalTagihanGesekTunai={summary?.totalTagihanGesekTunai ?? 0}
         jumlahGesekTunai={summary?.jumlahGesekTunai ?? 0}
+        digitalSalesByMethod={summary?.digitalSalesByMethod ?? []}
+        cashOutByMethod={summary?.cashOutByMethod ?? []}
       />
     </div>
   );

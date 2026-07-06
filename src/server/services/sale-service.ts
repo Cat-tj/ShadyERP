@@ -3,6 +3,7 @@ import { buildInvoiceNumber, buildInvoicePrefix } from "@/lib/invoice";
 import { computeVariantSelection, loadVariantGroupsByProduct } from "@/server/services/product-variant-service";
 import { recordAuditLog } from "@/server/services/audit-log-service";
 import { formatRupiah } from "@/lib/format";
+import { logSaleToJournal } from "@/server/services/accounting-service";
 import type { PaymentMethod, OrderType } from "@prisma/client";
 
 /**
@@ -230,6 +231,104 @@ export async function createSale(input: CreateSaleInput) {
       }
     }
 
+    // Autopilot low stock reorder checks
+    if (deductStock) {
+      const checkProductIds = new Set<string>();
+      for (const item of input.items) {
+        const product = productMap.get(item.productId)!;
+        const productRecipes = recipeMap.get(item.productId);
+        if (productRecipes && productRecipes.length > 0) {
+          for (const recipe of productRecipes) {
+            checkProductIds.add(recipe.ingredientId);
+          }
+        } else if (product.trackStock) {
+          checkProductIds.add(item.productId);
+        }
+      }
+
+      for (const pId of checkProductIds) {
+        const reorderPoint = await tx.stockReorderPoint.findFirst({
+          where: { tenantId: input.tenantId, productId: pId, outletId: input.outletId },
+        });
+
+        if (reorderPoint) {
+          const stock = await tx.productStock.findUnique({
+            where: { productId_outletId: { productId: pId, outletId: input.outletId } },
+          });
+          const currentQty = stock?.qty ?? 0;
+
+          if (currentQty <= reorderPoint.minQty) {
+            const contract = await tx.supplierPricingContract.findFirst({
+              where: { tenantId: input.tenantId, productId: pId, isActive: true },
+            });
+            let supplierId = contract?.supplierId;
+
+            if (!supplierId) {
+              const firstSupplier = await tx.supplier.findFirst({
+                where: { tenantId: input.tenantId, status: "ACTIVE" },
+              });
+              supplierId = firstSupplier?.id;
+            }
+
+            if (supplierId) {
+              let po: any = await tx.purchaseOrder.findFirst({
+                where: { tenantId: input.tenantId, supplierId, status: "DRAFT" },
+                include: { items: true },
+              });
+
+              if (!po) {
+                const today = new Date();
+                const count = await tx.purchaseOrder.count({ where: { tenantId: input.tenantId } });
+                const poNumber = `PO-${today.getFullYear()}${(today.getMonth() + 1)
+                  .toString()
+                  .padStart(2, "0")}-${String(count + 1).padStart(3, "0")}`;
+
+                po = await tx.purchaseOrder.create({
+                  data: {
+                    tenantId: input.tenantId,
+                    supplierId,
+                    poNumber,
+                    status: "DRAFT",
+                    totalAmount: 0,
+                    expectedAt: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000),
+                  },
+                  include: { items: true },
+                });
+              }
+
+              const hasItem = po.items.some((i: any) => i.productId === pId);
+              if (!hasItem) {
+                const reorderQty = contract?.minQty ?? 10;
+                const productObj = await tx.product.findUnique({
+                  where: { id: pId },
+                  select: { cost: true },
+                });
+                const unitPrice = contract?.unitPrice ?? productObj?.cost ?? 0;
+
+                await tx.purchaseOrderItem.create({
+                  data: {
+                    poId: po.id,
+                    productId: pId,
+                    qty: reorderQty,
+                    unitPrice,
+                    subtotal: reorderQty * unitPrice,
+                  },
+                });
+
+                // Update PO totalAmount
+                await tx.purchaseOrder.update({
+                  where: { id: po.id },
+                  data: {
+                    totalAmount: { increment: reorderQty * unitPrice },
+                  },
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
     if (member) {
       await tx.member.update({
         where: { id: member.id },
@@ -256,6 +355,9 @@ export async function createSale(input: CreateSaleInput) {
         });
       }
     }
+
+    // Auto-post to accounting journal
+    await logSaleToJournal(input.tenantId, sale.id, tx);
 
     return sale;
   }, { timeout: 15000 });

@@ -1,13 +1,18 @@
-import { requireRole } from "@/server/require-session";
+import Link from "next/link";
+import { requireSessionWithTenant } from "@/server/require-session";
 import { listCategories, listProductsFull } from "@/server/services/product-service";
 import { listOutletsForUser } from "@/server/services/outlet-service";
 import { getExpiringBatches, getLowStockProducts } from "@/server/services/inventory-service";
 import { ProdukManager } from "@/components/produk/produk-manager";
 import { LowStockAlert } from "@/components/inventory/low-stock-alert";
 import { formatTanggalPendek } from "@/lib/format";
+import { normalizeBusinessMode } from "@/lib/business-modes";
+import { redirect } from "next/navigation";
 
 export default async function ProdukPage() {
-  const user = await requireRole(["OWNER", "MANAGER"]);
+  const { user, tenant } = await requireSessionWithTenant();
+  if (user.role === "STAFF") redirect("/pilih-aplikasi");
+  const businessMode = normalizeBusinessMode(tenant?.businessType);
 
   const [categories, products, outlets] = await Promise.all([
     listCategories(user.tenantId),
@@ -25,6 +30,9 @@ export default async function ProdukPage() {
 
   return (
     <div className="flex flex-col gap-6">
+      {(businessMode === "TOKO" || businessMode === "COMPANY") && (
+        <RetailWorkflowPanel lowStockCount={lowStockItems.length} expiringCount={expiringBatches.length} />
+      )}
       {expiringBatches.length > 0 && (
         <div className="mx-auto w-full max-w-5xl rounded-xl border border-amber-200 bg-amber-50 p-4">
           <p className="text-sm font-bold text-amber-800">Batch mendekati expired ({outlets[0]?.name})</p>
@@ -94,5 +102,53 @@ export default async function ProdukPage() {
         }))}
       />
     </div>
+  );
+}
+
+function RetailWorkflowPanel({
+  lowStockCount,
+  expiringCount,
+}: {
+  lowStockCount: number;
+  expiringCount: number;
+}) {
+  const cards = [
+    { title: "Barang masuk", body: "Ganti catatan WA dengan PO + penerimaan + QC.", href: "/stock-receipt", status: "Siap" },
+    { title: "Barcode & varian", body: "SKU/barcode internal bisa dibuat dari form produk.", href: "/inventory", status: "Siap" },
+    { title: "Stok minimum", body: `${lowStockCount} item perlu perhatian di outlet aktif.`, href: "/inventory", status: "Aktif" },
+    { title: "Expired", body: `${expiringCount} batch mendekati expired dalam 14 hari.`, href: "/inventory", status: "Aktif" },
+    { title: "Closing bayar", body: "Metode bayar terlihat di riwayat dan tutup shift.", href: "/kasir/tutup", status: "Siap" },
+    { title: "Shopee import", body: "Roadmap: CSV import dulu, API belakangan.", href: "/kasir/riwayat", status: "Roadmap" },
+  ];
+
+  return (
+    <section className="mx-auto w-full max-w-5xl rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+      <div className="flex flex-col gap-1">
+        <p className="text-xs font-bold uppercase tracking-wide text-[var(--color-text-secondary)]">
+          Altora Toko
+        </p>
+        <h1 className="text-xl font-bold text-[var(--color-text)]">Retail Control</h1>
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          Fokus retail: penerimaan barang, barcode, stok minimum, expired, closing kasir, dan marketplace.
+        </p>
+      </div>
+      <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        {cards.map((card) => (
+          <Link
+            key={card.title}
+            href={card.href}
+            className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-4 hover:bg-[var(--color-surface)]"
+          >
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-sm font-bold text-[var(--color-text)]">{card.title}</p>
+              <span className="rounded-full bg-[var(--color-primary)]/10 px-2 py-0.5 text-[10px] font-bold text-[var(--color-primary)]">
+                {card.status}
+              </span>
+            </div>
+            <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-secondary)]">{card.body}</p>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }

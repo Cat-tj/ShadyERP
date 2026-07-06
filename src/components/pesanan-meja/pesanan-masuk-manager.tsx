@@ -64,8 +64,6 @@ export function PesananMasukManager({
   const [viewMode, setViewMode] = useState<"list" | "layout">("list");
   const [activeFloor, setActiveFloor] = useState(1);
 
-  const floorCount = Math.max(1, ...tables.map((t) => t.floor));
-
   useEffect(() => {
     const interval = setInterval(() => router.refresh(), REFRESH_INTERVAL_MS);
     return () => clearInterval(interval);

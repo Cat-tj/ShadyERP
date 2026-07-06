@@ -4,19 +4,23 @@ import { useEffect, useRef, useState, useTransition } from "react";
 import { updateTenantSettingAction } from "@/app/(app)/pengaturan/bisnis/actions";
 import { useToast, Toast } from "@/components/toast";
 import { XIcon } from "@/components/ui/icons";
+import { BUSINESS_MODES, type BusinessModeKey } from "@/lib/business-modes";
 
 export function BisnisForm({
+  businessType,
   taxPercent,
   pointsPerAmount,
   receiptFooter,
   staticQrisPayload,
 }: {
+  businessType: BusinessModeKey;
   taxPercent: number;
   pointsPerAmount: number;
   receiptFooter: string | null;
   staticQrisPayload: string | null;
 }) {
   const { toastMessage, showToast } = useToast();
+  const [mode, setMode] = useState<BusinessModeKey>(businessType);
   const [tax, setTax] = useState(String(taxPercent));
   const [points, setPoints] = useState(String(pointsPerAmount));
   const [footer, setFooter] = useState(receiptFooter ?? "");
@@ -29,6 +33,7 @@ export function BisnisForm({
     setError(null);
     startTransition(async () => {
       const result = await updateTenantSettingAction({
+        businessType: mode,
         taxPercent: Number(tax) || 0,
         pointsPerAmount: Number(points) || 10000,
         receiptFooter: footer.trim() || null,
@@ -51,6 +56,32 @@ export function BisnisForm({
       )}
 
       <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-[var(--color-text)]">Mode Altora</label>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            {BUSINESS_MODES.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => setMode(option.key)}
+                className={`rounded-xl border p-3 text-left transition-all ${
+                  mode === option.key
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]"
+                    : "border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] hover:bg-[var(--color-surface)]"
+                }`}
+              >
+                <span className="block text-sm font-bold">{option.shortLabel}</span>
+                <span className="mt-1 line-clamp-2 block text-[11px] text-[var(--color-text-secondary)]">
+                  {option.description}
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-[var(--color-text-secondary)]">
+            Mode mengatur bahasa produk dan rekomendasi modul. Modul aktif dikelola oleh Superadmin Altora.
+          </p>
+        </div>
+
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-[var(--color-text)]">Pajak transaksi (%)</label>
           <input

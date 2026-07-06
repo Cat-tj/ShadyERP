@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { requireSessionWithTenant } from "@/server/require-session";
 import { resolveEnabledModules } from "@/lib/modules";
 
@@ -14,16 +13,8 @@ export default async function PengaturanKartuLayout({ children }: { children: Re
         </div>
         <h2 className="font-display text-lg font-bold text-[var(--color-text)]">Modul Kartu &amp; Member Tidak Aktif</h2>
         <p className="mt-2 text-sm text-[var(--color-text-secondary)] leading-relaxed">
-          Modul <strong>Member &amp; Loyalitas</strong> saat ini dinonaktifkan untuk toko Anda. Aktifkan modul ini terlebih dahulu di tab Modul untuk mengelola kartu member.
+          Modul <strong>Member &amp; Loyalitas</strong> saat ini belum aktif untuk toko Anda. Hubungi Superadmin Altora untuk mengaktifkan fitur ini.
         </p>
-        <div className="mt-6">
-          <Link
-            href="/pengaturan/modul"
-            className="inline-flex min-h-[44px] items-center justify-center rounded-xl bg-teal-600 px-5 text-sm font-semibold text-white hover:bg-teal-700 transition-colors cursor-pointer"
-          >
-            Aktifkan Modul
-          </Link>
-        </div>
       </div>
     );
   }

@@ -32,8 +32,6 @@ function TableFormModal({
   onClose,
   onSaved,
   defaultPos = null,
-  maxCols = 6,
-  maxRows = 6,
   floorOptions = [1],
 }: {
   outlets: OutletOption[];
@@ -41,15 +39,13 @@ function TableFormModal({
   onClose: () => void;
   onSaved: (message: string) => void;
   defaultPos?: { posX: number; posY: number; floor: number } | null;
-  maxCols?: number;
-  maxRows?: number;
   floorOptions?: number[];
 }) {
   const router = useRouter();
   const [outletId, setOutletId] = useState(table?.outletId ?? outlets[0]?.id ?? "");
   const [name, setName] = useState(table?.name ?? "");
-  const [posX, setPosX] = useState(table?.posX ?? defaultPos?.posX ?? 10);
-  const [posY, setPosY] = useState(table?.posY ?? defaultPos?.posY ?? 10);
+  const [posX] = useState(table?.posX ?? defaultPos?.posX ?? 10);
+  const [posY] = useState(table?.posY ?? defaultPos?.posY ?? 10);
   const [floor, setFloor] = useState(table?.floor ?? defaultPos?.floor ?? 1);
   const [shape, setShape] = useState(table?.shape ?? "SQUARE");
   const [capacity, setCapacity] = useState(table?.capacity ?? 2);
@@ -201,85 +197,136 @@ export function TableVisual({
   isHovered: boolean;
   status?: "EMPTY" | "ORDERED" | "EATING" | "READY";
 }) {
+  const seatCount = Math.max(1, Math.min(capacity, 32));
+  const chairSize = 12;
+  const chairGap = 6;
   const chairs: React.ReactNode[] = [];
-  
+  let tableWidth = 62;
+  let tableHeight = 62;
+  let tableLeft = chairSize + 2;
+  let tableTop = chairSize + 2;
+  let frameWidth = tableWidth + chairSize * 2 + 4;
+  let frameHeight = tableHeight + chairSize * 2 + 4;
+
+  function addChair(key: string, left: number, top: number, side: "top" | "right" | "bottom" | "left" | "round") {
+    const radiusClass =
+      side === "round"
+        ? "rounded-full"
+        : side === "top"
+          ? "rounded-t-md"
+          : side === "right"
+            ? "rounded-r-md"
+            : side === "bottom"
+              ? "rounded-b-md"
+              : "rounded-l-md";
+    chairs.push(
+      <span
+        key={key}
+        className={`absolute border border-slate-300 bg-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.08)] ${radiusClass}`}
+        style={{ left, top, width: chairSize, height: chairSize }}
+      />
+    );
+  }
+
   if (shape === "RECTANGLE") {
-    const topBottomCount = Math.max(1, Math.floor((capacity - 2) / 2));
-    for (let i = 0; i < topBottomCount; i++) {
-      chairs.push(
-        <div key={`top-${i}`} className="absolute -top-2.5 w-5 h-2.5 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-t-md" style={{ left: topBottomCount === 1 ? "38px" : topBottomCount === 2 ? `${18 + i * 40}px` : `${12 + i * 26}px` }} />
-      );
+    const longSide = Math.max(1, Math.ceil(seatCount / 3));
+    let remainingSeats = seatCount;
+    const topSeats = Math.min(longSide, remainingSeats);
+    remainingSeats -= topSeats;
+    const bottomSeats = Math.min(longSide, remainingSeats);
+    remainingSeats -= bottomSeats;
+    const leftSeats = Math.ceil(remainingSeats / 2);
+    const rightSeats = remainingSeats - leftSeats;
+    const sideSeats = Math.max(leftSeats, rightSeats);
+    tableWidth = Math.max(92, longSide * (chairSize + chairGap) + 28);
+    tableHeight = Math.max(52, sideSeats * (chairSize + chairGap) + 28);
+
+    for (let i = 0; i < topSeats; i++) {
+      const left = ((tableWidth - chairSize) / Math.max(1, topSeats - 1)) * i;
+      addChair(`top-${i}`, left, 0, "top");
     }
-    for (let i = 0; i < topBottomCount; i++) {
-      chairs.push(
-        <div key={`bottom-${i}`} className="absolute -bottom-2.5 w-5 h-2.5 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-b-md" style={{ left: topBottomCount === 1 ? "38px" : topBottomCount === 2 ? `${18 + i * 40}px` : `${12 + i * 26}px` }} />
-      );
+    for (let i = 0; i < bottomSeats; i++) {
+      const left = ((tableWidth - chairSize) / Math.max(1, bottomSeats - 1)) * i;
+      addChair(`bottom-${i}`, left, tableHeight + chairSize + 4, "bottom");
     }
-    chairs.push(
-      <div key="left-0" className="absolute -left-2.5 top-[18px] w-2.5 h-5 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-l-md" />
-    );
-    chairs.push(
-      <div key="right-0" className="absolute -right-2.5 top-[18px] w-2.5 h-5 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-r-md" />
-    );
+    for (let i = 0; i < leftSeats; i++) {
+      const top = chairSize + 2 + ((tableHeight - chairSize) / Math.max(1, leftSeats - 1)) * i;
+      addChair(`left-${i}`, 0, top, "left");
+    }
+    for (let i = 0; i < rightSeats; i++) {
+      const top = chairSize + 2 + ((tableHeight - chairSize) / Math.max(1, rightSeats - 1)) * i;
+      addChair(`right-${i}`, tableWidth + chairSize + 4, top, "right");
+    }
   } else if (shape === "ROUND") {
-    const count = Math.min(8, capacity);
-    for (let i = 0; i < count; i++) {
-      const angleDeg = (360 / count) * i - 90;
-      const angleRad = (angleDeg * Math.PI) / 180;
-      const radius = 35;
-      const x = 32 + radius * Math.cos(angleRad) - 8;
-      const y = 32 + radius * Math.sin(angleRad) - 8;
-      chairs.push(
-        <div
-          key={`round-chair-${i}`}
-          className="absolute w-4 h-4 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-full"
-          style={{ left: `${x}px`, top: `${y}px` }}
-        />
+    const radius = Math.min(54, Math.max(30, 24 + seatCount * 1.2));
+    tableWidth = Math.max(58, radius * 1.35);
+    tableHeight = tableWidth;
+    const center = radius + chairSize;
+    frameWidth = center * 2;
+    frameHeight = center * 2;
+    tableLeft = center - tableWidth / 2;
+    tableTop = center - tableHeight / 2;
+    for (let i = 0; i < seatCount; i++) {
+      const angleRad = (((360 / seatCount) * i - 90) * Math.PI) / 180;
+      addChair(
+        `round-${i}`,
+        center + radius * Math.cos(angleRad) - chairSize / 2,
+        center + radius * Math.sin(angleRad) - chairSize / 2,
+        "round"
       );
     }
   } else {
-    chairs.push(
-      <div key="left" className="absolute -left-2.5 top-[22px] w-2.5 h-5 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-l-md" />
-    );
-    chairs.push(
-      <div key="right" className="absolute -right-2.5 top-[22px] w-2.5 h-5 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-r-md" />
-    );
-    if (capacity >= 3) {
-      chairs.push(
-        <div key="top" className="absolute -top-2.5 left-[22px] w-5 h-2.5 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-t-md" />
-      );
-    }
-    if (capacity >= 4) {
-      chairs.push(
-        <div key="bottom" className="absolute -bottom-2.5 left-[22px] w-5 h-2.5 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-b-md" />
-      );
-    }
+    const perSide = [0, 0, 0, 0];
+    for (let i = 0; i < seatCount; i++) perSide[i % 4] += 1;
+    const maxSide = Math.max(...perSide);
+    tableWidth = Math.max(62, maxSide * (chairSize + chairGap) + 16);
+    tableHeight = tableWidth;
+
+    for (let i = 0; i < perSide[0]; i++) addChair(`top-${i}`, ((tableWidth - chairSize) / Math.max(1, perSide[0] - 1)) * i, 0, "top");
+    for (let i = 0; i < perSide[2]; i++) addChair(`bottom-${i}`, ((tableWidth - chairSize) / Math.max(1, perSide[2] - 1)) * i, tableHeight + chairSize + 4, "bottom");
+    for (let i = 0; i < perSide[3]; i++) addChair(`left-${i}`, 0, chairSize + 2 + ((tableHeight - chairSize) / Math.max(1, perSide[3] - 1)) * i, "left");
+    for (let i = 0; i < perSide[1]; i++) addChair(`right-${i}`, tableWidth + chairSize + 4, chairSize + 2 + ((tableHeight - chairSize) / Math.max(1, perSide[1] - 1)) * i, "right");
   }
 
-  let badgeBg = "bg-blue-500 text-white";
-  if (status === "ORDERED") badgeBg = "bg-amber-500 text-white";
-  if (status === "EATING") badgeBg = "bg-zinc-400 text-white";
-  if (status === "READY") badgeBg = "bg-emerald-500 text-white";
+  if (shape !== "ROUND") {
+    frameWidth = tableWidth + chairSize * 2 + 4;
+    frameHeight = tableHeight + chairSize * 2 + 4;
+  }
 
-  let shapeClass = "w-16 h-16 rounded-2xl";
-  if (shape === "ROUND") shapeClass = "w-16 h-16 rounded-full";
-  if (shape === "RECTANGLE") shapeClass = "w-24 h-14 rounded-2xl";
+  const palette =
+    status === "ORDERED"
+      ? "bg-amber-100 border-amber-300"
+      : status === "EATING"
+        ? "bg-slate-200 border-slate-300"
+        : status === "READY"
+          ? "bg-emerald-100 border-emerald-300"
+          : "bg-sky-100 border-sky-200";
 
   return (
-    <div className={`relative ${shape === "RECTANGLE" ? "w-24 h-14" : "w-16 h-16"}`}>
+    <div
+      className="relative"
+      style={{
+        width: frameWidth,
+        height: frameHeight,
+      }}
+    >
       {isActive && chairs}
       <div
-        className={`flex items-center justify-center bg-white dark:bg-zinc-800 border transition-all shadow-[0_2px_8px_rgba(0,0,0,0.06)] relative z-10 ${shapeClass} ${
-          isHovered
-            ? "border-[var(--color-primary)] scale-105"
-            : isActive
-            ? "border-gray-200 dark:border-zinc-700"
-            : "border-gray-300 bg-gray-100 opacity-60"
+        className={`absolute z-10 flex items-center justify-center border text-slate-950 shadow-[0_4px_14px_rgba(15,23,42,0.10)] transition-all ${
+          shape === "ROUND" ? "rounded-full" : shape === "RECTANGLE" ? "rounded-2xl" : "rounded-xl"
+        } ${isActive ? palette : "border-slate-300 bg-slate-100 opacity-70"} ${
+          isHovered ? "scale-105 ring-2 ring-[var(--color-primary)]/35" : ""
         }`}
+        style={{
+          left: tableLeft,
+          top: tableTop,
+          width: tableWidth,
+          height: tableHeight,
+        }}
       >
-        <div className={`flex flex-col items-center justify-center text-center font-display text-xs font-bold rounded-full w-10 h-10 shadow-sm ${isActive ? badgeBg : "bg-gray-300 text-gray-500"}`}>
-          <span>{name}</span>
-          <span className="text-[8px] opacity-75 font-normal leading-none mt-0.5">{capacity}p</span>
+        <div className="flex max-w-full flex-col items-center justify-center px-2 text-center font-display leading-none">
+          <span className="max-w-full truncate text-[11px] font-black text-slate-950">{name}</span>
+          <span className="mt-1 text-[9px] font-semibold text-slate-700">{capacity}p</span>
         </div>
       </div>
     </div>

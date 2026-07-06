@@ -22,7 +22,7 @@ export type ProductRow = {
   categoryName: string | null;
   price: number;
   cost: number | null;
-  kind: "GOODS" | "SERVICE";
+  kind: "GOODS" | "SERVICE" | "ASSEMBLY" | "NON_INVENTORY" | "COST";
   trackStock: boolean;
   trackExpiry: boolean;
   shelfLifeDays: number | null;
@@ -32,6 +32,14 @@ export type ProductRow = {
   stockByOutlet: Record<string, number>;
   reorderPointByOutlet: Record<string, number>;
   variantGroups: VariantGroupRow[];
+};
+
+const PRODUCT_KIND_LABEL: Record<ProductRow["kind"], string> = {
+  GOODS: "Barang",
+  SERVICE: "Jasa",
+  ASSEMBLY: "Rakitan",
+  NON_INVENTORY: "Non-Stok",
+  COST: "Biaya",
 };
 
 export function ProdukManager({
@@ -153,12 +161,12 @@ export function ProdukManager({
                       ? ` · Jasa ${product.serviceDurationMin ?? 0} menit`
                       : product.trackStock
                         ? ` · Stok ${totalStock(product)}`
-                        : " · Tanpa stok"}
+                        : ` · ${PRODUCT_KIND_LABEL[product.kind]}`}
                   </p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    {product.kind === "SERVICE" && (
+                    {product.kind !== "GOODS" && (
                       <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
-                        Layanan
+                        {PRODUCT_KIND_LABEL[product.kind]}
                       </span>
                     )}
                     {product.trackExpiry && (

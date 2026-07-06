@@ -3,6 +3,7 @@ import { ulid } from "ulid";
 import { prisma } from "@/lib/prisma";
 import type { BusinessType, Prisma } from "@prisma/client";
 import { CORE_MODULE_KEYS, MODULES, resolveEnabledModules, type ModuleKey } from "@/lib/modules";
+import { normalizeBusinessMode } from "@/lib/business-modes";
 
 export type RegisterTenantInput = {
   businessName: string;
@@ -36,7 +37,9 @@ async function bootstrapTenantSampleData(
   outletId: string,
   businessType: BusinessType
 ) {
-  if (businessType === "FNB") {
+  const mode = normalizeBusinessMode(businessType);
+
+  if (mode === "CAFE") {
     const catMakanan = await tx.category.create({ data: { tenantId, name: "Makanan" } });
     const catMinuman = await tx.category.create({ data: { tenantId, name: "Minuman" } });
 
@@ -79,15 +82,15 @@ async function bootstrapTenantSampleData(
         },
       });
     }
-  } else if (businessType === "RETAIL") {
-    const catSembako = await tx.category.create({ data: { tenantId, name: "Sembako" } });
-    const catSnack = await tx.category.create({ data: { tenantId, name: "Makanan Ringan" } });
+  } else if (mode === "TOKO") {
+    const catOrganic = await tx.category.create({ data: { tenantId, name: "Organic Goods" } });
+    const catSnack = await tx.category.create({ data: { tenantId, name: "Healthy Snack" } });
 
     const products = [
-      { name: "Beras Premium 5kg", categoryId: catSembako.id, price: 75000, cost: 62000 },
-      { name: "Minyak Goreng 1L", categoryId: catSembako.id, price: 18500, cost: 15000 },
-      { name: "Keripik Singkong Balado", categoryId: catSnack.id, price: 12000, cost: 8000 },
-      { name: "Mie Instan Goreng", categoryId: catSembako.id, price: 3500, cost: 2800 },
+      { name: "Organic Almond Milk 1L", sku: "ALT-TOKO-0001", categoryId: catOrganic.id, price: 82000, cost: 61000, trackExpiry: true },
+      { name: "Gluten Free Granola 500g", sku: "ALT-TOKO-0002", categoryId: catSnack.id, price: 69000, cost: 48000, trackExpiry: true },
+      { name: "Raw Honey 350g", sku: "ALT-TOKO-0003", categoryId: catOrganic.id, price: 95000, cost: 70000, trackExpiry: true },
+      { name: "Kombucha Ginger 330ml", sku: "ALT-TOKO-0004", categoryId: catOrganic.id, price: 38000, cost: 25000, trackExpiry: true },
     ];
 
     for (const p of products) {
@@ -96,9 +99,12 @@ async function bootstrapTenantSampleData(
           tenantId,
           categoryId: p.categoryId,
           name: p.name,
+          sku: p.sku,
           price: p.price,
           cost: p.cost,
           trackStock: true,
+          trackExpiry: p.trackExpiry,
+          shelfLifeDays: 180,
         },
       });
 
@@ -110,29 +116,44 @@ async function bootstrapTenantSampleData(
         data: { tenantId, productId: prod.id, outletId, minQty: 15 },
       });
     }
-  } else if (businessType === "BARBERSHOP") {
-    const catHair = await tx.category.create({ data: { tenantId, name: "Potong Rambut" } });
-    const catCare = await tx.category.create({ data: { tenantId, name: "Perawatan" } });
+  } else if (mode === "COUNTER") {
+    const catAksesoris = await tx.category.create({ data: { tenantId, name: "Aksesoris HP" } });
+    const catService = await tx.category.create({ data: { tenantId, name: "Service" } });
 
     const products = [
-      { name: "Gentleman Haircut", categoryId: catHair.id, price: 45000, cost: 5000 },
-      { name: "Premium Shaving", categoryId: catHair.id, price: 25000, cost: 3000 },
-      { name: "Creambath & Head Massage", categoryId: catCare.id, price: 60000, cost: 10000 },
-      { name: "Hair Coloring", categoryId: catCare.id, price: 90000, cost: 25000 },
+      { name: "Kabel Type-C 1m", sku: "ALT-CTR-0001", categoryId: catAksesoris.id, price: 35000, cost: 18000, kind: "GOODS" as const, warrantyDays: 30 },
+      { name: "Charger 20W", sku: "ALT-CTR-0002", categoryId: catAksesoris.id, price: 85000, cost: 52000, kind: "GOODS" as const, warrantyDays: 90 },
+      { name: "Ganti LCD", sku: null, categoryId: catService.id, price: 250000, cost: 0, kind: "SERVICE" as const, warrantyDays: 14 },
     ];
 
     for (const p of products) {
-      await tx.product.create({
+      const prod = await tx.product.create({
         data: {
           tenantId,
           categoryId: p.categoryId,
           name: p.name,
+          sku: p.sku,
           price: p.price,
           cost: p.cost,
-          trackStock: false,
+          kind: p.kind,
+          trackStock: p.kind === "GOODS",
+          warrantyDays: p.warrantyDays,
+          serviceDurationMin: p.kind === "SERVICE" ? 60 : null,
         },
       });
+      if (p.kind === "GOODS") {
+        await tx.productStock.create({ data: { tenantId, productId: prod.id, outletId, qty: 25 } });
+        await tx.stockReorderPoint.create({ data: { tenantId, productId: prod.id, outletId, minQty: 5 } });
+      }
     }
+  } else if (mode === "LAUNDRY") {
+    await tx.laundryService.createMany({
+      data: [
+        { tenantId, name: "Kiloan Reguler", serviceType: "KILOAN", pricePerKg: 8000, sortOrder: 1 },
+        { tenantId, name: "Express", serviceType: "EXPRESS", pricePerKg: 14000, sortOrder: 2 },
+        { tenantId, name: "Setrika Satuan", serviceType: "SETRIKA", servicePrice: 5000, sortOrder: 3 },
+      ],
+    });
   } else {
     const catUmum = await tx.category.create({ data: { tenantId, name: "Layanan Umum" } });
 
@@ -243,6 +264,13 @@ export async function updateTenantSetting(tenantId: string, input: TenantSetting
   });
 }
 
+export async function updateTenantBusinessType(tenantId: string, businessType: BusinessType) {
+  return prisma.tenant.update({
+    where: { id: tenantId },
+    data: { businessType },
+  });
+}
+
 /**
  * Modul mana yang aktif buat tenant ini. Modul core selalu ikut walau tidak
  * ada di database — lihat resolveEnabledModules di src/lib/modules.ts.
@@ -254,8 +282,8 @@ export async function getEnabledModules(tenantId: string): Promise<Set<ModuleKey
 }
 
 /**
- * Ganti daftar modul yang dimatikan. Cuma Owner yang boleh manggil ini (dicek
- * di server action pemanggilnya). Modul core diabaikan kalau ikut terkirim —
+ * Ganti daftar modul yang dimatikan. Cuma pemanggil yang sudah dijaga server action
+ * boleh memakai ini. Modul core diabaikan kalau ikut terkirim —
  * tidak pernah bisa dimatikan.
  */
 export async function setDisabledModules(tenantId: string, disabledKeys: ModuleKey[]) {

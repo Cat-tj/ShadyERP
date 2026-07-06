@@ -38,6 +38,7 @@ export default async function KasirPage() {
         id: product.id,
         name: product.name,
         imageUrl: product.imageUrl,
+        sku: product.sku,
         price: product.price,
         categoryId: product.categoryId,
         categoryName: product.category?.name ?? null,

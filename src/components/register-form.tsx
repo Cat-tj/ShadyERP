@@ -3,16 +3,9 @@
 import { useState, useActionState } from "react";
 import Link from "next/link";
 import { registerAction, type RegisterState } from "@/app/register/actions";
+import { BUSINESS_MODES, BUSINESS_MODE_MAP, type BusinessModeKey } from "@/lib/business-modes";
 
 const initialState: RegisterState = {};
-
-const BUSINESS_TYPES = [
-  { value: "FNB", label: "Makanan & Minuman", desc: "Kafe, resto, depot" },
-  { value: "BARBERSHOP", label: "Barbershop & Salon", desc: "Cukur, salon, kecantikan" },
-  { value: "RETAIL", label: "Toko & Retail", desc: "Minimarket, butik, warung" },
-  { value: "SERVICE", label: "Jasa & Layanan", desc: "Laundry, bimbel, bengkel" },
-  { value: "OTHER", label: "Usaha Lainnya", desc: "Sektor industri lainnya" },
-] as const;
 
 const TOGGLEABLE_MODULES = [
   { key: "inventory", label: "Inventory", desc: "Produk, stok, supplier, pembelian, barang masuk, opname" },
@@ -23,17 +16,8 @@ const TOGGLEABLE_MODULES = [
   { key: "hr", label: "HR & Absensi", desc: "Jadwal shift & absensi foto + GPS" },
   { key: "keuangan", label: "Laporan Keuangan", desc: "Arus kas, laba-rugi, & pengeluaran" },
   { key: "promo", label: "Promo & Marketing", desc: "Happy hour & diskon otomatis" },
+  { key: "resep", label: "Resep & Bahan Baku", desc: "Bahan baku, resep, dan HPP menu" },
 ] as const;
-
-const MODULE_RECOMMENDATIONS: Record<string, string[]> = {
-  FNB: ["inventory", "pesanan-digital", "member", "hr", "keuangan", "promo"],
-  BARBERSHOP: ["inventory", "booking", "member", "hr", "keuangan", "promo"],
-  RETAIL: ["inventory", "member", "hr", "keuangan", "promo"],
-  SERVICE: ["inventory", "booking", "laundry", "hr", "keuangan"],
-  OTHER: ["inventory", "hr", "keuangan"],
-};
-
-type BusinessType = (typeof BUSINESS_TYPES)[number]["value"];
 
 export function RegisterForm() {
   const [state, formAction, isPending] = useActionState(registerAction, initialState);
@@ -45,13 +29,13 @@ export function RegisterForm() {
   const [email, setEmail] = useState(state.values?.email ?? "");
   const [password, setPassword] = useState("");
   const [businessName, setBusinessName] = useState(state.values?.businessName ?? "");
-  const [businessType, setBusinessType] = useState<BusinessType>("FNB");
+  const [businessType, setBusinessType] = useState<BusinessModeKey>("CAFE");
   const [outletName, setOutletName] = useState(state.values?.outletName ?? "");
-  const [enabledModules, setEnabledModules] = useState<string[]>(MODULE_RECOMMENDATIONS.FNB);
+  const [enabledModules, setEnabledModules] = useState<string[]>(BUSINESS_MODE_MAP.CAFE.recommendedModules);
   const [seedSampleData, setSeedSampleData] = useState(true);
   const displayedError = localError ?? state.error ?? null;
 
-  const allKeys = ["inventory", "pesanan-digital", "booking", "laundry", "member", "hr", "keuangan", "promo"];
+  const allKeys = TOGGLEABLE_MODULES.map((m) => m.key);
   const disabledModules = allKeys.filter((k) => !enabledModules.includes(k));
 
   function validateStep1() {
@@ -212,21 +196,22 @@ export function RegisterForm() {
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-[var(--color-text)]">Jenis Usaha</label>
             <div className="grid grid-cols-2 gap-2 mt-1 sm:grid-cols-3">
-              {BUSINESS_TYPES.map((t) => (
+              {BUSINESS_MODES.map((t) => (
                 <button
-                  key={t.value}
+                  key={t.key}
                   type="button"
                   onClick={() => {
-                    setBusinessType(t.value);
-                    setEnabledModules(MODULE_RECOMMENDATIONS[t.value] ?? ["hr", "keuangan"]);
+                    setBusinessType(t.key);
+                    setEnabledModules(t.recommendedModules);
                   }}
                   className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center transition-all ${
-                    businessType === t.value
+                    businessType === t.key
                       ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)] font-semibold shadow-sm"
                       : "border-[var(--color-border)] bg-white/50 hover:bg-white text-[var(--color-text)]"
                   }`}
                 >
-                  <span className="text-xs font-semibold leading-tight">{t.label}</span>
+                  <span className="text-xs font-semibold leading-tight">{t.shortLabel}</span>
+                  <span className="mt-1 line-clamp-2 text-[10px] font-medium opacity-70">{t.description}</span>
                 </button>
               ))}
             </div>
@@ -314,7 +299,7 @@ export function RegisterForm() {
               />
               <div className="flex-1">
                 <span className="text-xs font-bold text-[var(--color-text)]">
-                  Muat Data Sampel Bawaan ({businessType})
+                  Muat Data Sampel Bawaan ({BUSINESS_MODE_MAP[businessType].shortLabel})
                 </span>
                 <p className="text-[10px] text-[var(--color-text-secondary)] mt-0.5">
                   Membuat beberapa produk, kategori, stok, dan pengaturan sampel otomatis agar Anda bisa langsung mencoba sistem kasir dan operasional.

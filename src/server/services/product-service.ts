@@ -36,7 +36,7 @@ export async function deleteCategory(tenantId: string, id: string) {
 
 export async function listProductsWithStock(tenantId: string, outletId: string) {
   const products = await prisma.product.findMany({
-    where: { tenantId },
+    where: { tenantId, kind: { not: "COST" } },
     include: {
       category: true,
       stocks: { where: { outletId } },
@@ -70,7 +70,7 @@ export type ProductInput = {
   categoryId: string | null;
   price: number;
   cost: number | null;
-  kind: "GOODS" | "SERVICE";
+  kind: "GOODS" | "SERVICE" | "ASSEMBLY" | "NON_INVENTORY" | "COST";
   trackStock: boolean;
   trackExpiry: boolean;
   shelfLifeDays: number | null;

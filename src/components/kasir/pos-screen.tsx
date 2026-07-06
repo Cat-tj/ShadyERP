@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, type KeyboardEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { formatRupiah } from "@/lib/format";
@@ -15,6 +15,7 @@ export type PosProduct = {
   id: string;
   name: string;
   imageUrl: string | null;
+  sku: string | null;
   price: number;
   categoryId: string | null;
   categoryName: string | null;
@@ -61,12 +62,17 @@ export function PosScreen({
   const [showCartMobile, setShowCartMobile] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [showCashOut, setShowCashOut] = useState(false);
+  const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null);
   const [variantPickerProduct, setVariantPickerProduct] = useState<PosProduct | null>(null);
 
   const filteredProducts = useMemo(() => {
+    const query = search.trim().toLowerCase();
     return products.filter((product) => {
       const matchCategory = activeCategory === "ALL" || product.categoryId === activeCategory;
-      const matchSearch = product.name.toLowerCase().includes(search.trim().toLowerCase());
+      const matchSearch =
+        !query ||
+        product.name.toLowerCase().includes(query) ||
+        (product.sku?.toLowerCase().includes(query) ?? false);
       return matchCategory && matchSearch;
     });
   }, [products, activeCategory, search]);
@@ -102,6 +108,7 @@ export function PosScreen({
     priceDelta: number,
     variantLabel: string | null
   ) {
+    setLastAddedProductId(product.id);
     const cartKey = `${product.id}::${[...variantOptionIds].sort().join(",")}`;
     setCart((prev) => {
       const existing = prev.find((line) => line.cartKey === cartKey);
@@ -136,6 +143,17 @@ export function PosScreen({
       return;
     }
     addLineToCart(product, [], 0, null);
+  }
+
+  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") return;
+    const query = search.trim().toLowerCase();
+    if (!query) return;
+    const exact = products.find((product) => product.sku?.toLowerCase() === query);
+    if (!exact) return;
+    event.preventDefault();
+    addToCart(exact);
+    setSearch("");
   }
 
   function decrementProduct(productId: string) {
@@ -267,7 +285,8 @@ export function PosScreen({
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Cari produk..."
+            onKeyDown={handleSearchKeyDown}
+            placeholder="Scan barcode atau cari produk..."
             className="mb-3 min-h-[48px] w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
           />
 
@@ -348,6 +367,8 @@ export function PosScreen({
                     key={product.id}
                     className={`flex min-h-[132px] gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-sm transition-shadow hover:shadow-md ${
                       outOfStock ? "opacity-50" : ""
+                    } ${
+                      lastAddedProductId === product.id ? "ring-2 ring-[var(--color-primary)]/30" : ""
                     }`}
                   >
                     <ProductVisual product={product} />
@@ -357,6 +378,11 @@ export function PosScreen({
                         <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--color-text-secondary)]">
                           {product.categoryName ?? "Menu"} siap ditambahkan ke invoice.
                         </p>
+                        {product.sku && (
+                          <p className="mt-1 truncate font-mono text-[10px] text-[var(--color-text-secondary)]">
+                            {product.sku}
+                          </p>
+                        )}
                       </div>
                       <div className="mt-auto flex items-end justify-between gap-2 pt-3">
                         <div>

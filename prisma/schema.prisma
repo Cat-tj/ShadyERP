@@ -27,6 +27,11 @@ model SuperAdmin {
 // ================== TENANT & OUTLET ==================
 
 enum BusinessType {
+  CAFE
+  TOKO
+  LAUNDRY
+  COUNTER
+  COMPANY
   FNB
   BARBERSHOP
   RETAIL
@@ -44,11 +49,11 @@ model Tenant {
   id              String       @id @default(cuid())
   name            String
   slug            String       @unique
-  businessType    BusinessType @default(OTHER)
+  businessType    BusinessType @default(CAFE)
   plan            Plan         @default(FREE)
   isActive        Boolean      @default(true)
   /**
-   * Key modul (lihat src/lib/modules.ts) yang DIMATIKAN Owner. Modul core tidak pernah masuk sini.
+   * Key modul (lihat src/lib/modules.ts) yang dimatikan Superadmin Altora. Modul core tidak pernah masuk sini.
    */
   disabledModules String[]     @default([])
   createdAt       DateTime     @default(now())
@@ -101,6 +106,10 @@ model Tenant {
   productRecipeItems       ProductRecipeItem[]
   laundryOrders            LaundryOrder[]
   laundryServices          LaundryService[]
+  supplierInvoices         SupplierInvoice[]
+  supplierPayments         SupplierPayment[]
+  accounts                 Account[]
+  journalEntries           JournalEntry[]
 }
 
 model Outlet {
@@ -333,6 +342,9 @@ model Category {
 enum ProductKind {
   GOODS
   SERVICE
+  ASSEMBLY
+  NON_INVENTORY
+  COST
 }
 
 model Product {
@@ -1261,6 +1273,7 @@ model Supplier {
   tenant           Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   purchaseOrders   PurchaseOrder[]
   pricingContracts SupplierPricingContract[]
+  invoices         SupplierInvoice[]
 
   @@index([tenantId])
 }
@@ -1647,4 +1660,86 @@ model ProductRecipeItem {
   @@index([tenantId])
   @@index([productId])
   @@index([ingredientId])
+}
+
+enum SupplierInvoiceStatus {
+  UNPAID
+  PARTIAL
+  PAID
+  VOIDED
+}
+
+model SupplierInvoice {
+  id              String                @id @default(cuid())
+  tenantId        String
+  supplierId      String
+  outletId        String?
+  invoiceNumber   String
+  invoiceDate     DateTime
+  dueDate         DateTime?
+  subtotal        Int
+  discountAmount  Int                   @default(0)
+  taxAmount       Int                   @default(0)
+  total           Int
+  paidAmount      Int                   @default(0)
+  status          SupplierInvoiceStatus @default(UNPAID)
+  purchaseOrderId String?
+  stockReceiptId  String?
+  notes           String?
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  tenant   Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplier Supplier          @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  payments SupplierPayment[]
+
+  @@index([tenantId])
+  @@index([supplierId])
+}
+
+model SupplierPayment {
+  id                String   @id @default(cuid())
+  tenantId          String
+  supplierInvoiceId String
+  paymentDate       DateTime
+  amount            Int
+  paymentMethod     String   @default("CASH") // "CASH", "BANK", etc
+  notes             String?
+  createdAt         DateTime @default(now())
+
+  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoice SupplierInvoice @relation(fields: [supplierInvoiceId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([supplierInvoiceId])
+}
+
+model Account {
+  id        String   @id @default(cuid())
+  tenantId  String
+  code      String   // e.g., "11100" for Cash Drawer
+  name      String   // e.g., "Cash Drawer"
+  type      String   // "ASSET", "LIABILITY", "EQUITY", "REVENUE", "EXPENSE"
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, code])
+  @@index([tenantId])
+}
+
+model JournalEntry {
+  id          String   @id @default(cuid())
+  tenantId    String
+  date        DateTime @default(now())
+  description String
+  debitCode   String
+  creditCode  String
+  amount      Int      // Rupiah
+  reference   String?  // e.g., "SALE-123", "EXP-456"
+  createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
 }
