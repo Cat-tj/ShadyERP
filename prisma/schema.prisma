@@ -110,6 +110,7 @@ model Tenant {
   supplierPayments         SupplierPayment[]
   accounts                 Account[]
   journalEntries           JournalEntry[]
+  leads                    Lead[]
 }
 
 model Outlet {
@@ -1741,6 +1742,33 @@ model JournalEntry {
   amount      Int      // Rupiah
   reference   String?  // e.g., "SALE-123", "EXP-456"
   createdAt   DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  WON
+  LOST
+}
+
+model Lead {
+  id             String     @id @default(cuid())
+  tenantId       String
+  name           String
+  phone          String?
+  email          String?
+  source         String?    // e.g. "Instagram", "WhatsApp", "Rekomendasi"
+  interest       String?    // e.g. "Catering Event", "Kopi Bubuk Grosir"
+  expectedValue  Int        @default(0)
+  nextFollowUpAt DateTime?
+  status         LeadStatus @default(NEW)
+  notes          String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 

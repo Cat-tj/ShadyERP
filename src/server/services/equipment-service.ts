@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { EquipmentStatus, MaintenanceStatus } from "@prisma/client";
+import { logExpenseToJournal } from "@/server/services/accounting-service";
 
 /**
  * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
@@ -129,6 +130,23 @@ export async function updateMaintenanceStatus(
               : "NEEDS_REPAIR",
       },
     });
+
+    if (status === "RESOLVED" && updated.cost > 0) {
+      const expense = await tx.expense.create({
+        data: {
+          tenantId,
+          outletId: log.outletId,
+          createdById: log.reportedById,
+          category: "LAINNYA",
+          amount: updated.cost,
+          note: `Auto-Expense perbaikan alat: ${log.equipment.name} (${log.issue})`,
+          spentAt: new Date(),
+        },
+      });
+
+      await logExpenseToJournal(tenantId, expense.id, tx);
+    }
+
     return updated;
   });
 }
