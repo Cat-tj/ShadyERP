@@ -13,8 +13,15 @@ const CASH_OUT_METHOD_LABEL: Record<string, string> = {
   EWALLET: "E-Wallet",
 };
 
-export default async function RiwayatPage() {
+export default async function RiwayatPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ payment?: string; status?: string }>;
+}) {
   const user = await requireSession();
+  const filters = await searchParams;
+  const paymentFilter = filters.payment ?? "ALL";
+  const statusFilter = filters.status ?? "ALL";
   const outlets = await listOutletsForUser(user.tenantId, user.id, user.role);
   const outletIds = outlets.map((outlet) => outlet.id);
   const [sales, cashOutTransactions] = await Promise.all([
@@ -22,26 +29,29 @@ export default async function RiwayatPage() {
     listCashOutTransactions(user.tenantId, outletIds),
   ]);
 
-  const rows: SaleRow[] = sales.map((sale) => ({
-    id: sale.id,
-    invoiceNumber: sale.invoiceNumber,
-    outletName: sale.outlet.name,
-    cashierName: sale.cashier.name,
-    memberName: sale.member?.name ?? null,
-    total: sale.total,
-    paymentMethod: sale.paymentMethod,
-    orderType: sale.orderType,
-    status: sale.status,
-    voidReason: sale.voidReason,
-    createdAt: sale.createdAt.toISOString(),
-    items: sale.items.map((item) => ({
-      id: item.id,
-      productName: item.productName,
-      qty: item.qty,
-      returnedQty: item.returnedQty,
-      subtotal: item.subtotal,
-    })),
-  }));
+  const rows: SaleRow[] = sales
+    .filter((sale) => paymentFilter === "ALL" || sale.paymentMethod === paymentFilter)
+    .filter((sale) => statusFilter === "ALL" || sale.status === statusFilter)
+    .map((sale) => ({
+      id: sale.id,
+      invoiceNumber: sale.invoiceNumber,
+      outletName: sale.outlet.name,
+      cashierName: sale.cashier.name,
+      memberName: sale.member?.name ?? null,
+      total: sale.total,
+      paymentMethod: sale.paymentMethod,
+      orderType: sale.orderType,
+      status: sale.status,
+      voidReason: sale.voidReason,
+      createdAt: sale.createdAt.toISOString(),
+      items: sale.items.map((item) => ({
+        id: item.id,
+        productName: item.productName,
+        qty: item.qty,
+        returnedQty: item.returnedQty,
+        subtotal: item.subtotal,
+      })),
+    }));
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -54,6 +64,32 @@ export default async function RiwayatPage() {
           Ekspor CSV
         </a>
       </div>
+      <form className="mb-4 grid gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 sm:grid-cols-[1fr_1fr_auto]">
+        <select
+          name="payment"
+          defaultValue={paymentFilter}
+          className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm"
+        >
+          <option value="ALL">Semua metode bayar</option>
+          <option value="CASH">Tunai</option>
+          <option value="QRIS">QRIS</option>
+          <option value="TRANSFER">Transfer</option>
+          <option value="EWALLET">E-Wallet</option>
+          <option value="DEPOSIT">Deposit</option>
+        </select>
+        <select
+          name="status"
+          defaultValue={statusFilter}
+          className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm"
+        >
+          <option value="ALL">Semua status</option>
+          <option value="COMPLETED">Selesai</option>
+          <option value="VOIDED">Dibatalkan</option>
+        </select>
+        <button className="min-h-[42px] rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)]">
+          Filter
+        </button>
+      </form>
       <RiwayatList sales={rows} canVoid={user.role === "OWNER" || user.role === "MANAGER"} />
 
       <section className="mt-8">

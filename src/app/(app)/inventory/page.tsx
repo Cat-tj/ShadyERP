@@ -5,6 +5,7 @@ import { listOutletsForUser } from "@/server/services/outlet-service";
 import { getExpiringBatches, getLowStockProducts } from "@/server/services/inventory-service";
 import { ProdukManager } from "@/components/produk/produk-manager";
 import { LowStockAlert } from "@/components/inventory/low-stock-alert";
+import { ExpiredBatchActions } from "@/components/inventory/expired-batch-actions";
 import { formatTanggalPendek } from "@/lib/format";
 import { normalizeBusinessMode } from "@/lib/business-modes";
 import { redirect } from "next/navigation";
@@ -48,6 +49,7 @@ export default async function ProdukPage() {
                     {batch.expirationDate ? formatTanggalPendek(batch.expirationDate.toISOString()) : "-"}
                   </span>
                 </div>
+                <ExpiredBatchActions batchId={batch.id} />
               </div>
             ))}
           </div>

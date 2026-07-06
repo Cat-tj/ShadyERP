@@ -2,7 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole, requireSession } from "@/server/require-session";
-import { voidSale, processReturn, type ReturnItemInput } from "@/server/services/sale-service";
+import { voidSale, processReturn, correctSalePaymentMethod, type ReturnItemInput } from "@/server/services/sale-service";
+import type { PaymentMethod } from "@prisma/client";
 
 export type VoidResult = { error?: string; success?: boolean };
 
@@ -34,5 +35,23 @@ export async function processReturnAction(
   revalidatePath("/kasir/riwayat");
   revalidatePath("/kasir");
   revalidatePath("/laporan");
+  return { success: true };
+}
+
+export async function correctSalePaymentMethodAction(
+  saleId: string,
+  paymentMethod: Exclude<PaymentMethod, "DEPOSIT">,
+  reason: string
+): Promise<VoidResult> {
+  const user = await requireRole(["OWNER", "MANAGER"]);
+  try {
+    await correctSalePaymentMethod(user.tenantId, saleId, paymentMethod, reason, user.id);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal mengoreksi metode bayar." };
+  }
+  revalidatePath("/kasir/riwayat");
+  revalidatePath("/finance");
+  revalidatePath("/finance/kas");
+  revalidatePath("/simple/uang");
   return { success: true };
 }

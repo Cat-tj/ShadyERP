@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { HomeIcon, BarChartIcon, GridIcon, ReceiptIcon, WalletIcon, UserIcon, PowerIcon } from "@/components/ui/icons";
+import { BarChartIcon, GridIcon, ReceiptIcon, WalletIcon, UserIcon, PowerIcon } from "@/components/ui/icons";
 import type { Role } from "@/lib/nav";
 
 const ROLE_LABEL: Record<Role, string> = {
@@ -13,7 +13,6 @@ const ROLE_LABEL: Record<Role, string> = {
 };
 
 const tabs = [
-  { href: "/simple/hari-ini", label: "Hari Ini", icon: HomeIcon },
   { href: "/kasir", label: "Kasir", icon: ReceiptIcon },
   { href: "/simple/uang", label: "Uang", icon: WalletIcon },
   { href: "/simple/data", label: "Data", icon: BarChartIcon },
@@ -72,7 +71,7 @@ export function SimpleShell({
       <main className="mx-auto w-full max-w-5xl px-4 py-5">{children}</main>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--color-border)] bg-[var(--color-surface)]/95 px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-[0_-18px_40px_rgba(15,23,42,0.08)] backdrop-blur">
-        <div className="mx-auto grid max-w-5xl grid-cols-5 gap-1">
+        <div className="mx-auto grid max-w-5xl grid-cols-4 gap-1">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);

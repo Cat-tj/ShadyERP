@@ -950,6 +950,7 @@ model SubscriptionRequest {
 enum AuditAction {
   SALE_VOID
   SALE_RETURN
+  SALE_PAYMENT_CORRECTION
   PRODUCT_PRICE_CHANGE
   PRODUCT_DEACTIVATE
   PRODUCT_ACTIVATE
@@ -1427,6 +1428,8 @@ model StockReceiptItem {
   qtyReceived Int // Dari PO
   qtyAccepted Int      @default(0) // Lolos QC
   qtyDefect   Int      @default(0) // Rusak/bermasalah
+  batchNumber String?
+  expirationDate DateTime?
   qcStatus    QCStatus @default(PENDING)
   qcNotes     String?
   createdAt   DateTime @default(now())

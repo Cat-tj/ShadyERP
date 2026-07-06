@@ -448,6 +448,43 @@ export async function voidSale(tenantId: string, saleId: string, reason: string,
   });
 }
 
+export async function correctSalePaymentMethod(
+  tenantId: string,
+  saleId: string,
+  paymentMethod: Exclude<PaymentMethod, "DEPOSIT">,
+  reason: string,
+  changedById: string
+) {
+  if (!reason.trim()) throw new Error("Alasan koreksi wajib diisi.");
+
+  return prisma.$transaction(async (tx) => {
+    const sale = await tx.sale.findFirst({ where: { id: saleId, tenantId } });
+    if (!sale) throw new Error("Transaksi tidak ditemukan.");
+    if (sale.status === "VOIDED") throw new Error("Transaksi batal tidak bisa dikoreksi.");
+    if (sale.paymentMethod === "DEPOSIT") {
+      throw new Error("Transaksi deposit tidak bisa dikoreksi dari sini karena memengaruhi saldo member.");
+    }
+    if (sale.paymentMethod === paymentMethod) return sale;
+
+    await recordAuditLog(
+      tx,
+      tenantId,
+      changedById,
+      "SALE_PAYMENT_CORRECTION",
+      `Koreksi metode bayar ${sale.invoiceNumber}: ${sale.paymentMethod} → ${paymentMethod} — alasan: ${reason}`
+    );
+
+    return tx.sale.update({
+      where: { id: sale.id },
+      data: {
+        paymentMethod,
+        amountPaid: sale.total,
+        changeAmount: 0,
+      },
+    });
+  });
+}
+
 export type ReturnItemInput = { saleItemId: string; qty: number };
 
 /**

@@ -15,12 +15,14 @@ Dokumen ini adalah checklist kerja Altora. Setiap agent yang menyelesaikan item 
 - [x] Mode akuntansi tenant: `SIMPLE` dan `ADVANCED`.
   - `SIMPLE` memakai UX ringkas, `ADVANCED` memakai AppShell/sidebar.
 - [x] SimpleShell untuk tenant SIMPLE.
-  - Bottom tabs: Kasir, Uang, Data, Lainnya.
-- [x] Auto redirect `/pilih-aplikasi` ke `/kasir` untuk tenant SIMPLE.
+  - Bottom tabs dibuat tetap 4 item: Kasir, Uang, Data, Lainnya. Akses Hari Ini lewat logo/topbar dan menu agar mobile tetap lega.
+- [x] Auto redirect `/pilih-aplikasi` ke `/simple/hari-ini` untuk tenant SIMPLE.
 - [ ] Onboarding wizard tenant baru.
   - Pilih mode bisnis, modul, outlet, produk pertama, staff, dan QRIS.
+  - Progress: halaman `/onboarding` sudah ada sebagai checklist setup berbasis data tenant.
 - [x] Import data awal.
   - Halaman import produk dari CSV terintegrasi dengan validasi baris client-side, unduh template, dan pemrosesan bulk Server Action.
+  - Import sekarang mendukung outlet/cabang, supplier, batch/lot, expired date, track expiry, dan validasi duplikat SKU/barcode.
 - [x] Export backup tenant.
   - Kartu cadangan data ditambahkan ke halaman Pengaturan Bisnis yang mengekspor seluruh tabel penting (Profil, Outlet, Produk, Transaksi, Member, Supplier) menjadi berkas unduhan JSON secara aman.
 
@@ -34,8 +36,8 @@ Dokumen ini adalah checklist kerja Altora. Setiap agent yang menyelesaikan item 
   - Grid fitur sekunder berdasarkan role dan modul aktif.
 - [x] `/simple/hari-ini`.
   - Dashboard owner 10 detik: omzet hari ini vs kemarin, tunai di laci, digital, shift aktif, top product hari ini, dan peringatan operasional (alerts).
-- [x] Badge bottom tab yang data-driven.
-  - Jumlah alert riil dilewatkan dari layout server component ke SimpleShell client untuk merender badge Data secara dinamis.
+- [x] Simple layout low-spec pass.
+  - Query alert berat dilepas dari layout global agar halaman Kasir tidak ikut menarik stok/expiry/hutang/order setiap render.
 - [ ] Simple Mode mobile polish.
   - Tes HP kecil, tablet, desktop sempit, dan no-overlap.
 
@@ -50,7 +52,8 @@ Dokumen ini adalah checklist kerja Altora. Setiap agent yang menyelesaikan item 
 - [x] Alert hutang supplier jatuh tempo.
 - [x] Alert produk sepi.
 - [x] Alert pesanan belum selesai.
-- [ ] Alert transaksi offline belum sync.
+- [x] Alert transaksi offline belum sync.
+  - Dibuat halaman `/simple/offline` untuk melihat status online/offline, pending sync, retry manual, dan transaksi gagal di device kasir.
 
 ## Superadmin Platform
 
@@ -75,6 +78,8 @@ Dokumen ini adalah checklist kerja Altora. Setiap agent yang menyelesaikan item 
 
 - [ ] Role matrix granular.
   - Owner, Manager Cabang, Kasir, Inventory, Finance, HR, Staff Dapur/Laundry/Barber.
+  - Catatan: jangan dipecah setengah matang. Ini perlu migrasi enum role + update auth/nav/server actions secara menyeluruh.
+  - Progress: form karyawan punya preset pekerjaan Kasir, Inventory, Finance, HR, Manager Cabang, Dapur, Laundry, Runner lewat `jobTitle`.
 - [ ] Pembatasan per outlet.
   - User hanya lihat cabang yang ditugaskan.
 - [ ] Permission per aksi.
@@ -94,8 +99,10 @@ Dokumen ini adalah checklist kerja Altora. Setiap agent yang menyelesaikan item 
 - [x] Fix UI POS agar card produk tidak overlap dengan invoice.
 - [ ] Retur & void proper.
   - Void transaksi, retur item sebagian, alasan, approval, audit log.
-- [ ] Payment reconciliation.
-  - Koreksi metode bayar dengan audit.
+- [x] Payment reconciliation dasar.
+  - Riwayat transaksi punya aksi koreksi metode bayar non-deposit dengan alasan wajib dan audit log.
+- [x] Ringkasan rekonsiliasi metode bayar.
+  - Buku Kas menampilkan total/count/percentage per metode bayar untuk dicocokkan owner saat tutup hari.
 - [ ] Split bill.
 - [ ] Hold order / park order.
 - [ ] Print receipt polish.
@@ -103,23 +110,30 @@ Dokumen ini adalah checklist kerja Altora. Setiap agent yang menyelesaikan item 
 
 ## Offline Mode
 
-- [ ] Offline queue UI.
-  - Daftar transaksi pending sync.
-- [ ] Badge online/offline.
-- [ ] Retry sync manual.
-- [ ] Warning jika data lokal belum sync.
+- [x] Offline queue UI.
+  - Daftar transaksi pending sync tersedia di `/simple/offline`.
+- [x] Badge online/offline.
+  - Status online/offline tampil di panel Offline Sync.
+- [x] Retry sync manual.
+- [x] Warning jika data lokal belum sync.
 - [ ] Conflict handling saat sync.
 - [ ] Local-first POS hardening.
 
 ## Retail / Altora Toko
 
-- [ ] Receiving mobile.
-  - Scan barcode, qty, expired date, supplier, foto nota opsional.
+- [x] Receiving barang langsung.
+  - Barang datang bisa diinput dari halaman Barang Masuk tanpa membuat PO manual; sistem membuat PO cepat di belakang layar.
+- [x] Expiry/batch capture saat receiving.
+  - Form Barang Masuk mendukung batch/lot dan tanggal expired; saat selesai QC, batch masuk ke `StockBatch`.
+- [ ] Receiving mobile polish.
+  - Scan barcode, foto nota opsional, dan mode layar HP khusus gudang.
+  - Progress: form Barang Masuk mendukung scan/ketik SKU via input cepat; kamera dan foto nota belum.
 - [ ] Produk tanpa barcode workflow.
   - Alias pencarian, SKU internal, label barcode.
 - [ ] Barcode print.
 - [ ] Expired product workflow.
   - Buang/rusak, clearance discount, audit stok expired.
+  - Progress: batch mendekati expired bisa ditandai buang/rusak dari Inventory, stok outlet berkurang, dan stock adjustment tercatat.
 - [ ] Rak/lokasi barang.
 - [ ] Stock opname cepat.
 - [ ] Marketplace manual tracker.
@@ -145,6 +159,7 @@ Dokumen ini adalah checklist kerja Altora. Setiap agent yang menyelesaikan item 
 - [x] Top sale dan worst sale dasar.
 - [x] Hutang supplier dasar.
 - [ ] Payment reconciliation.
+  - Progress: filter riwayat transaksi berdasarkan metode bayar dan status tersedia di `/kasir/riwayat`.
 - [ ] Piutang pelanggan.
 - [ ] Kas masuk/keluar/transfer antar kas.
 - [ ] Laba rugi yang lebih jelas untuk SIMPLE.
@@ -240,4 +255,3 @@ Dokumen ini adalah checklist kerja Altora. Setiap agent yang menyelesaikan item 
 - [ ] Responsive screenshot checklist.
   - Mobile, tablet, desktop, wide desktop.
 - [ ] Seed/demo data per mode bisnis.
-

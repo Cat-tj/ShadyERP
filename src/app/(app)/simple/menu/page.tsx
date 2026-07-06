@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireSessionWithTenant } from "@/server/require-session";
 import { resolveEnabledModules, type ModuleKey } from "@/lib/modules";
-import { BarChartIcon, PackageIcon, SettingsIcon, UsersIcon, MapPinIcon, ReceiptIcon } from "@/components/ui/icons";
+import { AlertTriangleIcon, BarChartIcon, PackageIcon, SettingsIcon, UsersIcon, MapPinIcon, ReceiptIcon } from "@/components/ui/icons";
 
 const menuItems: {
   href: string;
@@ -11,6 +11,10 @@ const menuItems: {
   roles: Array<"OWNER" | "MANAGER" | "STAFF">;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
 }[] = [
+  { href: "/simple/hari-ini", label: "Hari Ini", description: "Ringkasan cepat omzet, shift, top produk, dan peringatan.", roles: ["OWNER", "MANAGER"], icon: BarChartIcon },
+  { href: "/alerts", label: "Alert Center", description: "Peringatan stok, shift, kas, hutang, dan order tertunda.", roles: ["OWNER", "MANAGER"], icon: AlertTriangleIcon },
+  { href: "/simple/offline", label: "Offline Sync", description: "Cek transaksi kasir yang belum terkirim dari device ini.", roles: ["OWNER", "MANAGER", "STAFF"], icon: ReceiptIcon },
+  { href: "/onboarding", label: "Setup Toko", description: "Checklist outlet, produk, staff, QRIS, barang masuk, dan tes transaksi.", roles: ["OWNER", "MANAGER"], icon: SettingsIcon },
   { href: "/produk", label: "Produk", description: "Harga, kategori, barcode, dan stok awal.", module: "inventory", roles: ["OWNER", "MANAGER"], icon: PackageIcon },
   { href: "/inventory", label: "Inventory", description: "Pantau stok, transfer, dan stok menipis.", module: "inventory", roles: ["OWNER", "MANAGER"], icon: PackageIcon },
   { href: "/member", label: "Member", description: "Pelanggan, poin, dan loyalitas.", module: "member", roles: ["OWNER", "MANAGER", "STAFF"], icon: UsersIcon },

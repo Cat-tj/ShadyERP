@@ -23,6 +23,8 @@ const ROLE_OPTIONS: { value: EditingUser["role"]; label: string }[] = [
   { value: "STAFF", label: "Staf" },
 ];
 
+const JOB_PRESETS = ["Kasir", "Inventory", "Finance", "HR", "Manager Cabang", "Dapur", "Laundry", "Runner"];
+
 export function UserFormModal({
   outlets,
   user,
@@ -126,6 +128,22 @@ export function UserFormModal({
               placeholder="Misal: Waitress, Barista, Chef, Kasir"
               className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
             />
+            <div className="flex flex-wrap gap-1.5">
+              {JOB_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => {
+                    setJobTitle(preset);
+                    if (preset === "Manager Cabang") setRole("MANAGER");
+                    if (["Kasir", "Inventory", "Dapur", "Laundry", "Runner"].includes(preset)) setRole("STAFF");
+                  }}
+                  className="rounded-full border border-[var(--color-border)] px-2.5 py-1 text-[11px] font-semibold text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)]"
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
           </div>
 
           <div className="flex flex-col gap-1.5">

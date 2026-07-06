@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import type { Outlet, Product, PurchaseOrder, PurchaseOrderItem, Supplier } from "@prisma/client";
 import {
+  createDirectStockReceiptAction,
   createStockReceiptAction,
   performQCAction,
   completeStockReceiptAction,
@@ -35,9 +36,19 @@ export type StockReceiptRow = {
     qtyReceived: number;
     qtyAccepted: number;
     qtyDefect: number;
+    batchNumber?: string | null;
+    expirationDate?: Date | null;
     qcStatus: "PENDING" | "PASSED" | "PARTIAL_DEFECT" | "REJECTED";
     qcNotes?: string;
   }>;
+};
+
+type DirectReceiptItem = {
+  productId: string;
+  qtyReceived: string;
+  unitPrice: string;
+  batchNumber: string;
+  expirationDate: string;
 };
 
 type ReceiptFormItem = {
@@ -274,12 +285,254 @@ function StockReceiptQCModal({
   );
 }
 
+function DirectStockReceiptModal({
+  products,
+  suppliers,
+  outlets,
+  onClose,
+  onSaved,
+}: {
+  products: Product[];
+  suppliers: Supplier[];
+  outlets: Outlet[];
+  onClose: () => void;
+  onSaved: (message: string) => void;
+}) {
+  const router = useRouter();
+  const [outletId, setOutletId] = useState(outlets[0]?.id ?? "");
+  const [supplierId, setSupplierId] = useState("");
+  const [note, setNote] = useState("");
+  const [skuInput, setSkuInput] = useState("");
+  const [items, setItems] = useState<DirectReceiptItem[]>([
+    { productId: products[0]?.id ?? "", qtyReceived: "1", unitPrice: String(products[0]?.cost ?? 0), batchNumber: "", expirationDate: "" },
+  ]);
+  const [error, setError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  function updateItem(index: number, patch: Partial<DirectReceiptItem>) {
+    setItems((prev) => prev.map((item, idx) => (idx === index ? { ...item, ...patch } : item)));
+  }
+
+  function addItem() {
+    setItems((prev) => [
+      ...prev,
+      { productId: products[0]?.id ?? "", qtyReceived: "1", unitPrice: String(products[0]?.cost ?? 0), batchNumber: "", expirationDate: "" },
+    ]);
+  }
+
+  function addBySku() {
+    const query = skuInput.trim().toLowerCase();
+    if (!query) return;
+    const product = products.find(
+      (item) => item.sku?.toLowerCase() === query || item.name.toLowerCase().includes(query)
+    );
+    if (!product) {
+      setError("Produk tidak ditemukan dari SKU/nama itu.");
+      return;
+    }
+    setError(null);
+    setItems((prev) => [
+      ...prev,
+      { productId: product.id, qtyReceived: "1", unitPrice: String(product.cost ?? 0), batchNumber: "", expirationDate: "" },
+    ]);
+    setSkuInput("");
+  }
+
+  function handleSubmit() {
+    setError(null);
+    if (!outletId) return setError("Outlet wajib dipilih.");
+    const parsed = items
+      .map((item) => ({
+        productId: item.productId,
+        qtyReceived: Number(item.qtyReceived),
+        unitPrice: Math.max(0, Math.round(Number(item.unitPrice) || 0)),
+        batchNumber: item.batchNumber.trim() || null,
+        expirationDate: item.expirationDate ? new Date(item.expirationDate) : null,
+      }))
+      .filter((item) => item.productId && item.qtyReceived > 0);
+    if (parsed.length === 0) return setError("Isi minimal satu produk dengan jumlah valid.");
+
+    startTransition(async () => {
+      const result = await createDirectStockReceiptAction(outletId, supplierId || null, parsed, note.trim() || null);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      onSaved("Penerimaan langsung dibuat. Lanjut QC untuk memasukkan stok.");
+      router.refresh();
+      onClose();
+    });
+  }
+
+  return (
+    <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/40 sm:items-center sm:justify-center">
+      <div className="max-h-[92vh] w-full overflow-y-auto glass-surface-strong rounded-t-2xl p-5 sm:max-w-2xl sm:rounded-2xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-[var(--color-text)]">Barang datang</h2>
+          <button
+            onClick={onClose}
+            aria-label="Tutup"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
+          >
+            <XIcon aria-hidden className="h-5 w-5" />
+          </button>
+        </div>
+
+        {error && (
+          <div className="mb-4 rounded-lg bg-[var(--color-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning-text)]">
+            {error}
+          </div>
+        )}
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--color-text)]">
+            Outlet
+            <select
+              value={outletId}
+              onChange={(event) => setOutletId(event.target.value)}
+              className="min-h-[46px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base outline-none focus:border-[var(--color-primary)]"
+            >
+              {outlets.map((outlet) => (
+                <option key={outlet.id} value={outlet.id}>{outlet.name}</option>
+              ))}
+            </select>
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--color-text)]">
+            Supplier
+            <select
+              value={supplierId}
+              onChange={(event) => setSupplierId(event.target.value)}
+              className="min-h-[46px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-base outline-none focus:border-[var(--color-primary)]"
+            >
+              <option value="">Supplier Umum</option>
+              {suppliers.map((supplier) => (
+                <option key={supplier.id} value={supplier.id}>{supplier.name}</option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+          <label className="text-sm font-medium text-[var(--color-text)]">Scan / ketik SKU produk</label>
+          <div className="mt-2 flex gap-2">
+            <input
+              value={skuInput}
+              onChange={(event) => setSkuInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  addBySku();
+                }
+              }}
+              placeholder="Scan barcode atau ketik nama produk"
+              className="min-h-[42px] flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+            />
+            <button
+              type="button"
+              onClick={addBySku}
+              className="min-h-[42px] rounded-lg border border-[var(--color-border)] px-3 text-sm font-semibold text-[var(--color-text)]"
+            >
+              Tambah
+            </button>
+          </div>
+        </div>
+
+        <div className="mt-4 flex flex-col gap-3">
+          {items.map((item, index) => (
+            <div key={index} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+              <div className="grid gap-2 sm:grid-cols-[1.5fr_0.7fr_0.8fr]">
+                <select
+                  value={item.productId}
+                  onChange={(event) => {
+                    const product = products.find((p) => p.id === event.target.value);
+                    updateItem(index, { productId: event.target.value, unitPrice: String(product?.cost ?? 0) });
+                  }}
+                  className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+                >
+                  {products.map((product) => (
+                    <option key={product.id} value={product.id}>{product.name}</option>
+                  ))}
+                </select>
+                <input
+                  type="number"
+                  min={1}
+                  inputMode="numeric"
+                  value={item.qtyReceived}
+                  onChange={(event) => updateItem(index, { qtyReceived: event.target.value })}
+                  placeholder="Qty"
+                  className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+                />
+                <input
+                  type="number"
+                  min={0}
+                  inputMode="numeric"
+                  value={item.unitPrice}
+                  onChange={(event) => updateItem(index, { unitPrice: event.target.value })}
+                  placeholder="Modal/unit"
+                  className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+                />
+              </div>
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <input
+                  value={item.batchNumber}
+                  onChange={(event) => updateItem(index, { batchNumber: event.target.value })}
+                  placeholder="Batch/lot (opsional)"
+                  className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+                />
+                <input
+                  type="date"
+                  value={item.expirationDate}
+                  onChange={(event) => updateItem(index, { expirationDate: event.target.value })}
+                  className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+                />
+              </div>
+              {items.length > 1 && (
+                <button
+                  type="button"
+                  onClick={() => setItems((prev) => prev.filter((_, idx) => idx !== index))}
+                  className="mt-2 text-xs font-semibold text-[var(--color-danger)]"
+                >
+                  Hapus baris
+                </button>
+              )}
+            </div>
+          ))}
+        </div>
+
+        <button type="button" onClick={addItem} className="mt-3 text-sm font-semibold text-[var(--color-primary)]">
+          + Tambah item
+        </button>
+
+        <textarea
+          value={note}
+          onChange={(event) => setNote(event.target.value)}
+          placeholder="Catatan/foto nota masih manual dulu. Tulis nomor nota atau catatan barang di sini."
+          rows={3}
+          className="mt-4 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm outline-none focus:border-[var(--color-primary)]"
+        />
+
+        <button
+          onClick={handleSubmit}
+          disabled={isPending || products.length === 0}
+          className="mt-5 flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] disabled:opacity-60"
+        >
+          {isPending ? "Menyimpan..." : "Buat penerimaan"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export function StockReceiptManager({
   receipts,
+  products,
+  suppliers,
   outlets,
 }: {
   receipts: StockReceiptRow[];
   purchaseOrders: PurchaseOrderWithItems[];
+  products: Product[];
+  suppliers: Supplier[];
   outlets: Outlet[];
 }) {
   const router = useRouter();
@@ -411,9 +664,10 @@ export function StockReceiptManager({
         )}
       </div>
 
-      {modalOpen && selectedPO && (
-        <StockReceiptFormModal
-          po={selectedPO}
+      {modalOpen && (
+        <DirectStockReceiptModal
+          products={products}
+          suppliers={suppliers}
           outlets={outlets}
           onClose={() => setModalOpen(false)}
           onSaved={showToast}

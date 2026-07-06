@@ -11,7 +11,7 @@ export default async function PilihAplikasiPage() {
   const setting = await getTenantSetting(user.tenantId);
 
   if ((setting?.accountingMode ?? "SIMPLE") === "SIMPLE") {
-    redirect("/kasir");
+    redirect("/simple/hari-ini");
   }
 
   const enabledModules = resolveEnabledModules(tenant?.disabledModules ?? []);

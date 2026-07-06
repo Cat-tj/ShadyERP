@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import {
   createStockReceipt,
+  createDirectStockReceipt,
   performQC,
   completeReceipt,
   rejectReceipt,
@@ -11,6 +12,9 @@ import {
 export interface ReceiptItemInput {
   productId: string;
   qtyReceived: number;
+  unitPrice?: number;
+  batchNumber?: string | null;
+  expirationDate?: Date | null;
 }
 
 export interface QCInput {
@@ -33,6 +37,34 @@ export async function createStockReceiptAction(poId: string, outletId: string, i
   } catch (err) {
     console.error("Error creating stock receipt:", err);
     return { error: "Gagal membuat penerimaan barang" };
+  }
+}
+
+export async function createDirectStockReceiptAction(
+  outletId: string,
+  supplierId: string | null,
+  items: ReceiptItemInput[],
+  note?: string | null
+) {
+  try {
+    const session = await auth();
+    if (!session?.user?.tenantId || !session.user.id) {
+      return { error: "Unauthorized" };
+    }
+
+    const receipt = await createDirectStockReceipt(
+      session.user.tenantId,
+      outletId,
+      supplierId,
+      items,
+      session.user.id,
+      note
+    );
+
+    return { data: receipt };
+  } catch (err) {
+    console.error("Error creating direct stock receipt:", err);
+    return { error: err instanceof Error ? err.message : "Gagal membuat penerimaan langsung" };
   }
 }
 

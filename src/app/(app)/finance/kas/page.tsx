@@ -1,6 +1,6 @@
 import { requireRole } from "@/server/require-session";
 import { listOutletsForUser } from "@/server/services/outlet-service";
-import { getCashOutletSummary } from "@/server/services/finance-operational-service";
+import { getCashOutletSummary, getPaymentMethodSummary } from "@/server/services/finance-operational-service";
 import { listCashFlows } from "@/server/services/cashflow-service";
 import { PeriodFilter } from "@/components/laporan/period-filter";
 import { StatTile } from "@/components/laporan/stat-tile";
@@ -23,7 +23,10 @@ export default async function KasOutletPage({
   const outletIds = outlets.map((outlet) => outlet.id);
 
   // Load shift reports for analytics
-  const cashOutlets = await getCashOutletSummary(user.tenantId, outletIds, days);
+  const [cashOutlets, paymentMethods] = await Promise.all([
+    getCashOutletSummary(user.tenantId, outletIds, days),
+    getPaymentMethodSummary(user.tenantId, outletIds, days),
+  ]);
   const totals = cashOutlets.reduce(
     (sum, outlet) => ({
       openingCash: sum.openingCash + outlet.openingCash,
@@ -112,9 +115,45 @@ export default async function KasOutletPage({
           )}
         </div>
       </div>
+
+      <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+        <div className="mb-4">
+          <h2 className="text-lg font-bold text-[var(--color-text)]">Rekonsiliasi metode bayar</h2>
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            Cocokkan total tunai, QRIS, transfer, e-wallet, dan deposit dari transaksi selesai.
+          </p>
+        </div>
+        {paymentMethods.length === 0 ? (
+          <p className="text-sm text-[var(--color-text-secondary)]">Belum ada transaksi pada periode ini.</p>
+        ) : (
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            {paymentMethods.map((method) => (
+              <div key={method.method} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+                <p className="text-xs font-semibold uppercase tracking-wide text-[var(--color-text-secondary)]">
+                  {PAYMENT_LABEL[method.method] ?? method.method}
+                </p>
+                <p className="mt-2 font-mono-data text-lg font-bold text-[var(--color-text)]">
+                  {formatRupiah(method.amount)}
+                </p>
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                  {method.count} transaksi · {method.percentage}%
+                </p>
+              </div>
+            ))}
+          </div>
+        )}
+      </section>
     </div>
   );
 }
+
+const PAYMENT_LABEL: Record<string, string> = {
+  CASH: "Tunai",
+  QRIS: "QRIS",
+  TRANSFER: "Transfer",
+  EWALLET: "E-Wallet",
+  DEPOSIT: "Deposit",
+};
 
 function Metric({
   label,
