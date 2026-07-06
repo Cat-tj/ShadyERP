@@ -1,5 +1,6 @@
 import { requireSuperAdmin } from "@/server/require-super-admin";
 import { superAdminLogoutAction } from "@/app/superadmin/login/actions";
+import Link from "next/link";
 
 export default async function SuperAdminLayout({ children }: { children: React.ReactNode }) {
   const admin = await requireSuperAdmin();
@@ -16,6 +17,12 @@ export default async function SuperAdminLayout({ children }: { children: React.R
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <Link href="/superadmin" className="text-xs font-bold text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">
+            Tenant
+          </Link>
+          <Link href="/superadmin/admins" className="text-xs font-bold text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">
+            Admin
+          </Link>
           <p className="text-sm text-[var(--color-text-secondary)]">{admin.name}</p>
           <form action={superAdminLogoutAction}>
             <button

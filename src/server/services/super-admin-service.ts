@@ -17,6 +17,38 @@ export async function verifySuperAdminCredentials(email: string, password: strin
   return admin;
 }
 
+export async function listSuperAdmins() {
+  return prisma.superAdmin.findMany({
+    orderBy: { createdAt: "asc" },
+    select: { id: true, email: true, name: true, createdAt: true },
+  });
+}
+
+export async function createSuperAdminAccount(input: { email: string; name: string; password: string }) {
+  const email = input.email.toLowerCase().trim();
+  const name = input.name.trim() || "Super Admin";
+  if (!email) throw new Error("Email superadmin wajib diisi.");
+  if (input.password.length < 8) throw new Error("Password superadmin minimal 8 karakter.");
+
+  const passwordHash = await bcrypt.hash(input.password, 10);
+  return prisma.superAdmin.upsert({
+    where: { email },
+    create: { email, name, passwordHash },
+    update: { name, passwordHash },
+    select: { id: true, email: true, name: true, createdAt: true },
+  });
+}
+
+export async function changeSuperAdminPassword(superAdminId: string, password: string) {
+  if (password.length < 8) throw new Error("Password superadmin minimal 8 karakter.");
+  const passwordHash = await bcrypt.hash(password, 10);
+  return prisma.superAdmin.update({
+    where: { id: superAdminId },
+    data: { passwordHash },
+    select: { id: true, email: true, name: true },
+  });
+}
+
 export async function listTenantsForSuperAdmin() {
   const tenants = await prisma.tenant.findMany({
     orderBy: { createdAt: "desc" },

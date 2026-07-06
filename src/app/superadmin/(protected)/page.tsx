@@ -1,20 +1,30 @@
 import { requireSuperAdmin } from "@/server/require-super-admin";
 import {
+  getPlatformStats,
   listTenantsForSuperAdmin,
   listPendingSubscriptionRequests,
 } from "@/server/services/super-admin-service";
 import { TenantListManager } from "@/components/superadmin/tenant-list-manager";
 import { SubscriptionRequestsManager } from "@/components/superadmin/subscription-requests-manager";
+import { formatRupiah } from "@/lib/format";
 
 export default async function SuperAdminPage() {
   await requireSuperAdmin();
-  const [tenants, pendingRequests] = await Promise.all([
+  const [stats, tenants, pendingRequests] = await Promise.all([
+    getPlatformStats(),
     listTenantsForSuperAdmin(),
     listPendingSubscriptionRequests(),
   ]);
 
   return (
     <div className="flex flex-col gap-8">
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard label="Tenant total" value={`${stats.totalTenants}`} />
+        <StatCard label="Tenant aktif" value={`${stats.activeTenants}`} />
+        <StatCard label="Tenant disuspend" value={`${stats.inactiveTenants}`} />
+        <StatCard label="Omzet 30 hari" value={formatRupiah(stats.totalOmzet30d)} />
+      </div>
+
       {pendingRequests.length > 0 && (
         <SubscriptionRequestsManager
           requests={pendingRequests.map((req) => ({
@@ -35,6 +45,7 @@ export default async function SuperAdminPage() {
           slug: tenant.slug,
           businessType: tenant.businessType,
           plan: tenant.plan,
+          accountingMode: tenant.accountingMode,
           isActive: tenant.isActive,
           disabledModules: tenant.disabledModules,
           createdAt: tenant.createdAt.toISOString(),
@@ -43,6 +54,15 @@ export default async function SuperAdminPage() {
           totalOmzet: tenant.totalOmzet,
         }))}
       />
+    </div>
+  );
+}
+
+function StatCard({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+      <p className="text-2xl font-bold text-[var(--color-text)]">{value}</p>
+      <p className="text-xs text-[var(--color-text-secondary)]">{label}</p>
     </div>
   );
 }

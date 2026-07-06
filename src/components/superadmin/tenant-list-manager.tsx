@@ -1,10 +1,16 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { BusinessType, Plan } from "@prisma/client";
 import { formatRupiah, formatTanggalPendek } from "@/lib/format";
-import { setTenantActiveAction, setTenantModulesAction } from "@/app/superadmin/(protected)/actions";
+import {
+  changeTenantAccountingModeAction,
+  changeTenantPlanAction,
+  setTenantActiveAction,
+  setTenantModulesAction,
+} from "@/app/superadmin/(protected)/actions";
 import { useToast, Toast } from "@/components/toast";
 import { TOGGLEABLE_MODULES, type ModuleKey } from "@/lib/modules";
 
@@ -14,6 +20,7 @@ export type TenantRow = {
   slug: string;
   businessType: BusinessType;
   plan: Plan;
+  accountingMode: "SIMPLE" | "ADVANCED";
   isActive: boolean;
   disabledModules: string[];
   createdAt: string;
@@ -47,6 +54,25 @@ export function TenantListManager({ tenants }: { tenants: TenantRow[] }) {
         return;
       }
       showToast(tenant.isActive ? `${tenant.name} disuspend` : `${tenant.name} diaktifkan`);
+      router.refresh();
+    });
+  }
+
+  function changePlan(tenant: TenantRow, plan: Plan) {
+    startTransition(async () => {
+      const result = await changeTenantPlanAction(tenant.id, plan);
+      if (result.error) return showToast(result.error);
+      showToast(`Paket ${tenant.name} diubah ke ${plan}`);
+      router.refresh();
+    });
+  }
+
+  function toggleAccountingMode(tenant: TenantRow) {
+    const nextMode = tenant.accountingMode === "SIMPLE" ? "ADVANCED" : "SIMPLE";
+    startTransition(async () => {
+      const result = await changeTenantAccountingModeAction(tenant.id, nextMode);
+      if (result.error) return showToast(result.error);
+      showToast(`${tenant.name} sekarang mode ${nextMode}`);
       router.refresh();
     });
   }
@@ -147,6 +173,29 @@ export function TenantListManager({ tenants }: { tenants: TenantRow[] }) {
                       <span className="tabular-nums text-sm font-bold text-[var(--color-text)]">
                         {formatRupiah(tenant.totalOmzet)}
                       </span>
+                      <select
+                        value={tenant.plan}
+                        onChange={(event) => changePlan(tenant, event.target.value as Plan)}
+                        disabled={isPending}
+                        className="min-h-[36px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-xs font-semibold text-[var(--color-text)] disabled:opacity-40"
+                      >
+                        <option value="FREE">Free</option>
+                        <option value="BASIC">Basic</option>
+                        <option value="PRO">Pro</option>
+                      </select>
+                      <button
+                        onClick={() => toggleAccountingMode(tenant)}
+                        disabled={isPending}
+                        className="min-h-[36px] flex-1 rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)] disabled:opacity-40 sm:flex-none"
+                      >
+                        {tenant.accountingMode === "SIMPLE" ? "Simple" : "Advanced"}
+                      </button>
+                      <Link
+                        href={`/superadmin/tenant/${tenant.id}`}
+                        className="flex min-h-[36px] flex-1 items-center justify-center rounded-lg border border-[var(--color-border)] px-3 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)] sm:flex-none"
+                      >
+                        Detail
+                      </Link>
                       <button
                         onClick={() => setModuleTenantId(isModuleOpen ? null : tenant.id)}
                         disabled={isPending}
