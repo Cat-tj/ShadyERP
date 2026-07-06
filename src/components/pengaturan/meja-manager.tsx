@@ -182,6 +182,19 @@ function TableFormModal({
   );
 }
 
+export function getTableDisplayCode(name: string): string {
+  if (name.includes("|")) {
+    return name.split("|")[1].trim();
+  }
+  let code = name.trim();
+  if (code.toLowerCase().startsWith("meja ")) {
+    code = code.substring(5).trim();
+  }
+  if (code.toUpperCase() === "BUNDAR VVIP") return "VVIP";
+  if (code.toUpperCase() === "BUNDAR VIP") return "VIP";
+  return code;
+}
+
 export function TableVisual({
   name,
   shape,
@@ -197,10 +210,15 @@ export function TableVisual({
   isHovered: boolean;
   status?: "EMPTY" | "ORDERED" | "EATING" | "READY";
 }) {
+  const displayCode = getTableDisplayCode(name);
+  const isVip = name.toUpperCase().includes("VIP");
+
   const seatCount = Math.max(1, Math.min(capacity, 32));
   const chairSize = 12;
   const chairGap = 6;
   const chairs: React.ReactNode[] = [];
+  const plates: React.ReactNode[] = [];
+
   let tableWidth = 62;
   let tableHeight = 62;
   let tableLeft = chairSize + 2;
@@ -244,18 +262,46 @@ export function TableVisual({
     for (let i = 0; i < topSeats; i++) {
       const left = ((tableWidth - chairSize) / Math.max(1, topSeats - 1)) * i;
       addChair(`top-${i}`, left, 0, "top");
+      plates.push(
+        <span
+          key={`plate-top-${i}`}
+          className="absolute h-1.5 w-3 rounded bg-slate-300 opacity-60"
+          style={{ left: left - chairSize - 2, top: 4, transform: "translateX(50%)" }}
+        />
+      );
     }
     for (let i = 0; i < bottomSeats; i++) {
       const left = ((tableWidth - chairSize) / Math.max(1, bottomSeats - 1)) * i;
       addChair(`bottom-${i}`, left, tableHeight + chairSize + 4, "bottom");
+      plates.push(
+        <span
+          key={`plate-bottom-${i}`}
+          className="absolute h-1.5 w-3 rounded bg-slate-300 opacity-60"
+          style={{ left: left - chairSize - 2, bottom: 4, transform: "translateX(50%)" }}
+        />
+      );
     }
     for (let i = 0; i < leftSeats; i++) {
       const top = chairSize + 2 + ((tableHeight - chairSize) / Math.max(1, leftSeats - 1)) * i;
       addChair(`left-${i}`, 0, top, "left");
+      plates.push(
+        <span
+          key={`plate-left-${i}`}
+          className="absolute h-3 w-1.5 rounded bg-slate-300 opacity-60"
+          style={{ left: 4, top: top - chairSize - 2, transform: "translateY(50%)" }}
+        />
+      );
     }
     for (let i = 0; i < rightSeats; i++) {
       const top = chairSize + 2 + ((tableHeight - chairSize) / Math.max(1, rightSeats - 1)) * i;
       addChair(`right-${i}`, tableWidth + chairSize + 4, top, "right");
+      plates.push(
+        <span
+          key={`plate-right-${i}`}
+          className="absolute h-3 w-1.5 rounded bg-slate-300 opacity-60"
+          style={{ right: 4, top: top - chairSize - 2, transform: "translateY(50%)" }}
+        />
+      );
     }
   } else if (shape === "ROUND") {
     const radius = Math.min(54, Math.max(30, 24 + seatCount * 1.2));
@@ -274,6 +320,17 @@ export function TableVisual({
         center + radius * Math.sin(angleRad) - chairSize / 2,
         "round"
       );
+      const plateRadius = radius * 0.7;
+      plates.push(
+        <span
+          key={`plate-round-${i}`}
+          className="absolute h-2 w-2 rounded-full bg-slate-300 opacity-60"
+          style={{
+            left: tableWidth / 2 + plateRadius * Math.cos(angleRad) - 4,
+            top: tableHeight / 2 + plateRadius * Math.sin(angleRad) - 4,
+          }}
+        />
+      );
     }
   } else {
     const perSide = [0, 0, 0, 0];
@@ -282,10 +339,50 @@ export function TableVisual({
     tableWidth = Math.max(62, maxSide * (chairSize + chairGap) + 16);
     tableHeight = tableWidth;
 
-    for (let i = 0; i < perSide[0]; i++) addChair(`top-${i}`, ((tableWidth - chairSize) / Math.max(1, perSide[0] - 1)) * i, 0, "top");
-    for (let i = 0; i < perSide[2]; i++) addChair(`bottom-${i}`, ((tableWidth - chairSize) / Math.max(1, perSide[2] - 1)) * i, tableHeight + chairSize + 4, "bottom");
-    for (let i = 0; i < perSide[3]; i++) addChair(`left-${i}`, 0, chairSize + 2 + ((tableHeight - chairSize) / Math.max(1, perSide[3] - 1)) * i, "left");
-    for (let i = 0; i < perSide[1]; i++) addChair(`right-${i}`, tableWidth + chairSize + 4, chairSize + 2 + ((tableHeight - chairSize) / Math.max(1, perSide[1] - 1)) * i, "right");
+    for (let i = 0; i < perSide[0]; i++) {
+      const left = ((tableWidth - chairSize) / Math.max(1, perSide[0] - 1)) * i;
+      addChair(`top-${i}`, left, 0, "top");
+      plates.push(
+        <span
+          key={`plate-top-${i}`}
+          className="absolute h-1.5 w-3 rounded bg-slate-300 opacity-60"
+          style={{ left: left - chairSize - 2, top: 4, transform: "translateX(50%)" }}
+        />
+      );
+    }
+    for (let i = 0; i < perSide[2]; i++) {
+      const left = ((tableWidth - chairSize) / Math.max(1, perSide[2] - 1)) * i;
+      addChair(`bottom-${i}`, left, tableHeight + chairSize + 4, "bottom");
+      plates.push(
+        <span
+          key={`plate-bottom-${i}`}
+          className="absolute h-1.5 w-3 rounded bg-slate-300 opacity-60"
+          style={{ left: left - chairSize - 2, bottom: 4, transform: "translateX(50%)" }}
+        />
+      );
+    }
+    for (let i = 0; i < perSide[3]; i++) {
+      const top = chairSize + 2 + ((tableHeight - chairSize) / Math.max(1, perSide[3] - 1)) * i;
+      addChair(`left-${i}`, 0, top, "left");
+      plates.push(
+        <span
+          key={`plate-left-${i}`}
+          className="absolute h-3 w-1.5 rounded bg-slate-300 opacity-60"
+          style={{ left: 4, top: top - chairSize - 2, transform: "translateY(50%)" }}
+        />
+      );
+    }
+    for (let i = 0; i < perSide[1]; i++) {
+      const top = chairSize + 2 + ((tableHeight - chairSize) / Math.max(1, perSide[1] - 1)) * i;
+      addChair(`right-${i}`, tableWidth + chairSize + 4, top, "right");
+      plates.push(
+        <span
+          key={`plate-right-${i}`}
+          className="absolute h-3 w-1.5 rounded bg-slate-300 opacity-60"
+          style={{ right: 4, top: top - chairSize - 2, transform: "translateY(50%)" }}
+        />
+      );
+    }
   }
 
   if (shape !== "ROUND") {
@@ -293,14 +390,26 @@ export function TableVisual({
     frameHeight = tableHeight + chairSize * 2 + 4;
   }
 
-  const palette =
+  // Base table card styles depending on VIP or Regular
+  const tierClass = isVip
+    ? "border-[3px] border-amber-400 bg-amber-50/95 ring-2 ring-amber-300/40 text-amber-950"
+    : "border-2 border-blue-400 bg-white ring-2 ring-blue-300/30 text-blue-950";
+
+  // Central circle status colors:
+  // EMPTY: blue/gold depending on VIP
+  // ORDERED: Amber (waiting food)
+  // EATING: Rose/Red (occupied)
+  // READY: Emerald/Green (finished/ready pay)
+  const statusColor =
     status === "ORDERED"
-      ? "bg-amber-100 border-amber-300"
+      ? "from-amber-400 via-amber-500 to-amber-600 shadow-amber-300/30"
       : status === "EATING"
-        ? "bg-slate-200 border-slate-300"
+        ? "from-rose-500 via-rose-600 to-red-600 shadow-rose-300/30"
         : status === "READY"
-          ? "bg-emerald-100 border-emerald-300"
-          : "bg-sky-100 border-sky-200";
+          ? "from-emerald-400 via-emerald-500 to-green-600 shadow-emerald-300/30"
+          : isVip
+            ? "from-amber-500 via-yellow-500 to-amber-600 shadow-amber-500/20"
+            : "from-blue-500 via-sky-500 to-blue-600 shadow-blue-500/20";
 
   return (
     <div
@@ -309,13 +418,14 @@ export function TableVisual({
         width: frameWidth,
         height: frameHeight,
       }}
+      title={name}
     >
       {isActive && chairs}
       <div
-        className={`absolute z-10 flex items-center justify-center border text-slate-950 shadow-[0_4px_14px_rgba(15,23,42,0.10)] transition-all ${
+        className={`absolute z-10 flex items-center justify-center shadow-[0_6px_20px_rgba(15,23,42,0.08)] transition-all overflow-hidden ${
           shape === "ROUND" ? "rounded-full" : shape === "RECTANGLE" ? "rounded-2xl" : "rounded-xl"
-        } ${isActive ? palette : "border-slate-300 bg-slate-100 opacity-70"} ${
-          isHovered ? "scale-105 ring-2 ring-[var(--color-primary)]/35" : ""
+        } ${isActive ? tierClass : "border border-slate-300 bg-slate-100 opacity-60"} ${
+          isHovered ? "scale-105" : ""
         }`}
         style={{
           left: tableLeft,
@@ -324,10 +434,23 @@ export function TableVisual({
           height: tableHeight,
         }}
       >
-        <div className="flex max-w-full flex-col items-center justify-center px-2 text-center font-display leading-none">
-          <span className="max-w-full truncate text-[11px] font-black text-slate-950">{name}</span>
-          <span className="mt-1 text-[9px] font-semibold text-slate-700">{capacity}p</span>
+        {/* Visual plates placement inside the table */}
+        {isActive && plates}
+
+        {/* Inner circle badge containing the display code */}
+        <div
+          className={`relative z-20 flex h-[38px] w-[38px] flex-col items-center justify-center rounded-full bg-gradient-to-br text-white shadow-md select-none ${statusColor}`}
+        >
+          <span className="text-[12px] font-black leading-none">{displayCode}</span>
+          <span className="mt-0.5 text-[7px] font-bold opacity-80 leading-none">{capacity}p</span>
         </div>
+
+        {/* Small VIP ribbon or badge for visual distinction */}
+        {isVip && isActive && (
+          <span className="absolute bottom-0 right-0 left-0 bg-amber-500 text-[6px] font-black text-white text-center tracking-widest uppercase py-0.5 leading-none z-30">
+            VIP
+          </span>
+        )}
       </div>
     </div>
   );
