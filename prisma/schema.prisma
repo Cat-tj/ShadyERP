@@ -111,6 +111,7 @@ model Tenant {
   accounts                 Account[]
   journalEntries           JournalEntry[]
   leads                    Lead[]
+  cashFlows                CashFlow[]
 }
 
 model Outlet {
@@ -147,6 +148,7 @@ model Outlet {
   stockReceipts            StockReceipt[]
   stockCounts              StockCount[]
   laundryOrders            LaundryOrder[]
+  cashFlows                CashFlow[]
 
   @@index([tenantId])
 }
@@ -204,6 +206,7 @@ model User {
   documentSignings         DocumentSigner[]
   documentAccess           DocumentAccess[]
   laundryOrdersCreated     LaundryOrder[]            @relation("LaundryOrderCreatedBy")
+  cashFlowsCreated         CashFlow[]                @relation("UserCashFlows")
 
   @@index([tenantId])
 }
@@ -1773,4 +1776,29 @@ model Lead {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+}
+
+enum CashFlowType {
+  IN
+  OUT
+}
+
+model CashFlow {
+  id          String       @id @default(cuid())
+  tenantId    String
+  outletId    String
+  createdById String
+  type        CashFlowType
+  category    String       // e.g., "Penjualan", "Modal", "Sewa", "Gaji", "Bahan Baku", "Lainnya"
+  amount      Int
+  note        String?
+  spentAt     DateTime     @default(now())
+  createdAt   DateTime     @default(now())
+
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet    Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  createdBy User   @relation("UserCashFlows", fields: [createdById], references: [id])
+
+  @@index([tenantId])
+  @@index([outletId])
 }
