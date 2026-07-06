@@ -72,17 +72,19 @@ export default function InventoryImportPage() {
         errorMsg += "Nama produk wajib diisi. ";
       }
 
-      const price = parseFloat(priceStr);
-      if (isNaN(price) || price < 0) {
+      const parsedPrice = parseFloat(priceStr);
+      if (isNaN(parsedPrice) || parsedPrice < 0) {
         isValid = false;
         errorMsg += "Harga jual harus berupa angka non-negatif. ";
       }
+      const price = isNaN(parsedPrice) ? 0 : Math.round(parsedPrice);
 
-      const cost = costStr.trim() ? parseFloat(costStr) : null;
-      if (cost !== null && (isNaN(cost) || cost < 0)) {
+      const parsedCost = costStr.trim() ? parseFloat(costStr) : null;
+      if (parsedCost !== null && (isNaN(parsedCost) || parsedCost < 0)) {
         isValid = false;
         errorMsg += "Harga modal harus berupa angka non-negatif. ";
       }
+      const cost = parsedCost === null || isNaN(parsedCost) ? null : Math.round(parsedCost);
 
       const trackStock = trackStockStr.toLowerCase() === "true" || trackStockStr === "1";
       const stockQty = stockQtyStr.trim() ? parseInt(stockQtyStr, 10) : null;
