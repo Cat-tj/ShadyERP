@@ -36,6 +36,14 @@ export async function postJournalEntry(params: {
 }) {
   const client = params.tx || prisma;
   
+  // Skip posting if tenant is in SIMPLE mode
+  const setting = await client.tenantSetting.findUnique({
+    where: { tenantId: params.tenantId },
+  });
+  if (!setting || setting.accountingMode !== "ADVANCED") {
+    return null;
+  }
+  
   // Ensure default accounts are present
   await ensureDefaultAccounts(params.tenantId);
 

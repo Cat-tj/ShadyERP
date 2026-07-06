@@ -245,11 +245,14 @@ export async function registerTenant(input: RegisterTenantInput) {
   return result;
 }
 
+import type { AccountingMode } from "@prisma/client";
+
 export type TenantSettingInput = {
   taxPercent: number;
   pointsPerAmount: number;
   receiptFooter: string | null;
   staticQrisPayload?: string | null;
+  accountingMode?: AccountingMode;
 };
 
 export async function getTenantSetting(tenantId: string) {

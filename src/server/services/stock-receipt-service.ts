@@ -223,9 +223,11 @@ export async function completeReceipt(
     }
   }
 
-  // Auto-generate SupplierInvoice if totalInvoiceAmount > 0
+  // Auto-generate SupplierInvoice if totalInvoiceAmount > 0 and ADVANCED mode
+  const setting = await prisma.tenantSetting.findUnique({ where: { tenantId } });
+  const isAdvanced = setting?.accountingMode === "ADVANCED";
   const supplierId = receipt.po?.supplier?.id;
-  if (supplierId && totalInvoiceAmount > 0) {
+  if (isAdvanced && supplierId && totalInvoiceAmount > 0) {
     const today = new Date();
     const dueDate = new Date();
     dueDate.setDate(today.getDate() + 30);

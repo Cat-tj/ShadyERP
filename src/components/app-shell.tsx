@@ -38,12 +38,14 @@ export function AppShell({
   role,
   tenantName,
   disabledModules,
+  accountingMode = "SIMPLE",
   children,
 }: {
   userName: string;
   role: Role;
   tenantName: string;
   disabledModules: string[];
+  accountingMode?: "SIMPLE" | "ADVANCED";
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -70,7 +72,10 @@ export function AppShell({
     (hub) => availableHubKeys.includes(hub.key) && hub.key !== activeHub.key
   );
 
-  const items = navItemsForHub(role, activeHub.key, enabledModules);
+  const rawItems = navItemsForHub(role, activeHub.key, enabledModules);
+  const items = accountingMode === "SIMPLE"
+    ? rawItems.filter((item) => item.href !== "/finance/jurnal")
+    : rawItems;
   const bottomItems = items.filter((item) => item.showOnBottomNav).slice(0, 5);
   // Beberapa href saling jadi prefix (mis. /kpi & /kpi/analitik) — hanya item
   // dengan prefix TERPANJANG yang cocok yang boleh nyala, biar tidak dobel.

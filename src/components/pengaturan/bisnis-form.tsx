@@ -12,12 +12,14 @@ export function BisnisForm({
   pointsPerAmount,
   receiptFooter,
   staticQrisPayload,
+  accountingMode = "SIMPLE",
 }: {
   businessType: BusinessModeKey;
   taxPercent: number;
   pointsPerAmount: number;
   receiptFooter: string | null;
   staticQrisPayload: string | null;
+  accountingMode?: "SIMPLE" | "ADVANCED";
 }) {
   const { toastMessage, showToast } = useToast();
   const [mode, setMode] = useState<BusinessModeKey>(businessType);
@@ -25,6 +27,7 @@ export function BisnisForm({
   const [points, setPoints] = useState(String(pointsPerAmount));
   const [footer, setFooter] = useState(receiptFooter ?? "");
   const [qrisPayload, setQrisPayload] = useState(staticQrisPayload ?? "");
+  const [accMode, setAccMode] = useState<"SIMPLE" | "ADVANCED">(accountingMode);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -38,6 +41,7 @@ export function BisnisForm({
         pointsPerAmount: Number(points) || 10000,
         receiptFooter: footer.trim() || null,
         staticQrisPayload: qrisPayload.trim() || null,
+        accountingMode: accMode,
       });
       if (result.error) {
         setError(result.error);
@@ -152,6 +156,46 @@ export function BisnisForm({
               ? "QRIS tersimpan akan dipakai otomatis di Kasir pada metode bayar QRIS."
               : "Belum ada QRIS tersimpan."}
           </p>
+        </div>
+
+        {/* Mode Akuntansi Switcher */}
+        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-4 mt-2">
+          <p className="text-sm font-bold text-[var(--color-text)]">Mode Pencatatan Keuangan</p>
+          <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+            Pilih bagaimana aktivitas keuangan bisnis Anda dicatat dan disajikan.
+          </p>
+
+          <div className="grid gap-3 sm:grid-cols-2 mt-3">
+            <button
+              type="button"
+              onClick={() => setAccMode("SIMPLE")}
+              className={`rounded-xl border p-4 text-left transition-all ${
+                accMode === "SIMPLE"
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]"
+                  : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+              }`}
+            >
+              <span className="block text-sm font-bold">Sederhana (Simple)</span>
+              <span className="mt-1 block text-[11px] leading-relaxed text-[var(--color-text-secondary)]">
+                Buku Kas Harian ringkas (Uang Masuk & Uang Keluar). Sangat cocok untuk operasional toko retail & cafe kecil tanpa kerumitan debit-kredit.
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setAccMode("ADVANCED")}
+              className={`rounded-xl border p-4 text-left transition-all ${
+                accMode === "ADVANCED"
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]"
+                  : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+              }`}
+            >
+              <span className="block text-sm font-bold">Lanjutan (Advanced ERP)</span>
+              <span className="mt-1 block text-[11px] leading-relaxed text-[var(--color-text-secondary)]">
+                Audit Jurnal Buku Besar (General Ledger). Mengaktifkan pembukuan double-entry akuntansi formal, COA, dan draf otomatis invoice.
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 

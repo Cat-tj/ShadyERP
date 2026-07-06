@@ -231,8 +231,11 @@ export async function createSale(input: CreateSaleInput) {
       }
     }
 
-    // Autopilot low stock reorder checks
-    if (deductStock) {
+    // Autopilot low stock reorder checks (Only in ADVANCED mode)
+    const accountingSetting = await tx.tenantSetting.findUnique({
+      where: { tenantId: input.tenantId },
+    });
+    if (deductStock && accountingSetting?.accountingMode === "ADVANCED") {
       const checkProductIds = new Set<string>();
       for (const item of input.items) {
         const product = productMap.get(item.productId)!;

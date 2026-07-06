@@ -45,6 +45,7 @@ export async function updateTenantSettingAction(
       pointsPerAmount: input.pointsPerAmount,
       receiptFooter: input.receiptFooter,
       staticQrisPayload,
+      accountingMode: input.accountingMode,
     });
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal menyimpan pengaturan." };

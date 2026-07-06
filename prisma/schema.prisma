@@ -1497,13 +1497,19 @@ model TenantSetting {
   id                String   @id @default(cuid())
   tenantId          String   @unique
   taxPercent        Int      @default(0)
-  pointsPerAmount   Int      @default(10000) // 1 poin per Rp10.000
+  pointsPerAmount   Int            @default(10000) // 1 poin per Rp10.000
   receiptFooter     String?
   staticQrisPayload String?
-  enableParkingFee  Boolean  @default(false)
-  updatedAt         DateTime @updatedAt
+  enableParkingFee  Boolean        @default(false)
+  accountingMode    AccountingMode @default(SIMPLE)
+  updatedAt         DateTime       @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+}
+
+enum AccountingMode {
+  SIMPLE
+  ADVANCED
 }
 
 // ================== DOKUMEN & E-SIGN ==================
