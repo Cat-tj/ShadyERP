@@ -16,12 +16,12 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Altora — Kasir & Manajemen Toko",
-  description: "Aplikasi kasir, member, dan absensi untuk UMKM Indonesia.",
+  title: "Altora POS & ERP — Kasir & Manajemen Toko UMKM",
+  description: "Altora adalah sistem aplikasi POS (Point of Sale) & ERP manajemen toko terlengkap untuk UMKM Indonesia. Kelola kasir, inventaris barang/stok, absensi karyawan, dan laporan keuangan usaha secara real-time.",
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
-    title: "Altora",
+    title: "Altora POS & ERP",
   },
 };
 
