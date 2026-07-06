@@ -613,6 +613,8 @@ model Sale {
   pointTransactions PointTransaction[]
   saleReturns       SaleReturn[]
   tableOrder        TableOrder?
+  bookingId         String?
+  booking           Booking?      @relation(fields: [bookingId], references: [id])
 
   @@index([tenantId])
   @@index([outletId])
@@ -1030,6 +1032,7 @@ model Booking {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
   staff  User?  @relation(fields: [staffUserId], references: [id])
+  sales  Sale[]
 
   @@index([tenantId])
   @@index([outletId])

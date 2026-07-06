@@ -44,7 +44,7 @@ export async function updateBookingAction(id: string, input: BookingFormInput): 
 export async function updateBookingStatusAction(id: string, status: BookingStatus): Promise<ActionResult> {
   const user = await requireSession();
   try {
-    await updateBookingStatus(user.tenantId, id, status);
+    await updateBookingStatus(user.tenantId, id, status, user.id);
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal mengubah status booking." };
   }

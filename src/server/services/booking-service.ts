@@ -1,5 +1,7 @@
 import { prisma } from "@/lib/prisma";
-import type { BookingType, BookingStatus } from "@prisma/client";
+import type { BookingType, BookingStatus, PaymentMethod, OrderType } from "@prisma/client";
+import { buildInvoiceNumber, buildInvoicePrefix } from "@/lib/invoice";
+import { logSaleToJournal } from "@/server/services/accounting-service";
 
 /**
  * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
@@ -107,9 +109,87 @@ export async function updateBooking(tenantId: string, id: string, input: Booking
   });
 }
 
-export async function updateBookingStatus(tenantId: string, id: string, status: BookingStatus) {
+export async function updateBookingStatus(
+  tenantId: string,
+  id: string,
+  status: BookingStatus,
+  cashierId?: string
+) {
   const booking = await prisma.booking.findFirst({ where: { id, tenantId } });
   if (!booking) throw new Error("Booking tidak ditemukan.");
+
+  if (status === "DONE") {
+    const existingSale = await prisma.sale.findFirst({
+      where: { tenantId, bookingId: id },
+    });
+
+    if (!existingSale && booking.quotedAmount && booking.quotedAmount > 0) {
+      let product = await prisma.product.findFirst({
+        where: { tenantId, name: "Layanan Event/Booking" },
+      });
+      if (!product) {
+        product = await prisma.product.create({
+          data: {
+            tenantId,
+            name: "Layanan Event/Booking",
+            price: 0,
+            cost: 0,
+            trackStock: false,
+            isActive: true,
+            kind: "SERVICE",
+          },
+        });
+      }
+
+      const activeCashierId = cashierId || booking.staffUserId || (await prisma.user.findFirst({ where: { tenantId } }))?.id;
+      if (!activeCashierId) throw new Error("Tidak ada staf/kasir yang valid untuk memposting transaksi.");
+
+      const today = new Date();
+      const ymdPrefix = buildInvoicePrefix(booking.outletId, today);
+      const countToday = await prisma.sale.count({
+        where: { tenantId, outletId: booking.outletId, invoiceNumber: { startsWith: ymdPrefix } },
+      });
+      const invoiceNumber = buildInvoiceNumber(booking.outletId, today, countToday + 1);
+
+      await prisma.$transaction(async (tx) => {
+        const sale = await tx.sale.create({
+          data: {
+            tenantId,
+            outletId: booking.outletId,
+            cashierId: activeCashierId,
+            invoiceNumber,
+            subtotal: booking.quotedAmount || 0,
+            discountAmount: 0,
+            taxAmount: 0,
+            total: booking.quotedAmount || 0,
+            paymentMethod: "CASH" as PaymentMethod,
+            amountPaid: booking.quotedAmount || 0,
+            changeAmount: 0,
+            orderType: "TAKE_AWAY" as OrderType,
+            status: "COMPLETED",
+            bookingId: id,
+            items: {
+              create: [
+                {
+                  tenantId,
+                  productId: product.id,
+                  productName: booking.serviceName || "Layanan Booking/Event",
+                  variantLabel: null,
+                  price: booking.quotedAmount || 0,
+                  qty: 1,
+                  discountAmount: 0,
+                  subtotal: booking.quotedAmount || 0,
+                },
+              ],
+            },
+          },
+        });
+
+        await logSaleToJournal(tenantId, sale.id, tx);
+      });
+    }
+  }
+
   return prisma.booking.update({ where: { id }, data: { status } });
 }
 
