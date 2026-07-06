@@ -55,3 +55,40 @@ export async function updateTenantSettingAction(
   revalidatePath("/kasir");
   return { success: true };
 }
+
+export async function exportTenantBackupAction(): Promise<{ error?: string; success?: boolean; data?: any }> {
+  const user = await requireRole(["OWNER"]);
+  
+  try {
+    const { prisma } = await import("@/lib/prisma");
+
+    const [tenant, setting, outlets, categories, products, sales, suppliers, members] = await Promise.all([
+      prisma.tenant.findUnique({ where: { id: user.tenantId } }),
+      prisma.tenantSetting.findUnique({ where: { tenantId: user.tenantId } }),
+      prisma.outlet.findMany({ where: { tenantId: user.tenantId } }),
+      prisma.category.findMany({ where: { tenantId: user.tenantId } }),
+      prisma.product.findMany({ where: { tenantId: user.tenantId }, include: { stocks: true, reorderPoints: true } }),
+      prisma.sale.findMany({ where: { tenantId: user.tenantId }, include: { items: true, saleReturns: true } }),
+      prisma.supplier.findMany({ where: { tenantId: user.tenantId } }),
+      prisma.member.findMany({ where: { tenantId: user.tenantId } }),
+    ]);
+
+    return {
+      success: true,
+      data: {
+        exportVersion: "1.0.0",
+        timestamp: new Date().toISOString(),
+        tenant,
+        setting,
+        outlets,
+        categories,
+        products,
+        sales,
+        suppliers,
+        members,
+      },
+    };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal mengekspor data backup." };
+  }
+}

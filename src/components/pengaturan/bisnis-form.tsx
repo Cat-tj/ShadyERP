@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { updateTenantSettingAction } from "@/app/(app)/pengaturan/bisnis/actions";
+import { updateTenantSettingAction, exportTenantBackupAction } from "@/app/(app)/pengaturan/bisnis/actions";
 import { useToast, Toast } from "@/components/toast";
 import { XIcon } from "@/components/ui/icons";
 import { BUSINESS_MODES, type BusinessModeKey } from "@/lib/business-modes";
@@ -31,6 +31,35 @@ export function BisnisForm({
   const [scannerOpen, setScannerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [exporting, setExporting] = useState(false);
+
+  function handleExportBackup() {
+    setExporting(true);
+    startTransition(async () => {
+      const result = await exportTenantBackupAction();
+      setExporting(false);
+      if (result.error) {
+        showToast(result.error);
+        return;
+      }
+      if (!result.data) {
+        showToast("Tidak ada data untuk dibackup.");
+        return;
+      }
+
+      const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const filename = `altora_backup_${result.data.tenant?.slug || "data"}_${new Date().toISOString().slice(0, 10)}.json`;
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("Data backup berhasil diunduh.");
+    });
+  }
 
   function handleSubmit() {
     setError(null);
@@ -197,6 +226,21 @@ export function BisnisForm({
             </button>
           </div>
         </div>
+      </div>
+
+      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-4 mt-4">
+        <p className="text-sm font-bold text-[var(--color-text)]">Backup & Ekspor Data</p>
+        <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+          Unduh salinan cadangan seluruh data penting usaha Anda (Profil, Outlet, Produk, Transaksi Penjualan, Member, dsb.) dalam format berkas JSON untuk kebutuhan keamanan atau migrasi data.
+        </p>
+        <button
+          type="button"
+          onClick={handleExportBackup}
+          disabled={exporting}
+          className="mt-3 flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold text-[var(--color-text)] hover:bg-[var(--color-bg)] disabled:opacity-60"
+        >
+          {exporting ? "Mengekspor..." : "Unduh Backup JSON"}
+        </button>
       </div>
 
       <button
