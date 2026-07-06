@@ -54,7 +54,14 @@ export default async function SimpleHariIniPage() {
 
       {/* Alerts / Peringatan Operasional */}
       <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm">
-        <h2 className="font-display text-lg font-bold text-[var(--color-text)] mb-3">Peringatan Operasional</h2>
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <h2 className="font-display text-lg font-bold text-[var(--color-text)]">Peringatan Operasional</h2>
+          {summary.alerts.length > 0 && (
+            <Link href="/alerts" className="text-xs font-bold text-[var(--color-primary)]">
+              Buka Alert Center ({summary.alerts.length})
+            </Link>
+          )}
+        </div>
         {summary.alerts.length === 0 ? (
           <p className="text-sm text-[var(--color-text-secondary)]">Semua operasional berjalan aman dan lancar.</p>
         ) : (

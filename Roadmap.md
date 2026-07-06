@@ -41,15 +41,15 @@ Dokumen ini adalah checklist kerja Altora. Setiap agent yang menyelesaikan item 
 
 ## Alert Center
 
-- [ ] Halaman Alert Center.
-  - Satu tempat untuk semua peringatan operasional.
-- [ ] Alert stok menipis.
-- [ ] Alert batch expired / hampir expired.
-- [ ] Alert shift belum tutup.
-- [ ] Alert selisih kas.
-- [ ] Alert hutang supplier jatuh tempo.
-- [ ] Alert produk sepi.
-- [ ] Alert pesanan belum selesai.
+- [x] Halaman Alert Center.
+  - Halaman terpusat (/alerts) yang mengelompokkan dan memvisualisasikan seluruh isu operasional aktif sesuai tingkat keparahannya.
+- [x] Alert stok menipis.
+- [x] Alert batch expired / hampir expired.
+- [x] Alert shift belum tutup.
+- [x] Alert selisih kas.
+- [x] Alert hutang supplier jatuh tempo.
+- [x] Alert produk sepi.
+- [x] Alert pesanan belum selesai.
 - [ ] Alert transaksi offline belum sync.
 
 ## Superadmin Platform
