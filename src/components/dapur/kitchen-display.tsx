@@ -7,6 +7,7 @@ import type { TableOrderStatus } from "@prisma/client";
 import { updateOrderStatusAction } from "@/app/(app)/pesanan-meja/actions";
 import { useToast, Toast } from "@/components/toast";
 import { LowStockAlert } from "@/components/inventory/low-stock-alert";
+import { TableVisual } from "@/components/pengaturan/meja-manager";
 
 export type KitchenItemRow = {
   id: string;
@@ -78,8 +79,6 @@ export function KitchenDisplay({
   const [now, setNow] = useState(() => Date.now());
   const [activeFloor, setActiveFloor] = useState(1);
   const [floorCount, setFloorCount] = useState(() => Math.max(1, ...tables.map((t) => t.floor)));
-  const [gridCols, setGridCols] = useState(() => Math.max(6, ...tables.map((t) => t.posX)));
-  const [gridRows, setGridRows] = useState(() => Math.max(6, ...tables.map((t) => t.posY)));
 
   useEffect(() => {
     const refreshInterval = setInterval(() => router.refresh(), REFRESH_INTERVAL_MS);
@@ -109,8 +108,6 @@ export function KitchenDisplay({
     return acc;
   }, {});
 
-  const rows = Array.from({ length: gridRows }, (_, i) => i + 1);
-  const cols = Array.from({ length: gridCols }, (_, i) => i + 1);
   const floors = Array.from({ length: floorCount }, (_, i) => i + 1);
   const pendingCount = orders.filter((order) => order.status === "PENDING").length;
   const cookingCount = orders.filter((order) => order.status === "ACCEPTED").length;
@@ -124,10 +121,7 @@ export function KitchenDisplay({
     )
   ).length;
 
-  function getTableAt(x: number, y: number) {
-    const table = tables.find((t) => t.posX === x && t.posY === y && t.floor === activeFloor);
-    if (!table) return null;
-
+  function resolveTableStatus(table: TableItem) {
     const order = orders.find(
       (o) =>
         o.tableName.toLowerCase() === table.name.toLowerCase() &&
@@ -135,16 +129,18 @@ export function KitchenDisplay({
         o.status !== "CANCELLED"
     );
 
-    let status: "EMPTY" | "ORDERED" | "EATING" = "EMPTY";
+    let status: "EMPTY" | "ORDERED" | "EATING" | "READY" = "EMPTY";
     if (order) {
       if (order.status === "PENDING") {
         status = "ORDERED";
+      } else if (order.status === "READY") {
+        status = "READY";
       } else {
         status = "EATING";
       }
     }
 
-    return { table, order, status };
+    return { order, status };
   }
 
   return (
@@ -351,132 +347,75 @@ export function KitchenDisplay({
               </button>
             </div>
 
-            {/* Grid Size Controllers */}
-            <div className="flex gap-3 items-center flex-wrap text-[10px] bg-[var(--color-surface)] p-2 rounded-lg border border-[var(--color-border)]">
-              <span className="font-bold text-[var(--color-text-secondary)]">Grid:</span>
-              <div className="flex items-center gap-1">
-                <span>X:</span>
-                <button
-                  type="button"
-                  disabled={gridCols <= 4}
-                  onClick={() => setGridCols((c) => Math.max(4, c - 1))}
-                  className="w-5.5 h-5.5 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  -
-                </button>
-                <span className="font-bold w-4 text-center text-xs">{gridCols}</span>
-                <button
-                  type="button"
-                  disabled={gridCols >= 12}
-                  onClick={() => setGridCols((c) => Math.min(12, c + 1))}
-                  className="w-5.5 h-5.5 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  +
-                </button>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>Y:</span>
-                <button
-                  type="button"
-                  disabled={gridRows <= 4}
-                  onClick={() => setGridRows((r) => Math.max(4, r - 1))}
-                  className="w-5.5 h-5.5 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  -
-                </button>
-                <span className="font-bold w-4 text-center text-xs">{gridRows}</span>
-                <button
-                  type="button"
-                  disabled={gridRows >= 12}
-                  onClick={() => setGridRows((r) => Math.min(12, r + 1))}
-                  className="w-5.5 h-5.5 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  +
-                </button>
-              </div>
-            </div>
           </div>
 
           <div className="flex flex-wrap gap-4 text-[10px] font-semibold text-[var(--color-text-secondary)] bg-[var(--color-surface)] p-2 px-3 rounded-lg border border-[var(--color-border)]">
             <div className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded bg-[var(--color-bg)] border border-[var(--color-border)] inline-block" />
-              <span>Kosong</span>
+              <span className="h-2.5 w-2.5 rounded-full bg-blue-500 inline-block" />
+              <span>Kosong / Tersedia</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded bg-amber-500/20 border border-amber-500 inline-block" />
-              <span>Baru Pesan</span>
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-500 inline-block" />
+              <span>Baru Pesan (Belum Masak)</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded bg-indigo-500/20 border border-indigo-500 inline-block" />
-              <span>Sedang Makan</span>
+              <span className="h-2.5 w-2.5 rounded-full bg-zinc-400 inline-block" />
+              <span>Sedang Makan / Dimasak</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block" />
+              <span>Tagihan / Siap Sajikan</span>
             </div>
           </div>
 
           <div
-            className="grid gap-2 rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg)]/70 p-4 shadow-inner"
-            style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
+            className="relative w-full h-[500px] rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg)]/70 p-4 shadow-inner overflow-hidden"
+            style={{
+              backgroundImage: "radial-gradient(var(--color-border) 1px, transparent 1px)",
+              backgroundSize: "24px 24px",
+            }}
           >
-            {rows.flatMap((y) =>
-              cols.map((x) => {
-                const cell = getTableAt(x, y);
-                if (!cell) {
-                  return (
-                    <div
-                      key={`empty-${x}-${y}`}
-                      className="aspect-square rounded-xl border border-dashed border-[var(--color-border)]/45 bg-white/22 flex items-center justify-center text-[var(--color-text-secondary)]/20 text-[8px] select-none"
-                    >
-                      {x},{y}
-                    </div>
-                  );
-                }
-
-                const { table, order, status } = cell;
-                let bgClass = "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)]";
-                let badgeLabel = "Kosong";
-                let badgeClass = "bg-[var(--color-bg)] text-[var(--color-text-secondary)] border-[var(--color-border)]";
-
-                if (status === "ORDERED") {
-                  bgClass = "bg-amber-500/5 border-amber-500/80 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10";
-                  badgeLabel = "Pesan";
-                  badgeClass = "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20";
-                } else if (status === "EATING") {
-                  bgClass = "bg-indigo-500/5 border-indigo-500/80 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/10";
-                  badgeLabel = "Makan";
-                  badgeClass = "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20";
-                }
-
-                let shapeClass = "rounded-xl aspect-square";
-                if (table.shape === "ROUND") {
-                  shapeClass = "rounded-full aspect-square";
-                } else if (table.shape === "RECTANGLE") {
-                  shapeClass = "rounded-lg w-[95%] h-[75%] aspect-[1.6/1]";
-                }
+            {tables
+              .filter((t) => t.floor === activeFloor)
+              .map((table) => {
+                const { order, status } = resolveTableStatus(table);
+                const leftPercent = table.posX < 15 ? table.posX * 8 : table.posX;
+                const topPercent = table.posY < 15 ? table.posY * 8 : table.posY;
 
                 return (
-                  <div key={table.id} className="aspect-square flex items-center justify-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (order) {
-                          const itemsStr = order.items
-                            .map((item) => `${item.qty}x ${item.productName}`)
-                            .join(", ");
-                          showToast(`${table.name}: ${itemsStr}`);
-                        } else {
-                          showToast(`${table.name} sedang kosong.`);
-                        }
-                      }}
-                      className={`border-2 flex flex-col items-center justify-center p-1.5 transition-all text-center ${shapeClass} ${bgClass} cursor-pointer`}
-                    >
-                      <span className="text-[10px] font-bold truncate max-w-full">{table.name}</span>
-                      <span className={`text-[6px] font-bold px-0.5 rounded border mt-0.5 max-w-full truncate ${badgeClass}`}>
-                        {badgeLabel} · {table.capacity}p
-                      </span>
-                    </button>
-                  </div>
+                  <button
+                    key={table.id}
+                    type="button"
+                    onClick={() => {
+                      if (order) {
+                        const itemsStr = order.items
+                          .map((item) => `${item.qty}x ${item.productName}`)
+                          .join(", ");
+                        showToast(`${table.name}: ${itemsStr}`);
+                      } else {
+                        showToast(`${table.name} sedang kosong.`);
+                      }
+                    }}
+                    style={{
+                      position: "absolute",
+                      left: `${leftPercent}%`,
+                      top: `${topPercent}%`,
+                      transform: "translate(-50%, -50%)",
+                      touchAction: "none",
+                    }}
+                    className="cursor-pointer outline-none hover:scale-105 transition-transform duration-150"
+                  >
+                    <TableVisual
+                      name={table.name}
+                      shape={table.shape}
+                      capacity={table.capacity}
+                      isActive={table.isActive}
+                      isHovered={false}
+                      status={status}
+                    />
+                  </button>
                 );
-              })
-            )}
+              })}
           </div>
         </section>
       </div>

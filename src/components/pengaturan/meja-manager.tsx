@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -48,8 +48,8 @@ function TableFormModal({
   const router = useRouter();
   const [outletId, setOutletId] = useState(table?.outletId ?? outlets[0]?.id ?? "");
   const [name, setName] = useState(table?.name ?? "");
-  const [posX, setPosX] = useState(table?.posX ?? defaultPos?.posX ?? 1);
-  const [posY, setPosY] = useState(table?.posY ?? defaultPos?.posY ?? 1);
+  const [posX, setPosX] = useState(table?.posX ?? defaultPos?.posX ?? 10);
+  const [posY, setPosY] = useState(table?.posY ?? defaultPos?.posY ?? 10);
   const [floor, setFloor] = useState(table?.floor ?? defaultPos?.floor ?? 1);
   const [shape, setShape] = useState(table?.shape ?? "SQUARE");
   const [capacity, setCapacity] = useState(table?.capacity ?? 2);
@@ -166,32 +166,9 @@ function TableFormModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-[var(--color-text-secondary)]">Kolom Layout (X)</label>
-              <select
-                value={posX}
-                onChange={(e) => setPosX(Number(e.target.value))}
-                className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
-              >
-                {Array.from({ length: maxCols }, (_, i) => i + 1).map((x) => (
-                  <option key={x} value={x}>Kolom {x}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-[var(--color-text-secondary)]">Baris Layout (Y)</label>
-              <select
-                value={posY}
-                onChange={(e) => setPosY(Number(e.target.value))}
-                className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
-              >
-                {Array.from({ length: maxRows }, (_, i) => i + 1).map((y) => (
-                  <option key={y} value={y}>Baris {y}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+          <p className="text-xs text-[var(--color-text-secondary)] bg-[var(--color-bg-secondary)] p-3 rounded-xl border border-[var(--color-border)]">
+            ℹ️ Posisi meja dapat diatur secara presisi dengan menyeret (*drag & drop*) meja langsung pada denah visual di sebelah kanan setelah disimpan.
+          </p>
         </div>
 
         <button
@@ -209,6 +186,106 @@ function TableFormModal({
   );
 }
 
+export function TableVisual({
+  name,
+  shape,
+  capacity,
+  isActive,
+  isHovered,
+  status = "EMPTY",
+}: {
+  name: string;
+  shape: string;
+  capacity: number;
+  isActive: boolean;
+  isHovered: boolean;
+  status?: "EMPTY" | "ORDERED" | "EATING" | "READY";
+}) {
+  const chairs: React.ReactNode[] = [];
+  
+  if (shape === "RECTANGLE") {
+    const topBottomCount = Math.max(1, Math.floor((capacity - 2) / 2));
+    for (let i = 0; i < topBottomCount; i++) {
+      chairs.push(
+        <div key={`top-${i}`} className="absolute -top-2.5 w-5 h-2.5 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-t-md" style={{ left: topBottomCount === 1 ? "38px" : topBottomCount === 2 ? `${18 + i * 40}px` : `${12 + i * 26}px` }} />
+      );
+    }
+    for (let i = 0; i < topBottomCount; i++) {
+      chairs.push(
+        <div key={`bottom-${i}`} className="absolute -bottom-2.5 w-5 h-2.5 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-b-md" style={{ left: topBottomCount === 1 ? "38px" : topBottomCount === 2 ? `${18 + i * 40}px` : `${12 + i * 26}px` }} />
+      );
+    }
+    chairs.push(
+      <div key="left-0" className="absolute -left-2.5 top-[18px] w-2.5 h-5 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-l-md" />
+    );
+    chairs.push(
+      <div key="right-0" className="absolute -right-2.5 top-[18px] w-2.5 h-5 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-r-md" />
+    );
+  } else if (shape === "ROUND") {
+    const count = Math.min(8, capacity);
+    for (let i = 0; i < count; i++) {
+      const angleDeg = (360 / count) * i - 90;
+      const angleRad = (angleDeg * Math.PI) / 180;
+      const radius = 35;
+      const x = 32 + radius * Math.cos(angleRad) - 8;
+      const y = 32 + radius * Math.sin(angleRad) - 8;
+      chairs.push(
+        <div
+          key={`round-chair-${i}`}
+          className="absolute w-4 h-4 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-full"
+          style={{ left: `${x}px`, top: `${y}px` }}
+        />
+      );
+    }
+  } else {
+    chairs.push(
+      <div key="left" className="absolute -left-2.5 top-[22px] w-2.5 h-5 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-l-md" />
+    );
+    chairs.push(
+      <div key="right" className="absolute -right-2.5 top-[22px] w-2.5 h-5 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-r-md" />
+    );
+    if (capacity >= 3) {
+      chairs.push(
+        <div key="top" className="absolute -top-2.5 left-[22px] w-5 h-2.5 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-t-md" />
+      );
+    }
+    if (capacity >= 4) {
+      chairs.push(
+        <div key="bottom" className="absolute -bottom-2.5 left-[22px] w-5 h-2.5 bg-gray-200 border border-gray-300 dark:bg-zinc-700 dark:border-zinc-600 rounded-b-md" />
+      );
+    }
+  }
+
+  let badgeBg = "bg-blue-500 text-white";
+  if (status === "ORDERED") badgeBg = "bg-amber-500 text-white";
+  if (status === "EATING") badgeBg = "bg-zinc-400 text-white";
+  if (status === "READY") badgeBg = "bg-emerald-500 text-white";
+
+  let shapeClass = "w-16 h-16 rounded-2xl";
+  if (shape === "ROUND") shapeClass = "w-16 h-16 rounded-full";
+  if (shape === "RECTANGLE") shapeClass = "w-24 h-14 rounded-2xl";
+
+  return (
+    <div className={`relative ${shape === "RECTANGLE" ? "w-24 h-14" : "w-16 h-16"}`}>
+      {isActive && chairs}
+      <div
+        className={`flex items-center justify-center bg-white dark:bg-zinc-800 border transition-all shadow-[0_2px_8px_rgba(0,0,0,0.06)] relative z-10 ${shapeClass} ${
+          isHovered
+            ? "border-[var(--color-primary)] scale-105"
+            : isActive
+            ? "border-gray-200 dark:border-zinc-700"
+            : "border-gray-300 bg-gray-100 opacity-60"
+        }`}
+      >
+        <div className={`flex flex-col items-center justify-center text-center font-display text-xs font-bold rounded-full w-10 h-10 shadow-sm ${isActive ? badgeBg : "bg-gray-300 text-gray-500"}`}>
+          <span>{name}</span>
+          <span className="text-[8px] opacity-75 font-normal leading-none mt-0.5">{capacity}p</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tables: TableRow[] }) {
   const router = useRouter();
   const { toastMessage, showToast } = useToast();
@@ -217,9 +294,9 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
   const [defaultPos, setDefaultPos] = useState<{ posX: number; posY: number; floor: number } | null>(null);
   const [activeFloor, setActiveFloor] = useState(1);
   const [floorCount, setFloorCount] = useState(() => Math.max(1, ...tables.map((t) => t.floor)));
-  const [gridCols, setGridCols] = useState(() => Math.max(6, ...tables.map((t) => t.posX)));
-  const [gridRows, setGridRows] = useState(() => Math.max(6, ...tables.map((t) => t.posY)));
-  const [movingTable, setMovingTable] = useState<TableRow | null>(null);
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [draggedTableId, setDraggedTableId] = useState<string | null>(null);
+  const [draggedPos, setDraggedPos] = useState<{ x: number; y: number } | null>(null);
   const [actionMenuTable, setActionMenuTable] = useState<TableRow | null>(null);
   const [hoveredTableId, setHoveredTableId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -236,43 +313,71 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
     });
   }
 
-  function handleMoveTable(table: TableRow, x: number, y: number) {
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+
+  function handlePointerDown(e: React.PointerEvent<HTMLButtonElement>, tableId: string) {
+    e.currentTarget.releasePointerCapture(e.pointerId); // Allows smooth move tracking on canvas parent
+    setDraggedTableId(tableId);
+    setDragStart({ x: e.clientX, y: e.clientY });
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.min(92, Math.max(5, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
+    const y = Math.min(92, Math.max(5, Math.round(((e.clientY - rect.top) / rect.height) * 100)));
+    setDraggedPos({ x, y });
+  }
+
+  function handlePointerMove(e: React.PointerEvent) {
+    if (!draggedTableId) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.min(92, Math.max(5, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
+    const y = Math.min(92, Math.max(5, Math.round(((e.clientY - rect.top) / rect.height) * 100)));
+    setDraggedPos({ x, y });
+  }
+
+  function handlePointerUp(e: React.PointerEvent) {
+    if (!draggedTableId) return;
+    const tableId = draggedTableId;
+    const pos = draggedPos;
+    const start = dragStart;
+
+    setDraggedTableId(null);
+    setDraggedPos(null);
+    setDragStart(null);
+
+    const table = tables.find((t) => t.id === tableId);
+    if (!table) return;
+
+    // Check if it was a quick click rather than a drag
+    if (start) {
+      const distance = Math.sqrt(Math.pow(e.clientX - start.x, 2) + Math.pow(e.clientY - start.y, 2));
+      if (distance < 5) {
+        setActionMenuTable(table);
+        return;
+      }
+    }
+
+    if (!pos) return;
+
     startTransition(async () => {
-      const result = await updateTableAction(table.id, table.name, x, y, activeFloor, table.shape, table.capacity);
+      const result = await updateTableAction(table.id, table.name, pos.x, pos.y, activeFloor, table.shape, table.capacity);
       if (result.error) {
         showToast(result.error);
       } else {
-        showToast(`Meja ${table.name} berhasil dipindahkan ke Lantai ${activeFloor}, Kolom ${x}, Baris ${y}`);
+        showToast(`Posisi Meja ${table.name} berhasil disimpan di ${pos.x}%, ${pos.y}%`);
       }
-      setMovingTable(null);
       router.refresh();
     });
   }
 
   const floors = Array.from({ length: floorCount }, (_, i) => i + 1);
-  const rows = Array.from({ length: gridRows }, (_, i) => i + 1);
-  const cols = Array.from({ length: gridCols }, (_, i) => i + 1);
-
-  function getTableAt(x: number, y: number) {
-    return tables.find((t) => t.posX === x && t.posY === y && t.floor === activeFloor);
-  }
 
   return (
     <div className="flex flex-col gap-6">
-      {movingTable && (
-        <div className="flex justify-between items-center p-3 text-xs bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 rounded-xl animate-pulse">
-          <span>
-            Sedang memindahkan <strong>{movingTable.name}</strong> (Lantai {movingTable.floor}). Pilih sel kosong tujuan pada Lantai {activeFloor} di bagian kanan.
-          </span>
-          <button
-            type="button"
-            onClick={() => setMovingTable(null)}
-            className="font-bold underline cursor-pointer"
-          >
-            Batal
-          </button>
-        </div>
-      )}
+
 
       {/* Connected Split View Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -305,7 +410,6 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
               <div className="divide-y divide-[var(--color-border)]">
                 {tables.map((table) => {
                   const isHovered = hoveredTableId === table.id;
-                  const isMovingThis = movingTable?.id === table.id;
 
                   return (
                     <div
@@ -315,8 +419,6 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
                       className={`flex flex-col gap-3 p-4 transition-all sm:flex-row sm:items-center sm:justify-between ${
                         isHovered
                           ? "bg-[var(--color-primary)]/5 border-[var(--color-primary)]/20"
-                          : isMovingThis
-                          ? "bg-amber-500/5 border-amber-500/20"
                           : "bg-transparent"
                       }`}
                     >
@@ -326,11 +428,6 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
                           {!table.isActive && (
                             <span className="ml-2 rounded-full bg-[var(--color-warning-bg)] px-2 py-0.5 text-xs font-medium text-[var(--color-warning-text)]">
                               Nonaktif
-                            </span>
-                          )}
-                          {isMovingThis && (
-                            <span className="ml-2 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-600 dark:text-amber-400 animate-pulse">
-                              Memindahkan...
                             </span>
                           )}
                         </p>
@@ -408,124 +505,62 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
             </div>
 
             {/* Grid Size Controllers */}
-            <div className="flex gap-3 items-center flex-wrap text-[10px] bg-[var(--color-surface)] p-2 rounded-lg border border-[var(--color-border)]">
-              <span className="font-bold text-[var(--color-text-secondary)]">Grid:</span>
-              <div className="flex items-center gap-1">
-                <span>X:</span>
-                <button
-                  type="button"
-                  disabled={gridCols <= 4}
-                  onClick={() => setGridCols((c) => Math.max(4, c - 1))}
-                  className="w-5.5 h-5.5 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  -
-                </button>
-                <span className="font-bold w-4 text-center text-xs">{gridCols}</span>
-                <button
-                  type="button"
-                  disabled={gridCols >= 12}
-                  onClick={() => setGridCols((c) => Math.min(12, c + 1))}
-                  className="w-5.5 h-5.5 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  +
-                </button>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>Y:</span>
-                <button
-                  type="button"
-                  disabled={gridRows <= 4}
-                  onClick={() => setGridRows((r) => Math.max(4, r - 1))}
-                  className="w-5.5 h-5.5 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  -
-                </button>
-                <span className="font-bold w-4 text-center text-xs">{gridRows}</span>
-                <button
-                  type="button"
-                  disabled={gridRows >= 12}
-                  onClick={() => setGridRows((r) => Math.min(12, r + 1))}
-                  className="w-5.5 h-5.5 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  +
-                </button>
-              </div>
-            </div>
+            <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+              💡 Seret (*drag*) meja untuk memposisikannya secara bebas. Klik meja untuk membuka opsi ubah nama atau aktif/nonaktif.
+            </p>
           </div>
 
           <div
-            className="grid gap-2 bg-[var(--color-surface)]/20 p-4 rounded-2xl border border-[var(--color-border)] select-none"
-            style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
+            ref={canvasRef}
+            className="relative w-full h-[500px] bg-slate-50 dark:bg-zinc-900/40 border border-[var(--color-border)] rounded-3xl overflow-hidden select-none"
+            style={{
+              backgroundImage: "radial-gradient(var(--color-border) 1px, transparent 1px)",
+              backgroundSize: "24px 24px",
+            }}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
           >
-            {rows.flatMap((y) =>
-              cols.map((x) => {
-                const table = getTableAt(x, y);
-
-                if (!table) {
-                  return (
-                    <button
-                      key={`empty-${x}-${y}`}
-                      type="button"
-                      disabled={isPending}
-                      onClick={() => {
-                        if (movingTable) {
-                          handleMoveTable(movingTable, x, y);
-                        } else {
-                          setDefaultPos({ posX: x, posY: y, floor: activeFloor });
-                          setEditing(null);
-                          setModalOpen(true);
-                        }
-                      }}
-                      className={`aspect-square rounded-xl border border-dashed flex flex-col items-center justify-center p-1 transition-all text-center text-[var(--color-text-secondary)]/30 hover:text-[var(--color-primary)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 ${
-                        movingTable
-                          ? "border-amber-500/60 bg-amber-500/5 cursor-pointer text-amber-500"
-                          : "border-[var(--color-border)] cursor-pointer"
-                      }`}
-                    >
-                      <span className="text-base font-medium">+</span>
-                      <span className="text-[8px] mt-0.5 opacity-55">{x},{y}</span>
-                    </button>
-                  );
-                }
-
-                const isMovingThis = movingTable?.id === table.id;
+            {tables
+              .filter((t) => t.floor === activeFloor)
+              .map((table) => {
+                const isDragging = draggedTableId === table.id;
                 const isHovered = hoveredTableId === table.id;
 
-                let shapeClass = "rounded-xl aspect-square";
-                if (table.shape === "ROUND") {
-                  shapeClass = "rounded-full aspect-square";
-                } else if (table.shape === "RECTANGLE") {
-                  shapeClass = "rounded-lg w-[95%] h-[75%] aspect-[1.6/1] self-center";
-                }
+                const leftPercent = table.posX < 15 ? table.posX * 8 : table.posX;
+                const topPercent = table.posY < 15 ? table.posY * 8 : table.posY;
+
+                const x = isDragging && draggedPos ? draggedPos.x : leftPercent;
+                const y = isDragging && draggedPos ? draggedPos.y : topPercent;
 
                 return (
-                  <div key={table.id} className="aspect-square flex items-center justify-center">
-                    <button
-                      type="button"
-                      disabled={isPending || isMovingThis}
-                      onMouseEnter={() => setHoveredTableId(table.id)}
-                      onMouseLeave={() => setHoveredTableId(null)}
-                      onClick={() => {
-                        if (!movingTable) {
-                          setActionMenuTable(table);
-                        }
-                      }}
-                      className={`border-2 flex flex-col items-center justify-center p-1.5 transition-all text-center ${shapeClass} ${
-                        isMovingThis
-                          ? "border-amber-500 bg-amber-500/10 text-amber-500 animate-pulse"
-                          : isHovered
-                          ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)] scale-[1.05] z-10 shadow-lg"
-                          : table.isActive
-                          ? "border-[var(--color-primary)]/40 bg-[var(--color-primary)]/5 text-[var(--color-primary)] hover:border-[var(--color-primary)]"
-                          : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)]"
-                      } ${!movingTable ? "cursor-pointer" : "cursor-not-allowed"}`}
-                    >
-                      <span className="text-[10px] font-bold truncate max-w-full">{table.name}</span>
-                    </button>
-                  </div>
+                  <button
+                    key={table.id}
+                    type="button"
+                    disabled={isPending}
+                    onPointerDown={(e) => handlePointerDown(e, table.id)}
+                    onMouseEnter={() => setHoveredTableId(table.id)}
+                    onMouseLeave={() => setHoveredTableId(null)}
+                    style={{
+                      position: "absolute",
+                      left: `${x}%`,
+                      top: `${y}%`,
+                      transform: "translate(-50%, -50%)",
+                      zIndex: isDragging ? 50 : isHovered ? 30 : 10,
+                      touchAction: "none",
+                    }}
+                    className="cursor-grab active:cursor-grabbing outline-none"
+                  >
+                    <TableVisual
+                      name={table.name}
+                      shape={table.shape}
+                      capacity={table.capacity}
+                      isActive={table.isActive}
+                      isHovered={isHovered || isDragging}
+                    />
+                  </button>
                 );
-              })
-            )}
+              })}
           </div>
         </div>
       </div>
@@ -533,21 +568,11 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
       {/* Action Menu Modal for Table */}
       {actionMenuTable && (
         <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/50 backdrop-blur-sm sm:items-center sm:justify-center">
-          <div className="max-h-[90vh] w-full overflow-y-auto bg-[var(--color-surface)] border border-[var(--color-border)] shadow-2xl rounded-t-3xl p-6 sm:max-w-xs sm:rounded-3xl text-center">
+          <div className="max-h-[90vh] w-full overflow-y-auto bg-[var(--color-surface)] border border-[var(--color-border)] shadow-2xl rounded-t-3xl p-6 sm:max-w-xs sm:rounded-3xl text-center animate-[fadeInUp_0.15s_ease-out_forwards]">
             <h3 className="text-sm font-bold text-[var(--color-text)] mb-4">
               Aksi Meja: {actionMenuTable.name}
             </h3>
             <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setMovingTable(actionMenuTable);
-                  setActionMenuTable(null);
-                }}
-                className="min-h-[44px] rounded-xl bg-[var(--color-primary)] text-sm font-semibold text-[var(--color-on-primary)] transition-all cursor-pointer hover:opacity-90"
-              >
-                Pindahkan Posisi
-              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -556,9 +581,9 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
                   setModalOpen(true);
                   setActionMenuTable(null);
                 }}
-                className="min-h-[44px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface)] transition-all cursor-pointer"
+                className="min-h-[44px] rounded-xl bg-[var(--color-primary)] text-sm font-semibold text-[var(--color-on-primary)] transition-all cursor-pointer hover:opacity-90"
               >
-                Ubah Detail Nama
+                Ubah Detail / Bentuk
               </button>
               <button
                 type="button"
@@ -587,8 +612,6 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
           outlets={outlets}
           table={editing}
           defaultPos={defaultPos}
-          maxCols={gridCols}
-          maxRows={gridRows}
           floorOptions={floors}
           onClose={() => setModalOpen(false)}
           onSaved={showToast}
