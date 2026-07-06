@@ -23,6 +23,9 @@ export default async function SuperAdminLayout({ children }: { children: React.R
           <Link href="/superadmin/admins" className="text-xs font-bold text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">
             Admin
           </Link>
+          <Link href="/superadmin/audit-logs" className="text-xs font-bold text-[var(--color-text-secondary)] hover:text-[var(--color-text)]">
+            Audit Log
+          </Link>
           <p className="text-sm text-[var(--color-text-secondary)]">{admin.name}</p>
           <form action={superAdminLogoutAction}>
             <button

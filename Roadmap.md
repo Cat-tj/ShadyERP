@@ -63,8 +63,8 @@ Dokumen ini adalah checklist kerja Altora. Setiap agent yang menyelesaikan item 
 - [x] Detail tenant `/superadmin/tenant/[id]`.
 - [x] Manajemen akun superadmin `/superadmin/admins`.
   - Tambah/reset akun superadmin.
-- [ ] Superadmin audit log.
-  - Siapa melakukan apa, tenant mana, sebelum/sesudah, timestamp.
+- [x] Superadmin audit log.
+  - Halaman audit log terintegrasi dengan filter pencarian dan detail payload JSON (sebelum & sesudah) untuk melacak aktivitas seluruh superadmin.
 - [ ] 2FA superadmin.
 - [ ] Session management superadmin.
   - Lihat sesi aktif dan revoke.
