@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/server/require-session";
-import { createCashFlow, deleteCashFlow, type CashFlowInput } from "@/server/services/cashflow-service";
+import { createCashFlow, deleteCashFlow } from "@/server/services/cashflow-service";
 import type { CashFlowType } from "@prisma/client";
 
 export async function createCashFlowAction(input: {
@@ -28,8 +28,9 @@ export async function createCashFlowAction(input: {
 
     revalidatePath("/finance/kas");
     return { succeeded: true };
-  } catch (error: any) {
-    return { succeeded: false, message: error?.message || "Terjadi kesalahan internal." };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Terjadi kesalahan internal.";
+    return { succeeded: false, message: msg };
   }
 }
 
@@ -40,7 +41,8 @@ export async function deleteCashFlowAction(id: string) {
     await deleteCashFlow(user.tenantId, id);
     revalidatePath("/finance/kas");
     return { succeeded: true };
-  } catch (error: any) {
-    return { succeeded: false, message: error?.message || "Terjadi kesalahan internal." };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Terjadi kesalahan internal.";
+    return { succeeded: false, message: msg };
   }
 }

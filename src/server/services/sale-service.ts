@@ -274,7 +274,7 @@ export async function createSale(input: CreateSaleInput) {
             }
 
             if (supplierId) {
-              let po: any = await tx.purchaseOrder.findFirst({
+              let po = await tx.purchaseOrder.findFirst({
                 where: { tenantId: input.tenantId, supplierId, status: "DRAFT" },
                 include: { items: true },
               });
@@ -299,7 +299,7 @@ export async function createSale(input: CreateSaleInput) {
                 });
               }
 
-              const hasItem = po.items.some((i: any) => i.productId === pId);
+              const hasItem = po.items.some((i: { productId: string }) => i.productId === pId);
               if (!hasItem) {
                 const reorderQty = contract?.minQty ?? 10;
                 const productObj = await tx.product.findUnique({

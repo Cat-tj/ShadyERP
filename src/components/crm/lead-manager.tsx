@@ -500,7 +500,7 @@ export function LeadManager({ leads }: LeadManagerProps) {
                   </label>
                   <select
                     value={status}
-                    onChange={(e) => setStatus(e.target.value as any)}
+                    onChange={(e) => setStatus(e.target.value as "NEW" | "CONTACTED" | "WON" | "LOST")}
                     className="w-full min-h-[38px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-xs text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] font-bold text-[var(--color-text)]"
                   >
                     <option value="NEW">NEW (Baru)</option>

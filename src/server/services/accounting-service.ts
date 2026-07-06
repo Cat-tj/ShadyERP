@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 export const DEFAULT_ACCOUNTS = [
@@ -32,7 +33,7 @@ export async function postJournalEntry(params: {
   creditCode: string;
   amount: number;
   reference?: string;
-  tx?: any;
+  tx?: Prisma.TransactionClient;
 }) {
   const client = params.tx || prisma;
   
@@ -62,7 +63,7 @@ export async function postJournalEntry(params: {
 /**
  * Automatically logs POS Sale to Journal Entry.
  */
-export async function logSaleToJournal(tenantId: string, saleId: string, tx?: any) {
+export async function logSaleToJournal(tenantId: string, saleId: string, tx?: Prisma.TransactionClient) {
   const client = tx || prisma;
   const sale = await client.sale.findUnique({
     where: { id: saleId },
@@ -72,7 +73,6 @@ export async function logSaleToJournal(tenantId: string, saleId: string, tx?: an
   if (!sale) return;
 
   const total = sale.total;
-  const subtotal = sale.subtotal;
   const discount = sale.discountAmount;
 
   // 1. Debet Kas/Bank, Kredit Penjualan
@@ -130,7 +130,7 @@ export async function logSaleToJournal(tenantId: string, saleId: string, tx?: an
 /**
  * Automatically logs Expense to Journal Entry.
  */
-export async function logExpenseToJournal(tenantId: string, expenseId: string, tx?: any) {
+export async function logExpenseToJournal(tenantId: string, expenseId: string, tx?: Prisma.TransactionClient) {
   const client = tx || prisma;
   const expense = await client.expense.findUnique({
     where: { id: expenseId },
@@ -141,7 +141,7 @@ export async function logExpenseToJournal(tenantId: string, expenseId: string, t
   // Debet Operational Expenses, Kredit Cash Drawer
   await postJournalEntry({
     tenantId,
-    description: `Expense: ${expense.title}`,
+    description: `Expense: ${expense.note || expense.category}`,
     debitCode: "51200", // Operational Expenses
     creditCode: "11100", // Cash Drawer (debit/credit cash)
     amount: expense.amount,

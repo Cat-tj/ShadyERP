@@ -1,5 +1,6 @@
 import bcrypt from "bcryptjs";
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 
 /**
  * PERINGATAN: file ini SENGAJA TIDAK memfilter tenantId — dipakai super-admin
@@ -46,6 +47,34 @@ export async function changeSuperAdminPassword(superAdminId: string, password: s
     where: { id: superAdminId },
     data: { passwordHash },
     select: { id: true, email: true, name: true },
+  });
+}
+
+export async function recordSuperAdminAuditLog(input: {
+  actorId: string;
+  action: string;
+  targetTenantId?: string | null;
+  description: string;
+  beforeJson?: Prisma.InputJsonValue | null;
+  afterJson?: Prisma.InputJsonValue | null;
+}) {
+  return prisma.superAdminAuditLog.create({
+    data: {
+      actorId: input.actorId,
+      action: input.action,
+      targetTenantId: input.targetTenantId ?? null,
+      description: input.description,
+      beforeJson: input.beforeJson ?? undefined,
+      afterJson: input.afterJson ?? undefined,
+    },
+  });
+}
+
+export async function listSuperAdminAuditLogs(take = 100) {
+  return prisma.superAdminAuditLog.findMany({
+    include: { actor: { select: { email: true, name: true } } },
+    orderBy: { createdAt: "desc" },
+    take,
   });
 }
 

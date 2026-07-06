@@ -278,7 +278,7 @@ export function PosScreen({
         </div>
       </div>
 
-      <div className="flex flex-1 flex-col gap-4 md:flex-row md:gap-5 xl:gap-6">
+      <div className="flex flex-1 flex-col gap-4 xl:flex-row xl:gap-6">
         {/* Grid produk */}
         <div className="flex-1 min-w-0">
           <input
@@ -356,7 +356,7 @@ export function PosScreen({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(16rem,1fr))] gap-3 pb-28 md:pb-0">
+            <div className="grid grid-cols-1 gap-3 pb-28 sm:grid-cols-2 xl:pb-0 2xl:grid-cols-3">
               {filteredProducts.map((product) => {
                 const linesForProduct = cart.filter((line) => line.productId === product.id);
                 const qtyInCart = linesForProduct.reduce((sum, line) => sum + line.qty, 0);
@@ -365,7 +365,7 @@ export function PosScreen({
                 return (
                   <div
                     key={product.id}
-                    className={`flex min-h-[132px] gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-sm transition-shadow hover:shadow-md ${
+                    className={`grid min-h-[132px] grid-cols-[5.5rem_minmax(0,1fr)] gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-sm transition-shadow hover:shadow-md lg:grid-cols-[6rem_minmax(0,1fr)] ${
                       outOfStock ? "opacity-50" : ""
                     } ${
                       lastAddedProductId === product.id ? "ring-2 ring-[var(--color-primary)]/30" : ""
@@ -384,9 +384,9 @@ export function PosScreen({
                           </p>
                         )}
                       </div>
-                      <div className="mt-auto flex items-end justify-between gap-2 pt-3">
-                        <div>
-                          <p className="tabular-nums text-lg font-black text-[var(--color-text)]">
+                      <div className="mt-auto flex min-w-0 items-end justify-between gap-2 pt-3">
+                        <div className="min-w-0">
+                          <p className="truncate tabular-nums text-base font-black text-[var(--color-text)] lg:text-lg">
                             {formatRupiah(product.price)}
                           </p>
                           {product.trackStock && (
@@ -395,7 +395,7 @@ export function PosScreen({
                             </p>
                           )}
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="grid shrink-0 grid-cols-[2.25rem_1.5rem_2.25rem] items-center gap-1">
                           <button
                             type="button"
                             onClick={() => decrementProduct(product.id)}
@@ -428,7 +428,7 @@ export function PosScreen({
         </div>
 
         {/* Cart desktop */}
-        <div className="hidden w-80 shrink-0 md:block xl:w-96">{desktopCartPanel}</div>
+        <div className="hidden w-96 shrink-0 xl:block">{desktopCartPanel}</div>
       </div>
 
       {/* Cart mobile: sticky bar + sheet */}
@@ -518,7 +518,7 @@ function ProductVisual({ product }: { product: PosProduct }) {
 
   return (
     <div
-      className="relative flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-xl"
+      className="relative flex h-[5.5rem] w-[5.5rem] shrink-0 items-center justify-center overflow-hidden rounded-xl lg:h-24 lg:w-24"
       style={{ backgroundColor: bg }}
     >
       {product.imageUrl ? (

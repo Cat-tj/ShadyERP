@@ -22,6 +22,25 @@ model SuperAdmin {
   passwordHash String
   name         String
   createdAt    DateTime @default(now())
+
+  auditLogs SuperAdminAuditLog[]
+}
+
+model SuperAdminAuditLog {
+  id             String   @id @default(cuid())
+  actorId        String
+  action         String
+  targetTenantId String?
+  description    String
+  beforeJson     Json?
+  afterJson      Json?
+  createdAt      DateTime @default(now())
+
+  actor SuperAdmin @relation(fields: [actorId], references: [id], onDelete: Cascade)
+
+  @@index([actorId])
+  @@index([targetTenantId])
+  @@index([createdAt])
 }
 
 // ================== TENANT & OUTLET ==================

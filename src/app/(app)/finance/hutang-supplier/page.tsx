@@ -27,7 +27,7 @@ export default async function HutangSupplierPage() {
     orderBy: { name: "asc" },
   });
 
-  const invoices = rawInvoices.map((inv: any) => ({
+  const invoices = rawInvoices.map((inv: (typeof rawInvoices)[number]) => ({
     id: inv.id,
     invoiceNumber: inv.invoiceNumber,
     invoiceDate: inv.invoiceDate.toISOString(),

@@ -68,8 +68,9 @@ export async function recordSupplierPaymentAction(payload: {
 
     revalidatePath("/finance/hutang-supplier");
     return { succeeded: true };
-  } catch (error: any) {
-    return { succeeded: false, message: error?.message || "Terjadi kesalahan internal." };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Terjadi kesalahan internal.";
+    return { succeeded: false, message: msg };
   }
 }
 
@@ -84,7 +85,6 @@ export async function createManualSupplierInvoiceAction(payload: {
   const user = await requireRole(["OWNER", "MANAGER"]);
 
   try {
-    const today = new Date();
     const invoiceDate = new Date(payload.invoiceDateStr);
     const dueDate = payload.dueDateStr ? new Date(payload.dueDateStr) : null;
 
@@ -116,7 +116,8 @@ export async function createManualSupplierInvoiceAction(payload: {
 
     revalidatePath("/finance/hutang-supplier");
     return { succeeded: true };
-  } catch (error: any) {
-    return { succeeded: false, message: error?.message || "Terjadi kesalahan internal." };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Terjadi kesalahan internal.";
+    return { succeeded: false, message: msg };
   }
 }

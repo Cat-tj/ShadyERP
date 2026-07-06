@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/server/require-session";
-import { createLead, updateLead, deleteLead, type LeadInput } from "@/server/services/lead-service";
+import { createLead, updateLead, deleteLead } from "@/server/services/lead-service";
 import type { LeadStatus } from "@prisma/client";
 
 export async function createLeadAction(input: {
@@ -32,8 +32,9 @@ export async function createLeadAction(input: {
 
     revalidatePath("/crm");
     return { succeeded: true };
-  } catch (error: any) {
-    return { succeeded: false, message: error?.message || "Terjadi kesalahan internal." };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Terjadi kesalahan internal.";
+    return { succeeded: false, message: msg };
   }
 }
 
@@ -69,8 +70,9 @@ export async function updateLeadAction(
 
     revalidatePath("/crm");
     return { succeeded: true };
-  } catch (error: any) {
-    return { succeeded: false, message: error?.message || "Terjadi kesalahan internal." };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Terjadi kesalahan internal.";
+    return { succeeded: false, message: msg };
   }
 }
 
@@ -81,7 +83,8 @@ export async function deleteLeadAction(id: string) {
     await deleteLead(user.tenantId, id);
     revalidatePath("/crm");
     return { succeeded: true };
-  } catch (error: any) {
-    return { succeeded: false, message: error?.message || "Terjadi kesalahan internal." };
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : "Terjadi kesalahan internal.";
+    return { succeeded: false, message: msg };
   }
 }
