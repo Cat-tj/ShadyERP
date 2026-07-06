@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXTAUTH_URL || "https://altora.id"; // Fallback to primary production domain
+  const baseUrl = process.env.NEXTAUTH_URL || "https://altora.my.id"; // Fallback to primary production domain
   
   return [
     {
