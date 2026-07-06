@@ -67,6 +67,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/finance/kas", label: "Kas Outlet", icon: WalletIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "keuangan", hub: "finance" },
   { href: "/finance/hutang-supplier", label: "Hutang Supplier", icon: ReceiptIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
   { href: "/crm", label: "Sales CRM", icon: BriefcaseIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
+  { href: "/finance/jurnal", label: "Jurnal Buku Besar", icon: WalletIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
   { href: "/finance/laba-rugi", label: "Laba Rugi", icon: TrendingUpIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
   { href: "/finance/metode-bayar", label: "Metode Bayar", icon: BuildingIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
 
