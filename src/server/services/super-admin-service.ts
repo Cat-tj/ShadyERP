@@ -22,6 +22,7 @@ export async function listTenantsForSuperAdmin() {
     orderBy: { createdAt: "desc" },
     include: {
       _count: { select: { outlets: true, users: true } },
+      setting: true,
     },
   });
 
@@ -38,6 +39,7 @@ export async function listTenantsForSuperAdmin() {
     outletCount: tenant._count.outlets,
     userCount: tenant._count.users,
     totalOmzet: omzetMap.get(tenant.id) ?? 0,
+    accountingMode: tenant.setting?.accountingMode ?? "SIMPLE",
   }));
 }
 
@@ -81,4 +83,73 @@ export async function reviewSubscriptionRequest(
       });
     }
   });
+}
+
+export async function getPlatformStats() {
+  const [totalTenants, activeTenants, planCounts, businessTypeCounts, totalOmzet30d] = await Promise.all([
+    prisma.tenant.count(),
+    prisma.tenant.count({ where: { isActive: true } }),
+    prisma.tenant.groupBy({ by: ["plan"], _count: { plan: true } }),
+    prisma.tenant.groupBy({ by: ["businessType"], _count: { businessType: true } }),
+    (async () => {
+      const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+      const result = await prisma.sale.aggregate({
+        where: { status: "COMPLETED", createdAt: { gte: since } },
+        _sum: { total: true },
+      });
+      return result._sum.total ?? 0;
+    })(),
+  ]);
+
+  return {
+    totalTenants,
+    activeTenants,
+    inactiveTenants: totalTenants - activeTenants,
+    planDistribution: Object.fromEntries(planCounts.map((p) => [p.plan, p._count.plan])) as Record<string, number>,
+    businessTypeDistribution: Object.fromEntries(businessTypeCounts.map((b) => [b.businessType, b._count.businessType])) as Record<string, number>,
+    totalOmzet30d,
+  };
+}
+
+export async function changeTenantPlan(tenantId: string, plan: "FREE" | "BASIC" | "PRO") {
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+  if (!tenant) throw new Error("Tenant tidak ditemukan.");
+  return prisma.tenant.update({ where: { id: tenantId }, data: { plan } });
+}
+
+export async function changeTenantAccountingMode(tenantId: string, mode: "SIMPLE" | "ADVANCED") {
+  const tenant = await prisma.tenant.findUnique({ where: { id: tenantId } });
+  if (!tenant) throw new Error("Tenant tidak ditemukan.");
+  return prisma.tenantSetting.upsert({
+    where: { tenantId },
+    update: { accountingMode: mode },
+    create: { tenantId, accountingMode: mode },
+  });
+}
+
+export async function getTenantDetailForSuperAdmin(tenantId: string) {
+  const tenant = await prisma.tenant.findUnique({
+    where: { id: tenantId },
+    include: {
+      _count: { select: { outlets: true, users: true, products: true } },
+      setting: true,
+      subscriptionRequests: { orderBy: { createdAt: "desc" }, take: 10 },
+    },
+  });
+  if (!tenant) throw new Error("Tenant tidak ditemukan.");
+
+  const since30d = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+  const omzet30d = await prisma.sale.aggregate({
+    where: { tenantId, status: "COMPLETED", createdAt: { gte: since30d } },
+    _sum: { total: true },
+  });
+
+  return {
+    ...tenant,
+    outletCount: tenant._count.outlets,
+    userCount: tenant._count.users,
+    productCount: tenant._count.products,
+    accountingMode: tenant.setting?.accountingMode ?? "SIMPLE",
+    omzet30d: omzet30d._sum.total ?? 0,
+  };
 }
