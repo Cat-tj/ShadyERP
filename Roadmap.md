@@ -19,8 +19,8 @@ Dokumen ini adalah checklist kerja Altora. Setiap agent yang menyelesaikan item 
 - [x] Auto redirect `/pilih-aplikasi` ke `/kasir` untuk tenant SIMPLE.
 - [ ] Onboarding wizard tenant baru.
   - Pilih mode bisnis, modul, outlet, produk pertama, staff, dan QRIS.
-- [ ] Import data awal.
-  - Produk, member, supplier dari CSV/XLSX.
+- [x] Import data awal.
+  - Halaman import produk dari CSV terintegrasi dengan validasi baris client-side, unduh template, dan pemrosesan bulk Server Action.
 - [ ] Export backup tenant.
   - Export data penting tenant untuk safety.
 

@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/server/require-session";
+import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import {
   createCategory,
   updateCategory,
@@ -329,4 +331,112 @@ export async function updateReorderPointAction(
   revalidatePath("/inventory");
   revalidatePath("/kpi");
   return { success: true };
+}
+
+export async function importProductsBulkAction(
+  rows: {
+    name: string;
+    sku?: string | null;
+    categoryName?: string | null;
+    price: number;
+    cost?: number | null;
+    trackStock: boolean;
+    stockQty?: number | null;
+    reorderPoint?: number | null;
+    kind: "GOODS" | "SERVICE" | "NON_INVENTORY";
+  }[]
+): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  
+  try {
+    const firstOutlet = await prisma.outlet.findFirst({
+      where: { tenantId: user.tenantId },
+    });
+    if (!firstOutlet) {
+      return { error: "Tenant belum memiliki outlet." };
+    }
+
+    const existingCats = await prisma.category.findMany({
+      where: { tenantId: user.tenantId },
+    });
+    const categoryMap = new Map<string, string>(
+      existingCats.map((c: { name: string; id: string }) => [c.name.toLowerCase().trim(), c.id])
+    );
+
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      for (const row of rows) {
+        let categoryId: string | null = null;
+        if (row.categoryName && row.categoryName.trim()) {
+          const catNameClean = row.categoryName.trim();
+          const catNameLower = catNameClean.toLowerCase();
+          if (categoryMap.has(catNameLower)) {
+            categoryId = categoryMap.get(catNameLower) ?? null;
+          } else {
+            const newCat = await tx.category.create({
+              data: { tenantId: user.tenantId, name: catNameClean },
+            });
+            categoryMap.set(catNameLower, newCat.id);
+            categoryId = newCat.id;
+          }
+        }
+
+        const product = await tx.product.create({
+          data: {
+            tenantId: user.tenantId,
+            name: row.name.trim(),
+            sku: row.sku?.trim() || null,
+            categoryId,
+            price: row.price,
+            cost: row.cost || null,
+            kind: row.kind,
+            trackStock: row.trackStock,
+            trackExpiry: false,
+          },
+        });
+
+        if (row.trackStock) {
+          const qty = row.stockQty || 0;
+          await tx.productStock.create({
+            data: {
+              tenantId: user.tenantId,
+              productId: product.id,
+              outletId: firstOutlet.id,
+              qty,
+            },
+          });
+
+          await tx.stockAdjustment.create({
+            data: {
+              tenantId: user.tenantId,
+              productId: product.id,
+              outletId: firstOutlet.id,
+              changedById: user.id,
+              previousQty: 0,
+              newQty: qty,
+              delta: qty,
+              note: "Import awal produk",
+            },
+          });
+
+          if (row.reorderPoint != null && row.reorderPoint >= 0) {
+            await tx.stockReorderPoint.create({
+              data: {
+                tenantId: user.tenantId,
+                productId: product.id,
+                outletId: firstOutlet.id,
+                minQty: row.reorderPoint,
+              },
+            });
+          }
+        }
+      }
+    });
+
+    revalidatePath("/produk");
+    revalidatePath("/inventory");
+    revalidatePath("/kasir");
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal mengimpor produk secara massal." };
+  }
 }
