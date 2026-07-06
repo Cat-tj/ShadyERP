@@ -17,11 +17,17 @@ import { useToast, Toast } from "@/components/toast";
 export type ProductRow = {
   id: string;
   name: string;
+  sku: string | null;
   categoryId: string | null;
   categoryName: string | null;
   price: number;
   cost: number | null;
+  kind: "GOODS" | "SERVICE";
   trackStock: boolean;
+  trackExpiry: boolean;
+  shelfLifeDays: number | null;
+  warrantyDays: number | null;
+  serviceDurationMin: number | null;
   isActive: boolean;
   stockByOutlet: Record<string, number>;
   reorderPointByOutlet: Record<string, number>;
@@ -50,10 +56,16 @@ export function ProdukManager({
     ? {
         id: editingProduct.id,
         name: editingProduct.name,
+        sku: editingProduct.sku,
         categoryId: editingProduct.categoryId,
         price: editingProduct.price,
         cost: editingProduct.cost,
+        kind: editingProduct.kind,
         trackStock: editingProduct.trackStock,
+        trackExpiry: editingProduct.trackExpiry,
+        shelfLifeDays: editingProduct.shelfLifeDays,
+        warrantyDays: editingProduct.warrantyDays,
+        serviceDurationMin: editingProduct.serviceDurationMin,
         stockByOutlet: editingProduct.stockByOutlet,
         reorderPointByOutlet: editingProduct.reorderPointByOutlet,
         variantGroups: editingProduct.variantGroups,
@@ -136,8 +148,35 @@ export function ProdukManager({
                   </p>
                   <p className="text-xs text-[var(--color-text-secondary)]">
                     {product.categoryName ?? "Tanpa kategori"}
-                    {product.trackStock ? ` · Stok ${totalStock(product)}` : " · Tanpa stok"}
+                    {product.sku ? ` · SKU ${product.sku}` : ""}
+                    {product.kind === "SERVICE"
+                      ? ` · Jasa ${product.serviceDurationMin ?? 0} menit`
+                      : product.trackStock
+                        ? ` · Stok ${totalStock(product)}`
+                        : " · Tanpa stok"}
                   </p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {product.kind === "SERVICE" && (
+                      <span className="rounded-full bg-blue-500/10 px-2 py-0.5 text-[10px] font-semibold text-blue-700">
+                        Layanan
+                      </span>
+                    )}
+                    {product.trackExpiry && (
+                      <span className="rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-semibold text-amber-700">
+                        Expired
+                      </span>
+                    )}
+                    {product.warrantyDays != null && product.warrantyDays > 0 && (
+                      <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                        Garansi {product.warrantyDays} hari
+                      </span>
+                    )}
+                    {product.shelfLifeDays != null && product.shelfLifeDays > 0 && (
+                      <span className="rounded-full bg-orange-500/10 px-2 py-0.5 text-[10px] font-semibold text-orange-700">
+                        Simpan {product.shelfLifeDays} hari
+                      </span>
+                    )}
+                  </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-2 sm:gap-3">
                   <span className="tabular-nums text-sm font-bold text-[var(--color-text)]">

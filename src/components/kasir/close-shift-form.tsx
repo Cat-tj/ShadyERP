@@ -12,15 +12,19 @@ export function CloseShiftForm({
   openingCash,
   totalPenjualanCash,
   jumlahTransaksiCash,
+  totalGesekTunai,
+  jumlahGesekTunai,
 }: {
   shiftId: string;
   outletName: string;
   openingCash: number;
   totalPenjualanCash: number;
   jumlahTransaksiCash: number;
+  totalGesekTunai: number;
+  jumlahGesekTunai: number;
 }) {
   const [state, formAction, isPending] = useActionState(closeShiftAction, initialState);
-  const expectedCash = openingCash + totalPenjualanCash;
+  const expectedCash = openingCash + totalPenjualanCash - totalGesekTunai;
 
   return (
     <div className="mx-auto max-w-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
@@ -34,6 +38,12 @@ export function CloseShiftForm({
         <div className="flex justify-between">
           <span className="text-[var(--color-text-secondary)]">Penjualan tunai ({jumlahTransaksiCash} transaksi)</span>
           <span className="tabular-nums font-medium">{formatRupiah(totalPenjualanCash)}</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-[var(--color-text-secondary)]">Gesek tunai ({jumlahGesekTunai} transaksi)</span>
+          <span className="tabular-nums font-medium text-[var(--color-danger)]">
+            -{formatRupiah(totalGesekTunai)}
+          </span>
         </div>
         <div className="flex justify-between border-t border-[var(--color-border)] pt-2">
           <span className="font-semibold text-[var(--color-text)]">Uang seharusnya di laci</span>

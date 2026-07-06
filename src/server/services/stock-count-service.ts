@@ -93,8 +93,7 @@ export async function updateCountItems(
     if (!countItem) throw new Error("Count item not found");
 
     const variance = item.physicalQty - countItem.systemQty;
-    const product = countItem.product as any;
-    const varianceValue = variance * (product.price || 0);
+    const varianceValue = variance * (countItem.product.price || 0);
 
     await prisma.stockCountItem.update({
       where: { id: item.stockCountItemId },

@@ -6,20 +6,84 @@ import {
   getFinancialRatios,
   getExpenseSummary,
 } from "@/server/services/finance-analytics-service";
+import { listOutletsForUser } from "@/server/services/outlet-service";
+import { getProductSalesPerformance } from "@/server/services/report-service";
 import { StatTile } from "@/components/laporan/stat-tile";
 import { RankingBarChart } from "@/components/laporan/ranking-bar-chart";
 import { formatRupiah } from "@/lib/format";
 import { WalletIcon, TrendingUpIcon, TrendingDownIcon, BarChartIcon } from "@/components/ui/icons";
 
+type ProductSalesRow = {
+  productId: string;
+  productName: string;
+  categoryName: string;
+  qty: number;
+  omzet: number;
+  stockQty: number;
+  trackStock: boolean;
+};
+
+function ProductSalesTable({ title, hint, items }: { title: string; hint: string; items: ProductSalesRow[] }) {
+  return (
+    <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+      <div className="mb-4">
+        <h2 className="text-base font-bold text-[var(--color-text)]">{title}</h2>
+        <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">{hint}</p>
+      </div>
+      {items.length === 0 ? (
+        <p className="py-8 text-center text-sm text-[var(--color-text-secondary)]">
+          Belum ada produk untuk dianalisis.
+        </p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-left text-sm">
+            <thead className="text-xs text-[var(--color-text-secondary)]">
+              <tr className="border-b border-[var(--color-border)]">
+                <th className="py-2 pr-3 font-semibold">Produk</th>
+                <th className="py-2 px-3 font-semibold">Kategori</th>
+                <th className="py-2 px-3 text-right font-semibold">Terjual</th>
+                <th className="py-2 px-3 text-right font-semibold">Omzet</th>
+                <th className="py-2 pl-3 text-right font-semibold">Stok</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-[var(--color-border)]">
+              {items.map((item) => (
+                <tr key={item.productId}>
+                  <td className="max-w-52 py-3 pr-3">
+                    <p className="truncate font-semibold text-[var(--color-text)]">{item.productName}</p>
+                  </td>
+                  <td className="py-3 px-3 text-xs text-[var(--color-text-secondary)]">{item.categoryName}</td>
+                  <td className="py-3 px-3 text-right tabular-nums font-semibold text-[var(--color-text)]">
+                    {item.qty}
+                  </td>
+                  <td className="py-3 px-3 text-right tabular-nums text-[var(--color-text)]">
+                    {formatRupiah(item.omzet)}
+                  </td>
+                  <td className="py-3 pl-3 text-right tabular-nums text-[var(--color-text-secondary)]">
+                    {item.trackStock ? item.stockQty : "-"}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default async function FinanceAnalitikPage() {
   const user = await requireRole(["OWNER", "MANAGER"]);
+  const outlets = await listOutletsForUser(user.tenantId, user.id, user.role);
+  const outletIds = outlets.map((outlet) => outlet.id);
 
-  const [pnl, profitByCategory, cashFlow, ratios, expenseSummary] = await Promise.all([
+  const [pnl, profitByCategory, cashFlow, ratios, expenseSummary, productSales] = await Promise.all([
     getProfitAndLoss(user.tenantId),
     getProfitByCategory(user.tenantId),
     getCashFlowTrend(user.tenantId, undefined, 6),
     getFinancialRatios(user.tenantId),
     getExpenseSummary(user.tenantId, undefined, 30),
+    getProductSalesPerformance(user.tenantId, outletIds, 30, 10),
   ]);
 
   const maxCashFlow = Math.max(1, ...cashFlow.map((c) => Math.max(c.cashIn, c.cashOut)));
@@ -101,6 +165,19 @@ export default async function FinanceAnalitikPage() {
             value: e.amount,
             sublabel: `${e.percentage}% dari total · ${e.count}x`,
           }))}
+        />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-2">
+        <ProductSalesTable
+          title="Top sale produk (30 hari)"
+          hint="Produk paling sering dibeli. Pakai ini untuk siapin stok bahan yang bergerak cepat."
+          items={productSales.topSales}
+        />
+        <ProductSalesTable
+          title="Worst sale produk (30 hari)"
+          hint="Produk paling lambat bergerak, termasuk yang belum terjual. Cocok untuk evaluasi menu dan promo."
+          items={productSales.worstSales}
         />
       </div>
     </div>

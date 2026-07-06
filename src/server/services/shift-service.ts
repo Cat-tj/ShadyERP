@@ -47,7 +47,7 @@ export async function closeShift(input: {
     throw new Error("Shift ini sudah ditutup sebelumnya.");
   }
 
-  const [cashSalesTotal, totalCashback] = await Promise.all([
+  const [cashSalesTotal, totalCashback, cashOutTotal] = await Promise.all([
     prisma.sale.aggregate({
       where: {
         tenantId: input.tenantId,
@@ -65,12 +65,21 @@ export async function closeShift(input: {
       },
       _sum: { cashbackAmount: true },
     }),
+    prisma.cashOutTransaction.aggregate({
+      where: {
+        tenantId: input.tenantId,
+        shiftId: shift.id,
+        status: "COMPLETED",
+      },
+      _sum: { withdrawAmount: true },
+    }),
   ]);
 
   const expectedCash =
     shift.openingCash +
     (cashSalesTotal._sum?.total ?? 0) -
-    (totalCashback._sum?.cashbackAmount ?? 0);
+    (totalCashback._sum?.cashbackAmount ?? 0) -
+    (cashOutTotal._sum?.withdrawAmount ?? 0);
 
   return prisma.cashierShift.update({
     where: { id: shift.id },
@@ -90,15 +99,32 @@ export async function getShiftSummary(tenantId: string, shiftId: string) {
   });
   if (!shift) return null;
 
-  const sales = await prisma.sale.findMany({
-    where: { tenantId, shiftId, status: "COMPLETED" },
-  });
+  const [sales, cashOutTransactions] = await Promise.all([
+    prisma.sale.findMany({
+      where: { tenantId, shiftId, status: "COMPLETED" },
+    }),
+    prisma.cashOutTransaction.findMany({
+      where: { tenantId, shiftId, status: "COMPLETED" },
+    }),
+  ]);
 
   const cashSales = sales.filter((sale) => sale.paymentMethod === "CASH");
   const totalPenjualan = sales.reduce((sum, sale) => sum + sale.total, 0);
   const totalPenjualanCash = cashSales.reduce((sum, sale) => sum + sale.total, 0);
   const jumlahTransaksi = sales.length;
   const jumlahTransaksiCash = cashSales.length;
+  const totalGesekTunai = cashOutTransactions.reduce((sum, row) => sum + row.withdrawAmount, 0);
+  const totalAdminGesekTunai = cashOutTransactions.reduce((sum, row) => sum + row.adminFee, 0);
+  const jumlahGesekTunai = cashOutTransactions.length;
 
-  return { shift, totalPenjualan, totalPenjualanCash, jumlahTransaksi, jumlahTransaksiCash };
+  return {
+    shift,
+    totalPenjualan,
+    totalPenjualanCash,
+    jumlahTransaksi,
+    jumlahTransaksiCash,
+    totalGesekTunai,
+    totalAdminGesekTunai,
+    jumlahGesekTunai,
+  };
 }

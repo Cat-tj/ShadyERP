@@ -15,6 +15,7 @@ export type SaleRow = {
   memberName: string | null;
   total: number;
   paymentMethod: string;
+  orderType: string;
   status: "COMPLETED" | "VOIDED";
   voidReason: string | null;
   createdAt: string;
@@ -27,6 +28,28 @@ const PAYMENT_LABEL: Record<string, string> = {
   TRANSFER: "Transfer",
   EWALLET: "E-Wallet",
   DEPOSIT: "Deposit",
+};
+
+const ORDER_TYPE_LABEL: Record<string, string> = {
+  DINE_IN: "Dine-in",
+  TAKEAWAY: "Takeaway",
+  COURIER: "Kurir Toko",
+  GOFOOD: "Gojek",
+  GRABFOOD: "Grab",
+  SHOPEEFOOD: "Shopee Food",
+  MAXIM: "Maxim",
+  DELIVERY_OTHER: "Delivery lain",
+};
+
+const ORDER_TYPE_COLOR: Record<string, string> = {
+  DINE_IN: "#a730a8",
+  TAKEAWAY: "#334155",
+  COURIER: "#64748b",
+  GOFOOD: "#00AA13",
+  GRABFOOD: "#00B14F",
+  SHOPEEFOOD: "#EE4D2D",
+  MAXIM: "#F6C600",
+  DELIVERY_OTHER: "#334155",
 };
 
 export function RiwayatList({
@@ -90,6 +113,15 @@ export function RiwayatList({
                   {sale.cashierName}
                   {sale.memberName ? ` · ${sale.memberName}` : ""}
                 </p>
+                <span
+                  className="mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold text-white"
+                  style={{
+                    backgroundColor: ORDER_TYPE_COLOR[sale.orderType] ?? "#334155",
+                    color: sale.orderType === "MAXIM" ? "#181818" : "#fff",
+                  }}
+                >
+                  {ORDER_TYPE_LABEL[sale.orderType] ?? sale.orderType}
+                </span>
               </div>
               <div className="text-right">
                 <p className="tabular-nums text-sm font-bold text-[var(--color-text)]">

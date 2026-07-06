@@ -37,15 +37,24 @@ function DocumentPreview({ fileUrl, name }: { fileUrl: string; name: string }) {
 }
 
 export type DocumentViewerProps = {
-  document: any;
+  document: {
+    id: string;
+    name: string;
+    fileUrl: string;
+    uploader: { name: string };
+    signers: Array<{
+      id: string;
+      status: "PENDING" | "SIGNED" | "REJECTED" | "SKIPPED";
+      signer: { name: string; email: string };
+    }>;
+  };
   currentUserId: string;
   canSign: boolean;
-  pendingSigner?: any;
+  pendingSigner?: unknown;
 };
 
 export function DocumentViewer({
   document,
-  currentUserId,
   canSign,
   pendingSigner,
 }: DocumentViewerProps) {
@@ -94,7 +103,7 @@ export function DocumentViewer({
     });
   }
 
-  const signedCount = document.signers.filter((s: any) => s.status === "SIGNED").length;
+  const signedCount = document.signers.filter((s) => s.status === "SIGNED").length;
   const totalSigners = document.signers.length;
   const progress = totalSigners > 0 ? Math.round((signedCount / totalSigners) * 100) : 0;
 
@@ -122,7 +131,7 @@ export function DocumentViewer({
             />
           </div>
           <div className="space-y-2">
-            {document.signers.map((signer: any, idx: number) => (
+            {document.signers.map((signer, idx) => (
               <div key={signer.id} className="flex items-center gap-3 rounded-lg bg-[var(--color-bg)] p-3">
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-[var(--color-primary)] text-xs font-bold text-[var(--color-on-primary)]">
                   {idx + 1}
@@ -167,7 +176,7 @@ export function DocumentViewer({
         <DocumentPreview fileUrl={document.fileUrl} name={document.name} />
       </div>
 
-      {canSign && pendingSigner && (
+      {canSign && Boolean(pendingSigner) && (
         <button
           onClick={() => setShowSigningModal(true)}
           className="min-h-[48px] rounded-lg bg-[var(--color-primary)] px-4 text-base font-semibold text-[var(--color-on-primary)]"

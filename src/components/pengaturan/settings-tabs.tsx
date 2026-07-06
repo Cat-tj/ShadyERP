@@ -10,6 +10,7 @@ const TABS = [
   { href: "/pengaturan/modul", label: "Modul" },
   { href: "/pengaturan/kartu", label: "Kartu", module: "member" },
   { href: "/pengaturan/meja", label: "Meja", module: "pesanan-digital" },
+  { href: "/pengaturan/laundry", label: "Laundry", module: "laundry" },
   { href: "/pengaturan/promo", label: "Promo", module: "promo" },
   { href: "/pengaturan/langganan", label: "Langganan" },
   { href: "/pengaturan/audit-log", label: "Log audit" },

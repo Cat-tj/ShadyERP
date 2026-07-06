@@ -41,61 +41,66 @@ enum Plan {
 }
 
 model Tenant {
-  id           String       @id @default(cuid())
-  name         String
-  slug         String       @unique
-  businessType BusinessType @default(OTHER)
-  plan         Plan         @default(FREE)
-  isActive     Boolean      @default(true)
-  /** Key modul (lihat src/lib/modules.ts) yang DIMATIKAN Owner. Modul core tidak pernah masuk sini. */
-  disabledModules String[] @default([])
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id              String       @id @default(cuid())
+  name            String
+  slug            String       @unique
+  businessType    BusinessType @default(OTHER)
+  plan            Plan         @default(FREE)
+  isActive        Boolean      @default(true)
+  /**
+   * Key modul (lihat src/lib/modules.ts) yang DIMATIKAN Owner. Modul core tidak pernah masuk sini.
+   */
+  disabledModules String[]     @default([])
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  outlets              Outlet[]
-  users                User[]
-  uidBatches           UidBatch[]
-  uidCards             UidCard[]
-  members              Member[]
-  pointTransactions    PointTransaction[]
-  categories           Category[]
-  products             Product[]
-  productStocks        ProductStock[]
-  cashierShifts        CashierShift[]
-  sales                Sale[]
-  saleItems            SaleItem[]
-  saleReturns          SaleReturn[]
-  saleReturnItems      SaleReturnItem[]
-  shiftSchedules       ShiftSchedule[]
-  attendances          Attendance[]
-  stockAdjustments     StockAdjustment[]
-  stockTransfers       StockTransfer[]
-  expenses             Expense[]
-  tables               Table[]
-  tableOrders          TableOrder[]
-  tableOrderItems      TableOrderItem[]
-  subscriptionRequests SubscriptionRequest[]
-  productVariantGroups ProductVariantGroup[]
-  productVariantOptions ProductVariantOption[]
-  auditLogs            AuditLog[]
-  promos               Promo[]
-  bookings             Booking[]
-  equipments           Equipment[]
+  outlets                  Outlet[]
+  users                    User[]
+  uidBatches               UidBatch[]
+  uidCards                 UidCard[]
+  members                  Member[]
+  pointTransactions        PointTransaction[]
+  categories               Category[]
+  products                 Product[]
+  productStocks            ProductStock[]
+  cashierShifts            CashierShift[]
+  sales                    Sale[]
+  cashOutTransactions      CashOutTransaction[]
+  saleItems                SaleItem[]
+  saleReturns              SaleReturn[]
+  saleReturnItems          SaleReturnItem[]
+  shiftSchedules           ShiftSchedule[]
+  attendances              Attendance[]
+  stockAdjustments         StockAdjustment[]
+  stockTransfers           StockTransfer[]
+  expenses                 Expense[]
+  tables                   Table[]
+  tableOrders              TableOrder[]
+  tableOrderItems          TableOrderItem[]
+  subscriptionRequests     SubscriptionRequest[]
+  productVariantGroups     ProductVariantGroup[]
+  productVariantOptions    ProductVariantOption[]
+  auditLogs                AuditLog[]
+  promos                   Promo[]
+  bookings                 Booking[]
+  equipments               Equipment[]
   equipmentMaintenanceLogs EquipmentMaintenanceLog[]
-  reorderPoints        StockReorderPoint[]
-  stockBatches         StockBatch[]
-  warehouseLocations   WarehouseLocation[]
-  suppliers            Supplier[]
-  supplierContracts    SupplierPricingContract[]
-  purchaseOrders       PurchaseOrder[]
-  stockReceipts        StockReceipt[]
-  stockCounts          StockCount[]
-  productCostHistory   ProductCostHistory[]
-  documents            Document[]
-  setting              TenantSetting?
-  productUoms          ProductUom[]
-  wholesalePrices      WholesalePrice[]
-  productRecipeItems   ProductRecipeItem[]
+  reorderPoints            StockReorderPoint[]
+  stockBatches             StockBatch[]
+  warehouseLocations       WarehouseLocation[]
+  suppliers                Supplier[]
+  supplierContracts        SupplierPricingContract[]
+  purchaseOrders           PurchaseOrder[]
+  stockReceipts            StockReceipt[]
+  stockCounts              StockCount[]
+  productCostHistory       ProductCostHistory[]
+  documents                Document[]
+  setting                  TenantSetting?
+  productUoms              ProductUom[]
+  wholesalePrices          WholesalePrice[]
+  productRecipeItems       ProductRecipeItem[]
+  laundryOrders            LaundryOrder[]
+  laundryServices          LaundryService[]
 }
 
 model Outlet {
@@ -110,26 +115,28 @@ model Outlet {
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  userOutlets       UserOutlet[]
-  productStocks     ProductStock[]
-  cashierShifts     CashierShift[]
-  sales             Sale[]
-  shiftSchedules    ShiftSchedule[]
-  attendances       Attendance[]
-  stockAdjustments  StockAdjustment[]
-  expenses          Expense[]
-  transfersFrom     StockTransfer[]   @relation("StockTransferFromOutlet")
-  transfersTo       StockTransfer[]   @relation("StockTransferToOutlet")
-  tables              Table[]
-  tableOrders         TableOrder[]
-  bookings            Booking[]
-  equipments          Equipment[]
+  userOutlets              UserOutlet[]
+  productStocks            ProductStock[]
+  cashierShifts            CashierShift[]
+  sales                    Sale[]
+  cashOutTransactions      CashOutTransaction[]
+  shiftSchedules           ShiftSchedule[]
+  attendances              Attendance[]
+  stockAdjustments         StockAdjustment[]
+  expenses                 Expense[]
+  transfersFrom            StockTransfer[]           @relation("StockTransferFromOutlet")
+  transfersTo              StockTransfer[]           @relation("StockTransferToOutlet")
+  tables                   Table[]
+  tableOrders              TableOrder[]
+  bookings                 Booking[]
+  equipments               Equipment[]
   equipmentMaintenanceLogs EquipmentMaintenanceLog[]
-  reorderPoints       StockReorderPoint[]
-  stockBatches        StockBatch[]
-  warehouseLocations  WarehouseLocation[]
-  stockReceipts       StockReceipt[]
-  stockCounts         StockCount[]
+  reorderPoints            StockReorderPoint[]
+  stockBatches             StockBatch[]
+  warehouseLocations       WarehouseLocation[]
+  stockReceipts            StockReceipt[]
+  stockCounts              StockCount[]
+  laundryOrders            LaundryOrder[]
 
   @@index([tenantId])
 }
@@ -158,33 +165,35 @@ model User {
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  userOutlets          UserOutlet[]
-  uidCardsAssigned     UidCard[]         @relation("EmployeeCard")
-  cashierShifts        CashierShift[]
-  salesAsCashier       Sale[]            @relation("SaleCashier")
-  saleReturnsProcessed SaleReturn[]      @relation("SaleReturnProcessedBy")
-  attendances          Attendance[]
-  shiftSchedules       ShiftSchedule[]
-  stockAdjustments     StockAdjustment[]
-  expensesCreated      Expense[]
-  stockTransfersCreated     StockTransfer[]         @relation("StockTransferCreatedBy")
-  stockTransfersApproved    StockTransfer[]         @relation("StockTransferApprovedBy")
-  stockTransfersSent        StockTransfer[]         @relation("StockTransferSentBy")
-  stockTransfersReceived    StockTransfer[]         @relation("StockTransferReceivedBy")
-  auditLogs                 AuditLog[]
-  bookingsAssigned          Booking[]
-  equipmentMaintenanceLogs  EquipmentMaintenanceLog[]
-  purchaseOrdersApproved    PurchaseOrder[]
-  stockReceiptsReceived     StockReceipt[]           @relation("StockReceiptReceivedBy")
-  stockReceiptsChecked      StockReceipt[]           @relation("StockReceiptCheckedBy")
-  stockCountsStarted        StockCount[]             @relation("StockCountStartedBy")
-  stockCountsCompleted      StockCount[]             @relation("StockCountCompletedBy")
-  stockCountsVerified       StockCount[]             @relation("StockCountVerifiedBy")
-  costHistoryChanges        ProductCostHistory[]
-  documentsUploaded         Document[]               @relation("DocumentUploader")
-  documentVersions          DocumentVersion[]
-  documentSignings          DocumentSigner[]
-  documentAccess            DocumentAccess[]
+  userOutlets              UserOutlet[]
+  uidCardsAssigned         UidCard[]                 @relation("EmployeeCard")
+  cashierShifts            CashierShift[]
+  salesAsCashier           Sale[]                    @relation("SaleCashier")
+  cashOutTransactions      CashOutTransaction[]      @relation("CashOutCashier")
+  saleReturnsProcessed     SaleReturn[]              @relation("SaleReturnProcessedBy")
+  attendances              Attendance[]
+  shiftSchedules           ShiftSchedule[]
+  stockAdjustments         StockAdjustment[]
+  expensesCreated          Expense[]
+  stockTransfersCreated    StockTransfer[]           @relation("StockTransferCreatedBy")
+  stockTransfersApproved   StockTransfer[]           @relation("StockTransferApprovedBy")
+  stockTransfersSent       StockTransfer[]           @relation("StockTransferSentBy")
+  stockTransfersReceived   StockTransfer[]           @relation("StockTransferReceivedBy")
+  auditLogs                AuditLog[]
+  bookingsAssigned         Booking[]
+  equipmentMaintenanceLogs EquipmentMaintenanceLog[]
+  purchaseOrdersApproved   PurchaseOrder[]
+  stockReceiptsReceived    StockReceipt[]            @relation("StockReceiptReceivedBy")
+  stockReceiptsChecked     StockReceipt[]            @relation("StockReceiptCheckedBy")
+  stockCountsStarted       StockCount[]              @relation("StockCountStartedBy")
+  stockCountsCompleted     StockCount[]              @relation("StockCountCompletedBy")
+  stockCountsVerified      StockCount[]              @relation("StockCountVerifiedBy")
+  costHistoryChanges       ProductCostHistory[]
+  documentsUploaded        Document[]                @relation("DocumentUploader")
+  documentVersions         DocumentVersion[]
+  documentSignings         DocumentSigner[]
+  documentAccess           DocumentAccess[]
+  laundryOrdersCreated     LaundryOrder[]            @relation("LaundryOrderCreatedBy")
 
   @@index([tenantId])
 }
@@ -321,40 +330,50 @@ model Category {
   @@index([tenantId])
 }
 
+enum ProductKind {
+  GOODS
+  SERVICE
+}
+
 model Product {
-  id         String   @id @default(cuid())
-  tenantId   String
-  categoryId String?
-  name       String
-  sku        String?
-  price      Int // Rupiah, tanpa sen
-  cost       Int?
-  imageUrl   String?
-  trackStock Boolean  @default(true)
-  isActive   Boolean  @default(true)
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id                 String      @id @default(cuid())
+  tenantId           String
+  categoryId         String?
+  name               String
+  sku                String?
+  price              Int // Rupiah, tanpa sen
+  cost               Int?
+  imageUrl           String?
+  kind               ProductKind @default(GOODS)
+  trackStock         Boolean     @default(true)
+  trackExpiry        Boolean     @default(false)
+  shelfLifeDays      Int?
+  warrantyDays       Int?
+  serviceDurationMin Int?
+  isActive           Boolean     @default(true)
+  createdAt          DateTime    @default(now())
+  updatedAt          DateTime    @updatedAt
 
   tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   category Category? @relation(fields: [categoryId], references: [id])
 
-  stocks                ProductStock[]
-  saleItems             SaleItem[]
-  stockAdjustments      StockAdjustment[]
-  stockTransfers        StockTransfer[]
-  tableOrderItems       TableOrderItem[]
-  variantGroups         ProductVariantGroup[]
-  reorderPoints         StockReorderPoint[]
-  stockBatches          StockBatch[]
-  supplierContracts     SupplierPricingContract[]
-  purchaseOrderItems    PurchaseOrderItem[]
-  stockReceiptItems     StockReceiptItem[]
-  stockCountItems       StockCountItem[]
-  costHistory           ProductCostHistory[]
-  uoms                  ProductUom[]
-  wholesalePrices       WholesalePrice[]
-  recipes               ProductRecipeItem[] @relation("ProductRecipe")
-  ingredients           ProductRecipeItem[] @relation("ProductIngredient")
+  stocks             ProductStock[]
+  saleItems          SaleItem[]
+  stockAdjustments   StockAdjustment[]
+  stockTransfers     StockTransfer[]
+  tableOrderItems    TableOrderItem[]
+  variantGroups      ProductVariantGroup[]
+  reorderPoints      StockReorderPoint[]
+  stockBatches       StockBatch[]
+  supplierContracts  SupplierPricingContract[]
+  purchaseOrderItems PurchaseOrderItem[]
+  stockReceiptItems  StockReceiptItem[]
+  stockCountItems    StockCountItem[]
+  costHistory        ProductCostHistory[]
+  uoms               ProductUom[]
+  wholesalePrices    WholesalePrice[]
+  recipes            ProductRecipeItem[]       @relation("ProductRecipe")
+  ingredients        ProductRecipeItem[]       @relation("ProductIngredient")
 
   @@index([tenantId])
   @@index([categoryId])
@@ -367,14 +386,14 @@ enum VariantGroupType {
 
 /// Grup varian per produk, mis. "Ukuran" (SINGLE, wajib) atau "Topping" (MULTIPLE, opsional).
 model ProductVariantGroup {
-  id        String            @id @default(cuid())
+  id        String           @id @default(cuid())
   tenantId  String
   productId String
   name      String
-  type      VariantGroupType  @default(SINGLE)
-  required  Boolean           @default(false)
-  sortOrder Int               @default(0)
-  createdAt DateTime          @default(now())
+  type      VariantGroupType @default(SINGLE)
+  required  Boolean          @default(false)
+  sortOrder Int              @default(0)
+  createdAt DateTime         @default(now())
 
   tenant  Tenant                 @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   product Product                @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -453,7 +472,7 @@ enum StockTransferStatus {
 /// Transfer stok antar outlet. Alur normal: request dibuat, stok outlet asal
 /// berkurang saat dikirim, lalu stok outlet tujuan bertambah saat diterima.
 model StockTransfer {
-  id              String   @id @default(cuid())
+  id              String              @id @default(cuid())
   tenantId        String
   productId       String
   fromOutletId    String
@@ -468,7 +487,7 @@ model StockTransfer {
   receivedQty     Int?
   note            String?
   rejectReason    String?
-  createdAt       DateTime @default(now())
+  createdAt       DateTime            @default(now())
   approvedAt      DateTime?
   sentAt          DateTime?
   receivedAt      DateTime?
@@ -514,7 +533,8 @@ model CashierShift {
   outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  sales Sale[]
+  sales               Sale[]
+  cashOutTransactions CashOutTransaction[]
 
   @@index([tenantId])
   @@index([outletId])
@@ -531,6 +551,19 @@ enum PaymentMethod {
 }
 
 enum SaleStatus {
+  COMPLETED
+  VOIDED
+}
+
+enum CashOutMethod {
+  DEBIT_CARD
+  CREDIT_CARD
+  QRIS
+  TRANSFER
+  EWALLET
+}
+
+enum CashOutStatus {
   COMPLETED
   VOIDED
 }
@@ -575,8 +608,39 @@ model Sale {
   @@index([memberId])
 }
 
+model CashOutTransaction {
+  id              String        @id @default(cuid())
+  tenantId        String
+  outletId        String
+  shiftId         String
+  cashierId       String
+  referenceNumber String        @unique
+  customerName    String?
+  customerPhone   String?
+  withdrawAmount  Int
+  adminFee        Int           @default(0)
+  totalCharged    Int
+  method          CashOutMethod
+  status          CashOutStatus @default(COMPLETED)
+  voidReason      String?
+  note            String?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  tenant  Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet  Outlet       @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  shift   CashierShift @relation(fields: [shiftId], references: [id], onDelete: Cascade)
+  cashier User         @relation("CashOutCashier", fields: [cashierId], references: [id])
+
+  @@index([tenantId])
+  @@index([outletId])
+  @@index([shiftId])
+  @@index([cashierId])
+  @@index([status])
+}
+
 model SaleItem {
-  id             String @id @default(cuid())
+  id             String  @id @default(cuid())
   tenantId       String
   saleId         String
   productId      String
@@ -584,9 +648,9 @@ model SaleItem {
   variantLabel   String? // snapshot pilihan varian, mis. "Large, Less Sugar, Boba"
   price          Int // snapshot harga saat transaksi (sudah termasuk priceDelta varian)
   qty            Int
-  discountAmount Int    @default(0)
+  discountAmount Int     @default(0)
   subtotal       Int
-  returnedQty    Int    @default(0) // akumulasi qty yang sudah diretur, tidak boleh melebihi qty
+  returnedQty    Int     @default(0) // akumulasi qty yang sudah diretur, tidak boleh melebihi qty
 
   tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)
@@ -637,20 +701,20 @@ model SaleReturnItem {
 // ================== ABSENSI & JADWAL ==================
 
 model ShiftSchedule {
-  id        String   @id @default(cuid())
-  tenantId  String
-  outletId  String
-  userId    String
-  startAt   DateTime
-  endAt     DateTime
-  workType  ShiftWorkType @default(REGULAR)
-  payType   ShiftPayType  @default(MONTHLY)
-  shiftPay  Int?
-  holidayBonus Int       @default(0)
+  id           String        @id @default(cuid())
+  tenantId     String
+  outletId     String
+  userId       String
+  startAt      DateTime
+  endAt        DateTime
+  workType     ShiftWorkType @default(REGULAR)
+  payType      ShiftPayType  @default(MONTHLY)
+  shiftPay     Int?
+  holidayBonus Int           @default(0)
   overtimeNote String?
-  note      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  note         String?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
@@ -960,6 +1024,86 @@ model Booking {
   @@index([staffUserId])
 }
 
+// ================== LAUNDRY ==================
+
+enum LaundryServiceType {
+  KILOAN
+  SATUAN
+  DRY_CLEAN
+  SETRIKA
+  EXPRESS
+}
+
+enum LaundryOrderStatus {
+  RECEIVED
+  WASHING
+  DRYING
+  IRONING
+  READY
+  PICKED_UP
+  CANCELLED
+}
+
+/// Order laundry butuh tracking lifecycle fisik dari drop-off sampai pickup.
+/// `weightGram` dipakai supaya harga kiloan tetap integer tanpa floating point.
+model LaundryOrder {
+  id               String             @id @default(cuid())
+  tenantId         String
+  outletId         String
+  laundryServiceId String?
+  orderNumber      String             @unique
+  customerName     String
+  customerPhone    String?
+  serviceType      LaundryServiceType @default(KILOAN)
+  serviceName      String?
+  weightGram       Int?
+  itemQty          Int?
+  pricePerKg       Int?
+  servicePrice     Int                @default(0)
+  extraFee         Int                @default(0)
+  discountAmount   Int                @default(0)
+  total            Int
+  paidAmount       Int                @default(0)
+  dueAt            DateTime?
+  pickupDelivery   Boolean            @default(false)
+  deliveryAddress  String?
+  status           LaundryOrderStatus @default(RECEIVED)
+  note             String?
+  createdById      String
+  createdAt        DateTime           @default(now())
+  updatedAt        DateTime           @updatedAt
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet         Outlet          @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  laundryService LaundryService? @relation(fields: [laundryServiceId], references: [id], onDelete: SetNull)
+  createdBy      User            @relation("LaundryOrderCreatedBy", fields: [createdById], references: [id])
+
+  @@index([tenantId])
+  @@index([outletId])
+  @@index([laundryServiceId])
+  @@index([status])
+  @@index([dueAt])
+}
+
+model LaundryService {
+  id           String             @id @default(cuid())
+  tenantId     String
+  name         String
+  serviceType  LaundryServiceType @default(KILOAN)
+  pricePerKg   Int?
+  servicePrice Int                @default(0)
+  isActive     Boolean            @default(true)
+  sortOrder    Int                @default(0)
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+
+  tenant Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  orders LaundryOrder[]
+
+  @@index([tenantId])
+  @@index([isActive])
+}
+
 // ================== MAINTENANCE ALAT ==================
 
 enum EquipmentStatus {
@@ -976,19 +1120,19 @@ enum MaintenanceStatus {
 }
 
 model Equipment {
-  id          String          @id @default(cuid())
-  tenantId    String
-  outletId    String
-  name        String
-  category    String
+  id           String          @id @default(cuid())
+  tenantId     String
+  outletId     String
+  name         String
+  category     String
   serialNumber String?
-  status      EquipmentStatus @default(ACTIVE)
-  note        String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  status       EquipmentStatus @default(ACTIVE)
+  note         String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  tenant Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet Outlet                    @relation(fields: [outletId], references: [id], onDelete: Cascade)
   logs   EquipmentMaintenanceLog[]
 
   @@index([tenantId])
@@ -997,19 +1141,19 @@ model Equipment {
 }
 
 model EquipmentMaintenanceLog {
-  id            String            @id @default(cuid())
-  tenantId      String
-  outletId      String
-  equipmentId   String
-  reportedById  String
-  status        MaintenanceStatus @default(OPEN)
-  issue         String
-  actionTaken   String?
-  cost          Int               @default(0)
-  reportedAt    DateTime          @default(now())
-  resolvedAt    DateTime?
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
+  id           String            @id @default(cuid())
+  tenantId     String
+  outletId     String
+  equipmentId  String
+  reportedById String
+  status       MaintenanceStatus @default(OPEN)
+  issue        String
+  actionTaken  String?
+  cost         Int               @default(0)
+  reportedAt   DateTime          @default(now())
+  resolvedAt   DateTime?
+  createdAt    DateTime          @default(now())
+  updatedAt    DateTime          @updatedAt
 
   tenant     Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   outlet     Outlet    @relation(fields: [outletId], references: [id], onDelete: Cascade)
@@ -1046,18 +1190,18 @@ model StockReorderPoint {
 /// Stock batch/lot tracking untuk FMCG, makanan, farmasi.
 /// Catat batch number, exp date, dan kuantitas yang masuk per batch.
 model StockBatch {
-  id              String   @id @default(cuid())
-  tenantId        String
-  productId       String
-  outletId        String
-  batchNumber     String
-  expirationDate  DateTime?
-  qtyReceived     Int
-  qtyRemaining    Int
-  receivedDate    DateTime @default(now())
-  note            String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id             String    @id @default(cuid())
+  tenantId       String
+  productId      String
+  outletId       String
+  batchNumber    String
+  expirationDate DateTime?
+  qtyReceived    Int
+  qtyRemaining   Int
+  receivedDate   DateTime  @default(now())
+  note           String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -1075,9 +1219,9 @@ model WarehouseLocation {
   id        String   @id @default(cuid())
   tenantId  String
   outletId  String
-  code      String   // "A1", "B2", "Freezer", "Display", dll
+  code      String // "A1", "B2", "Freezer", "Display", dll
   name      String
-  capacity  Int?     // opsional: kapasitas lokasi
+  capacity  Int? // opsional: kapasitas lokasi
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1098,41 +1242,41 @@ enum SupplierStatus {
 }
 
 model Supplier {
-  id             String          @id @default(cuid())
-  tenantId       String
-  name           String
-  address        String?
-  city           String?
-  phone          String?
-  email          String?
-  contactPerson  String?
-  paymentTerms   String? // "Net 30", "COD", "DP 50%", dll
-  taxId          String? // NPWP
-  rating         Int? // 1-5 bintang
-  notes          String?
-  status         SupplierStatus  @default(ACTIVE)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  id            String         @id @default(cuid())
+  tenantId      String
+  name          String
+  address       String?
+  city          String?
+  phone         String?
+  email         String?
+  contactPerson String?
+  paymentTerms  String? // "Net 30", "COD", "DP 50%", dll
+  taxId         String? // NPWP
+  rating        Int? // 1-5 bintang
+  notes         String?
+  status        SupplierStatus @default(ACTIVE)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 
-  tenant              Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  purchaseOrders      PurchaseOrder[]
-  pricingContracts    SupplierPricingContract[]
+  tenant           Tenant                    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  purchaseOrders   PurchaseOrder[]
+  pricingContracts SupplierPricingContract[]
 
   @@index([tenantId])
 }
 
 /// Harga khusus supplier per produk dengan minimal order.
 model SupplierPricingContract {
-  id           String   @id @default(cuid())
-  tenantId     String
-  supplierId   String
-  productId    String
-  unitPrice    Int      // Rupiah per unit
-  minQty       Int      @default(1) // Minimal order quantity
-  leadDays     Int      @default(3) // Berapa hari pengiriman
-  isActive     Boolean  @default(true)
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id         String   @id @default(cuid())
+  tenantId   String
+  supplierId String
+  productId  String
+  unitPrice  Int // Rupiah per unit
+  minQty     Int      @default(1) // Minimal order quantity
+  leadDays   Int      @default(3) // Berapa hari pengiriman
+  isActive   Boolean  @default(true)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
   tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Cascade)
@@ -1153,23 +1297,23 @@ enum PurchaseOrderStatus {
 }
 
 model PurchaseOrder {
-  id              String                @id @default(cuid())
-  tenantId        String
-  supplierId      String
-  poNumber        String // Auto: PO-20250704-001
-  status          PurchaseOrderStatus   @default(DRAFT)
-  sentAt          DateTime?
-  expectedAt      DateTime?
-  receivedAt      DateTime?
-  totalAmount     Int // Rupiah, calculated
-  approvedById    String? // User yang approve
-  rejectionNote   String?
-  createdAt       DateTime              @default(now())
-  updatedAt       DateTime              @updatedAt
+  id            String              @id @default(cuid())
+  tenantId      String
+  supplierId    String
+  poNumber      String // Auto: PO-20250704-001
+  status        PurchaseOrderStatus @default(DRAFT)
+  sentAt        DateTime?
+  expectedAt    DateTime?
+  receivedAt    DateTime?
+  totalAmount   Int // Rupiah, calculated
+  approvedById  String? // User yang approve
+  rejectionNote String?
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
 
-  tenant        Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  supplier      Supplier             @relation(fields: [supplierId], references: [id], onDelete: Cascade)
-  approvedBy    User?                @relation(fields: [approvedById], references: [id])
+  tenant        Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  supplier      Supplier            @relation(fields: [supplierId], references: [id], onDelete: Cascade)
+  approvedBy    User?               @relation(fields: [approvedById], references: [id])
   items         PurchaseOrderItem[]
   stockReceipts StockReceipt[]
 
@@ -1179,17 +1323,17 @@ model PurchaseOrder {
 }
 
 model PurchaseOrderItem {
-  id              String   @id @default(cuid())
-  poId            String
-  productId       String
-  qty             Int
-  unitPrice       Int // Rupiah
-  subtotal        Int // qty * unitPrice
-  qtyReceived     Int @default(0)
-  createdAt       DateTime @default(now())
+  id          String   @id @default(cuid())
+  poId        String
+  productId   String
+  qty         Int
+  unitPrice   Int // Rupiah
+  subtotal    Int // qty * unitPrice
+  qtyReceived Int      @default(0)
+  createdAt   DateTime @default(now())
 
   po      PurchaseOrder @relation(fields: [poId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id])
+  product Product       @relation(fields: [productId], references: [id])
 
   @@index([poId])
   @@index([productId])
@@ -1204,26 +1348,26 @@ enum StockReceiptStatus {
 
 /// Goods received dari supplier (linked ke PurchaseOrder).
 model StockReceipt {
-  id              String               @id @default(cuid())
-  tenantId        String
-  poId            String
-  outletId        String
-  receiptNumber   String // Auto: GR-20250704-001
-  status          StockReceiptStatus   @default(PENDING)
-  receivedAt      DateTime             @default(now())
-  completedAt     DateTime?
-  receivedById    String?
-  checkedById     String?
-  notes           String?
-  createdAt       DateTime             @default(now())
-  updatedAt       DateTime             @updatedAt
+  id            String             @id @default(cuid())
+  tenantId      String
+  poId          String
+  outletId      String
+  receiptNumber String // Auto: GR-20250704-001
+  status        StockReceiptStatus @default(PENDING)
+  receivedAt    DateTime           @default(now())
+  completedAt   DateTime?
+  receivedById  String?
+  checkedById   String?
+  notes         String?
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
 
-  tenant       Tenant               @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  po           PurchaseOrder        @relation(fields: [poId], references: [id], onDelete: Cascade)
-  outlet       Outlet               @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  receivedBy   User?                @relation("StockReceiptReceivedBy", fields: [receivedById], references: [id])
-  checkedBy    User?                @relation("StockReceiptCheckedBy", fields: [checkedById], references: [id])
-  items        StockReceiptItem[]
+  tenant     Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  po         PurchaseOrder      @relation(fields: [poId], references: [id], onDelete: Cascade)
+  outlet     Outlet             @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  receivedBy User?              @relation("StockReceiptReceivedBy", fields: [receivedById], references: [id])
+  checkedBy  User?              @relation("StockReceiptCheckedBy", fields: [checkedById], references: [id])
+  items      StockReceiptItem[]
 
   @@index([tenantId])
   @@index([poId])
@@ -1238,16 +1382,16 @@ enum QCStatus {
 }
 
 model StockReceiptItem {
-  id           String    @id @default(cuid())
-  receiptId    String
-  productId    String
-  qtyReceived  Int // Dari PO
-  qtyAccepted  Int @default(0) // Lolos QC
-  qtyDefect    Int @default(0) // Rusak/bermasalah
-  qcStatus     QCStatus  @default(PENDING)
-  qcNotes      String?
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  id          String   @id @default(cuid())
+  receiptId   String
+  productId   String
+  qtyReceived Int // Dari PO
+  qtyAccepted Int      @default(0) // Lolos QC
+  qtyDefect   Int      @default(0) // Rusak/bermasalah
+  qcStatus    QCStatus @default(PENDING)
+  qcNotes     String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   receipt StockReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
   product Product      @relation(fields: [productId], references: [id])
@@ -1265,26 +1409,26 @@ enum StockCountStatus {
 
 /// Physical inventory count (opname).
 model StockCount {
-  id              String          @id @default(cuid())
-  tenantId        String
-  outletId        String
-  countDate       DateTime
-  countNumber     String // Auto: SC-20250704-001
-  status          StockCountStatus @default(DRAFT)
-  startedBy       String?
-  completedBy     String?
-  verifiedBy      String?
-  totalVariance   Int @default(0) // Total nilai variance Rupiah
-  notes           String?
-  createdAt       DateTime        @default(now())
-  updatedAt       DateTime        @updatedAt
+  id            String           @id @default(cuid())
+  tenantId      String
+  outletId      String
+  countDate     DateTime
+  countNumber   String // Auto: SC-20250704-001
+  status        StockCountStatus @default(DRAFT)
+  startedBy     String?
+  completedBy   String?
+  verifiedBy    String?
+  totalVariance Int              @default(0) // Total nilai variance Rupiah
+  notes         String?
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
 
-  tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  outlet      Outlet           @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  startedByUser User?           @relation("StockCountStartedBy", fields: [startedBy], references: [id])
-  completedByUser User?         @relation("StockCountCompletedBy", fields: [completedBy], references: [id])
-  verifiedByUser User?          @relation("StockCountVerifiedBy", fields: [verifiedBy], references: [id])
-  items       StockCountItem[]
+  tenant          Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet          Outlet           @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  startedByUser   User?            @relation("StockCountStartedBy", fields: [startedBy], references: [id])
+  completedByUser User?            @relation("StockCountCompletedBy", fields: [completedBy], references: [id])
+  verifiedByUser  User?            @relation("StockCountVerifiedBy", fields: [verifiedBy], references: [id])
+  items           StockCountItem[]
 
   @@index([tenantId])
   @@index([outletId])
@@ -1296,9 +1440,9 @@ model StockCountItem {
   countId       String
   productId     String
   systemQty     Int // Qty di sistem
-  physicalQty   Int @default(0) // Qty hasil count fisik
-  variance      Int @default(0) // physicalQty - systemQty
-  varianceValue Int @default(0) // variance * harga jual
+  physicalQty   Int     @default(0) // Qty hasil count fisik
+  variance      Int     @default(0) // physicalQty - systemQty
+  varianceValue Int     @default(0) // variance * harga jual
   notes         String?
 
   count   StockCount @relation(fields: [countId], references: [id], onDelete: Cascade)
@@ -1310,14 +1454,14 @@ model StockCountItem {
 
 /// Track setiap perubahan harga/cost produk dari supplier.
 model ProductCostHistory {
-  id        String   @id @default(cuid())
-  tenantId  String
-  productId String
+  id           String   @id @default(cuid())
+  tenantId     String
+  productId    String
   previousCost Int?
-  newCost   Int
-  reason    String? // "Supplier price change", "Manual adjustment", dll
-  changedBy String? // User yang ubah
-  createdAt DateTime @default(now())
+  newCost      Int
+  reason       String? // "Supplier price change", "Manual adjustment", dll
+  changedBy    String? // User yang ubah
+  createdAt    DateTime @default(now())
 
   tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   product Product @relation(fields: [productId], references: [id])
@@ -1330,14 +1474,14 @@ model ProductCostHistory {
 // ================== PENGATURAN TENANT ==================
 
 model TenantSetting {
-  id               String   @id @default(cuid())
-  tenantId         String   @unique
-  taxPercent       Int      @default(0)
-  pointsPerAmount  Int      @default(10000) // 1 poin per Rp10.000
-  receiptFooter    String?
+  id                String   @id @default(cuid())
+  tenantId          String   @unique
+  taxPercent        Int      @default(0)
+  pointsPerAmount   Int      @default(10000) // 1 poin per Rp10.000
+  receiptFooter     String?
   staticQrisPayload String?
-  enableParkingFee Boolean  @default(false)
-  updatedAt        DateTime @updatedAt
+  enableParkingFee  Boolean  @default(false)
+  updatedAt         DateTime @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
@@ -1368,24 +1512,24 @@ enum DocumentAccessLevel {
 }
 
 model Document {
-  id            String            @id @default(cuid())
-  tenantId      String
-  name          String
-  description   String?
-  fileUrl       String // Data URL base64 (lihat docs/SKEMA-DATABASE.md § Dokumen)
-  status        DocumentStatus    @default(DRAFT)
-  uploadedBy    String
-  createdAt     DateTime          @default(now())
-  updatedAt     DateTime          @updatedAt
-  expiresAt     DateTime?
+  id          String         @id @default(cuid())
+  tenantId    String
+  name        String
+  description String?
+  fileUrl     String // Data URL base64 (lihat docs/SKEMA-DATABASE.md § Dokumen)
+  status      DocumentStatus @default(DRAFT)
+  uploadedBy  String
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+  expiresAt   DateTime?
 
   // Relations
   versions      DocumentVersion[]
   signers       DocumentSigner[]
   accessControl DocumentAccess[]
 
-  uploader      User              @relation("DocumentUploader", fields: [uploadedBy], references: [id], onDelete: Cascade)
-  tenant        Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  uploader User   @relation("DocumentUploader", fields: [uploadedBy], references: [id], onDelete: Cascade)
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([uploadedBy])
@@ -1400,27 +1544,27 @@ model DocumentVersion {
   createdAt  DateTime @default(now())
   createdBy  String
 
-  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  creator    User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  creator  User     @relation(fields: [createdBy], references: [id], onDelete: Cascade)
 
   @@unique([documentId, version])
   @@index([documentId])
 }
 
 model DocumentSigner {
-  id           String       @id @default(cuid())
-  documentId   String
-  userId       String
-  sequence     Int          // Urutan signing (1, 2, 3, dst)
-  status       SignerStatus @default(PENDING)
-  signedAt     DateTime?
-  signatureData String?     // Canvas signature data (base64)
+  id              String       @id @default(cuid())
+  documentId      String
+  userId          String
+  sequence        Int // Urutan signing (1, 2, 3, dst)
+  status          SignerStatus @default(PENDING)
+  signedAt        DateTime?
+  signatureData   String? // Canvas signature data (base64)
   rejectionReason String?
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
 
-  document     Document     @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  signer       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  signer   User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([documentId, userId])
   @@index([documentId])
@@ -1429,15 +1573,15 @@ model DocumentSigner {
 }
 
 model DocumentAccess {
-  id       String                @id @default(cuid())
+  id         String              @id @default(cuid())
   documentId String
-  userId   String?               // NULL jika untuk role
-  role     String?               // OWNER/MANAGER/STAFF atau null jika specific user
-  level    DocumentAccessLevel   @default(VIEWER)
-  createdAt DateTime             @default(now())
+  userId     String? // NULL jika untuk role
+  role       String? // OWNER/MANAGER/STAFF atau null jika specific user
+  level      DocumentAccessLevel @default(VIEWER)
+  createdAt  DateTime            @default(now())
 
-  document Document              @relation(fields: [documentId], references: [id], onDelete: Cascade)
-  user     User?                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  user     User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([documentId, userId])
   @@index([documentId])
@@ -1446,9 +1590,11 @@ model DocumentAccess {
 enum OrderType {
   DINE_IN
   TAKEAWAY
+  COURIER
   GRABFOOD
   GOFOOD
   SHOPEEFOOD
+  MAXIM
   DELIVERY_OTHER
 }
 

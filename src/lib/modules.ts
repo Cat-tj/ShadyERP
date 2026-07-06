@@ -11,8 +11,10 @@
 
 export type ModuleKey =
   | "kasir"
+  | "inventory"
   | "pesanan-digital"
   | "booking"
+  | "laundry"
   | "member"
   | "hr"
   | "keuangan"
@@ -34,12 +36,21 @@ export type ModuleDef = {
 export const MODULES: ModuleDef[] = [
   {
     key: "kasir",
-    label: "Kasir & Produk",
-    description: "Transaksi, produk, kategori, stok — inti operasional toko.",
+    label: "Kasir",
+    description: "Transaksi POS, shift kasir, riwayat, dan pembayaran.",
     core: true,
     color: "#a730a8",
     colorDark: "#7e2582",
     colorSoft: "rgba(167, 48, 168, 0.12)",
+  },
+  {
+    key: "inventory",
+    label: "Inventory",
+    description: "Produk, kategori, stok, supplier, pembelian, barang masuk, opname, dan maintenance aset.",
+    core: false,
+    color: "#0f766e",
+    colorDark: "#115e59",
+    colorSoft: "rgba(15, 118, 110, 0.12)",
   },
   {
     key: "pesanan-digital",
@@ -58,6 +69,15 @@ export const MODULES: ModuleDef[] = [
     color: "#db2777",
     colorDark: "#be185d",
     colorSoft: "rgba(219, 39, 119, 0.12)",
+  },
+  {
+    key: "laundry",
+    label: "Laundry",
+    description: "Order laundry kiloan/satuan, status proses, pickup, dan delivery.",
+    core: false,
+    color: "#0891b2",
+    colorDark: "#0e7490",
+    colorSoft: "rgba(8, 145, 178, 0.12)",
   },
   {
     key: "member",
@@ -131,23 +151,25 @@ const ROUTE_MODULE_MAP: { prefix: string; module: ModuleKey }[] = [
   { prefix: "/finance/laporan", module: "keuangan" },
   { prefix: "/finance/pengeluaran", module: "keuangan" },
   { prefix: "/finance", module: "keuangan" },
-  { prefix: "/supplier", module: "kasir" },
-  { prefix: "/purchase-order", module: "kasir" },
-  { prefix: "/stock-receipt", module: "kasir" },
-  { prefix: "/stock-count", module: "kasir" },
-  { prefix: "/maintenance", module: "kasir" },
+  { prefix: "/supplier", module: "inventory" },
+  { prefix: "/purchase-order", module: "inventory" },
+  { prefix: "/stock-receipt", module: "inventory" },
+  { prefix: "/stock-count", module: "inventory" },
+  { prefix: "/maintenance", module: "inventory" },
   { prefix: "/kpi", module: "kasir" },
   { prefix: "/kasir", module: "kasir" },
-  { prefix: "/inventory", module: "kasir" },
+  { prefix: "/inventory", module: "inventory" },
   { prefix: "/pesanan-meja", module: "pesanan-digital" },
   { prefix: "/command-center", module: "pesanan-digital" },
   { prefix: "/booking", module: "booking" },
+  { prefix: "/laundry", module: "laundry" },
   { prefix: "/member", module: "member" },
+  { prefix: "/hris", module: "hr" },
   { prefix: "/absensi", module: "hr" },
   { prefix: "/tim", module: "hr" },
   // Keep old paths for backwards compatibility (redirect via middleware if needed)
   { prefix: "/dashboard", module: "kasir" },
-  { prefix: "/produk", module: "kasir" },
+  { prefix: "/produk", module: "inventory" },
   { prefix: "/laporan", module: "keuangan" },
   { prefix: "/pengeluaran", module: "keuangan" },
 ];

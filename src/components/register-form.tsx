@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition, useActionState, useEffect } from "react";
+import { useState, useActionState } from "react";
 import Link from "next/link";
 import { registerAction, type RegisterState } from "@/app/register/actions";
 
@@ -15,8 +15,10 @@ const BUSINESS_TYPES = [
 ] as const;
 
 const TOGGLEABLE_MODULES = [
+  { key: "inventory", label: "Inventory", desc: "Produk, stok, supplier, pembelian, barang masuk, opname" },
   { key: "pesanan-digital", label: "Pemesanan Digital", desc: "Menu QR meja & kitchen display" },
   { key: "booking", label: "Booking & Janji Temu", desc: "Sistem reservasi & jadwal kerja" },
+  { key: "laundry", label: "Laundry", desc: "Order kiloan/satuan, pickup, delivery, status cucian" },
   { key: "member", label: "Member & Loyalitas", desc: "Poin belanja, saldo deposit, kartu QR" },
   { key: "hr", label: "HR & Absensi", desc: "Jadwal shift & absensi foto + GPS" },
   { key: "keuangan", label: "Laporan Keuangan", desc: "Arus kas, laba-rugi, & pengeluaran" },
@@ -24,12 +26,14 @@ const TOGGLEABLE_MODULES = [
 ] as const;
 
 const MODULE_RECOMMENDATIONS: Record<string, string[]> = {
-  FNB: ["pesanan-digital", "member", "hr", "keuangan", "promo"],
-  BARBERSHOP: ["booking", "member", "hr", "keuangan", "promo"],
-  RETAIL: ["member", "hr", "keuangan", "promo"],
-  SERVICE: ["booking", "hr", "keuangan"],
-  OTHER: ["hr", "keuangan"],
+  FNB: ["inventory", "pesanan-digital", "member", "hr", "keuangan", "promo"],
+  BARBERSHOP: ["inventory", "booking", "member", "hr", "keuangan", "promo"],
+  RETAIL: ["inventory", "member", "hr", "keuangan", "promo"],
+  SERVICE: ["inventory", "booking", "laundry", "hr", "keuangan"],
+  OTHER: ["inventory", "hr", "keuangan"],
 };
+
+type BusinessType = (typeof BUSINESS_TYPES)[number]["value"];
 
 export function RegisterForm() {
   const [state, formAction, isPending] = useActionState(registerAction, initialState);
@@ -41,25 +45,13 @@ export function RegisterForm() {
   const [email, setEmail] = useState(state.values?.email ?? "");
   const [password, setPassword] = useState("");
   const [businessName, setBusinessName] = useState(state.values?.businessName ?? "");
-  const [businessType, setBusinessType] = useState<"FNB" | "BARBERSHOP" | "RETAIL" | "SERVICE" | "OTHER">("FNB");
+  const [businessType, setBusinessType] = useState<BusinessType>("FNB");
   const [outletName, setOutletName] = useState(state.values?.outletName ?? "");
-  const [enabledModules, setEnabledModules] = useState<string[]>([]);
+  const [enabledModules, setEnabledModules] = useState<string[]>(MODULE_RECOMMENDATIONS.FNB);
   const [seedSampleData, setSeedSampleData] = useState(true);
+  const displayedError = localError ?? state.error ?? null;
 
-  // Sync recommendations based on business type once on init or type change
-  useEffect(() => {
-    const recommended = MODULE_RECOMMENDATIONS[businessType] ?? ["hr", "keuangan"];
-    setEnabledModules(recommended);
-  }, [businessType]);
-
-  // Sync server errors back to local state
-  useEffect(() => {
-    if (state.error) {
-      setLocalError(state.error);
-    }
-  }, [state.error]);
-
-  const allKeys = ["pesanan-digital", "booking", "member", "hr", "keuangan", "promo"];
+  const allKeys = ["inventory", "pesanan-digital", "booking", "laundry", "member", "hr", "keuangan", "promo"];
   const disabledModules = allKeys.filter((k) => !enabledModules.includes(k));
 
   function validateStep1() {
@@ -135,9 +127,9 @@ export function RegisterForm() {
         </span>
       </div>
 
-      {localError && (
+      {displayedError && (
         <div className="rounded-lg bg-[var(--color-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning-text)] transition-all">
-          {localError}
+          {displayedError}
         </div>
       )}
 
@@ -224,7 +216,10 @@ export function RegisterForm() {
                 <button
                   key={t.value}
                   type="button"
-                  onClick={() => setBusinessType(t.value as any)}
+                  onClick={() => {
+                    setBusinessType(t.value);
+                    setEnabledModules(MODULE_RECOMMENDATIONS[t.value] ?? ["hr", "keuangan"]);
+                  }}
                   className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center transition-all ${
                     businessType === t.value
                       ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)] font-semibold shadow-sm"

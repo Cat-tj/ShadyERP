@@ -13,11 +13,14 @@ function useGreeting() {
   // klien yang beda timezone tidak bikin hydration mismatch.
   const [greeting, setGreeting] = useState("Selamat datang");
   useEffect(() => {
-    const h = new Date().getHours();
-    if (h < 11) setGreeting("Selamat pagi");
-    else if (h < 15) setGreeting("Selamat siang");
-    else if (h < 19) setGreeting("Selamat sore");
-    else setGreeting("Selamat malam");
+    const timer = window.setTimeout(() => {
+      const h = new Date().getHours();
+      if (h < 11) setGreeting("Selamat pagi");
+      else if (h < 15) setGreeting("Selamat siang");
+      else if (h < 19) setGreeting("Selamat sore");
+      else setGreeting("Selamat malam");
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
   return greeting;
 }

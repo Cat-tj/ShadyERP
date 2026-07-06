@@ -34,6 +34,7 @@ function TableFormModal({
   defaultPos = null,
   maxCols = 6,
   maxRows = 6,
+  floorOptions = [1],
 }: {
   outlets: OutletOption[];
   table: TableRow | null;
@@ -42,6 +43,7 @@ function TableFormModal({
   defaultPos?: { posX: number; posY: number; floor: number } | null;
   maxCols?: number;
   maxRows?: number;
+  floorOptions?: number[];
 }) {
   const router = useRouter();
   const [outletId, setOutletId] = useState(table?.outletId ?? outlets[0]?.id ?? "");
@@ -145,7 +147,7 @@ function TableFormModal({
                 onChange={(e) => setFloor(Number(e.target.value))}
                 className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
               >
-                {[1, 2, 3].map((f) => (
+                {floorOptions.map((f) => (
                   <option key={f} value={f}>Lantai {f}</option>
                 ))}
               </select>
@@ -214,6 +216,7 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
   const [editing, setEditing] = useState<TableRow | null>(null);
   const [defaultPos, setDefaultPos] = useState<{ posX: number; posY: number; floor: number } | null>(null);
   const [activeFloor, setActiveFloor] = useState(1);
+  const [floorCount, setFloorCount] = useState(() => Math.max(1, ...tables.map((t) => t.floor)));
   const [gridCols, setGridCols] = useState(() => Math.max(6, ...tables.map((t) => t.posX)));
   const [gridRows, setGridRows] = useState(() => Math.max(6, ...tables.map((t) => t.posY)));
   const [movingTable, setMovingTable] = useState<TableRow | null>(null);
@@ -246,6 +249,7 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
     });
   }
 
+  const floors = Array.from({ length: floorCount }, (_, i) => i + 1);
   const rows = Array.from({ length: gridRows }, (_, i) => i + 1);
   const cols = Array.from({ length: gridCols }, (_, i) => i + 1);
 
@@ -373,8 +377,8 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
           
           <div className="flex justify-between items-center gap-4 flex-wrap border-b border-[var(--color-border)] pb-2">
             {/* Floor selector */}
-            <div className="flex gap-1">
-              {[1, 2, 3].map((f) => (
+            <div className="flex flex-wrap gap-1">
+              {floors.map((f) => (
                 <button
                   key={f}
                   type="button"
@@ -388,6 +392,19 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
                   Lantai {f}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setFloorCount((count) => {
+                    const next = count + 1;
+                    setActiveFloor(next);
+                    return next;
+                  });
+                }}
+                className="rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-[10px] font-bold text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+              >
+                + Lantai
+              </button>
             </div>
 
             {/* Grid Size Controllers */}
@@ -572,6 +589,7 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
           defaultPos={defaultPos}
           maxCols={gridCols}
           maxRows={gridRows}
+          floorOptions={floors}
           onClose={() => setModalOpen(false)}
           onSaved={showToast}
         />

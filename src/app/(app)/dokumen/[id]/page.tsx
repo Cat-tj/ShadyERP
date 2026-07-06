@@ -1,5 +1,5 @@
 import { requireRole } from "@/server/require-session";
-import { getDocumentById, getPendingSignatures } from "@/server/services/document-service";
+import { getDocumentById } from "@/server/services/document-service";
 import { DocumentViewer } from "@/components/dokumen/document-viewer";
 
 export default async function DokumenDetailPage({

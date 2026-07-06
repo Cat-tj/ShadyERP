@@ -66,10 +66,16 @@ export async function listProductsFull(tenantId: string) {
 
 export type ProductInput = {
   name: string;
+  sku: string | null;
   categoryId: string | null;
   price: number;
   cost: number | null;
+  kind: "GOODS" | "SERVICE";
   trackStock: boolean;
+  trackExpiry: boolean;
+  shelfLifeDays: number | null;
+  warrantyDays: number | null;
+  serviceDurationMin: number | null;
 };
 
 export async function createProduct(tenantId: string, input: ProductInput) {
@@ -78,10 +84,16 @@ export async function createProduct(tenantId: string, input: ProductInput) {
     data: {
       tenantId,
       name: input.name,
+      sku: input.sku,
       categoryId: input.categoryId,
       price: input.price,
       cost: input.cost,
+      kind: input.kind,
       trackStock: input.trackStock,
+      trackExpiry: input.trackExpiry,
+      shelfLifeDays: input.shelfLifeDays,
+      warrantyDays: input.warrantyDays,
+      serviceDurationMin: input.serviceDurationMin,
     },
   });
 }
@@ -109,10 +121,16 @@ export async function updateProduct(
     where: { id },
     data: {
       name: input.name,
+      sku: input.sku,
       categoryId: input.categoryId,
       price: input.price,
       cost: input.cost,
+      kind: input.kind,
       trackStock: input.trackStock,
+      trackExpiry: input.trackExpiry,
+      shelfLifeDays: input.shelfLifeDays,
+      warrantyDays: input.warrantyDays,
+      serviceDurationMin: input.serviceDurationMin,
     },
   });
 }

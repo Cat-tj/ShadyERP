@@ -34,6 +34,16 @@ export default async function ShiftSelesaiPage({
         <p className="text-sm text-[var(--color-text-secondary)]">{shift.outlet.name}</p>
 
         <div className="mt-4 flex flex-col gap-2 rounded-lg bg-[var(--color-bg)] p-4 text-left text-sm">
+          {summary.jumlahGesekTunai > 0 && (
+            <div className="flex justify-between">
+              <span className="text-[var(--color-text-secondary)]">
+                Gesek tunai ({summary.jumlahGesekTunai} transaksi)
+              </span>
+              <span className="tabular-nums font-medium text-[var(--color-danger)]">
+                -{formatRupiah(summary.totalGesekTunai)}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between">
             <span className="text-[var(--color-text-secondary)]">Uang seharusnya</span>
             <span className="tabular-nums font-medium">{formatRupiah(expectedCash)}</span>

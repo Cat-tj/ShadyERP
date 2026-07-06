@@ -37,6 +37,7 @@ export default async function KasirPage() {
       products={activeProducts.map((product) => ({
         id: product.id,
         name: product.name,
+        imageUrl: product.imageUrl,
         price: product.price,
         categoryId: product.categoryId,
         categoryName: product.category?.name ?? null,

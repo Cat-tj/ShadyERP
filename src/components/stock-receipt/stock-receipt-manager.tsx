@@ -2,7 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { Outlet, PurchaseOrder } from "@prisma/client";
+import type { Outlet, Product, PurchaseOrder, PurchaseOrderItem, Supplier } from "@prisma/client";
 import {
   createStockReceiptAction,
   performQCAction,
@@ -12,10 +12,18 @@ import {
 import { useToast, Toast } from "@/components/toast";
 import { XIcon } from "@/components/ui/icons";
 
+type PurchaseOrderSummary = PurchaseOrder & {
+  supplier?: Pick<Supplier, "id" | "name"> | null;
+};
+
+type PurchaseOrderWithItems = PurchaseOrderSummary & {
+  items: Array<PurchaseOrderItem & { product: Pick<Product, "id" | "name"> }>;
+};
+
 export type StockReceiptRow = {
   id: string;
   receiptNumber: string;
-  po: PurchaseOrder & { supplier: any };
+  po: PurchaseOrderSummary;
   outlet: Outlet;
   status: "PENDING" | "PARTIAL_QC" | "COMPLETED" | "REJECTED";
   receivedAt?: Date;
@@ -23,7 +31,7 @@ export type StockReceiptRow = {
   items: Array<{
     id: string;
     productId: string;
-    product: any;
+    product: Pick<Product, "id" | "name">;
     qtyReceived: number;
     qtyAccepted: number;
     qtyDefect: number;
@@ -50,14 +58,14 @@ function StockReceiptFormModal({
   onClose,
   onSaved,
 }: {
-  po: PurchaseOrder & { items: any[] };
+  po: PurchaseOrderWithItems;
   outlets: Outlet[];
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
   const router = useRouter();
   const [outletId, setOutletId] = useState("");
-  const [items, setItems] = useState<ReceiptFormItem[]>(
+  const [items] = useState<ReceiptFormItem[]>(
     po.items.map((i) => ({ productId: i.productId, qtyReceived: i.qty }))
   );
   const [error, setError] = useState<string | null>(null);
@@ -268,18 +276,17 @@ function StockReceiptQCModal({
 
 export function StockReceiptManager({
   receipts,
-  purchaseOrders,
   outlets,
 }: {
   receipts: StockReceiptRow[];
-  purchaseOrders: (PurchaseOrder & { items: any[] })[];
+  purchaseOrders: PurchaseOrderWithItems[];
   outlets: Outlet[];
 }) {
   const router = useRouter();
   const { toastMessage, showToast } = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [qcModalOpen, setQCModalOpen] = useState(false);
-  const [selectedPO, setSelectedPO] = useState<(PurchaseOrder & { items: any[] }) | null>(null);
+  const [selectedPO, setSelectedPO] = useState<PurchaseOrderWithItems | null>(null);
   const [selectedReceipt, setSelectedReceipt] = useState<StockReceiptRow | null>(null);
   const [isPending, startTransition] = useTransition();
 

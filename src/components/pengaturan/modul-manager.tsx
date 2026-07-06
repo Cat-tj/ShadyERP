@@ -71,13 +71,13 @@ export function ModulManager({
                   aria-checked={isOn}
                   aria-label={`Modul ${m.label}`}
                   onClick={() => toggle(m.key)}
-                  className="relative h-7 w-12 shrink-0 rounded-full transition-colors duration-150"
+                  className="relative h-8 w-14 shrink-0 rounded-full p-1 shadow-inner transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/25"
                   style={{ backgroundColor: isOn ? m.color : "var(--color-border)" }}
                 >
                   <span
                     aria-hidden
-                    className="absolute top-1 h-5 w-5 rounded-full bg-white shadow transition-transform duration-150"
-                    style={{ transform: isOn ? "translateX(22px)" : "translateX(4px)" }}
+                    className="block h-6 w-6 rounded-full bg-white shadow-md transition-transform duration-200 ease-out"
+                    style={{ transform: isOn ? "translateX(24px)" : "translateX(0)" }}
                   />
                 </button>
               </div>

@@ -21,6 +21,8 @@ export default async function TutupShiftPage() {
         openingCash={shift.openingCash}
         totalPenjualanCash={summary?.totalPenjualanCash ?? 0}
         jumlahTransaksiCash={summary?.jumlahTransaksiCash ?? 0}
+        totalGesekTunai={summary?.totalGesekTunai ?? 0}
+        jumlahGesekTunai={summary?.jumlahGesekTunai ?? 0}
       />
     </div>
   );

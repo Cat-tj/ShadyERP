@@ -20,10 +20,16 @@ export type OutletOption = { id: string; name: string };
 export type EditingProduct = {
   id: string;
   name: string;
+  sku: string | null;
   categoryId: string | null;
   price: number;
   cost: number | null;
+  kind: "GOODS" | "SERVICE";
   trackStock: boolean;
+  trackExpiry: boolean;
+  shelfLifeDays: number | null;
+  warrantyDays: number | null;
+  serviceDurationMin: number | null;
   stockByOutlet: Record<string, number>;
   reorderPointByOutlet: Record<string, number>;
   variantGroups: VariantGroupRow[];
@@ -44,10 +50,18 @@ export function ProductFormModal({
 }) {
   const router = useRouter();
   const [name, setName] = useState(product?.name ?? "");
+  const [sku, setSku] = useState(product?.sku ?? "");
   const [categoryId, setCategoryId] = useState(product?.categoryId ?? "");
   const [price, setPrice] = useState(product ? String(product.price) : "");
   const [cost, setCost] = useState(product?.cost ? String(product.cost) : "");
+  const [kind, setKind] = useState<"GOODS" | "SERVICE">(product?.kind ?? "GOODS");
   const [trackStock, setTrackStock] = useState(product?.trackStock ?? true);
+  const [trackExpiry, setTrackExpiry] = useState(product?.trackExpiry ?? false);
+  const [shelfLifeDays, setShelfLifeDays] = useState(product?.shelfLifeDays ? String(product.shelfLifeDays) : "");
+  const [warrantyDays, setWarrantyDays] = useState(product?.warrantyDays ? String(product.warrantyDays) : "");
+  const [serviceDurationMin, setServiceDurationMin] = useState(
+    product?.serviceDurationMin ? String(product.serviceDurationMin) : "45"
+  );
   const [stockByOutlet, setStockByOutlet] = useState<Record<string, string>>(
     Object.fromEntries(outlets.map((outlet) => [outlet.id, String(product?.stockByOutlet[outlet.id] ?? 0)]))
   );
@@ -74,10 +88,16 @@ export function ProductFormModal({
     startTransition(async () => {
       const input = {
         name: name.trim(),
+        sku: sku.trim() || null,
         categoryId: categoryId || null,
         price: priceNumber,
         cost: cost ? Number(cost) : null,
-        trackStock,
+        kind,
+        trackStock: kind === "GOODS" ? trackStock : false,
+        trackExpiry: kind === "GOODS" && trackStock ? trackExpiry : false,
+        shelfLifeDays: shelfLifeDays ? Number(shelfLifeDays) : null,
+        warrantyDays: warrantyDays ? Number(warrantyDays) : null,
+        serviceDurationMin: kind === "SERVICE" ? Number(serviceDurationMin) || null : null,
       };
 
       const result = product
@@ -89,12 +109,9 @@ export function ProductFormModal({
         return;
       }
 
-      if (trackStock) {
-        let productId = product?.id;
-        if (!productId) {
-          productId = undefined;
-        }
-        if (productId) {
+      if (input.trackStock) {
+        const productId = product?.id ?? ("id" in result ? result.id : undefined);
+        if (typeof productId === "string") {
           for (const outlet of outlets) {
             const qty = Number(stockByOutlet[outlet.id] ?? 0);
             if (Number.isFinite(qty) && qty >= 0) {
@@ -147,20 +164,61 @@ export function ProductFormModal({
             />
           </div>
 
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-[var(--color-text)]">Kategori</label>
-            <select
-              value={categoryId}
-              onChange={(event) => setCategoryId(event.target.value)}
-              className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
-            >
-              <option value="">Tanpa kategori</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-[var(--color-text)]">Kategori</label>
+              <select
+                value={categoryId}
+                onChange={(event) => setCategoryId(event.target.value)}
+                className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+              >
+                <option value="">Tanpa kategori</option>
+                {categories.map((category) => (
+                  <option key={category.id} value={category.id}>
+                    {category.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex flex-col gap-1.5">
+              <label className="text-sm font-medium text-[var(--color-text)]">SKU / Barcode</label>
+              <input
+                value={sku}
+                onChange={(event) => setSku(event.target.value)}
+                placeholder="8991234567890"
+                className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-1.5">
+            {[
+              { value: "GOODS", label: "Barang", desc: "Retail, F&B, listrik" },
+              { value: "SERVICE", label: "Jasa", desc: "Barbershop, layanan" },
+            ].map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => {
+                  const nextKind = option.value as "GOODS" | "SERVICE";
+                  setKind(nextKind);
+                  if (nextKind === "SERVICE") {
+                    setTrackStock(false);
+                    setTrackExpiry(false);
+                  } else {
+                    setTrackStock(true);
+                  }
+                }}
+                className={`rounded-lg px-3 py-2 text-left transition-all ${
+                  kind === option.value
+                    ? "bg-[var(--color-primary)] text-[var(--color-on-primary)] shadow-sm"
+                    : "bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
+                }`}
+              >
+                <span className="block text-sm font-bold">{option.label}</span>
+                <span className="block text-[10px] opacity-80">{option.desc}</span>
+              </button>
+            ))}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
@@ -190,17 +248,85 @@ export function ProductFormModal({
             </div>
           </div>
 
-          <label className="flex items-center gap-2 text-sm text-[var(--color-text)]">
-            <input
-              type="checkbox"
-              checked={trackStock}
-              onChange={(event) => setTrackStock(event.target.checked)}
-              className="h-5 w-5 rounded border-[var(--color-border)]"
-            />
-            Catat stok produk ini
-          </label>
+          {kind === "GOODS" ? (
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+              <label className="flex items-center gap-2 text-sm font-medium text-[var(--color-text)]">
+                <input
+                  type="checkbox"
+                  checked={trackStock}
+                  onChange={(event) => {
+                    setTrackStock(event.target.checked);
+                    if (!event.target.checked) setTrackExpiry(false);
+                  }}
+                  className="h-5 w-5 rounded border-[var(--color-border)]"
+                />
+                Catat stok produk ini
+              </label>
+              <label className="mt-3 flex items-center gap-2 text-sm font-medium text-[var(--color-text)]">
+                <input
+                  type="checkbox"
+                  checked={trackExpiry}
+                  disabled={!trackStock}
+                  onChange={(event) => setTrackExpiry(event.target.checked)}
+                  className="h-5 w-5 rounded border-[var(--color-border)] disabled:opacity-40"
+                />
+                Lacak expired / batch
+              </label>
+              <div className="mt-3 grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-[var(--color-text-secondary)]">
+                    Masa simpan (hari)
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={shelfLifeDays}
+                    onChange={(event) => setShelfLifeDays(event.target.value)}
+                    placeholder="30"
+                    className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-xs font-semibold text-[var(--color-text-secondary)]">
+                    Garansi (hari)
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    value={warrantyDays}
+                    onChange={(event) => setWarrantyDays(event.target.value)}
+                    placeholder="365"
+                    className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+                  />
+                </div>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+                Expired cocok untuk makanan/minuman/FMCG. Garansi cocok untuk toko listrik dan elektronik.
+              </p>
+            </div>
+          ) : (
+            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+              <label className="text-sm font-medium text-[var(--color-text)]">Durasi layanan</label>
+              <div className="mt-2 flex items-center gap-2">
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  value={serviceDurationMin}
+                  onChange={(event) => setServiceDurationMin(event.target.value)}
+                  className="min-h-[42px] w-28 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+                />
+                <span className="text-sm text-[var(--color-text-secondary)]">menit</span>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+                Dipakai untuk barbershop/salon supaya layanan punya durasi standar.
+              </p>
+            </div>
+          )}
 
-          {trackStock && product && (
+          {kind === "GOODS" && trackStock && product && (
             <div className="flex flex-col gap-2">
               <div className="flex justify-between items-center text-xs font-semibold text-[var(--color-text)] mb-1">
                 <span>Outlet</span>
@@ -252,7 +378,7 @@ export function ProductFormModal({
               </Link>
             </div>
           )}
-          {trackStock && !product && (
+          {kind === "GOODS" && trackStock && !product && (
             <p className="text-sm text-[var(--color-text-secondary)]">
               Simpan produk dulu, lalu atur stok awal lewat tombol &quot;Ubah&quot; pada produk ini.
             </p>

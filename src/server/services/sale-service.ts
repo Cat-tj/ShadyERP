@@ -57,7 +57,7 @@ export async function createSale(input: CreateSaleInput) {
     const recipes = await tx.productRecipeItem.findMany({
       where: { tenantId: input.tenantId, productId: { in: productIds } },
     });
-    const ingredientIds = recipes.map((r: any) => r.ingredientId);
+    const ingredientIds = recipes.map((r) => r.ingredientId);
 
     // Fetch produk + stok produk dan stok bahan baku sekaligus
     const [products, ingredientStocks, variantGroupsByProduct] = await Promise.all([
@@ -73,7 +73,7 @@ export async function createSale(input: CreateSaleInput) {
     ]);
 
     const productMap = new Map(products.map((p) => [p.id, p]));
-    const recipeMap = new Map<string, any[]>();
+    const recipeMap = new Map<string, (typeof recipes)[number][]>();
     for (const r of recipes) {
       if (!recipeMap.has(r.productId)) recipeMap.set(r.productId, []);
       recipeMap.get(r.productId)!.push(r);

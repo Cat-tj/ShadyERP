@@ -53,6 +53,14 @@ export type TableItem = {
   capacity: number;
 };
 
+type LowStockItem = {
+  productId: string;
+  productName: string;
+  currentStock: number;
+  reorderPoint: number;
+  deficit: number;
+};
+
 export function KitchenDisplay({
   orders,
   activeStaff = [],
@@ -62,14 +70,14 @@ export function KitchenDisplay({
   orders: KitchenOrderRow[];
   activeStaff?: ActiveStaffRow[];
   tables?: TableItem[];
-  lowStockItems?: any[];
+  lowStockItems?: LowStockItem[];
 }) {
   const router = useRouter();
   const { toastMessage, showToast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [now, setNow] = useState(() => Date.now());
-  const [viewMode, setViewMode] = useState<"list" | "layout">("list");
   const [activeFloor, setActiveFloor] = useState(1);
+  const [floorCount, setFloorCount] = useState(() => Math.max(1, ...tables.map((t) => t.floor)));
   const [gridCols, setGridCols] = useState(() => Math.max(6, ...tables.map((t) => t.posX)));
   const [gridRows, setGridRows] = useState(() => Math.max(6, ...tables.map((t) => t.posY)));
 
@@ -103,6 +111,18 @@ export function KitchenDisplay({
 
   const rows = Array.from({ length: gridRows }, (_, i) => i + 1);
   const cols = Array.from({ length: gridCols }, (_, i) => i + 1);
+  const floors = Array.from({ length: floorCount }, (_, i) => i + 1);
+  const pendingCount = orders.filter((order) => order.status === "PENDING").length;
+  const cookingCount = orders.filter((order) => order.status === "ACCEPTED").length;
+  const readyCount = orders.filter((order) => order.status === "READY").length;
+  const occupiedCount = tables.filter((table) =>
+    orders.some(
+      (order) =>
+        order.tableName.toLowerCase() === table.name.toLowerCase() &&
+        order.status !== "DONE" &&
+        order.status !== "CANCELLED"
+    )
+  ).length;
 
   function getTableAt(x: number, y: number) {
     const table = tables.find((t) => t.posX === x && t.posY === y && t.floor === activeFloor);
@@ -128,26 +148,42 @@ export function KitchenDisplay({
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--color-border)] pb-4">
+    <div className="mx-auto flex min-h-[calc(100dvh-3rem)] max-w-[1720px] flex-col gap-5 rounded-[28px] border border-white/70 bg-white/45 p-4 shadow-[0_24px_70px_-42px_rgba(10,31,68,0.45)] sm:p-5">
+      <div className="flex flex-col justify-between gap-4 rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]/90 p-4 shadow-sm md:flex-row md:items-center">
         <div className="flex items-start gap-4">
           <Link
             href="/pilih-aplikasi"
-            className="flex min-h-[36px] items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs font-semibold text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] transition-all cursor-pointer whitespace-nowrap mt-1"
+            className="mt-1 flex min-h-[38px] items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-xs font-semibold text-[var(--color-text-secondary)] transition-all hover:bg-white"
           >
             ← Keluar Fullscreen
           </Link>
           <div>
             <h1 className="font-display text-2xl font-semibold text-[var(--color-text)]">Command Center</h1>
-            <p className="text-sm text-[var(--color-text-secondary)]">
+            <p className="max-w-2xl text-sm leading-relaxed text-[var(--color-text-secondary)]">
               Pusat kendali operasional live: antrean pesanan, peta meja, staf hadir, dan peringatan stok bahan baku.
             </p>
           </div>
         </div>
 
         {/* Panel Karyawan Aktif */}
-        {activeStaff.length > 0 && (
-          <div className="flex flex-wrap gap-2.5 p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/40 max-w-xl">
+        <div className="flex flex-wrap gap-2.5">
+          {[
+            { label: "Pesanan", value: orders.length },
+            { label: "Masak", value: cookingCount },
+            { label: "Siap", value: readyCount },
+            { label: "Meja isi", value: occupiedCount },
+          ].map(({ label, value }) => (
+            <div key={label} className="min-w-20 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-center">
+              <p className="tabular-nums text-lg font-bold text-[var(--color-text)]">{value}</p>
+              <p className="text-[10px] font-semibold text-[var(--color-text-secondary)]">{label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {activeStaff.length > 0 && (
+        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/75 p-3">
+          <div className="flex flex-wrap gap-2.5">
             <span className="text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider w-full mb-0.5">
               Staf Hadir:
             </span>
@@ -158,12 +194,12 @@ export function KitchenDisplay({
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Low Stock Alert */}
       {lowStockItems.length > 0 && (
-        <div className="w-full">
+        <div className="w-full rounded-2xl border border-red-200 bg-red-50/70 p-3">
           <p className="mb-1.5 text-xs font-bold text-red-500 uppercase tracking-wider">
             Peringatan Stok Kritis (Bahan Baku):
           </p>
@@ -175,13 +211,19 @@ export function KitchenDisplay({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* Left: Daftar Antrean (Queue List) */}
-        <div className="lg:col-span-5 flex flex-col gap-3">
-          <h2 className="text-base font-bold text-[var(--color-text)]">Daftar Antrean Masak</h2>
+        <section className="lg:col-span-5 flex flex-col gap-3 rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]/82 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-bold text-[var(--color-text)]">Daftar Antrean Masak</h2>
+            <span className="rounded-full bg-[var(--color-primary)]/10 px-3 py-1 text-xs font-bold text-[var(--color-primary)]">
+              {pendingCount} baru
+            </span>
+          </div>
           
           <div className="max-h-[78vh] overflow-y-auto pr-1 flex flex-col gap-3">
             {orders.length === 0 ? (
-              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-16 text-center">
-                <p className="text-sm text-[var(--color-text-secondary)]">Tidak ada pesanan aktif.</p>
+              <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg)]/70 px-6 py-16 text-center">
+                <p className="text-sm font-semibold text-[var(--color-text)]">Tidak ada pesanan aktif</p>
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Pesanan QR meja akan muncul di sini begitu masuk.</p>
               </div>
             ) : (
               orders.map((order) => {
@@ -191,7 +233,7 @@ export function KitchenDisplay({
                 return (
                   <div
                     key={order.id}
-                    className={`flex flex-col gap-3 rounded-xl border-2 bg-[var(--color-surface)] p-4 ${
+                    className={`flex flex-col gap-3 rounded-2xl border-2 bg-[var(--color-surface)] p-4 shadow-sm ${
                       isUrgent
                         ? "border-[var(--color-danger)] animate-pulse"
                         : isWarn
@@ -266,16 +308,21 @@ export function KitchenDisplay({
               })
             )}
           </div>
-        </div>
+        </section>
 
         {/* Right: Peta Layout Meja */}
-        <div className="lg:col-span-7 flex flex-col gap-3">
-          <h2 className="text-base font-bold text-[var(--color-text)]">Peta Layout Meja</h2>
+        <section className="lg:col-span-7 flex flex-col gap-3 rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]/82 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-bold text-[var(--color-text)]">Peta Layout Meja</h2>
+            <span className="rounded-full bg-[var(--color-bg)] px-3 py-1 text-xs font-bold text-[var(--color-text-secondary)]">
+              {tables.length} meja
+            </span>
+          </div>
 
           <div className="flex justify-between items-center gap-4 flex-wrap border-b border-[var(--color-border)] pb-2">
             {/* Floor selector */}
-            <div className="flex gap-1">
-              {[1, 2, 3].map((f) => (
+            <div className="flex flex-wrap gap-1">
+              {floors.map((f) => (
                 <button
                   key={f}
                   type="button"
@@ -289,6 +336,19 @@ export function KitchenDisplay({
                   Lantai {f}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setFloorCount((count) => {
+                    const next = count + 1;
+                    setActiveFloor(next);
+                    return next;
+                  });
+                }}
+                className="rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-[10px] font-bold text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+              >
+                + Lantai
+              </button>
             </div>
 
             {/* Grid Size Controllers */}
@@ -353,7 +413,7 @@ export function KitchenDisplay({
           </div>
 
           <div
-            className="grid gap-2 bg-[var(--color-surface)]/20 p-4 rounded-2xl border border-[var(--color-border)]"
+            className="grid gap-2 rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg)]/70 p-4 shadow-inner"
             style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
           >
             {rows.flatMap((y) =>
@@ -363,7 +423,7 @@ export function KitchenDisplay({
                   return (
                     <div
                       key={`empty-${x}-${y}`}
-                      className="aspect-square rounded-xl border border-dashed border-[var(--color-border)]/20 bg-transparent flex items-center justify-center text-[var(--color-text-secondary)]/10 text-[8px] select-none"
+                      className="aspect-square rounded-xl border border-dashed border-[var(--color-border)]/45 bg-white/22 flex items-center justify-center text-[var(--color-text-secondary)]/20 text-[8px] select-none"
                     >
                       {x},{y}
                     </div>
@@ -418,7 +478,7 @@ export function KitchenDisplay({
               })
             )}
           </div>
-        </div>
+        </section>
       </div>
 
       <Toast message={toastMessage} />

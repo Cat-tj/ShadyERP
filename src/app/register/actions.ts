@@ -42,7 +42,7 @@ export async function registerAction(
   let disabledModules: string[] = [];
   try {
     disabledModules = JSON.parse(disabledModulesStr);
-  } catch (e) {}
+  } catch {}
 
   const seedSampleData = formData.get("seedSampleData") === "true";
 

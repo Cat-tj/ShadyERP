@@ -69,24 +69,25 @@ export async function deleteCategoryAction(id: string): Promise<ActionResult> {
   return { success: true };
 }
 
-export async function createProductAction(input: ProductInput): Promise<ActionResult> {
+export async function createProductAction(input: ProductInput): Promise<CreateResult> {
   const user = await requireRole([...MANAGE_ROLES]);
-  if (!input.name.trim()) return { error: "Nama produk wajib diisi." };
-  if (!Number.isFinite(input.price) || input.price < 0) return { error: "Harga tidak valid." };
+  const validationError = validateProductInput(input);
+  if (validationError) return { error: validationError };
+  let product;
   try {
-    await createProduct(user.tenantId, input);
+    product = await createProduct(user.tenantId, input);
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal menambah produk." };
   }
   revalidatePath("/produk");
   revalidatePath("/kasir");
-  return { success: true };
+  return { success: true, id: product.id };
 }
 
 export async function updateProductAction(id: string, input: ProductInput): Promise<ActionResult> {
   const user = await requireRole([...MANAGE_ROLES]);
-  if (!input.name.trim()) return { error: "Nama produk wajib diisi." };
-  if (!Number.isFinite(input.price) || input.price < 0) return { error: "Harga tidak valid." };
+  const validationError = validateProductInput(input);
+  if (validationError) return { error: validationError };
   try {
     await updateProduct(user.tenantId, id, input, user.id);
   } catch (error) {
@@ -95,6 +96,21 @@ export async function updateProductAction(id: string, input: ProductInput): Prom
   revalidatePath("/produk");
   revalidatePath("/kasir");
   return { success: true };
+}
+
+function validateProductInput(input: ProductInput) {
+  if (!input.name.trim()) return "Nama produk wajib diisi.";
+  if (!Number.isFinite(input.price) || input.price < 0) return "Harga tidak valid.";
+  if (input.cost != null && (!Number.isFinite(input.cost) || input.cost < 0)) return "Modal tidak valid.";
+  if (!["GOODS", "SERVICE"].includes(input.kind)) return "Jenis produk tidak valid.";
+  if (input.kind === "SERVICE" && input.trackStock) return "Jasa tidak boleh memakai stok barang.";
+  if (input.kind === "SERVICE" && (!input.serviceDurationMin || input.serviceDurationMin <= 0)) {
+    return "Durasi layanan wajib diisi untuk produk jasa.";
+  }
+  if (input.trackExpiry && !input.trackStock) return "Expired hanya bisa dilacak untuk produk yang memakai stok.";
+  if (input.shelfLifeDays != null && input.shelfLifeDays < 0) return "Masa simpan tidak valid.";
+  if (input.warrantyDays != null && input.warrantyDays < 0) return "Masa garansi tidak valid.";
+  return null;
 }
 
 export async function toggleProductActiveAction(id: string, isActive: boolean): Promise<ActionResult> {
