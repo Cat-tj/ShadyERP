@@ -1,9 +1,10 @@
 import type { MetadataRoute } from "next";
+import { CITIES } from "@/app/kasir/[city]/page";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXTAUTH_URL || "https://altora.my.id"; // Fallback to primary production domain
+  const baseUrl = "https://www.altora.my.id"; // Use canonical production URL
   
-  return [
+  const mainRoutes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: new Date(),
@@ -23,4 +24,13 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
       priority: 0.5,
     },
   ];
+
+  const cityRoutes: MetadataRoute.Sitemap = CITIES.map((city) => ({
+    url: `${baseUrl}/kasir/${city}`,
+    lastModified: new Date(),
+    changeFrequency: "weekly",
+    priority: 0.8,
+  }));
+
+  return [...mainRoutes, ...cityRoutes];
 }

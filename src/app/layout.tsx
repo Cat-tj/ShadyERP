@@ -17,7 +17,11 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: "Altora POS & ERP — Kasir & Manajemen Toko UMKM",
-  description: "Altora adalah sistem aplikasi POS (Point of Sale) & ERP manajemen toko terlengkap untuk UMKM Indonesia. Kelola kasir, inventaris barang/stok, absensi karyawan, dan laporan keuangan usaha secara real-time.",
+  description: "Altora adalah aplikasi POS & ERP toko terlengkap untuk UMKM Indonesia. Kelola kasir, stok, absensi karyawan, dan laporan keuangan secara real-time.",
+  metadataBase: new URL("https://www.altora.my.id"),
+  alternates: {
+    canonical: "/",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "default",
@@ -38,6 +42,31 @@ export default function RootLayout({
     <html lang="id" className={`${inter.variable} ${jetbrainsMono.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-[var(--color-bg)] text-[var(--color-text)]">
         {children}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              "@context": "https://schema.org",
+              "@type": "WebApplication",
+              "name": "Altora POS & ERP",
+              "url": "https://www.altora.my.id",
+              "applicationCategory": "BusinessApplication",
+              "operatingSystem": "All",
+              "description": "Altora adalah aplikasi POS & ERP toko terlengkap untuk UMKM Indonesia. Kelola kasir, stok, absensi karyawan, dan laporan keuangan secara real-time.",
+              "offers": {
+                "@type": "Offer",
+                "price": "0.00",
+                "priceCurrency": "IDR",
+              },
+              "author": {
+                "@type": "Organization",
+                "name": "Altora",
+                "url": "https://www.altora.my.id",
+                "logo": "https://www.altora.my.id/icon.svg"
+              }
+            })
+          }}
+        />
         <SpeedInsights />
         <ServiceWorkerRegister />
       </body>
