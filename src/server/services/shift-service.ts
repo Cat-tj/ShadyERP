@@ -77,7 +77,7 @@ export async function closeShift(input: {
       where: {
         tenantId: input.tenantId,
         shiftId: shift.id,
-        sale: { paymentMethod: "CASH" },
+        refundMethod: "CASH",
       },
       _sum: { totalRefund: true },
     }),
@@ -149,8 +149,8 @@ export async function getShiftSummary(tenantId: string, shiftId: string) {
     }, {})
   ).map(([method, value]) => ({ method, ...value }));
 
-  const cashReturns = saleReturns.filter((sr) => sr.sale.paymentMethod === "CASH");
-  const digitalReturns = saleReturns.filter((sr) => sr.sale.paymentMethod !== "CASH");
+  const cashReturns = saleReturns.filter((sr) => sr.refundMethod === "CASH");
+  const digitalReturns = saleReturns.filter((sr) => sr.refundMethod !== "CASH");
   const totalRefundCash = cashReturns.reduce((sum, sr) => sum + sr.totalRefund, 0);
   const totalRefundDigital = digitalReturns.reduce((sum, sr) => sum + sr.totalRefund, 0);
   const jumlahRetur = saleReturns.length;

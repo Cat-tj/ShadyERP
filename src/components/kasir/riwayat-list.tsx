@@ -347,6 +347,7 @@ function ReturnModal({
 }) {
   const [qtyById, setQtyById] = useState<Record<string, string>>({});
   const [reason, setReason] = useState("");
+  const [refundMethod, setRefundMethod] = useState<string>(sale.paymentMethod === "DEPOSIT" ? "DEPOSIT" : "CASH");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -368,7 +369,7 @@ function ReturnModal({
 
     setError(null);
     startTransition(async () => {
-      const result = await processReturnAction(sale.id, items, reason.trim());
+      const result = await processReturnAction(sale.id, items, reason.trim(), refundMethod);
       if (result.error) {
         setError(result.error);
         return;
@@ -386,6 +387,25 @@ function ReturnModal({
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
           Isi jumlah item yang mau diretur. Stok akan dikembalikan otomatis.
         </p>
+
+        {sale.paymentMethod !== "DEPOSIT" ? (
+          <div className="mt-3 flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-[var(--color-text-secondary)]">Metode Refund</label>
+            <select
+              value={refundMethod}
+              onChange={(e) => setRefundMethod(e.target.value)}
+              className="min-h-[44px] w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+            >
+              <option value="CASH">Tunai (Potong Laci Kas)</option>
+              <option value="TRANSFER">Transfer Bank / QRIS</option>
+              {sale.memberName && <option value="DEPOSIT">Saldo Member</option>}
+            </select>
+          </div>
+        ) : (
+          <div className="mt-3 rounded-lg bg-[var(--color-bg)] p-3 text-xs text-[var(--color-text-secondary)]">
+            Metode Refund: <span className="font-semibold text-[var(--color-text)]">Saldo Member</span> (Kredit deposit saldo secara otomatis)
+          </div>
+        )}
 
         {error && (
           <div className="mt-3 rounded-lg bg-[var(--color-warning-bg)] px-3 py-2 text-sm text-[var(--color-warning-text)]">

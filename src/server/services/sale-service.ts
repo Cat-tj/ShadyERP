@@ -496,7 +496,8 @@ export async function processReturn(
   saleId: string,
   processedById: string,
   items: ReturnItemInput[],
-  reason: string
+  reason: string,
+  refundMethod: string = "CASH"
 ) {
   if (!reason.trim()) {
     throw new Error("Alasan retur wajib diisi.");
@@ -544,7 +545,7 @@ export async function processReturn(
       tenantId,
       processedById,
       "SALE_RETURN",
-      `Retur ${returnItemsData.length} item dari transaksi ${sale.invoiceNumber} (${formatRupiah(totalRefund)}) — alasan: ${reason}`
+      `Retur ${returnItemsData.length} item dari transaksi ${sale.invoiceNumber} (${formatRupiah(totalRefund)}) lewat ${refundMethod} — alasan: ${reason}`
     );
 
     const openShift = await tx.cashierShift.findFirst({
@@ -564,6 +565,7 @@ export async function processReturn(
         shiftId: openShift?.id ?? null,
         reason,
         totalRefund,
+        refundMethod,
         items: { create: returnItemsData },
       },
       include: { items: true },
@@ -584,7 +586,7 @@ export async function processReturn(
       }
     }
 
-    if (sale.memberId && sale.paymentMethod === "DEPOSIT" && totalRefund > 0) {
+    if (sale.memberId && refundMethod === "DEPOSIT" && totalRefund > 0) {
       await tx.member.update({
         where: { id: sale.memberId },
         data: { depositBalance: { increment: totalRefund } },

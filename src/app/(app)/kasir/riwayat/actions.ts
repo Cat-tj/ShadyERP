@@ -24,11 +24,12 @@ export type ReturnResult = { error?: string; success?: boolean };
 export async function processReturnAction(
   saleId: string,
   items: ReturnItemInput[],
-  reason: string
+  reason: string,
+  refundMethod: string = "CASH"
 ): Promise<ReturnResult> {
   const user = await requireSession();
   try {
-    await processReturn(user.tenantId, saleId, user.id, items, reason);
+    await processReturn(user.tenantId, saleId, user.id, items, reason, refundMethod);
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal memproses retur." };
   }
