@@ -6,7 +6,7 @@ import { formatRupiah } from "@/lib/format";
 import { SimpleCashflowForm, type SimpleCashFlowRow } from "@/components/simple/simple-cashflow-form";
 
 export default async function SimpleUangPage() {
-  const user = await requireRole(["OWNER", "MANAGER"]);
+  const user = await requireRole(["OWNER", "MANAGER", "STAFF"]);
   const outlets = await listOutletsForUser(user.tenantId, user.id, user.role);
   const outletIds = outlets.map((outlet) => outlet.id);
   const [cashOutlets, rawFlows] = await Promise.all([

@@ -17,7 +17,7 @@ export async function createSimpleCashFlowAction(input: {
   note?: string;
   spentAtStr?: string;
 }) {
-  const user = await requireRole(["OWNER", "MANAGER"]);
+  const user = await requireRole(["OWNER", "MANAGER", "STAFF"]);
 
   try {
     await createCashFlow(user.tenantId, user.id, {
@@ -37,7 +37,7 @@ export async function createSimpleCashFlowAction(input: {
 }
 
 export async function deleteSimpleCashFlowAction(id: string) {
-  const user = await requireRole(["OWNER", "MANAGER"]);
+  const user = await requireRole(["OWNER", "MANAGER", "STAFF"]);
 
   try {
     await deleteCashFlow(user.tenantId, id);
