@@ -31,6 +31,9 @@ export function CloseShiftForm({
   jumlahGesekTunai,
   digitalSalesByMethod,
   cashOutByMethod,
+  totalRefundCash,
+  totalRefundDigital,
+  jumlahRetur,
 }: {
   shiftId: string;
   outletName: string;
@@ -45,10 +48,13 @@ export function CloseShiftForm({
   jumlahGesekTunai: number;
   digitalSalesByMethod: MethodBreakdown[];
   cashOutByMethod: MethodBreakdown[];
+  totalRefundCash: number;
+  totalRefundDigital: number;
+  jumlahRetur: number;
 }) {
   const [state, formAction, isPending] = useActionState(closeShiftAction, initialState);
-  const expectedCash = openingCash + totalPenjualanCash - totalCashback - totalGesekTunai;
-  const expectedDigital = totalPenjualanDigital + totalTagihanGesekTunai;
+  const expectedCash = openingCash + totalPenjualanCash - totalCashback - totalGesekTunai - totalRefundCash;
+  const expectedDigital = totalPenjualanDigital + totalTagihanGesekTunai - totalRefundDigital;
 
   return (
     <div className="mx-auto max-w-3xl rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
@@ -76,12 +82,22 @@ export function CloseShiftForm({
               </span>
             </div>
           )}
-          <div className="flex justify-between">
-            <span className="text-[var(--color-text-secondary)]">Cash keluar gesek tunai ({jumlahGesekTunai})</span>
-            <span className="tabular-nums font-medium text-[var(--color-danger)]">
-              -{formatRupiah(totalGesekTunai)}
-            </span>
-          </div>
+          {totalGesekTunai > 0 && (
+            <div className="flex justify-between">
+              <span className="text-[var(--color-text-secondary)]">Cash keluar gesek tunai ({jumlahGesekTunai})</span>
+              <span className="tabular-nums font-medium text-[var(--color-danger)]">
+                -{formatRupiah(totalGesekTunai)}
+              </span>
+            </div>
+          )}
+          {totalRefundCash > 0 && (
+            <div className="flex justify-between">
+              <span className="text-[var(--color-text-secondary)]">Cash keluar retur/refund ({jumlahRetur})</span>
+              <span className="tabular-nums font-medium text-[var(--color-danger)]">
+                -{formatRupiah(totalRefundCash)}
+              </span>
+            </div>
+          )}
           <div className="flex justify-between border-t border-[var(--color-border)] pt-2">
             <span className="font-semibold text-[var(--color-text)]">Harus ada di laci</span>
             <span className="tabular-nums font-bold text-[var(--color-text)]">{formatRupiah(expectedCash)}</span>
@@ -94,7 +110,7 @@ export function CloseShiftForm({
             <span className="text-[var(--color-text-secondary)]">Penjualan digital</span>
             <span className="tabular-nums font-medium">{jumlahTransaksiDigital} transaksi</span>
           </div>
-          {digitalSalesByMethod.length === 0 && cashOutByMethod.length === 0 ? (
+          {digitalSalesByMethod.length === 0 && cashOutByMethod.length === 0 && totalRefundDigital === 0 ? (
             <p className="text-[var(--color-text-secondary)]">Belum ada transaksi digital di shift ini.</p>
           ) : (
             <>
@@ -114,6 +130,14 @@ export function CloseShiftForm({
                   <span className="tabular-nums font-medium">{formatRupiah(item.amount)}</span>
                 </div>
               ))}
+              {totalRefundDigital > 0 && (
+                <div className="flex justify-between">
+                  <span className="text-[var(--color-text-secondary)]">Retur/refund digital</span>
+                  <span className="tabular-nums font-medium text-[var(--color-danger)]">
+                    -{formatRupiah(totalRefundDigital)}
+                  </span>
+                </div>
+              )}
             </>
           )}
           <div className="mt-auto flex justify-between border-t border-[var(--color-border)] pt-2">

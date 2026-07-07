@@ -547,11 +547,21 @@ export async function processReturn(
       `Retur ${returnItemsData.length} item dari transaksi ${sale.invoiceNumber} (${formatRupiah(totalRefund)}) — alasan: ${reason}`
     );
 
+    const openShift = await tx.cashierShift.findFirst({
+      where: {
+        tenantId,
+        userId: processedById,
+        outletId: sale.outletId,
+        status: "OPEN",
+      },
+    });
+
     const saleReturn = await tx.saleReturn.create({
       data: {
         tenantId,
         saleId: sale.id,
         processedById,
+        shiftId: openShift?.id ?? null,
         reason,
         totalRefund,
         items: { create: returnItemsData },

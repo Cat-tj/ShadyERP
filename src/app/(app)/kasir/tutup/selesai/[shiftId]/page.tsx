@@ -32,7 +32,7 @@ export default async function ShiftSelesaiPage({
   const closingCash = shift.closingCash ?? 0;
   const selisih = closingCash - expectedCash;
   const isPas = selisih === 0;
-  const expectedDigital = summary.totalPenjualanDigital + summary.totalTagihanGesekTunai;
+  const expectedDigital = summary.totalPenjualanDigital + summary.totalTagihanGesekTunai - summary.totalRefundDigital;
 
   return (
     <div className="mx-auto max-w-3xl">
@@ -53,6 +53,16 @@ export default async function ShiftSelesaiPage({
                 </span>
                 <span className="tabular-nums font-medium text-[var(--color-danger)]">
                   -{formatRupiah(summary.totalGesekTunai)}
+                </span>
+              </div>
+            )}
+            {summary.totalRefundCash > 0 && (
+              <div className="flex justify-between">
+                <span className="text-[var(--color-text-secondary)]">
+                  Cash keluar retur/refund ({summary.jumlahRetur})
+                </span>
+                <span className="tabular-nums font-medium text-[var(--color-danger)]">
+                  -{formatRupiah(summary.totalRefundCash)}
                 </span>
               </div>
             )}
@@ -79,7 +89,7 @@ export default async function ShiftSelesaiPage({
 
           <div className="flex flex-col gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
             <p className="text-xs font-bold uppercase tracking-wide text-[var(--color-text-secondary)]">Digital / non-tunai</p>
-            {summary.digitalSalesByMethod.length === 0 && summary.cashOutByMethod.length === 0 ? (
+            {summary.digitalSalesByMethod.length === 0 && summary.cashOutByMethod.length === 0 && summary.totalRefundDigital === 0 ? (
               <p className="text-[var(--color-text-secondary)]">Tidak ada transaksi digital.</p>
             ) : (
               <>
@@ -99,6 +109,16 @@ export default async function ShiftSelesaiPage({
                     <span className="tabular-nums font-medium">{formatRupiah(item.amount)}</span>
                   </div>
                 ))}
+                {summary.totalRefundDigital > 0 && (
+                  <div className="flex justify-between">
+                    <span className="text-[var(--color-text-secondary)]">
+                      Retur/refund digital
+                    </span>
+                    <span className="tabular-nums font-medium text-[var(--color-danger)]">
+                      -{formatRupiah(summary.totalRefundDigital)}
+                    </span>
+                  </div>
+                )}
               </>
             )}
             <div className="mt-auto flex justify-between border-t border-[var(--color-border)] pt-2">

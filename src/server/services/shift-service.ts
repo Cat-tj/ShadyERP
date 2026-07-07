@@ -47,7 +47,7 @@ export async function closeShift(input: {
     throw new Error("Shift ini sudah ditutup sebelumnya.");
   }
 
-  const [cashSalesTotal, totalCashback, cashOutTotal] = await Promise.all([
+  const [cashSalesTotal, totalCashback, cashOutTotal, cashRefundsTotal] = await Promise.all([
     prisma.sale.aggregate({
       where: {
         tenantId: input.tenantId,
@@ -73,13 +73,22 @@ export async function closeShift(input: {
       },
       _sum: { withdrawAmount: true },
     }),
+    prisma.saleReturn.aggregate({
+      where: {
+        tenantId: input.tenantId,
+        shiftId: shift.id,
+        sale: { paymentMethod: "CASH" },
+      },
+      _sum: { totalRefund: true },
+    }),
   ]);
 
   const expectedCash =
     shift.openingCash +
     (cashSalesTotal._sum?.total ?? 0) -
     (totalCashback._sum?.cashbackAmount ?? 0) -
-    (cashOutTotal._sum?.withdrawAmount ?? 0);
+    (cashOutTotal._sum?.withdrawAmount ?? 0) -
+    (cashRefundsTotal._sum?.totalRefund ?? 0);
 
   return prisma.cashierShift.update({
     where: { id: shift.id },
@@ -99,12 +108,16 @@ export async function getShiftSummary(tenantId: string, shiftId: string) {
   });
   if (!shift) return null;
 
-  const [sales, cashOutTransactions] = await Promise.all([
+  const [sales, cashOutTransactions, saleReturns] = await Promise.all([
     prisma.sale.findMany({
       where: { tenantId, shiftId, status: "COMPLETED" },
     }),
     prisma.cashOutTransaction.findMany({
       where: { tenantId, shiftId, status: "COMPLETED" },
+    }),
+    prisma.saleReturn.findMany({
+      where: { tenantId, shiftId },
+      include: { sale: true },
     }),
   ]);
 
@@ -136,6 +149,12 @@ export async function getShiftSummary(tenantId: string, shiftId: string) {
     }, {})
   ).map(([method, value]) => ({ method, ...value }));
 
+  const cashReturns = saleReturns.filter((sr) => sr.sale.paymentMethod === "CASH");
+  const digitalReturns = saleReturns.filter((sr) => sr.sale.paymentMethod !== "CASH");
+  const totalRefundCash = cashReturns.reduce((sum, sr) => sum + sr.totalRefund, 0);
+  const totalRefundDigital = digitalReturns.reduce((sum, sr) => sum + sr.totalRefund, 0);
+  const jumlahRetur = saleReturns.length;
+
   return {
     shift,
     totalPenjualan,
@@ -151,5 +170,8 @@ export async function getShiftSummary(tenantId: string, shiftId: string) {
     jumlahGesekTunai,
     digitalSalesByMethod,
     cashOutByMethod,
+    totalRefundCash,
+    totalRefundDigital,
+    jumlahRetur,
   };
 }

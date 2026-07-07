@@ -29,6 +29,9 @@ export default async function TutupShiftPage() {
         jumlahGesekTunai={summary?.jumlahGesekTunai ?? 0}
         digitalSalesByMethod={summary?.digitalSalesByMethod ?? []}
         cashOutByMethod={summary?.cashOutByMethod ?? []}
+        totalRefundCash={summary?.totalRefundCash ?? 0}
+        totalRefundDigital={summary?.totalRefundDigital ?? 0}
+        jumlahRetur={summary?.jumlahRetur ?? 0}
       />
     </div>
   );
