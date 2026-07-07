@@ -570,6 +570,7 @@ model CashierShift {
 
   sales               Sale[]
   cashOutTransactions CashOutTransaction[]
+  saleReturns         SaleReturn[]
 
   @@index([tenantId])
   @@index([outletId])
@@ -706,6 +707,7 @@ model SaleReturn {
   tenantId      String
   saleId        String
   processedById String
+  shiftId       String?
   reason        String
   totalRefund   Int
   createdAt     DateTime @default(now())
@@ -713,10 +715,12 @@ model SaleReturn {
   tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   sale        Sale             @relation(fields: [saleId], references: [id], onDelete: Cascade)
   processedBy User             @relation("SaleReturnProcessedBy", fields: [processedById], references: [id])
+  shift       CashierShift?    @relation(fields: [shiftId], references: [id], onDelete: SetNull)
   items       SaleReturnItem[]
 
   @@index([tenantId])
   @@index([saleId])
+  @@index([shiftId])
 }
 
 model SaleReturnItem {
