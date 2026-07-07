@@ -53,7 +53,7 @@ export function CloseShiftForm({
   jumlahRetur: number;
 }) {
   const [state, formAction, isPending] = useActionState(closeShiftAction, initialState);
-  const [displayValue, setDisplayValue] = useState("");
+  const [displayValue, setDisplayValue] = useState("Rp 0");
   const [rawCash, setRawCash] = useState(0);
 
   const formatNumber = (val: string) => {

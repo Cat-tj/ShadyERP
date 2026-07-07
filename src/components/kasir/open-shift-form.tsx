@@ -11,7 +11,7 @@ export function OpenShiftForm({
   outlets: { id: string; name: string }[];
 }) {
   const [state, formAction, isPending] = useActionState(openShiftAction, initialState);
-  const [displayValue, setDisplayValue] = useState("");
+  const [displayValue, setDisplayValue] = useState("Rp 0");
   const [rawCash, setRawCash] = useState(0);
 
   const formatNumber = (val: string) => {
