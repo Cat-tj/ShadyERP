@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { closeShiftAction, type CloseShiftResult } from "@/app/(app)/kasir/actions";
 import { formatRupiah } from "@/lib/format";
 
@@ -53,6 +53,27 @@ export function CloseShiftForm({
   jumlahRetur: number;
 }) {
   const [state, formAction, isPending] = useActionState(closeShiftAction, initialState);
+  const [displayValue, setDisplayValue] = useState("");
+  const [rawCash, setRawCash] = useState(0);
+
+  const formatNumber = (val: string) => {
+    const clean = val.replace(/\D/g, "");
+    if (!clean) return "";
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(Number(clean));
+  };
+
+  const handleCashChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    const cleanNum = Number(rawValue.replace(/\D/g, ""));
+    setRawCash(cleanNum);
+    setDisplayValue(formatNumber(rawValue));
+  };
+
   const expectedCash = openingCash + totalPenjualanCash - totalCashback - totalGesekTunai - totalRefundCash;
   const expectedDigital = totalPenjualanDigital + totalTagihanGesekTunai - totalRefundDigital;
 
@@ -159,19 +180,20 @@ export function CloseShiftForm({
         )}
 
         <div className="flex flex-col gap-1.5">
-          <label htmlFor="closingCash" className="text-sm font-medium text-[var(--color-text)]">
+          <label htmlFor="displayClosingCash" className="text-sm font-medium text-[var(--color-text)]">
             Uang yang dihitung sekarang
           </label>
           <input
-            id="closingCash"
-            name="closingCash"
-            type="number"
+            id="displayClosingCash"
+            type="text"
             inputMode="numeric"
-            min={0}
             required
-            placeholder="0"
+            value={displayValue}
+            onChange={handleCashChange}
+            placeholder="Rp 0"
             className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base tabular-nums text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
           />
+          <input type="hidden" name="closingCash" value={rawCash} />
         </div>
 
         <button
