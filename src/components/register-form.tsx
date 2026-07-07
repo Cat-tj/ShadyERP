@@ -32,7 +32,7 @@ export function RegisterForm() {
   const [businessType, setBusinessType] = useState<BusinessModeKey>("CAFE");
   const [outletName, setOutletName] = useState(state.values?.outletName ?? "");
   const [enabledModules, setEnabledModules] = useState<string[]>(BUSINESS_MODE_MAP.CAFE.recommendedModules);
-  const [seedSampleData, setSeedSampleData] = useState(true);
+  const [seedSampleData, setSeedSampleData] = useState(false);
   const displayedError = localError ?? state.error ?? null;
 
   const allKeys = TOGGLEABLE_MODULES.map((m) => m.key);
