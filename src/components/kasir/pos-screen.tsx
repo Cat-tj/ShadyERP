@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, type KeyboardEvent } from "react";
+import { useMemo, useState, useEffect, type KeyboardEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { formatRupiah } from "@/lib/format";
@@ -64,6 +64,28 @@ export function PosScreen({
   const [showCashOut, setShowCashOut] = useState(false);
   const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null);
   const [variantPickerProduct, setVariantPickerProduct] = useState<PosProduct | null>(null);
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: globalThis.KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key.length === 1) {
+        const searchInput = document.getElementById("pos-search-input") as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
 
   const filteredProducts = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -106,18 +128,17 @@ export function PosScreen({
     product: PosProduct,
     variantOptionIds: string[],
     priceDelta: number,
-    variantLabel: string | null
+    variantLabel: string | null,
+    initialQty: number = 1
   ) {
     setLastAddedProductId(product.id);
     const cartKey = `${product.id}::${[...variantOptionIds].sort().join(",")}`;
     setCart((prev) => {
       const existing = prev.find((line) => line.cartKey === cartKey);
-      const currentQty = existing?.qty ?? 0;
-      if (product.trackStock && currentQty + 1 > product.stockQty) {
-        return prev;
-      }
+      const targetQty = existing ? existing.qty + initialQty : initialQty;
+      const clampedQty = product.trackStock ? Math.min(targetQty, product.stockQty) : targetQty;
       if (existing) {
-        return prev.map((line) => (line.cartKey === cartKey ? { ...line, qty: line.qty + 1 } : line));
+        return prev.map((line) => (line.cartKey === cartKey ? { ...line, qty: clampedQty } : line));
       }
       return [
         ...prev,
@@ -126,7 +147,7 @@ export function PosScreen({
           productId: product.id,
           name: product.name,
           price: product.price + priceDelta,
-          qty: 1,
+          qty: clampedQty,
           discountAmount: 0,
           trackStock: product.trackStock,
           stockQty: product.stockQty,
@@ -282,6 +303,7 @@ export function PosScreen({
         {/* Grid produk */}
         <div className="flex-1 min-w-0">
           <input
+            id="pos-search-input"
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
@@ -395,7 +417,7 @@ export function PosScreen({
                             </p>
                           )}
                         </div>
-                        <div className="grid shrink-0 grid-cols-[2.25rem_1.5rem_2.25rem] items-center gap-1">
+                        <div className="grid shrink-0 grid-cols-[2.25rem_3rem_2.25rem] items-center gap-1">
                           <button
                             type="button"
                             onClick={() => decrementProduct(product.id)}
@@ -405,9 +427,25 @@ export function PosScreen({
                           >
                             -
                           </button>
-                          <span className="w-6 text-center tabular-nums text-sm font-bold text-[var(--color-text)]">
-                            {qtyInCart}
-                          </span>
+                          {product.variantGroups.length === 0 ? (
+                            <CartQtyInput
+                              qty={qtyInCart}
+                              stockQty={product.stockQty}
+                              trackStock={product.trackStock}
+                              onChange={(val) => {
+                                const line = cart.find((item) => item.productId === product.id);
+                                if (line) {
+                                  updateQty(line.cartKey, val);
+                                } else if (val > 0) {
+                                  addLineToCart(product, [], 0, null, val);
+                                }
+                              }}
+                            />
+                          ) : (
+                            <span className="w-6 text-center tabular-nums text-sm font-bold text-[var(--color-text)]">
+                              {qtyInCart}
+                            </span>
+                          )}
                           <button
                             type="button"
                             onClick={() => addToCart(product)}
@@ -616,7 +654,12 @@ function CartPanel({
                   >
                     −
                   </button>
-                  <span className="w-6 text-center tabular-nums text-sm font-semibold">{line.qty}</span>
+                   <CartQtyInput
+                    qty={line.qty}
+                    stockQty={line.stockQty}
+                    trackStock={line.trackStock}
+                    onChange={(val) => onUpdateQty(line.cartKey, val)}
+                  />
                   <button
                     onClick={() => onUpdateQty(line.cartKey, line.qty + 1)}
                     disabled={line.trackStock && line.qty >= line.stockQty}
@@ -702,5 +745,50 @@ function CartPanel({
         </button>
       )}
     </div>
+  );
+}
+
+function CartQtyInput({
+  qty,
+  stockQty,
+  trackStock,
+  onChange,
+}: {
+  qty: number;
+  stockQty: number;
+  trackStock: boolean;
+  onChange: (val: number) => void;
+}) {
+  const [val, setVal] = useState(String(qty));
+
+  useEffect(() => {
+    setVal(String(qty));
+  }, [qty]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, "");
+    setVal(raw);
+    if (raw !== "") {
+      const num = Number(raw);
+      const clamped = trackStock ? Math.min(num, stockQty) : num;
+      onChange(clamped);
+    }
+  };
+
+  const handleBlur = () => {
+    if (val === "" || Number(val) <= 0) {
+      onChange(0);
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={val}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      className="w-12 h-8 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-center tabular-nums text-sm font-semibold outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]/20"
+    />
   );
 }
