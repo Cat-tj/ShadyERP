@@ -1,24 +1,33 @@
 import type { MetadataRoute } from "next";
 
 export default function robots(): MetadataRoute.Robots {
-  const baseUrl = process.env.NEXTAUTH_URL || "https://altora.my.id";
-  
   return {
     rules: {
       userAgent: "*",
-      allow: ["/", "/login", "/register"],
+      allow: ["/", "/login", "/register", "/kasir/"],
       disallow: [
         "/api/", 
         "/dashboard/", 
-        "/kasir/", 
+        "/kasir/riwayat",
+        "/kasir/tutup",
+        "/kasir/struk/",
         "/hris/", 
         "/inventory/", 
         "/kpi/", 
         "/finance/",
         "/pengaturan/",
-        "/pilih-aplikasi/"
+        "/pilih-aplikasi/",
+        "/simple/",
+        "/absensi/",
+        "/akun",
+        "/onboarding",
+        "/produk/",
+        "/member/",
+        "/laporan/",
+        "/tim/",
+        "/superadmin/",
       ],
     },
-    sitemap: `${baseUrl}/sitemap.xml`,
+    sitemap: "https://www.altora.my.id/sitemap.xml",
   };
 }
