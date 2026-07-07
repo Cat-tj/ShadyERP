@@ -710,6 +710,7 @@ model SaleReturn {
   shiftId       String?
   reason        String
   totalRefund   Int
+  refundMethod  String   @default("CASH") // "CASH", "TRANSFER", "DEPOSIT"
   createdAt     DateTime @default(now())
 
   tenant      Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
