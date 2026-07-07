@@ -20,12 +20,15 @@ export function ServiceWorkerRegister() {
           const buttons = Array.from(activeModal.querySelectorAll("button, a"));
           const closeButton = buttons.find((btn) => {
             const text = (btn.textContent || "").toLowerCase();
+            const ariaLabel = (btn.getAttribute("aria-label") || "").toLowerCase();
             return (
               text.includes("batal") ||
               text.includes("tutup") ||
               text.includes("cancel") ||
               text.includes("keluar") ||
-              btn.getAttribute("aria-label")?.toLowerCase().includes("close")
+              ariaLabel.includes("close") ||
+              ariaLabel.includes("tutup") ||
+              ariaLabel.includes("batal")
             );
           });
           if (closeButton) {
@@ -47,12 +50,15 @@ export function ServiceWorkerRegister() {
         const buttons = Array.from(target.querySelectorAll("button, a"));
         const closeButton = buttons.find((btn) => {
           const text = (btn.textContent || "").toLowerCase();
+          const ariaLabel = (btn.getAttribute("aria-label") || "").toLowerCase();
           return (
             text.includes("batal") ||
             text.includes("tutup") ||
             text.includes("cancel") ||
             text.includes("keluar") ||
-            btn.getAttribute("aria-label")?.toLowerCase().includes("close")
+            ariaLabel.includes("close") ||
+            ariaLabel.includes("tutup") ||
+            ariaLabel.includes("batal")
           );
         });
         if (closeButton) {

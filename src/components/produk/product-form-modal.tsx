@@ -140,10 +140,10 @@ export function ProductFormModal({
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/40 sm:items-center sm:justify-center">
-      <div className="max-h-[90vh] w-full overflow-y-auto glass-surface-strong rounded-t-2xl p-5 sm:max-w-md sm:rounded-2xl">
+      <div className="max-h-[90vh] w-full overflow-y-auto glass-surface-strong rounded-t-2xl p-6 sm:max-w-lg sm:rounded-2xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-[var(--color-text)]">
-            {product ? "Ubah produk" : "Tambah produk"}
+            {product ? "Ubah Produk" : "Tambah Produk Baru"}
           </h2>
           <button
             onClick={onClose}
@@ -160,267 +160,298 @@ export function ProductFormModal({
           </div>
         )}
 
-        <div className="flex flex-col gap-4">
-          <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-[var(--color-text)]">Nama produk</label>
-            <input
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-              placeholder="Kopi Susu"
-              className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
-            />
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2">
+        <div className="flex flex-col gap-5">
+          {/* Dasar Produk */}
+          <div className="flex flex-col gap-3.5">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">Dasar Produk</h3>
+            
             <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-[var(--color-text)]">Kategori</label>
-              <select
-                value={categoryId}
-                onChange={(event) => setCategoryId(event.target.value)}
+              <label className="text-sm font-medium text-[var(--color-text)]">Nama Produk</label>
+              <input
+                value={name}
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Masukkan nama produk"
                 className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
-              >
-                <option value="">Tanpa kategori</option>
-                {categories.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {category.name}
-                  </option>
-                ))}
-              </select>
+              />
             </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-[var(--color-text)]">SKU / Barcode</label>
-              <div className="flex gap-2">
+
+            <div className="grid gap-3.5 sm:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-[var(--color-text)]">Kategori Produk</label>
+                <select
+                  value={categoryId}
+                  onChange={(event) => setCategoryId(event.target.value)}
+                  className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+                >
+                  <option value="">Pilih Kategori</option>
+                  {categories.map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {category.name}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <div className="flex justify-between items-center">
+                  <label className="text-sm font-medium text-[var(--color-text)]">SKU / Barcode</label>
+                  <button
+                    type="button"
+                    onClick={generateInternalSku}
+                    className="text-xs font-bold text-[var(--color-primary)] hover:underline"
+                  >
+                    Buat SKU
+                  </button>
+                </div>
                 <input
                   value={sku}
                   onChange={(event) => setSku(event.target.value)}
                   placeholder="8991234567890"
                   className="min-h-[48px] min-w-0 flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
                 />
-                <button
-                  type="button"
-                  onClick={generateInternalSku}
-                  className="min-h-[48px] rounded-lg border border-[var(--color-border)] px-3 text-xs font-semibold text-[var(--color-text)] hover:bg-[var(--color-bg)]"
-                >
-                  Generate
-                </button>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-1.5 sm:grid-cols-5">
-            {[
-              { value: "GOODS", label: "Barang", desc: "Retail, F&B, listrik" },
-              { value: "SERVICE", label: "Jasa", desc: "Barbershop, layanan" },
-              { value: "ASSEMBLY", label: "Rakitan", desc: "Bundle/produksi" },
-              { value: "NON_INVENTORY", label: "Non-Stok", desc: "Biaya jual tanpa stok" },
-              { value: "COST", label: "Biaya", desc: "Internal/HPP" },
-            ].map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => {
-                  const nextKind = option.value as ProductKindOption;
-                  setKind(nextKind);
-                  if (!STOCKABLE_KINDS.has(nextKind)) {
-                    setTrackStock(false);
-                    setTrackExpiry(false);
-                  } else {
-                    setTrackStock(true);
-                  }
-                }}
-                className={`rounded-lg px-3 py-2 text-left transition-all ${
-                  kind === option.value
-                    ? "bg-[var(--color-primary)] text-[var(--color-on-primary)] shadow-sm"
-                    : "bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
-                }`}
-              >
-                <span className="block text-sm font-bold">{option.label}</span>
-                <span className="block text-[10px] opacity-80">{option.desc}</span>
-              </button>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-[var(--color-text)]">Harga jual</label>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={0}
-                value={price}
-                onChange={(event) => setPrice(event.target.value)}
-                placeholder="0"
-                className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base tabular-nums outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
-              />
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-sm font-medium text-[var(--color-text)]">Modal (opsional)</label>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={0}
-                value={cost}
-                onChange={(event) => setCost(event.target.value)}
-                placeholder="0"
-                className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base tabular-nums outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
-              />
+          {/* Tipe Produk */}
+          <div className="flex flex-col gap-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">Tipe Produk</h3>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              {[
+                { value: "GOODS", label: "Barang", desc: "Retail, F&B, Listrik", icon: "📦" },
+                { value: "SERVICE", label: "Jasa", desc: "Layanan & Perbaikan", icon: "🛠️" },
+                { value: "ASSEMBLY", label: "Rakitan", desc: "Bundling Produk", icon: "📦⚙️" },
+                { value: "NON_INVENTORY", label: "Non-Stok", desc: "Biaya Jual s/d HPP", icon: "🚫" },
+                { value: "COST", label: "Biaya Internal", desc: "Biaya HPP & Inventarisir", icon: "📊" },
+              ].map((option) => {
+                const isSelected = kind === option.value;
+                return (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => {
+                      const nextKind = option.value as ProductKindOption;
+                      setKind(nextKind);
+                      if (!STOCKABLE_KINDS.has(nextKind)) {
+                        setTrackStock(false);
+                        setTrackExpiry(false);
+                      } else {
+                        setTrackStock(true);
+                      }
+                    }}
+                    className={`flex items-start gap-3 p-3 rounded-lg border text-left transition-all ${
+                      isSelected
+                        ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)] font-bold shadow-sm"
+                        : "border-[var(--color-border)] bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
+                    }`}
+                  >
+                    <span className="text-lg shrink-0 mt-0.5">{option.icon}</span>
+                    <div className="min-w-0">
+                      <span className="block text-xs font-bold text-[var(--color-text)]">{option.label}</span>
+                      <span className="block text-[10px] text-[var(--color-text-secondary)] mt-0.5 leading-none">{option.desc}</span>
+                    </div>
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {STOCKABLE_KINDS.has(kind) ? (
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
-              <label className="flex items-center gap-2 text-sm font-medium text-[var(--color-text)]">
-                <input
-                  type="checkbox"
-                  checked={trackStock}
-                  onChange={(event) => {
-                    setTrackStock(event.target.checked);
-                    if (!event.target.checked) setTrackExpiry(false);
-                  }}
-                  className="h-5 w-5 rounded border-[var(--color-border)]"
-                />
-                Catat stok produk ini
-              </label>
-              <label className="mt-3 flex items-center gap-2 text-sm font-medium text-[var(--color-text)]">
-                <input
-                  type="checkbox"
-                  checked={trackExpiry}
-                  disabled={!trackStock}
-                  onChange={(event) => setTrackExpiry(event.target.checked)}
-                  className="h-5 w-5 rounded border-[var(--color-border)] disabled:opacity-40"
-                />
-                Lacak expired / batch
-              </label>
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-[var(--color-text-secondary)]">
-                    Masa simpan (hari)
-                  </label>
+          {/* Harga */}
+          <div className="flex flex-col gap-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">Harga</h3>
+            <div className="grid grid-cols-2 gap-3.5">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-[var(--color-text)]">Harga Jual</label>
+                <div className="relative flex items-center">
+                  <span className="absolute left-3 text-sm text-[var(--color-text-secondary)] font-medium">Rp</span>
                   <input
                     type="number"
                     inputMode="numeric"
                     min={0}
-                    value={shelfLifeDays}
-                    onChange={(event) => setShelfLifeDays(event.target.value)}
-                    placeholder="30"
-                    className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+                    value={price}
+                    onChange={(event) => setPrice(event.target.value)}
+                    placeholder="0"
+                    className="min-h-[48px] w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] pl-9 pr-4 text-base tabular-nums outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
                   />
                 </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-semibold text-[var(--color-text-secondary)]">
-                    Garansi (hari)
-                  </label>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-[var(--color-text)]">Modal (opsional)</label>
+                <div className="relative flex items-center">
+                  <span className="absolute left-3 text-sm text-[var(--color-text-secondary)] font-medium">Rp</span>
                   <input
                     type="number"
                     inputMode="numeric"
                     min={0}
-                    value={warrantyDays}
-                    onChange={(event) => setWarrantyDays(event.target.value)}
-                    placeholder="365"
-                    className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+                    value={cost}
+                    onChange={(event) => setCost(event.target.value)}
+                    placeholder="0"
+                    className="min-h-[48px] w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] pl-9 pr-4 text-base tabular-nums outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
                   />
                 </div>
               </div>
-              <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-secondary)]">
-                Expired cocok untuk makanan/minuman/FMCG. Garansi cocok untuk toko listrik dan elektronik.
-              </p>
             </div>
-          ) : kind === "SERVICE" ? (
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
-              <label className="text-sm font-medium text-[var(--color-text)]">Durasi layanan</label>
-              <div className="mt-2 flex items-center gap-2">
-                <input
-                  type="number"
-                  inputMode="numeric"
-                  min={1}
-                  value={serviceDurationMin}
-                  onChange={(event) => setServiceDurationMin(event.target.value)}
-                  className="min-h-[42px] w-28 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
-                />
-                <span className="text-sm text-[var(--color-text-secondary)]">menit</span>
-              </div>
-              <p className="mt-2 text-xs leading-relaxed text-[var(--color-text-secondary)]">
-                Dipakai untuk barbershop/salon supaya layanan punya durasi standar.
-              </p>
-            </div>
-          ) : (
-            <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
-              <p className="text-sm font-semibold text-[var(--color-text)]">
-                {kind === "COST" ? "Item biaya internal" : "Item tanpa stok"}
-              </p>
-              <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
-                {kind === "COST"
-                  ? "Dipakai untuk biaya rakitan, tenaga kerja, atau pencatatan HPP. Item biaya tidak tampil di POS."
-                  : "Cocok untuk ongkir, biaya layanan, atau item yang dijual tanpa mengurangi stok."}
-              </p>
-            </div>
-          )}
+          </div>
 
-          {STOCKABLE_KINDS.has(kind) && trackStock && product && (
-            <div className="flex flex-col gap-2">
-              <div className="flex justify-between items-center text-xs font-semibold text-[var(--color-text)] mb-1">
-                <span>Outlet</span>
-                <div className="flex gap-8">
-                  <span className="w-20 text-center">Stok</span>
-                  <span className="w-20 text-center">Batas Min</span>
-                </div>
-              </div>
-              {outlets.map((outlet) => (
-                <div key={outlet.id} className="flex items-center justify-between gap-3">
-                  <span className="text-xs text-[var(--color-text-secondary)] truncate max-w-[140px]">{outlet.name}</span>
-                  <div className="flex gap-2">
+          {/* Pengaturan Lanjutan */}
+          <div className="flex flex-col gap-3">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">Pengaturan Lanjutan</h3>
+
+            {STOCKABLE_KINDS.has(kind) ? (
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 flex flex-col gap-3">
+                <label className="flex items-center gap-3 text-sm font-medium text-[var(--color-text)] cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={trackStock}
+                    onChange={(event) => {
+                      setTrackStock(event.target.checked);
+                      if (!event.target.checked) setTrackExpiry(false);
+                    }}
+                    className="h-5 w-5 rounded border-[var(--color-border)] accent-[var(--color-primary)] shrink-0"
+                  />
+                  Aktifkan pencatatan stok
+                </label>
+                <label className="flex items-center gap-3 text-sm font-medium text-[var(--color-text)] cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={trackExpiry}
+                    disabled={!trackStock}
+                    onChange={(event) => setTrackExpiry(event.target.checked)}
+                    className="h-5 w-5 rounded border-[var(--color-border)] accent-[var(--color-primary)] shrink-0 disabled:opacity-40"
+                  />
+                  Lacak masa expired atau batch
+                </label>
+                
+                <div className="grid grid-cols-2 gap-3 mt-1.5">
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-[var(--color-text-secondary)]">
+                      Masa Simpan (Hari)
+                    </label>
                     <input
                       type="number"
                       inputMode="numeric"
                       min={0}
-                      value={stockByOutlet[outlet.id] ?? "0"}
-                      onChange={(event) =>
-                        setStockByOutlet((prev) => ({ ...prev, [outlet.id]: event.target.value }))
-                      }
-                      placeholder="Stok"
-                      className="h-9 w-20 rounded-md border border-[var(--color-border)] px-2 text-center text-xs tabular-nums outline-none focus:border-[var(--color-primary)] bg-[var(--color-surface)]"
+                      value={shelfLifeDays}
+                      onChange={(event) => setShelfLifeDays(event.target.value)}
+                      placeholder="30"
+                      className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
                     />
+                  </div>
+                  <div className="flex flex-col gap-1.5">
+                    <label className="text-xs font-semibold text-[var(--color-text-secondary)]">
+                      Garansi (Hari)
+                    </label>
                     <input
                       type="number"
                       inputMode="numeric"
                       min={0}
-                      value={reorderPointByOutlet[outlet.id] ?? "5"}
-                      onChange={(event) =>
-                        setReorderPointByOutlet((prev) => ({ ...prev, [outlet.id]: event.target.value }))
-                      }
-                      placeholder="Min"
-                      className="h-9 w-20 rounded-md border border-[var(--color-border)] px-2 text-center text-xs tabular-nums outline-none focus:border-[var(--color-primary)] bg-[var(--color-surface)]"
+                      value={warrantyDays}
+                      onChange={(event) => setWarrantyDays(event.target.value)}
+                      placeholder="365"
+                      className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
                     />
                   </div>
                 </div>
-              ))}
-              <input
-                value={stockNote}
-                onChange={(event) => setStockNote(event.target.value)}
-                placeholder="Catatan perubahan stok (opsional), mis. restock supplier"
-                className="min-h-[44px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
-              />
-              <Link
-                href="/produk/riwayat-stok"
-                className="text-xs font-medium text-[var(--color-primary)]"
-              >
-                Lihat riwayat perubahan stok →
-              </Link>
-            </div>
-          )}
-          {STOCKABLE_KINDS.has(kind) && trackStock && !product && (
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              Simpan produk dulu, lalu atur stok awal lewat tombol &quot;Ubah&quot; pada produk ini.
-            </p>
-          )}
+                <p className="text-[10px] leading-relaxed text-[var(--color-text-secondary)] mt-1">
+                  Tip: Atur expired untuk produk FMCG/Makanan. Garansi cocok untuk elektronik.
+                </p>
+              </div>
+            ) : kind === "SERVICE" ? (
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 flex flex-col gap-3">
+                <label className="text-sm font-medium text-[var(--color-text)]">Durasi layanan</label>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={1}
+                    value={serviceDurationMin}
+                    onChange={(event) => setServiceDurationMin(event.target.value)}
+                    className="min-h-[42px] w-28 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+                  />
+                  <span className="text-sm text-[var(--color-text-secondary)]">menit</span>
+                </div>
+                <p className="text-xs leading-relaxed text-[var(--color-text-secondary)]">
+                  Dipakai untuk barbershop/salon supaya layanan punya durasi standar.
+                </p>
+              </div>
+            ) : (
+              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+                <p className="text-xs font-bold text-[var(--color-text)]">
+                  {kind === "COST" ? "Biaya Internal" : "Item Tanpa Stok"}
+                </p>
+                <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+                  {kind === "COST"
+                    ? "Dipakai untuk biaya rakitan, tenaga kerja, atau pencatatan HPP. Item biaya tidak tampil di POS."
+                    : "Cocok untuk ongkir, biaya layanan, atau item yang dijual tanpa mengurangi stok."}
+                </p>
+              </div>
+            )}
 
-          {product ? (
-            <VariantGroupsEditor productId={product.id} groups={product.variantGroups} onNotify={setInfo} />
-          ) : (
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              Simpan produk dulu untuk menambahkan varian & topping (mis. Ukuran, Level Gula, Topping).
-            </p>
-          )}
+            {STOCKABLE_KINDS.has(kind) && trackStock && product && (
+              <div className="flex flex-col gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+                <div className="flex justify-between items-center text-xs font-semibold text-[var(--color-text)] mb-1">
+                  <span>Outlet</span>
+                  <div className="flex gap-8">
+                    <span className="w-20 text-center">Stok</span>
+                    <span className="w-20 text-center">Batas Min</span>
+                  </div>
+                </div>
+                {outlets.map((outlet) => (
+                  <div key={outlet.id} className="flex items-center justify-between gap-3">
+                    <span className="text-xs text-[var(--color-text-secondary)] truncate max-w-[140px]">{outlet.name}</span>
+                    <div className="flex gap-2">
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        value={stockByOutlet[outlet.id] ?? "0"}
+                        onChange={(event) =>
+                          setStockByOutlet((prev) => ({ ...prev, [outlet.id]: event.target.value }))
+                        }
+                        placeholder="Stok"
+                        className="h-9 w-20 rounded-md border border-[var(--color-border)] px-2 text-center text-xs tabular-nums outline-none focus:border-[var(--color-primary)] bg-[var(--color-bg)]"
+                      />
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        value={reorderPointByOutlet[outlet.id] ?? "5"}
+                        onChange={(event) =>
+                          setReorderPointByOutlet((prev) => ({ ...prev, [outlet.id]: event.target.value }))
+                        }
+                        placeholder="Min"
+                        className="h-9 w-20 rounded-md border border-[var(--color-border)] px-2 text-center text-xs tabular-nums outline-none focus:border-[var(--color-primary)] bg-[var(--color-bg)]"
+                      />
+                    </div>
+                  </div>
+                ))}
+                <input
+                  value={stockNote}
+                  onChange={(event) => setStockNote(event.target.value)}
+                  placeholder="Catatan perubahan stok (opsional), mis. restock supplier"
+                  className="min-h-[44px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+                />
+                <Link
+                  href="/produk/riwayat-stok"
+                  className="text-xs font-medium text-[var(--color-primary)]"
+                >
+                  Lihat riwayat perubahan stok →
+                </Link>
+              </div>
+            )}
+            {STOCKABLE_KINDS.has(kind) && trackStock && !product && (
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                Simpan produk dulu, lalu atur stok awal lewat tombol &quot;Ubah&quot; pada produk ini.
+              </p>
+            )}
+
+            {product ? (
+              <VariantGroupsEditor productId={product.id} groups={product.variantGroups} onNotify={setInfo} />
+            ) : (
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                Simpan produk dulu untuk menambahkan varian & topping (mis. Ukuran, Level Gula, Topping).
+              </p>
+            )}
+          </div>
         </div>
 
         {info && (
@@ -429,16 +460,27 @@ export function ProductFormModal({
           </div>
         )}
 
-        <button
-          onClick={handleSubmit}
-          disabled={isPending}
-          className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-60"
-        >
-          {isPending && (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)]" />
-          )}
-          {isPending ? "Menyimpan..." : "Simpan produk"}
-        </button>
+        <div className="mt-6 flex gap-3">
+          <button
+            type="button"
+            onClick={onClose}
+            className="flex min-h-[52px] flex-1 items-center justify-center rounded-lg border border-[var(--color-border)] text-base font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface)]"
+          >
+            Batal
+          </button>
+          <button
+            onClick={handleSubmit}
+            disabled={isPending}
+            className="flex min-h-[52px] flex-[2] items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-60"
+          >
+            {isPending ? (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)]" />
+            ) : (
+              <span className="text-lg">✓</span>
+            )}
+            {isPending ? "Menyimpan..." : "Simpan Produk"}
+          </button>
+        </div>
       </div>
     </div>
   );
