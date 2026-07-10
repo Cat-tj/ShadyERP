@@ -20,7 +20,7 @@ export function SettingsTabs({ disabledModules = [] }: { disabledModules?: strin
   const disabledSet = new Set(disabledModules);
 
   return (
-    <div className="hairline-gold mb-4 hidden md:flex gap-2 overflow-x-auto border-b pb-px">
+    <div className="hairline-gold mb-4 flex gap-2 overflow-x-auto border-b pb-1">
       {TABS.map((tab) => {
         const active = pathname.startsWith(tab.href);
         const isDisabled = tab.module && disabledSet.has(tab.module);
@@ -31,10 +31,11 @@ export function SettingsTabs({ disabledModules = [] }: { disabledModules?: strin
           <Link
             key={tab.href}
             href={tab.href}
-            className={`min-h-[44px] shrink-0 border-b-2 px-3 flex items-center text-sm font-medium transition-colors ${
+            style={active ? { backgroundColor: "var(--color-primary)", borderColor: "var(--color-primary)" } : undefined}
+            className={`min-h-[38px] shrink-0 rounded-full border px-4 flex items-center text-sm font-medium transition-all duration-150 ${
               active
-                ? "border-[var(--color-primary)] text-[var(--color-primary)]"
-                : "border-transparent text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+                ? "text-[var(--color-on-primary)] shadow-sm"
+                : "border-[var(--color-border)] text-[var(--color-text-secondary)] hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
             }`}
           >
             {tab.label}

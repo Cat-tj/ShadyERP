@@ -9,8 +9,10 @@ import {
 } from "@/server/services/finance-operational-service";
 import { StatTile } from "@/components/laporan/stat-tile";
 import { RankingBarChart } from "@/components/laporan/ranking-bar-chart";
-import { formatRupiah } from "@/lib/format";
+import { formatRupiah, formatTanggal } from "@/lib/format";
 import { WalletIcon, TrendingDownIcon, TrendingUpIcon, ReceiptIcon } from "@/components/ui/icons";
+import { EyebrowBadge } from "@/components/ui/eyebrow-badge";
+import { SectionCard } from "@/components/ui/section-card";
 
 const FINANCE_SHORTCUTS = [
   { href: "/finance/pengeluaran", label: "Catat pengeluaran", description: "Sewa, gaji, bahan baku, listrik, dan biaya lain." },
@@ -44,8 +46,11 @@ export default async function FinanceHomePage() {
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">
       <div>
-        <h1 className="font-display text-2xl font-semibold text-[var(--color-text)]">Ringkasan Finance</h1>
-        <p className="text-sm text-[var(--color-text-secondary)]">
+        <EyebrowBadge>{formatTanggal(new Date())}</EyebrowBadge>
+        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-[var(--color-text)] sm:text-3xl">
+          Ringkasan Finance
+        </h1>
+        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
           Gambaran sederhana uang masuk, pengeluaran, kas outlet, dan tagihan supplier.
         </p>
       </div>
@@ -58,8 +63,7 @@ export default async function FinanceHomePage() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[1.1fr_0.9fr]">
-        <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-          <h2 className="mb-3 text-base font-bold text-[var(--color-text)]">Metode bayar 30 hari</h2>
+        <SectionCard eyebrow="30 hari terakhir" title="Metode bayar">
           <RankingBarChart
             items={paymentMethods.map((item) => ({
               label: PAYMENT_LABEL[item.method] ?? item.method,
@@ -67,11 +71,10 @@ export default async function FinanceHomePage() {
               sublabel: `${item.count} transaksi · ${item.percentage}% dari omzet tercatat`,
             }))}
           />
-        </section>
+        </SectionCard>
 
-        <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-          <h2 className="text-base font-bold text-[var(--color-text)]">Hutang supplier simple</h2>
-          <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+        <SectionCard eyebrow="PO aktif" title="Hutang supplier simple">
+          <p className="text-sm text-[var(--color-text-secondary)]">
             Berdasarkan PO aktif. Status pembayaran detail bisa ditambah setelah alur invoice supplier dibuat.
           </p>
           <p className="mt-5 font-mono-data tabular-nums text-3xl font-semibold text-[var(--color-text)]">
@@ -86,17 +89,16 @@ export default async function FinanceHomePage() {
           >
             Lihat detail supplier
           </Link>
-        </section>
+        </SectionCard>
       </div>
 
-      <section className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
-        <h2 className="text-base font-bold text-[var(--color-text)]">Aksi finance harian</h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <SectionCard eyebrow="Harian" title="Aksi finance harian">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {FINANCE_SHORTCUTS.map((item) => (
             <Link
               key={item.href}
               href={item.href}
-              className="rounded-lg border border-[var(--color-border)] p-4 text-sm transition-colors hover:bg-[var(--color-bg)]"
+              className="rounded-lg border border-[var(--color-border)] p-4 text-sm transition-all duration-150 hover:-translate-y-0.5 hover:border-[var(--color-primary)] hover:bg-[var(--color-primary-soft)]"
             >
               <span className="font-semibold text-[var(--color-text)]">{item.label}</span>
               <span className="mt-1 block text-xs leading-relaxed text-[var(--color-text-secondary)]">
@@ -105,7 +107,7 @@ export default async function FinanceHomePage() {
             </Link>
           ))}
         </div>
-      </section>
+      </SectionCard>
     </div>
   );
 }

@@ -1,43 +1,36 @@
 @import "tailwindcss";
 
 :root {
-  /* ─── Background & Surface ─────────────────────────────── */
-  --color-bg: #F8FAFC;
-  --color-bg-secondary: #F1F5F9;
+  /* Palet terang, aksen magenta Altora — disamakan dengan landing page (lihat src/app/landing.css) */
+  --color-bg: #f5f7fa;
+  --color-bg-secondary: #eceef2;
   --color-surface: #ffffff;
-  --color-surface-muted: #F8FAFC;
-  --color-surface-elevated: #ffffff;
-
-  /* ─── Text ─────────────────────────────────────────────── */
-  --color-text: #0F172A;
-  --color-text-secondary: #475569;
-  --color-text-muted: #94A3B8;
-
-  /* ─── Border ───────────────────────────────────────────── */
-  --color-border: #E2E8F0;
-  --color-border-strong: #CBD5E1;
-
-  /* ─── Primary (Blue) ───────────────────────────────────── */
-  --color-primary: #2563EB;
-  --color-primary-dark: #1D4ED8;
-  --color-primary-soft: #EFF6FF;
+  --color-border: #e2e6ec;
+  --color-text: #0a1f44;
+  --color-text-secondary: #5b6478;
+  --color-primary: #a730a8;
+  --color-primary-dark: #7e2582;
   --color-on-primary: #ffffff;
+  --color-gold: #d94a86;
+  --color-gold-soft: rgba(217, 74, 134, 0.4);
+  --color-danger: #dc2626;
+  --color-warning-bg: #fee2e2;
+  --color-warning-text: #991b1b;
+  --color-good-bg: #dcfce7;
+  --color-good-text: #15803d;
 
-  /* ─── Semantic Colors ──────────────────────────────────── */
-  --color-success: #16A34A;
-  --color-success-surface: #DCFCE7;
-  --color-warning: #D97706;
-  --color-warning-surface: #FEF3C7;
-  --color-danger: #DC2626;
-  --color-danger-surface: #FEE2E2;
-  --color-info: #2563EB;
-  --color-info-surface: #DBEAFE;
+  /* Tint dari --color-primary — pakai color-mix (bukan rgba tetap) supaya otomatis
+     ikut warna modul saat contentThemeStyle di AppShell override --color-primary. */
+  --color-primary-soft: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  --color-primary-soft-strong: color-mix(in srgb, var(--color-primary) 16%, transparent);
 
-  /* ─── Legacy aliases (agar tidak break kode lama) ──────── */
-  --color-gold: #60a5fa;
-  --color-gold-soft: rgba(96, 165, 250, 0.4);
-  --color-warning-bg: var(--color-warning-surface);
-  --color-warning-text: #92400E;
+  /* Logomark "a" — sama persis dengan landing.css & AltoraLogomark, dipakai untuk gradient-text/badge di dalam app */
+  --logo-c1: #2f3ba3;
+  --logo-c2: #6a3cc0;
+  --logo-c3: #a730a8;
+  --logo-c4: #d94a86;
+  --logo-c5: #f28a4e;
+  --logo-c6: #f6c945;
 
   /* ─── Shadows ──────────────────────────────────────────── */
   --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06);
