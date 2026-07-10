@@ -16,6 +16,17 @@ const PAYMENT_LABEL: Record<string, string> = {
   DEPOSIT: "Saldo deposit",
 };
 
+const ORDER_TYPE_LABEL: Record<string, string> = {
+  DINE_IN: "Dine-in",
+  TAKEAWAY: "Takeaway",
+  COURIER: "Delivery - Kurir Toko",
+  GOFOOD: "Delivery - Gojek",
+  GRABFOOD: "Delivery - Grab",
+  SHOPEEFOOD: "Delivery - Shopee Food",
+  MAXIM: "Delivery - Maxim",
+  DELIVERY_OTHER: "Delivery - Lainnya",
+};
+
 export default async function StrukPage({
   params,
 }: {
@@ -41,6 +52,7 @@ export default async function StrukPage({
       dateLabel: `${formatTanggal(sale.createdAt)}, ${formatJam(sale.createdAt)}`,
       cashierName: sale.cashier.name,
       memberName: sale.member?.name ?? null,
+      orderType: ORDER_TYPE_LABEL[sale.orderType] ?? sale.orderType,
       items: sale.items.map((item) => ({
         name: item.variantLabel ? `${item.productName} (${item.variantLabel})` : item.productName,
         qty: item.qty,
@@ -88,6 +100,10 @@ export default async function StrukPage({
           <div className="flex justify-between">
             <span>Kasir</span>
             <span>{sale.cashier.name}</span>
+          </div>
+          <div className="flex justify-between">
+            <span>Jenis pesanan</span>
+            <span>{ORDER_TYPE_LABEL[sale.orderType] ?? sale.orderType}</span>
           </div>
           {sale.member && (
             <div className="flex justify-between">

@@ -1,8 +1,14 @@
+import { Metadata } from "next";
 import { requireSession } from "@/server/require-session";
 import { listOutletsForUser } from "@/server/services/outlet-service";
 import { listIncomingOrders } from "@/server/services/table-order-service";
 import { listTables } from "@/server/services/table-service";
 import { PesananMasukManager } from "@/components/pesanan-meja/pesanan-masuk-manager";
+
+export const metadata: Metadata = {
+  title: "Kelola Pesanan & Layout Meja Kasir - Altora",
+  description: "Kelola pesanan pelanggan masuk, monitor sebaran meja kosong atau terisi, dan proses transaksi pembayaran kasir secara visual.",
+};
 
 export default async function PesananMejaPage() {
   const user = await requireSession();

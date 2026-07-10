@@ -4,7 +4,7 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { formatRupiah, formatJam, formatTanggal } from "@/lib/format";
-import { voidSaleAction, processReturnAction } from "@/app/(app)/kasir/riwayat/actions";
+import { correctSalePaymentMethodAction, voidSaleAction, processReturnAction } from "@/app/(app)/kasir/riwayat/actions";
 import { Toast, useToast } from "@/components/toast";
 
 export type SaleRow = {
@@ -15,6 +15,7 @@ export type SaleRow = {
   memberName: string | null;
   total: number;
   paymentMethod: string;
+  orderType: string;
   status: "COMPLETED" | "VOIDED";
   voidReason: string | null;
   createdAt: string;
@@ -29,6 +30,30 @@ const PAYMENT_LABEL: Record<string, string> = {
   DEPOSIT: "Deposit",
 };
 
+const CORRECTABLE_PAYMENT_METHODS = ["CASH", "QRIS", "TRANSFER", "EWALLET"] as const;
+
+const ORDER_TYPE_LABEL: Record<string, string> = {
+  DINE_IN: "Dine-in",
+  TAKEAWAY: "Takeaway",
+  COURIER: "Kurir Toko",
+  GOFOOD: "Gojek",
+  GRABFOOD: "Grab",
+  SHOPEEFOOD: "Shopee Food",
+  MAXIM: "Maxim",
+  DELIVERY_OTHER: "Delivery lain",
+};
+
+const ORDER_TYPE_COLOR: Record<string, string> = {
+  DINE_IN: "#a730a8",
+  TAKEAWAY: "#334155",
+  COURIER: "#64748b",
+  GOFOOD: "#00AA13",
+  GRABFOOD: "#00B14F",
+  SHOPEEFOOD: "#EE4D2D",
+  MAXIM: "#F6C600",
+  DELIVERY_OTHER: "#334155",
+};
+
 export function RiwayatList({
   sales,
   canVoid,
@@ -40,6 +65,8 @@ export function RiwayatList({
   const { toastMessage, showToast } = useToast();
   const [voidTarget, setVoidTarget] = useState<SaleRow | null>(null);
   const [returnTarget, setReturnTarget] = useState<SaleRow | null>(null);
+  const [paymentTarget, setPaymentTarget] = useState<SaleRow | null>(null);
+  const [nextPaymentMethod, setNextPaymentMethod] = useState<(typeof CORRECTABLE_PAYMENT_METHODS)[number]>("CASH");
   const [reason, setReason] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -59,6 +86,35 @@ export function RiwayatList({
       }
       showToast("Transaksi dibatalkan, stok dikembalikan");
       setVoidTarget(null);
+      setReason("");
+      router.refresh();
+    });
+  }
+
+  function openPaymentCorrection(sale: SaleRow) {
+    setPaymentTarget(sale);
+    setNextPaymentMethod(
+      CORRECTABLE_PAYMENT_METHODS.find((method) => method !== sale.paymentMethod) ?? "CASH"
+    );
+    setReason("");
+    setError(null);
+  }
+
+  function handlePaymentCorrection() {
+    if (!paymentTarget) return;
+    if (!reason.trim()) {
+      setError("Alasan koreksi wajib diisi.");
+      return;
+    }
+    setError(null);
+    startTransition(async () => {
+      const result = await correctSalePaymentMethodAction(paymentTarget.id, nextPaymentMethod, reason.trim());
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
+      showToast("Metode bayar dikoreksi");
+      setPaymentTarget(null);
       setReason("");
       router.refresh();
     });
@@ -90,6 +146,15 @@ export function RiwayatList({
                   {sale.cashierName}
                   {sale.memberName ? ` · ${sale.memberName}` : ""}
                 </p>
+                <span
+                  className="mt-2 inline-flex rounded-full px-2 py-0.5 text-[11px] font-bold text-white"
+                  style={{
+                    backgroundColor: ORDER_TYPE_COLOR[sale.orderType] ?? "#334155",
+                    color: sale.orderType === "MAXIM" ? "#181818" : "#fff",
+                  }}
+                >
+                  {ORDER_TYPE_LABEL[sale.orderType] ?? sale.orderType}
+                </span>
               </div>
               <div className="text-right">
                 <p className="tabular-nums text-sm font-bold text-[var(--color-text)]">
@@ -122,12 +187,22 @@ export function RiwayatList({
                   </button>
                 )}
                 {canVoid && (
-                  <button
-                    onClick={() => setVoidTarget(sale)}
-                    className="min-h-[36px] rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-danger)] hover:bg-[var(--color-bg)]"
-                  >
-                    Batalkan
-                  </button>
+                  <>
+                    {sale.paymentMethod !== "DEPOSIT" && (
+                      <button
+                        onClick={() => openPaymentCorrection(sale)}
+                        className="min-h-[36px] rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+                      >
+                        Koreksi bayar
+                      </button>
+                    )}
+                    <button
+                      onClick={() => setVoidTarget(sale)}
+                      className="min-h-[36px] rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-danger)] hover:bg-[var(--color-bg)]"
+                    >
+                      Batalkan
+                    </button>
+                  </>
                 )}
               </div>
             )}
@@ -182,6 +257,68 @@ export function RiwayatList({
         </div>
       )}
 
+      {paymentTarget && (
+        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-sm rounded-xl bg-[var(--color-bg)] p-5">
+            <h2 className="text-base font-bold text-[var(--color-text)]">
+              Koreksi metode bayar {paymentTarget.invoiceNumber}
+            </h2>
+            <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
+              Total transaksi tidak berubah. Aksi ini masuk log audit.
+            </p>
+
+            {error && (
+              <div className="mt-3 rounded-lg bg-[var(--color-warning-bg)] px-3 py-2 text-sm text-[var(--color-warning-text)]">
+                {error}
+              </div>
+            )}
+
+            <label className="mt-3 block text-xs font-semibold text-[var(--color-text-secondary)]">
+              Metode bayar benar
+            </label>
+            <select
+              value={nextPaymentMethod}
+              onChange={(event) => setNextPaymentMethod(event.target.value as typeof nextPaymentMethod)}
+              className="mt-1 min-h-[44px] w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+            >
+              {CORRECTABLE_PAYMENT_METHODS.map((method) => (
+                <option key={method} value={method} disabled={method === paymentTarget.paymentMethod}>
+                  {PAYMENT_LABEL[method]}
+                </option>
+              ))}
+            </select>
+
+            <textarea
+              value={reason}
+              onChange={(event) => setReason(event.target.value)}
+              placeholder="Alasan koreksi (wajib diisi)"
+              rows={3}
+              className="mt-3 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm outline-none focus:border-[var(--color-primary)]"
+            />
+
+            <div className="mt-4 flex gap-2">
+              <button
+                onClick={() => {
+                  setPaymentTarget(null);
+                  setReason("");
+                  setError(null);
+                }}
+                className="min-h-[48px] flex-1 rounded-lg border border-[var(--color-border)] text-sm font-medium text-[var(--color-text)]"
+              >
+                Batal
+              </button>
+              <button
+                onClick={handlePaymentCorrection}
+                disabled={isPending || nextPaymentMethod === paymentTarget.paymentMethod}
+                className="min-h-[48px] flex-1 rounded-lg bg-[var(--color-primary)] text-sm font-semibold text-[var(--color-on-primary)] disabled:opacity-60"
+              >
+                {isPending ? "Menyimpan..." : "Simpan koreksi"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {returnTarget && (
         <ReturnModal
           sale={returnTarget}
@@ -210,6 +347,7 @@ function ReturnModal({
 }) {
   const [qtyById, setQtyById] = useState<Record<string, string>>({});
   const [reason, setReason] = useState("");
+  const [refundMethod, setRefundMethod] = useState<string>(sale.paymentMethod === "DEPOSIT" ? "DEPOSIT" : "CASH");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -231,7 +369,7 @@ function ReturnModal({
 
     setError(null);
     startTransition(async () => {
-      const result = await processReturnAction(sale.id, items, reason.trim());
+      const result = await processReturnAction(sale.id, items, reason.trim(), refundMethod);
       if (result.error) {
         setError(result.error);
         return;
@@ -249,6 +387,25 @@ function ReturnModal({
         <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
           Isi jumlah item yang mau diretur. Stok akan dikembalikan otomatis.
         </p>
+
+        {sale.paymentMethod !== "DEPOSIT" ? (
+          <div className="mt-3 flex flex-col gap-1.5">
+            <label className="text-xs font-semibold text-[var(--color-text-secondary)]">Metode Refund</label>
+            <select
+              value={refundMethod}
+              onChange={(e) => setRefundMethod(e.target.value)}
+              className="min-h-[44px] w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+            >
+              <option value="CASH">Tunai (Potong Laci Kas)</option>
+              <option value="TRANSFER">Transfer Bank / QRIS</option>
+              {sale.memberName && <option value="DEPOSIT">Saldo Member</option>}
+            </select>
+          </div>
+        ) : (
+          <div className="mt-3 rounded-lg bg-[var(--color-bg)] p-3 text-xs text-[var(--color-text-secondary)]">
+            Metode Refund: <span className="font-semibold text-[var(--color-text)]">Saldo Member</span> (Kredit deposit saldo secara otomatis)
+          </div>
+        )}
 
         {error && (
           <div className="mt-3 rounded-lg bg-[var(--color-warning-bg)] px-3 py-2 text-sm text-[var(--color-warning-text)]">

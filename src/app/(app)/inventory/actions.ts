@@ -2,6 +2,8 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/server/require-session";
+import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 import {
   createCategory,
   updateCategory,
@@ -328,5 +330,216 @@ export async function updateReorderPointAction(
   revalidatePath("/produk");
   revalidatePath("/inventory");
   revalidatePath("/kpi");
+  return { success: true };
+}
+
+export async function importProductsBulkAction(
+  rows: {
+    name: string;
+    sku?: string | null;
+    categoryName?: string | null;
+    outletName?: string | null;
+    supplierName?: string | null;
+    price: number;
+    cost?: number | null;
+    trackStock: boolean;
+    trackExpiry?: boolean;
+    stockQty?: number | null;
+    reorderPoint?: number | null;
+    batchNumber?: string | null;
+    expirationDate?: string | null;
+    kind: "GOODS" | "SERVICE" | "NON_INVENTORY";
+  }[]
+): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  
+  try {
+    const firstOutlet = await prisma.outlet.findFirst({ where: { tenantId: user.tenantId }, orderBy: { name: "asc" } });
+    if (!firstOutlet) {
+      return { error: "Tenant belum memiliki outlet." };
+    }
+    const duplicateSku = findDuplicate(rows.map((row) => row.sku?.trim()).filter(Boolean) as string[]);
+    if (duplicateSku) return { error: `SKU/barcode duplikat di CSV: ${duplicateSku}.` };
+    const existingSku = rows
+      .map((row) => row.sku?.trim())
+      .filter(Boolean) as string[];
+    if (existingSku.length > 0) {
+      const existing = await prisma.product.findFirst({
+        where: { tenantId: user.tenantId, sku: { in: existingSku } },
+        select: { sku: true },
+      });
+      if (existing?.sku) return { error: `SKU/barcode sudah ada di database: ${existing.sku}.` };
+    }
+
+    const [existingCats, outlets, suppliers] = await Promise.all([
+      prisma.category.findMany({ where: { tenantId: user.tenantId } }),
+      prisma.outlet.findMany({ where: { tenantId: user.tenantId } }),
+      prisma.supplier.findMany({ where: { tenantId: user.tenantId } }),
+    ]);
+    const categoryMap = new Map<string, string>(
+      existingCats.map((c: { name: string; id: string }) => [c.name.toLowerCase().trim(), c.id])
+    );
+    const outletMap = new Map(outlets.map((outlet) => [outlet.name.toLowerCase().trim(), outlet.id]));
+    const supplierMap = new Map(suppliers.map((supplier) => [supplier.name.toLowerCase().trim(), supplier.id]));
+
+    await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      for (const row of rows) {
+        let categoryId: string | null = null;
+        if (row.categoryName && row.categoryName.trim()) {
+          const catNameClean = row.categoryName.trim();
+          const catNameLower = catNameClean.toLowerCase();
+          if (categoryMap.has(catNameLower)) {
+            categoryId = categoryMap.get(catNameLower) ?? null;
+          } else {
+            const newCat = await tx.category.create({
+              data: { tenantId: user.tenantId, name: catNameClean },
+            });
+            categoryMap.set(catNameLower, newCat.id);
+            categoryId = newCat.id;
+          }
+        }
+        const outletId = row.outletName?.trim()
+          ? outletMap.get(row.outletName.trim().toLowerCase()) ?? firstOutlet.id
+          : firstOutlet.id;
+        if (row.supplierName?.trim()) {
+          const supplierName = row.supplierName.trim();
+          const supplierKey = supplierName.toLowerCase();
+          if (!supplierMap.has(supplierKey)) {
+            const supplier = await tx.supplier.create({ data: { tenantId: user.tenantId, name: supplierName } });
+            supplierMap.set(supplierKey, supplier.id);
+          }
+        }
+
+        const product = await tx.product.create({
+          data: {
+            tenantId: user.tenantId,
+            name: row.name.trim(),
+            sku: row.sku?.trim() || null,
+            categoryId,
+            price: row.price,
+            cost: row.cost || null,
+            kind: row.kind,
+            trackStock: row.trackStock,
+            trackExpiry: row.trackExpiry ?? Boolean(row.expirationDate),
+          },
+        });
+
+        if (row.trackStock) {
+          const qty = row.stockQty || 0;
+          await tx.productStock.create({
+            data: {
+              tenantId: user.tenantId,
+              productId: product.id,
+              outletId,
+              qty,
+            },
+          });
+
+          await tx.stockAdjustment.create({
+            data: {
+              tenantId: user.tenantId,
+              productId: product.id,
+              outletId,
+              changedById: user.id,
+              previousQty: 0,
+              newQty: qty,
+              delta: qty,
+              note: "Import awal produk",
+            },
+          });
+
+          if (row.reorderPoint != null && row.reorderPoint >= 0) {
+            await tx.stockReorderPoint.create({
+              data: {
+                tenantId: user.tenantId,
+                productId: product.id,
+                outletId,
+                minQty: row.reorderPoint,
+              },
+            });
+          }
+          if (qty > 0 && (row.batchNumber?.trim() || row.expirationDate)) {
+            await tx.stockBatch.create({
+              data: {
+                tenantId: user.tenantId,
+                productId: product.id,
+                outletId,
+                batchNumber: row.batchNumber?.trim() || `IMPORT-${product.id.slice(-6)}`,
+                expirationDate: row.expirationDate ? new Date(row.expirationDate) : null,
+                qtyReceived: qty,
+                qtyRemaining: qty,
+                note: "Batch awal dari import CSV",
+              },
+            });
+          }
+        }
+      }
+    });
+
+    revalidatePath("/produk");
+    revalidatePath("/inventory");
+    revalidatePath("/kasir");
+    return { success: true };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal mengimpor produk secara massal." };
+  }
+}
+
+function findDuplicate(values: string[]) {
+  const seen = new Set<string>();
+  for (const value of values) {
+    const key = value.toLowerCase();
+    if (seen.has(key)) return value;
+    seen.add(key);
+  }
+  return null;
+}
+
+export async function disposeExpiredBatchAction(batchId: string, note?: string): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  try {
+    await prisma.$transaction(async (tx) => {
+      const batch = await tx.stockBatch.findFirst({
+        where: { id: batchId, tenantId: user.tenantId },
+        include: { product: true },
+      });
+      if (!batch) throw new Error("Batch tidak ditemukan.");
+      if (batch.qtyRemaining <= 0) return;
+
+      const stock = await tx.productStock.findUnique({
+        where: { productId_outletId: { productId: batch.productId, outletId: batch.outletId } },
+      });
+      const currentQty = stock?.qty ?? 0;
+      const disposeQty = Math.min(batch.qtyRemaining, currentQty);
+
+      if (stock && disposeQty > 0) {
+        await tx.productStock.update({
+          where: { id: stock.id },
+          data: { qty: { decrement: disposeQty } },
+        });
+      }
+      await tx.stockBatch.update({
+        where: { id: batch.id },
+        data: { qtyRemaining: 0, note: note?.trim() || "Dibuang/rusak dari workflow expired" },
+      });
+      await tx.stockAdjustment.create({
+        data: {
+          tenantId: user.tenantId,
+          productId: batch.productId,
+          outletId: batch.outletId,
+          changedById: user.id,
+          previousQty: currentQty,
+          newQty: Math.max(0, currentQty - disposeQty),
+          delta: -disposeQty,
+          note: `Expired/rusak batch ${batch.batchNumber}: ${note?.trim() || "dibuang"}`,
+        },
+      });
+    });
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal menandai batch expired." };
+  }
+  revalidatePath("/inventory");
+  revalidatePath("/produk/riwayat-stok");
+  revalidatePath("/simple/data");
   return { success: true };
 }

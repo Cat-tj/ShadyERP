@@ -166,7 +166,9 @@ function SpotlightPhone({ screen }: { screen: SpotlightSlide["screen"] }) {
   );
 }
 
-export function LandingContent() {
+export function LandingContent({ city }: { city?: string }) {
+  const displayCity = city ? decodeURIComponent(city).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "";
+
   return (
     <div className="altora-landing">
 <header className="site">
@@ -219,19 +221,34 @@ export function LandingContent() {
     <div className="hero-glow" aria-hidden="true"></div>
     <div className="wrap hero-grid">
       <div className="hero-copy">
-        <span className="eyebrow">POS &amp; Manajemen Toko untuk UMKM Indonesia</span>
-        <h1 aria-label="Tutup toko, tanpa tutup buku.">
-          Tutup toko,<br />
-          <span className="roll-window" aria-hidden="true">
-            <span className="roll-track">
-              <span className="roll-item">tanpa tutup buku.</span>
-              <span className="roll-item">kasir sampai laporan.</span>
-              <span className="roll-item">walau internet mati.</span>
-              <span className="roll-item">mulai hari ini juga.</span>
-              <span className="roll-item">tanpa tutup buku.</span>
+        <span className="eyebrow">POS &amp; Manajemen Toko untuk UMKM {displayCity ? `di ${displayCity}` : "Indonesia"}</span>
+        {displayCity ? (
+          <h1>
+            <span className="sr-only">Aplikasi Kasir POS &amp; ERP Terbaik di {displayCity} — Altora</span>
+            <span aria-hidden="true">
+              POS &amp; ERP Terbaik<br />
+              <span style={{ backgroundImage: "linear-gradient(135deg, var(--logo-c1), var(--logo-c4))", WebkitBackgroundClip: "text", WebkitTextFillColor: "transparent" }}>
+                di {displayCity}
+              </span>
             </span>
-          </span>
-        </h1>
+          </h1>
+        ) : (
+          <h1>
+            <span className="sr-only">Tutup toko, tanpa tutup buku.</span>
+            <span aria-hidden="true">
+              Tutup toko,<br />
+              <span className="roll-window">
+                <span className="roll-track">
+                  <span className="roll-item">tanpa tutup buku.</span>
+                  <span className="roll-item">kasir sampai laporan.</span>
+                  <span className="roll-item">walau internet mati.</span>
+                  <span className="roll-item">mulai hari ini juga.</span>
+                  <span className="roll-item">tanpa tutup buku.</span>
+                </span>
+              </span>
+            </span>
+          </h1>
+        )}
         <p className="lede">
           Altora rapikan kasir, stok, karyawan, dan laporan tokomu jadi satu layar —
           buat coffee shop, barbershop, atau toko retail. Tetap jalan walau internet

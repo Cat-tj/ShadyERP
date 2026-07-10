@@ -24,7 +24,9 @@ export function OfflineSyncBanner() {
   }
 
   useEffect(() => {
-    refresh();
+    const initialRefresh = window.setTimeout(() => {
+      refresh();
+    }, 0);
     window.addEventListener("online", sync);
     // Poll terus (bukan cuma pas event "online") — transaksi offline baru
     // ditambahkan lewat komponen lain (PaymentSheet) yang tidak punya jalur
@@ -35,6 +37,7 @@ export function OfflineSyncBanner() {
       if (navigator.onLine) sync();
     }, 30_000);
     return () => {
+      window.clearTimeout(initialRefresh);
       window.removeEventListener("online", sync);
       clearInterval(pollInterval);
       clearInterval(syncInterval);

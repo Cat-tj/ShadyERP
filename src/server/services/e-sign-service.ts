@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { DocumentSigner } from "@prisma/client";
-import { getDocumentById, getSigningQueue, getNextSigner } from "./document-service";
+import { getDocumentById, getSigningQueue } from "./document-service";
 
 export async function signDocument(
   tenantId: string,

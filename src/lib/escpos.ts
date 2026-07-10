@@ -63,6 +63,7 @@ export type ReceiptData = {
   dateLabel: string;
   cashierName: string;
   memberName: string | null;
+  orderType: string;
   items: { name: string; qty: number; price: number; subtotal: number }[];
   subtotal: number;
   discountAmount: number;
@@ -102,6 +103,7 @@ export function buildReceiptEscPos(data: ReceiptData): Uint8Array {
   r.text(`No: ${data.invoiceNumber}`);
   r.text(data.dateLabel);
   r.text(`Kasir: ${data.cashierName}`);
+  r.text(`Order: ${data.orderType}`);
   if (data.memberName) r.text(`Member: ${data.memberName}`);
   r.divider("-", LINE_WIDTH);
 

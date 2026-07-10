@@ -2,22 +2,34 @@
 
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/server/require-session";
-import { buildDynamicQris } from "@/lib/qris-dynamic";
-import { updateTenantSetting, type TenantSettingInput } from "@/server/services/tenant-service";
+import { buildDynamicQris, normalizeStaticQrisPayload } from "@/lib/qris-dynamic";
+import {
+  updateTenantBusinessType,
+  updateTenantSetting,
+  type TenantSettingInput,
+} from "@/server/services/tenant-service";
+import { BUSINESS_MODE_MAP, type BusinessModeKey } from "@/lib/business-modes";
 
 export type ActionResult = { error?: string; success?: boolean };
 
-export async function updateTenantSettingAction(input: TenantSettingInput): Promise<ActionResult> {
+export async function updateTenantSettingAction(
+  input: TenantSettingInput & { businessType?: BusinessModeKey }
+): Promise<ActionResult> {
   const user = await requireRole(["OWNER"]);
+  let staticQrisPayload = input.staticQrisPayload?.trim() || null;
+  if (input.businessType && !BUSINESS_MODE_MAP[input.businessType]) {
+    return { error: "Mode Altora tidak valid." };
+  }
   if (!Number.isFinite(input.taxPercent) || input.taxPercent < 0 || input.taxPercent > 100) {
     return { error: "Pajak harus antara 0-100%." };
   }
   if (!Number.isFinite(input.pointsPerAmount) || input.pointsPerAmount <= 0) {
     return { error: "Rasio poin harus lebih dari 0." };
   }
-  if (input.staticQrisPayload?.trim()) {
+  if (staticQrisPayload) {
     try {
-      buildDynamicQris(input.staticQrisPayload, 1000);
+      staticQrisPayload = normalizeStaticQrisPayload(staticQrisPayload);
+      buildDynamicQris(staticQrisPayload, 1000);
     } catch (error) {
       return {
         error: error instanceof Error ? error.message : "Payload QRIS tidak valid.",
@@ -25,14 +37,58 @@ export async function updateTenantSettingAction(input: TenantSettingInput): Prom
     }
   }
   try {
+    if (input.businessType) {
+      await updateTenantBusinessType(user.tenantId, input.businessType);
+    }
     await updateTenantSetting(user.tenantId, {
-      ...input,
-      staticQrisPayload: input.staticQrisPayload?.trim() || null,
+      taxPercent: input.taxPercent,
+      pointsPerAmount: input.pointsPerAmount,
+      receiptFooter: input.receiptFooter,
+      staticQrisPayload,
+      accountingMode: input.accountingMode,
     });
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal menyimpan pengaturan." };
   }
   revalidatePath("/pengaturan/bisnis");
+  revalidatePath("/pilih-aplikasi");
   revalidatePath("/kasir");
   return { success: true };
+}
+
+export async function exportTenantBackupAction(): Promise<{ error?: string; success?: boolean; data?: any }> {
+  const user = await requireRole(["OWNER"]);
+  
+  try {
+    const { prisma } = await import("@/lib/prisma");
+
+    const [tenant, setting, outlets, categories, products, sales, suppliers, members] = await Promise.all([
+      prisma.tenant.findUnique({ where: { id: user.tenantId } }),
+      prisma.tenantSetting.findUnique({ where: { tenantId: user.tenantId } }),
+      prisma.outlet.findMany({ where: { tenantId: user.tenantId } }),
+      prisma.category.findMany({ where: { tenantId: user.tenantId } }),
+      prisma.product.findMany({ where: { tenantId: user.tenantId }, include: { stocks: true, reorderPoints: true } }),
+      prisma.sale.findMany({ where: { tenantId: user.tenantId }, include: { items: true, saleReturns: true } }),
+      prisma.supplier.findMany({ where: { tenantId: user.tenantId } }),
+      prisma.member.findMany({ where: { tenantId: user.tenantId } }),
+    ]);
+
+    return {
+      success: true,
+      data: {
+        exportVersion: "1.0.0",
+        timestamp: new Date().toISOString(),
+        tenant,
+        setting,
+        outlets,
+        categories,
+        products,
+        sales,
+        suppliers,
+        members,
+      },
+    };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal mengekspor data backup." };
+  }
 }

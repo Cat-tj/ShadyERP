@@ -9,9 +9,26 @@
  */
 
 import type { ComponentType, SVGProps } from "react";
-import { ReceiptIcon, UsersIcon, BarChartIcon, SettingsIcon, FlameIcon, BriefcaseIcon, GridIcon } from "@/components/ui/icons";
+import {
+  ReceiptIcon,
+  UsersIcon,
+  BarChartIcon,
+  SettingsIcon,
+  BriefcaseIcon,
+  GridIcon,
+  PackageIcon,
+} from "@/components/ui/icons";
 
-export type HubKey = "kasir" | "tim" | "finance" | "admin" | "command" | "dokumen";
+export type HubKey =
+  | "kasir"
+  | "inventory"
+  | "laundry"
+  | "tim"
+  | "hris"
+  | "finance"
+  | "admin"
+  | "command"
+  | "dokumen";
 
 export type HubDef = {
   key: HubKey;
@@ -28,23 +45,43 @@ export type HubDef = {
 export const HUBS: HubDef[] = [
   {
     key: "kasir",
-    label: "Kasir & Operasional",
-    description: "Transaksi harian, pesanan meja, dapur, booking, dan akses cepat member.",
+    label: "Kasir",
+    description: "Transaksi cepat, riwayat, tutup shift, pesanan meja, booking, dan member.",
     color: "#a730a8",
     colorDark: "#7e2582",
     colorSoft: "rgba(167, 48, 168, 0.12)",
     icon: ReceiptIcon,
-    homeHref: "/kpi",
+    homeHref: "/kasir",
   },
   {
-    key: "tim",
-    label: "Tim",
-    description: "Absensi, jadwal kerja, dan manajemen kehadiran karyawan.",
+    key: "inventory",
+    label: "Inventory",
+    description: "Produk, stok, supplier, pembelian, barang masuk, opname, transfer, dan maintenance aset.",
+    color: "#0f766e",
+    colorDark: "#115e59",
+    colorSoft: "rgba(15, 118, 110, 0.12)",
+    icon: PackageIcon,
+    homeHref: "/inventory",
+  },
+  {
+    key: "laundry",
+    label: "Laundry",
+    description: "Order kiloan/satuan, pickup, delivery, status cucian, dan pembayaran laundry.",
+    color: "#0891b2",
+    colorDark: "#0e7490",
+    colorSoft: "rgba(8, 145, 178, 0.12)",
+    icon: ReceiptIcon,
+    homeHref: "/laundry",
+  },
+  {
+    key: "hris",
+    label: "Kepegawaian",
+    description: "Database karyawan, absensi, jadwal kerja, dan performa tim.",
     color: "#2563eb",
     colorDark: "#1d4ed8",
     colorSoft: "rgba(37, 99, 235, 0.12)",
     icon: UsersIcon,
-    homeHref: "/tim",
+    homeHref: "/hris",
   },
   {
     key: "finance",
@@ -99,19 +136,21 @@ const ROUTE_HUB_MAP: { prefix: string; hub: HubKey }[] = [
   { prefix: "/pesanan-meja", hub: "kasir" },
   { prefix: "/command-center", hub: "command" },
   { prefix: "/booking", hub: "kasir" },
-  { prefix: "/inventory", hub: "kasir" },
-  { prefix: "/supplier", hub: "kasir" },
-  { prefix: "/purchase-order", hub: "kasir" },
-  { prefix: "/stock-receipt", hub: "kasir" },
-  { prefix: "/stock-count", hub: "kasir" },
-  { prefix: "/maintenance", hub: "kasir" },
+  { prefix: "/laundry", hub: "laundry" },
+  { prefix: "/inventory", hub: "inventory" },
+  { prefix: "/supplier", hub: "inventory" },
+  { prefix: "/purchase-order", hub: "inventory" },
+  { prefix: "/stock-receipt", hub: "inventory" },
+  { prefix: "/stock-count", hub: "inventory" },
+  { prefix: "/maintenance", hub: "inventory" },
   { prefix: "/member", hub: "kasir" },
   { prefix: "/kpi", hub: "kasir" },
-  { prefix: "/produk", hub: "kasir" },
+  { prefix: "/produk", hub: "inventory" },
   { prefix: "/dashboard", hub: "kasir" },
-  // Tim
-  { prefix: "/absensi", hub: "tim" },
-  { prefix: "/tim", hub: "tim" },
+  // Kepegawaian (HRIS)
+  { prefix: "/absensi", hub: "hris" },
+  { prefix: "/tim", hub: "hris" },
+  { prefix: "/hris", hub: "hris" },
   // Finance
   { prefix: "/finance", hub: "finance" },
   { prefix: "/laporan", hub: "finance" },

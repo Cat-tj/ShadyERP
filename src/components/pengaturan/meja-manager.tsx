@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -32,22 +32,20 @@ function TableFormModal({
   onClose,
   onSaved,
   defaultPos = null,
-  maxCols = 6,
-  maxRows = 6,
+  floorOptions = [1],
 }: {
   outlets: OutletOption[];
   table: TableRow | null;
   onClose: () => void;
   onSaved: (message: string) => void;
   defaultPos?: { posX: number; posY: number; floor: number } | null;
-  maxCols?: number;
-  maxRows?: number;
+  floorOptions?: number[];
 }) {
   const router = useRouter();
   const [outletId, setOutletId] = useState(table?.outletId ?? outlets[0]?.id ?? "");
   const [name, setName] = useState(table?.name ?? "");
-  const [posX, setPosX] = useState(table?.posX ?? defaultPos?.posX ?? 1);
-  const [posY, setPosY] = useState(table?.posY ?? defaultPos?.posY ?? 1);
+  const [posX] = useState(table?.posX ?? defaultPos?.posX ?? 10);
+  const [posY] = useState(table?.posY ?? defaultPos?.posY ?? 10);
   const [floor, setFloor] = useState(table?.floor ?? defaultPos?.floor ?? 1);
   const [shape, setShape] = useState(table?.shape ?? "SQUARE");
   const [capacity, setCapacity] = useState(table?.capacity ?? 2);
@@ -76,8 +74,8 @@ function TableFormModal({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/40 sm:items-center sm:justify-center">
-      <div className="max-h-[90vh] w-full overflow-y-auto glass-surface-strong rounded-t-2xl p-5 sm:max-w-md sm:rounded-2xl">
+    <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/50 backdrop-blur-sm sm:items-center sm:justify-center">
+      <div className="max-h-[90vh] w-full overflow-y-auto bg-[var(--color-surface)] border border-[var(--color-border)] shadow-2xl rounded-t-3xl p-6 sm:max-w-md sm:rounded-3xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-[var(--color-text)]">
             {table ? "Ubah meja" : "Tambah meja"}
@@ -85,7 +83,7 @@ function TableFormModal({
           <button
             onClick={onClose}
             aria-label="Tutup"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] transition-colors cursor-pointer"
           >
             <XIcon aria-hidden className="h-5 w-5" />
           </button>
@@ -145,7 +143,7 @@ function TableFormModal({
                 onChange={(e) => setFloor(Number(e.target.value))}
                 className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
               >
-                {[1, 2, 3].map((f) => (
+                {floorOptions.map((f) => (
                   <option key={f} value={f}>Lantai {f}</option>
                 ))}
               </select>
@@ -164,44 +162,295 @@ function TableFormModal({
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-[var(--color-text-secondary)]">Kolom Layout (X)</label>
-              <select
-                value={posX}
-                onChange={(e) => setPosX(Number(e.target.value))}
-                className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
-              >
-                {Array.from({ length: maxCols }, (_, i) => i + 1).map((x) => (
-                  <option key={x} value={x}>Kolom {x}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-[var(--color-text-secondary)]">Baris Layout (Y)</label>
-              <select
-                value={posY}
-                onChange={(e) => setPosY(Number(e.target.value))}
-                className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
-              >
-                {Array.from({ length: maxRows }, (_, i) => i + 1).map((y) => (
-                  <option key={y} value={y}>Baris {y}</option>
-                ))}
-              </select>
-            </div>
-          </div>
+          <p className="text-xs text-[var(--color-text-secondary)] bg-[var(--color-bg-secondary)] p-3 rounded-xl border border-[var(--color-border)]">
+            ℹ️ Posisi meja dapat diatur secara presisi dengan menyeret (*drag & drop*) meja langsung pada denah visual di sebelah kanan setelah disimpan.
+          </p>
         </div>
 
         <button
           onClick={handleSubmit}
           disabled={isPending}
-          className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-60"
+          className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-40 cursor-pointer"
         >
           {isPending && (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)]" />
           )}
           {isPending ? "Menyimpan..." : "Simpan meja"}
         </button>
+      </div>
+    </div>
+  );
+}
+
+export function getTableDisplayCode(name: string): string {
+  if (name.includes("|")) {
+    return name.split("|")[1].trim();
+  }
+  let code = name.trim();
+  if (code.toLowerCase().startsWith("meja ")) {
+    code = code.substring(5).trim();
+  }
+  if (code.toUpperCase() === "BUNDAR VVIP") return "VVIP";
+  if (code.toUpperCase() === "BUNDAR VIP") return "VIP";
+  return code;
+}
+
+export function TableVisual({
+  name,
+  shape,
+  capacity,
+  isActive,
+  isHovered,
+  status = "EMPTY",
+}: {
+  name: string;
+  shape: string;
+  capacity: number;
+  isActive: boolean;
+  isHovered: boolean;
+  status?: "EMPTY" | "ORDERED" | "EATING" | "READY";
+}) {
+  const displayCode = getTableDisplayCode(name);
+  const isVip = name.toUpperCase().includes("VIP");
+
+  const seatCount = Math.max(1, Math.min(capacity, 32));
+  const chairSize = 12;
+  const chairGap = 6;
+  const chairs: React.ReactNode[] = [];
+  const plates: React.ReactNode[] = [];
+
+  let tableWidth = 62;
+  let tableHeight = 62;
+  let tableLeft = chairSize + 2;
+  let tableTop = chairSize + 2;
+  let frameWidth = tableWidth + chairSize * 2 + 4;
+  let frameHeight = tableHeight + chairSize * 2 + 4;
+
+  function addChair(key: string, left: number, top: number, side: "top" | "right" | "bottom" | "left" | "round") {
+    const radiusClass =
+      side === "round"
+        ? "rounded-full"
+        : side === "top"
+          ? "rounded-t-md"
+          : side === "right"
+            ? "rounded-r-md"
+            : side === "bottom"
+              ? "rounded-b-md"
+              : "rounded-l-md";
+    chairs.push(
+      <span
+        key={key}
+        className={`absolute border border-slate-300 bg-slate-200 shadow-[0_1px_2px_rgba(15,23,42,0.08)] ${radiusClass}`}
+        style={{ left, top, width: chairSize, height: chairSize }}
+      />
+    );
+  }
+
+  if (shape === "RECTANGLE") {
+    const longSide = Math.max(1, Math.ceil(seatCount / 3));
+    let remainingSeats = seatCount;
+    const topSeats = Math.min(longSide, remainingSeats);
+    remainingSeats -= topSeats;
+    const bottomSeats = Math.min(longSide, remainingSeats);
+    remainingSeats -= bottomSeats;
+    const leftSeats = Math.ceil(remainingSeats / 2);
+    const rightSeats = remainingSeats - leftSeats;
+    const sideSeats = Math.max(leftSeats, rightSeats);
+    tableWidth = Math.max(92, longSide * (chairSize + chairGap) + 28);
+    tableHeight = Math.max(52, sideSeats * (chairSize + chairGap) + 28);
+
+    for (let i = 0; i < topSeats; i++) {
+      const left = ((tableWidth - chairSize) / Math.max(1, topSeats - 1)) * i;
+      addChair(`top-${i}`, left, 0, "top");
+      plates.push(
+        <span
+          key={`plate-top-${i}`}
+          className="absolute h-1.5 w-3 rounded bg-slate-300 opacity-60"
+          style={{ left: left - chairSize - 2, top: 4, transform: "translateX(50%)" }}
+        />
+      );
+    }
+    for (let i = 0; i < bottomSeats; i++) {
+      const left = ((tableWidth - chairSize) / Math.max(1, bottomSeats - 1)) * i;
+      addChair(`bottom-${i}`, left, tableHeight + chairSize + 4, "bottom");
+      plates.push(
+        <span
+          key={`plate-bottom-${i}`}
+          className="absolute h-1.5 w-3 rounded bg-slate-300 opacity-60"
+          style={{ left: left - chairSize - 2, bottom: 4, transform: "translateX(50%)" }}
+        />
+      );
+    }
+    for (let i = 0; i < leftSeats; i++) {
+      const top = chairSize + 2 + ((tableHeight - chairSize) / Math.max(1, leftSeats - 1)) * i;
+      addChair(`left-${i}`, 0, top, "left");
+      plates.push(
+        <span
+          key={`plate-left-${i}`}
+          className="absolute h-3 w-1.5 rounded bg-slate-300 opacity-60"
+          style={{ left: 4, top: top - chairSize - 2, transform: "translateY(50%)" }}
+        />
+      );
+    }
+    for (let i = 0; i < rightSeats; i++) {
+      const top = chairSize + 2 + ((tableHeight - chairSize) / Math.max(1, rightSeats - 1)) * i;
+      addChair(`right-${i}`, tableWidth + chairSize + 4, top, "right");
+      plates.push(
+        <span
+          key={`plate-right-${i}`}
+          className="absolute h-3 w-1.5 rounded bg-slate-300 opacity-60"
+          style={{ right: 4, top: top - chairSize - 2, transform: "translateY(50%)" }}
+        />
+      );
+    }
+  } else if (shape === "ROUND") {
+    const radius = Math.min(54, Math.max(30, 24 + seatCount * 1.2));
+    tableWidth = Math.max(58, radius * 1.35);
+    tableHeight = tableWidth;
+    const center = radius + chairSize;
+    frameWidth = center * 2;
+    frameHeight = center * 2;
+    tableLeft = center - tableWidth / 2;
+    tableTop = center - tableHeight / 2;
+    for (let i = 0; i < seatCount; i++) {
+      const angleRad = (((360 / seatCount) * i - 90) * Math.PI) / 180;
+      addChair(
+        `round-${i}`,
+        center + radius * Math.cos(angleRad) - chairSize / 2,
+        center + radius * Math.sin(angleRad) - chairSize / 2,
+        "round"
+      );
+      const plateRadius = radius * 0.7;
+      plates.push(
+        <span
+          key={`plate-round-${i}`}
+          className="absolute h-2 w-2 rounded-full bg-slate-300 opacity-60"
+          style={{
+            left: tableWidth / 2 + plateRadius * Math.cos(angleRad) - 4,
+            top: tableHeight / 2 + plateRadius * Math.sin(angleRad) - 4,
+          }}
+        />
+      );
+    }
+  } else {
+    const perSide = [0, 0, 0, 0];
+    for (let i = 0; i < seatCount; i++) perSide[i % 4] += 1;
+    const maxSide = Math.max(...perSide);
+    tableWidth = Math.max(62, maxSide * (chairSize + chairGap) + 16);
+    tableHeight = tableWidth;
+
+    for (let i = 0; i < perSide[0]; i++) {
+      const left = ((tableWidth - chairSize) / Math.max(1, perSide[0] - 1)) * i;
+      addChair(`top-${i}`, left, 0, "top");
+      plates.push(
+        <span
+          key={`plate-top-${i}`}
+          className="absolute h-1.5 w-3 rounded bg-slate-300 opacity-60"
+          style={{ left: left - chairSize - 2, top: 4, transform: "translateX(50%)" }}
+        />
+      );
+    }
+    for (let i = 0; i < perSide[2]; i++) {
+      const left = ((tableWidth - chairSize) / Math.max(1, perSide[2] - 1)) * i;
+      addChair(`bottom-${i}`, left, tableHeight + chairSize + 4, "bottom");
+      plates.push(
+        <span
+          key={`plate-bottom-${i}`}
+          className="absolute h-1.5 w-3 rounded bg-slate-300 opacity-60"
+          style={{ left: left - chairSize - 2, bottom: 4, transform: "translateX(50%)" }}
+        />
+      );
+    }
+    for (let i = 0; i < perSide[3]; i++) {
+      const top = chairSize + 2 + ((tableHeight - chairSize) / Math.max(1, perSide[3] - 1)) * i;
+      addChair(`left-${i}`, 0, top, "left");
+      plates.push(
+        <span
+          key={`plate-left-${i}`}
+          className="absolute h-3 w-1.5 rounded bg-slate-300 opacity-60"
+          style={{ left: 4, top: top - chairSize - 2, transform: "translateY(50%)" }}
+        />
+      );
+    }
+    for (let i = 0; i < perSide[1]; i++) {
+      const top = chairSize + 2 + ((tableHeight - chairSize) / Math.max(1, perSide[1] - 1)) * i;
+      addChair(`right-${i}`, tableWidth + chairSize + 4, top, "right");
+      plates.push(
+        <span
+          key={`plate-right-${i}`}
+          className="absolute h-3 w-1.5 rounded bg-slate-300 opacity-60"
+          style={{ right: 4, top: top - chairSize - 2, transform: "translateY(50%)" }}
+        />
+      );
+    }
+  }
+
+  if (shape !== "ROUND") {
+    frameWidth = tableWidth + chairSize * 2 + 4;
+    frameHeight = tableHeight + chairSize * 2 + 4;
+  }
+
+  // Base table card styles depending on VIP or Regular
+  const tierClass = isVip
+    ? "border-[3px] border-amber-400 bg-amber-50/95 ring-2 ring-amber-300/40 text-amber-950"
+    : "border-2 border-blue-400 bg-white ring-2 ring-blue-300/30 text-blue-950";
+
+  // Central circle status colors:
+  // EMPTY: blue/gold depending on VIP
+  // ORDERED: Amber (waiting food)
+  // EATING: Rose/Red (occupied)
+  // READY: Emerald/Green (finished/ready pay)
+  const statusColor =
+    status === "ORDERED"
+      ? "from-amber-400 via-amber-500 to-amber-600 shadow-amber-300/30"
+      : status === "EATING"
+        ? "from-rose-500 via-rose-600 to-red-600 shadow-rose-300/30"
+        : status === "READY"
+          ? "from-emerald-400 via-emerald-500 to-green-600 shadow-emerald-300/30"
+          : isVip
+            ? "from-amber-500 via-yellow-500 to-amber-600 shadow-amber-500/20"
+            : "from-blue-500 via-sky-500 to-blue-600 shadow-blue-500/20";
+
+  return (
+    <div
+      className="relative"
+      style={{
+        width: frameWidth,
+        height: frameHeight,
+      }}
+      title={name}
+    >
+      {isActive && chairs}
+      <div
+        className={`absolute z-10 flex items-center justify-center shadow-[0_6px_20px_rgba(15,23,42,0.08)] transition-all overflow-hidden ${
+          shape === "ROUND" ? "rounded-full" : shape === "RECTANGLE" ? "rounded-2xl" : "rounded-xl"
+        } ${isActive ? tierClass : "border border-slate-300 bg-slate-100 opacity-60"} ${
+          isHovered ? "scale-105" : ""
+        }`}
+        style={{
+          left: tableLeft,
+          top: tableTop,
+          width: tableWidth,
+          height: tableHeight,
+        }}
+      >
+        {/* Visual plates placement inside the table */}
+        {isActive && plates}
+
+        {/* Inner circle badge containing the display code */}
+        <div
+          className={`relative z-20 flex h-[38px] w-[38px] flex-col items-center justify-center rounded-full bg-gradient-to-br text-white shadow-md select-none ${statusColor}`}
+        >
+          <span className="text-[12px] font-black leading-none">{displayCode}</span>
+          <span className="mt-0.5 text-[7px] font-bold opacity-80 leading-none">{capacity}p</span>
+        </div>
+
+        {/* Small VIP ribbon or badge for visual distinction */}
+        {isVip && isActive && (
+          <span className="absolute bottom-0 right-0 left-0 bg-amber-500 text-[6px] font-black text-white text-center tracking-widest uppercase py-0.5 leading-none z-30">
+            VIP
+          </span>
+        )}
       </div>
     </div>
   );
@@ -214,9 +463,10 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
   const [editing, setEditing] = useState<TableRow | null>(null);
   const [defaultPos, setDefaultPos] = useState<{ posX: number; posY: number; floor: number } | null>(null);
   const [activeFloor, setActiveFloor] = useState(1);
-  const [gridCols, setGridCols] = useState(() => Math.max(6, ...tables.map((t) => t.posX)));
-  const [gridRows, setGridRows] = useState(() => Math.max(6, ...tables.map((t) => t.posY)));
-  const [movingTable, setMovingTable] = useState<TableRow | null>(null);
+  const [floorCount, setFloorCount] = useState(() => Math.max(1, ...tables.map((t) => t.floor)));
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const [draggedTableId, setDraggedTableId] = useState<string | null>(null);
+  const [draggedPos, setDraggedPos] = useState<{ x: number; y: number } | null>(null);
   const [actionMenuTable, setActionMenuTable] = useState<TableRow | null>(null);
   const [hoveredTableId, setHoveredTableId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -233,42 +483,71 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
     });
   }
 
-  function handleMoveTable(table: TableRow, x: number, y: number) {
+  const [dragStart, setDragStart] = useState<{ x: number; y: number } | null>(null);
+
+  function handlePointerDown(e: React.PointerEvent<HTMLButtonElement>, tableId: string) {
+    e.currentTarget.releasePointerCapture(e.pointerId); // Allows smooth move tracking on canvas parent
+    setDraggedTableId(tableId);
+    setDragStart({ x: e.clientX, y: e.clientY });
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.min(92, Math.max(5, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
+    const y = Math.min(92, Math.max(5, Math.round(((e.clientY - rect.top) / rect.height) * 100)));
+    setDraggedPos({ x, y });
+  }
+
+  function handlePointerMove(e: React.PointerEvent) {
+    if (!draggedTableId) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const rect = canvas.getBoundingClientRect();
+    const x = Math.min(92, Math.max(5, Math.round(((e.clientX - rect.left) / rect.width) * 100)));
+    const y = Math.min(92, Math.max(5, Math.round(((e.clientY - rect.top) / rect.height) * 100)));
+    setDraggedPos({ x, y });
+  }
+
+  function handlePointerUp(e: React.PointerEvent) {
+    if (!draggedTableId) return;
+    const tableId = draggedTableId;
+    const pos = draggedPos;
+    const start = dragStart;
+
+    setDraggedTableId(null);
+    setDraggedPos(null);
+    setDragStart(null);
+
+    const table = tables.find((t) => t.id === tableId);
+    if (!table) return;
+
+    // Check if it was a quick click rather than a drag
+    if (start) {
+      const distance = Math.sqrt(Math.pow(e.clientX - start.x, 2) + Math.pow(e.clientY - start.y, 2));
+      if (distance < 5) {
+        setActionMenuTable(table);
+        return;
+      }
+    }
+
+    if (!pos) return;
+
     startTransition(async () => {
-      const result = await updateTableAction(table.id, table.name, x, y, activeFloor, table.shape, table.capacity);
+      const result = await updateTableAction(table.id, table.name, pos.x, pos.y, activeFloor, table.shape, table.capacity);
       if (result.error) {
         showToast(result.error);
       } else {
-        showToast(`Meja ${table.name} berhasil dipindahkan ke Lantai ${activeFloor}, Kolom ${x}, Baris ${y}`);
+        showToast(`Posisi Meja ${table.name} berhasil disimpan di ${pos.x}%, ${pos.y}%`);
       }
-      setMovingTable(null);
       router.refresh();
     });
   }
 
-  const rows = Array.from({ length: gridRows }, (_, i) => i + 1);
-  const cols = Array.from({ length: gridCols }, (_, i) => i + 1);
-
-  function getTableAt(x: number, y: number) {
-    return tables.find((t) => t.posX === x && t.posY === y && t.floor === activeFloor);
-  }
+  const floors = Array.from({ length: floorCount }, (_, i) => i + 1);
 
   return (
     <div className="flex flex-col gap-6">
-      {movingTable && (
-        <div className="flex justify-between items-center p-3 text-xs bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-300 rounded-xl animate-pulse">
-          <span>
-            Sedang memindahkan <strong>{movingTable.name}</strong> (Lantai {movingTable.floor}). Pilih sel kosong tujuan pada Lantai {activeFloor} di bagian kanan.
-          </span>
-          <button
-            type="button"
-            onClick={() => setMovingTable(null)}
-            className="font-bold underline cursor-pointer"
-          >
-            Batal
-          </button>
-        </div>
-      )}
+
 
       {/* Connected Split View Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
@@ -301,7 +580,6 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
               <div className="divide-y divide-[var(--color-border)]">
                 {tables.map((table) => {
                   const isHovered = hoveredTableId === table.id;
-                  const isMovingThis = movingTable?.id === table.id;
 
                   return (
                     <div
@@ -311,8 +589,6 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
                       className={`flex flex-col gap-3 p-4 transition-all sm:flex-row sm:items-center sm:justify-between ${
                         isHovered
                           ? "bg-[var(--color-primary)]/5 border-[var(--color-primary)]/20"
-                          : isMovingThis
-                          ? "bg-amber-500/5 border-amber-500/20"
                           : "bg-transparent"
                       }`}
                     >
@@ -322,11 +598,6 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
                           {!table.isActive && (
                             <span className="ml-2 rounded-full bg-[var(--color-warning-bg)] px-2 py-0.5 text-xs font-medium text-[var(--color-warning-text)]">
                               Nonaktif
-                            </span>
-                          )}
-                          {isMovingThis && (
-                            <span className="ml-2 rounded-full bg-amber-500/10 px-2 py-0.5 text-xs font-bold text-amber-600 dark:text-amber-400 animate-pulse">
-                              Memindahkan...
                             </span>
                           )}
                         </p>
@@ -373,8 +644,8 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
           
           <div className="flex justify-between items-center gap-4 flex-wrap border-b border-[var(--color-border)] pb-2">
             {/* Floor selector */}
-            <div className="flex gap-1">
-              {[1, 2, 3].map((f) => (
+            <div className="flex flex-wrap gap-1">
+              {floors.map((f) => (
                 <button
                   key={f}
                   type="button"
@@ -388,149 +659,90 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
                   Lantai {f}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setFloorCount((count) => {
+                    const next = count + 1;
+                    setActiveFloor(next);
+                    return next;
+                  });
+                }}
+                className="rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-[10px] font-bold text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+              >
+                + Lantai
+              </button>
             </div>
 
             {/* Grid Size Controllers */}
-            <div className="flex gap-3 items-center flex-wrap text-[10px] bg-[var(--color-surface)] p-2 rounded-lg border border-[var(--color-border)]">
-              <span className="font-bold text-[var(--color-text-secondary)]">Grid:</span>
-              <div className="flex items-center gap-1">
-                <span>X:</span>
-                <button
-                  type="button"
-                  disabled={gridCols <= 4}
-                  onClick={() => setGridCols((c) => Math.max(4, c - 1))}
-                  className="w-5.5 h-5.5 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  -
-                </button>
-                <span className="font-bold w-4 text-center text-xs">{gridCols}</span>
-                <button
-                  type="button"
-                  disabled={gridCols >= 12}
-                  onClick={() => setGridCols((c) => Math.min(12, c + 1))}
-                  className="w-5.5 h-5.5 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  +
-                </button>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>Y:</span>
-                <button
-                  type="button"
-                  disabled={gridRows <= 4}
-                  onClick={() => setGridRows((r) => Math.max(4, r - 1))}
-                  className="w-5.5 h-5.5 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  -
-                </button>
-                <span className="font-bold w-4 text-center text-xs">{gridRows}</span>
-                <button
-                  type="button"
-                  disabled={gridRows >= 12}
-                  onClick={() => setGridRows((r) => Math.min(12, r + 1))}
-                  className="w-5.5 h-5.5 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  +
-                </button>
-              </div>
-            </div>
+            <p className="text-xs text-[var(--color-text-secondary)] mt-1">
+              💡 Seret (*drag*) meja untuk memposisikannya secara bebas. Klik meja untuk membuka opsi ubah nama atau aktif/nonaktif.
+            </p>
           </div>
 
           <div
-            className="grid gap-2 bg-[var(--color-surface)]/20 p-4 rounded-2xl border border-[var(--color-border)] select-none"
-            style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
+            ref={canvasRef}
+            className="relative w-full h-[500px] bg-slate-50 dark:bg-zinc-900/40 border border-[var(--color-border)] rounded-3xl overflow-hidden select-none"
+            style={{
+              backgroundImage: "radial-gradient(var(--color-border) 1px, transparent 1px)",
+              backgroundSize: "24px 24px",
+            }}
+            onPointerMove={handlePointerMove}
+            onPointerUp={handlePointerUp}
+            onPointerLeave={handlePointerUp}
           >
-            {rows.flatMap((y) =>
-              cols.map((x) => {
-                const table = getTableAt(x, y);
-
-                if (!table) {
-                  return (
-                    <button
-                      key={`empty-${x}-${y}`}
-                      type="button"
-                      disabled={isPending}
-                      onClick={() => {
-                        if (movingTable) {
-                          handleMoveTable(movingTable, x, y);
-                        } else {
-                          setDefaultPos({ posX: x, posY: y, floor: activeFloor });
-                          setEditing(null);
-                          setModalOpen(true);
-                        }
-                      }}
-                      className={`aspect-square rounded-xl border border-dashed flex flex-col items-center justify-center p-1 transition-all text-center text-[var(--color-text-secondary)]/30 hover:text-[var(--color-primary)] hover:border-[var(--color-primary)] hover:bg-[var(--color-primary)]/5 ${
-                        movingTable
-                          ? "border-amber-500/60 bg-amber-500/5 cursor-pointer text-amber-500"
-                          : "border-[var(--color-border)] cursor-pointer"
-                      }`}
-                    >
-                      <span className="text-base font-medium">+</span>
-                      <span className="text-[8px] mt-0.5 opacity-55">{x},{y}</span>
-                    </button>
-                  );
-                }
-
-                const isMovingThis = movingTable?.id === table.id;
+            {tables
+              .filter((t) => t.floor === activeFloor)
+              .map((table) => {
+                const isDragging = draggedTableId === table.id;
                 const isHovered = hoveredTableId === table.id;
 
-                let shapeClass = "rounded-xl aspect-square";
-                if (table.shape === "ROUND") {
-                  shapeClass = "rounded-full aspect-square";
-                } else if (table.shape === "RECTANGLE") {
-                  shapeClass = "rounded-lg w-[95%] h-[75%] aspect-[1.6/1] self-center";
-                }
+                const leftPercent = table.posX < 15 ? table.posX * 8 : table.posX;
+                const topPercent = table.posY < 15 ? table.posY * 8 : table.posY;
+
+                const x = isDragging && draggedPos ? draggedPos.x : leftPercent;
+                const y = isDragging && draggedPos ? draggedPos.y : topPercent;
 
                 return (
-                  <div key={table.id} className="aspect-square flex items-center justify-center">
-                    <button
-                      type="button"
-                      disabled={isPending || isMovingThis}
-                      onMouseEnter={() => setHoveredTableId(table.id)}
-                      onMouseLeave={() => setHoveredTableId(null)}
-                      onClick={() => {
-                        if (!movingTable) {
-                          setActionMenuTable(table);
-                        }
-                      }}
-                      className={`border-2 flex flex-col items-center justify-center p-1.5 transition-all text-center ${shapeClass} ${
-                        isMovingThis
-                          ? "border-amber-500 bg-amber-500/10 text-amber-500 animate-pulse"
-                          : isHovered
-                          ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-primary)] scale-[1.05] z-10 shadow-lg"
-                          : table.isActive
-                          ? "border-[var(--color-primary)]/40 bg-[var(--color-primary)]/5 text-[var(--color-primary)] hover:border-[var(--color-primary)]"
-                          : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)]"
-                      } ${!movingTable ? "cursor-pointer" : "cursor-not-allowed"}`}
-                    >
-                      <span className="text-[10px] font-bold truncate max-w-full">{table.name}</span>
-                    </button>
-                  </div>
+                  <button
+                    key={table.id}
+                    type="button"
+                    disabled={isPending}
+                    onPointerDown={(e) => handlePointerDown(e, table.id)}
+                    onMouseEnter={() => setHoveredTableId(table.id)}
+                    onMouseLeave={() => setHoveredTableId(null)}
+                    style={{
+                      position: "absolute",
+                      left: `${x}%`,
+                      top: `${y}%`,
+                      transform: "translate(-50%, -50%)",
+                      zIndex: isDragging ? 50 : isHovered ? 30 : 10,
+                      touchAction: "none",
+                    }}
+                    className="cursor-grab active:cursor-grabbing outline-none"
+                  >
+                    <TableVisual
+                      name={table.name}
+                      shape={table.shape}
+                      capacity={table.capacity}
+                      isActive={table.isActive}
+                      isHovered={isHovered || isDragging}
+                    />
+                  </button>
                 );
-              })
-            )}
+              })}
           </div>
         </div>
       </div>
 
       {/* Action Menu Modal for Table */}
       {actionMenuTable && (
-        <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/40 sm:items-center sm:justify-center">
-          <div className="max-h-[90vh] w-full overflow-y-auto glass-surface-strong rounded-t-2xl p-5 sm:max-w-xs sm:rounded-2xl text-center">
+        <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/50 backdrop-blur-sm sm:items-center sm:justify-center">
+          <div className="max-h-[90vh] w-full overflow-y-auto bg-[var(--color-surface)] border border-[var(--color-border)] shadow-2xl rounded-t-3xl p-6 sm:max-w-xs sm:rounded-3xl text-center animate-[fadeInUp_0.15s_ease-out_forwards]">
             <h3 className="text-sm font-bold text-[var(--color-text)] mb-4">
               Aksi Meja: {actionMenuTable.name}
             </h3>
             <div className="flex flex-col gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setMovingTable(actionMenuTable);
-                  setActionMenuTable(null);
-                }}
-                className="min-h-[44px] rounded-lg bg-[var(--color-primary)] text-sm font-semibold text-[var(--color-on-primary)] transition-all cursor-pointer"
-              >
-                Pindahkan Posisi
-              </button>
               <button
                 type="button"
                 onClick={() => {
@@ -539,9 +751,9 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
                   setModalOpen(true);
                   setActionMenuTable(null);
                 }}
-                className="min-h-[44px] rounded-lg border border-[var(--color-border)] bg-white/50 text-sm font-semibold text-[var(--color-text)] hover:bg-white transition-all cursor-pointer"
+                className="min-h-[44px] rounded-xl bg-[var(--color-primary)] text-sm font-semibold text-[var(--color-on-primary)] transition-all cursor-pointer hover:opacity-90"
               >
-                Ubah Detail Nama
+                Ubah Detail / Bentuk
               </button>
               <button
                 type="button"
@@ -549,14 +761,14 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
                   toggleActive(actionMenuTable);
                   setActionMenuTable(null);
                 }}
-                className="min-h-[44px] rounded-lg border border-[var(--color-border)] bg-white/50 text-sm font-semibold text-[var(--color-text)] hover:bg-white transition-all cursor-pointer"
+                className="min-h-[44px] rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface)] transition-all cursor-pointer"
               >
                 {actionMenuTable.isActive ? "Nonaktifkan" : "Aktifkan"}
               </button>
               <button
                 type="button"
                 onClick={() => setActionMenuTable(null)}
-                className="min-h-[44px] rounded-lg border border-dashed border-[var(--color-border)] text-sm font-medium text-[var(--color-text-secondary)] mt-2 cursor-pointer"
+                className="min-h-[44px] rounded-xl border border-dashed border-[var(--color-border)] text-sm font-medium text-[var(--color-text-secondary)] mt-2 cursor-pointer hover:bg-[var(--color-bg)] transition-colors"
               >
                 Batal
               </button>
@@ -570,8 +782,7 @@ export function MejaManager({ outlets, tables }: { outlets: OutletOption[]; tabl
           outlets={outlets}
           table={editing}
           defaultPos={defaultPos}
-          maxCols={gridCols}
-          maxRows={gridRows}
+          floorOptions={floors}
           onClose={() => setModalOpen(false)}
           onSaved={showToast}
         />

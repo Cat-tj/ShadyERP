@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
 import QRCode from "qrcode";
 import { formatRupiah } from "@/lib/format";
 import { buildDynamicQris } from "@/lib/qris-dynamic";
@@ -9,6 +10,7 @@ import { createSaleAction, type CreateSalePayload } from "@/app/(app)/kasir/acti
 import { queueSale } from "@/lib/offline-queue";
 import { MemberPicker, type MemberOption } from "@/components/kasir/member-picker";
 import { XIcon } from "@/components/ui/icons";
+import type { OrderType } from "@prisma/client";
 
 const QUICK_CASH = [20000, 50000, 100000];
 const STATIC_QRIS_STORAGE_KEY = "altora-static-qris-placeholder";
@@ -21,6 +23,29 @@ const PAYMENT_METHODS: { value: CreateSalePayload["paymentMethod"]; label: strin
   { value: "DEPOSIT", label: "Saldo" },
 ];
 
+const ORDER_MODE_OPTIONS: { value: "DINE_IN" | "TAKEAWAY" | "DELIVERY"; label: string }[] = [
+  { value: "DINE_IN", label: "Dine-in" },
+  { value: "TAKEAWAY", label: "Takeaway" },
+  { value: "DELIVERY", label: "Delivery" },
+];
+
+const DELIVERY_CHANNELS: {
+  value: OrderType;
+  label: string;
+  logoSrc: string;
+  subtitle: string;
+  color: string;
+  bg: string;
+  textColor?: string;
+}[] = [
+  { value: "COURIER", label: "Kurir Toko", logoSrc: "/delivery-logos/truck.png", subtitle: "Kurir internal", color: "#64748b", bg: "#f8fafc" },
+  { value: "GOFOOD", label: "Gojek", logoSrc: "/delivery-logos/gojek.png", subtitle: "GoFood", color: "#00AA13", bg: "#ecfdf3" },
+  { value: "GRABFOOD", label: "Grab", logoSrc: "/delivery-logos/grab.png", subtitle: "GrabFood", color: "#00B14F", bg: "#ecfdf5" },
+  { value: "SHOPEEFOOD", label: "Shopee Food", logoSrc: "/delivery-logos/shopee-food.png", subtitle: "Shopee Food", color: "#EE4D2D", bg: "#fff7ed" },
+  { value: "MAXIM", label: "Maxim", logoSrc: "/delivery-logos/maxim.png", subtitle: "Maxim", color: "#F6C600", bg: "#fffbeb", textColor: "#181818" },
+  { value: "DELIVERY_OTHER", label: "Lainnya", logoSrc: "/delivery-logos/truck.png", subtitle: "Channel lain", color: "#334155", bg: "#f8fafc" },
+];
+
 export function PaymentSheet({
   total,
   items,
@@ -28,6 +53,7 @@ export function PaymentSheet({
   staticQrisPayload,
   onClose,
   onSuccess,
+  variant = "modal",
 }: {
   total: number;
   subtotal: number;
@@ -37,9 +63,12 @@ export function PaymentSheet({
   staticQrisPayload: string | null;
   onClose: () => void;
   onSuccess: () => void;
+  variant?: "modal" | "panel";
 }) {
   const router = useRouter();
   const [method, setMethod] = useState<CreateSalePayload["paymentMethod"]>("CASH");
+  const [orderMode, setOrderMode] = useState<"DINE_IN" | "TAKEAWAY" | "DELIVERY">("DINE_IN");
+  const [deliveryChannel, setDeliveryChannel] = useState<OrderType>("GOFOOD");
   const [amountInput, setAmountInput] = useState("");
   const [member, setMember] = useState<MemberOption | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -106,10 +135,12 @@ export function PaymentSheet({
   function handleSubmit() {
     setError(null);
     startTransition(async () => {
+      const orderType: OrderType = orderMode === "DELIVERY" ? deliveryChannel : orderMode;
       const payload: CreateSalePayload = {
         items,
         discountAmount,
         paymentMethod: method,
+        orderType,
         amountPaid,
         memberId: member?.id ?? null,
       };
@@ -164,15 +195,20 @@ export function PaymentSheet({
     );
   }
 
-  return (
-    <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/40 sm:items-center sm:justify-center">
-      <div className="max-h-[90vh] w-full overflow-y-auto rounded-t-2xl bg-[var(--color-bg)] p-5 sm:max-w-md sm:rounded-2xl">
-        <div className="mb-4 flex items-center justify-between">
+  const content = (
+      <div
+        className={
+          variant === "panel"
+            ? "w-full bg-transparent"
+            : "max-h-[90vh] w-full overflow-y-auto bg-[var(--color-bg)] border border-[var(--color-border)] shadow-2xl rounded-t-3xl p-6 sm:max-w-md sm:rounded-3xl"
+        }
+      >
+        <div className={`mb-4 flex items-center justify-between ${variant === "panel" ? "hidden" : ""}`}>
           <h2 className="text-lg font-bold text-[var(--color-text)]">Pembayaran</h2>
           <button
             onClick={onClose}
             aria-label="Tutup"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)] transition-colors cursor-pointer"
           >
             <XIcon aria-hidden className="h-5 w-5" />
           </button>
@@ -181,6 +217,61 @@ export function PaymentSheet({
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-center">
           <p className="text-sm text-[var(--color-text-secondary)]">Total belanja</p>
           <p className="tabular-nums text-3xl font-bold text-[var(--color-text)]">{formatRupiah(total)}</p>
+        </div>
+
+        <div className="mt-4">
+          <p className="mb-1.5 text-sm font-medium text-[var(--color-text)]">Jenis pesanan</p>
+          <div className="grid grid-cols-3 gap-2">
+            {ORDER_MODE_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                onClick={() => setOrderMode(option.value)}
+                className={`min-h-[48px] rounded-lg border text-xs font-semibold ${
+                  orderMode === option.value
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                    : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]"
+                }`}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+
+          {orderMode === "DELIVERY" && (
+            <div className="mt-3">
+              <p className="mb-2 text-xs font-bold tracking-normal text-[var(--color-text-secondary)]">
+                Channel Delivery
+              </p>
+              <div className="grid grid-cols-2 gap-2">
+                {DELIVERY_CHANNELS.map((channel) => {
+                  const active = deliveryChannel === channel.value;
+                  return (
+                    <button
+                      key={channel.value}
+                      type="button"
+                      onClick={() => setDeliveryChannel(channel.value)}
+                      className={`flex min-h-[64px] items-center gap-3 rounded-xl border px-3 text-left transition-all active:scale-[0.98] ${
+                        active
+                          ? "border-[var(--color-primary)] bg-[var(--color-surface)] shadow-sm"
+                          : "border-[var(--color-border)] bg-[var(--color-bg)] hover:bg-[var(--color-surface)]"
+                      }`}
+                    >
+                      <DeliveryLogo channel={channel} active={active} />
+                      <span className="min-w-0">
+                        <span className="block truncate text-xs font-bold text-[var(--color-text)]">
+                          {channel.label}
+                        </span>
+                        <span className="block truncate text-[11px] text-[var(--color-text-secondary)]">
+                          {channel.subtitle}
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         <div className="mt-4">
@@ -338,7 +429,7 @@ export function PaymentSheet({
         <button
           onClick={handleSubmit}
           disabled={isPending || isCashInsufficient || isDepositInsufficient || isQrisUnavailable}
-          className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-40"
+          className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-40 cursor-pointer"
         >
           {isPending && (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)]" />
@@ -346,6 +437,43 @@ export function PaymentSheet({
           {isPending ? "Menyimpan..." : `Selesaikan — ${formatRupiah(total)}`}
         </button>
       </div>
+  );
+
+  if (variant === "panel") return content;
+
+  return (
+    <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/50 backdrop-blur-sm sm:items-center sm:justify-center">
+      {content}
     </div>
+  );
+}
+
+function DeliveryLogo({
+  channel,
+  active,
+}: {
+  channel: (typeof DELIVERY_CHANNELS)[number];
+  active: boolean;
+}) {
+  const hasSolidBrandBackground =
+    channel.value === "GOFOOD" || channel.value === "SHOPEEFOOD" || channel.value === "MAXIM";
+
+  return (
+    <span
+      className="flex h-10 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border shadow-sm"
+      style={{
+        borderColor: active ? channel.color : `${channel.color}55`,
+        backgroundColor: hasSolidBrandBackground ? channel.bg : "var(--color-surface)",
+      }}
+      aria-hidden
+    >
+      <Image
+        src={channel.logoSrc}
+        alt=""
+        width={90}
+        height={40}
+        className="h-8 w-14 object-contain"
+      />
+    </span>
   );
 }

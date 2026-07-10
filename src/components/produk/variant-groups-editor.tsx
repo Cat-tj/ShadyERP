@@ -82,11 +82,9 @@ function AddOptionRow({
 }
 
 function OptionItem({
-  groupId,
   option,
   onNotify,
 }: {
-  groupId: string;
   option: VariantOptionRow;
   onNotify: (message: string) => void;
 }) {
@@ -175,11 +173,9 @@ function OptionItem({
 }
 
 function GroupCard({
-  productId,
   group,
   onNotify,
 }: {
-  productId: string;
   group: VariantGroupRow;
   onNotify: (message: string) => void;
 }) {
@@ -278,7 +274,7 @@ function GroupCard({
 
       <div className="flex flex-col gap-1.5">
         {group.options.map((option) => (
-          <OptionItem key={option.id} groupId={group.id} option={option} onNotify={onNotify} />
+          <OptionItem key={option.id} option={option} onNotify={onNotify} />
         ))}
         <AddOptionRow groupId={group.id} onNotify={onNotify} />
       </div>
@@ -325,7 +321,7 @@ export function VariantGroupsEditor({
       <p className="text-sm font-medium text-[var(--color-text)]">Varian & topping</p>
 
       {groups.map((group) => (
-        <GroupCard key={group.id} productId={productId} group={group} onNotify={onNotify} />
+        <GroupCard key={group.id} group={group} onNotify={onNotify} />
       ))}
 
       <div className="flex flex-col gap-2 rounded-lg bg-[var(--color-bg)] p-3">

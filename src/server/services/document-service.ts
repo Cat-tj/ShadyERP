@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import type { Document, DocumentSigner, DocumentAccessLevel } from "@prisma/client";
+import type { Document, DocumentSigner, DocumentAccessLevel, DocumentStatus } from "@prisma/client";
 
 export async function createDocument(
   tenantId: string,
@@ -52,12 +52,12 @@ export async function getDocumentById(tenantId: string, documentId: string) {
   });
 }
 
-export async function getDocuments(tenantId: string, uploadedBy?: string, status?: string) {
+export async function getDocuments(tenantId: string, uploadedBy?: string, status?: DocumentStatus) {
   return prisma.document.findMany({
     where: {
       tenantId,
       ...(uploadedBy && { uploadedBy }),
-      ...(status && { status: status as any }),
+      ...(status && { status }),
     },
     include: {
       uploader: { select: { id: true, name: true } },
@@ -101,14 +101,14 @@ export async function getDocumentsAccessibleByUser(tenantId: string, userId: str
 export async function updateDocumentStatus(
   tenantId: string,
   documentId: string,
-  status: string
+  status: DocumentStatus
 ): Promise<Document> {
   const doc = await getDocumentById(tenantId, documentId);
   if (!doc) throw new Error("Document not found");
 
   return prisma.document.update({
     where: { id: documentId },
-    data: { status: status as any },
+    data: { status },
   });
 }
 
@@ -117,7 +117,7 @@ export async function createDocumentVersion(
   documentId: string,
   fileUrl: string,
   createdBy: string
-): Promise<any> {
+) {
   const doc = await getDocumentById(tenantId, documentId);
   if (!doc) throw new Error("Document not found");
 

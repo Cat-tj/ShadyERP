@@ -58,11 +58,30 @@
   --radius-2xl: 1.5rem;
 }
 
+html {
+  min-height: 100%;
+  background: var(--color-bg-secondary);
+}
+
 body {
+  min-height: 100dvh;
   background: var(--color-bg);
   background-image: linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-secondary) 100%);
+  background-attachment: fixed;
   color: var(--color-text);
   font-family: var(--font-sans), system-ui, sans-serif;
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  content: "";
+  background:
+    radial-gradient(900px 540px at 8% -12%, rgba(37, 99, 235, 0.08), transparent 58%),
+    radial-gradient(840px 520px at 100% 0%, rgba(234, 88, 12, 0.07), transparent 56%),
+    linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-secondary) 100%);
 }
 
 .tabular-nums {

@@ -7,6 +7,7 @@ import type { TableOrderStatus } from "@prisma/client";
 import { updateOrderStatusAction } from "@/app/(app)/pesanan-meja/actions";
 import { useToast, Toast } from "@/components/toast";
 import { LowStockAlert } from "@/components/inventory/low-stock-alert";
+import { TableVisual } from "@/components/pengaturan/meja-manager";
 
 export type KitchenItemRow = {
   id: string;
@@ -53,6 +54,14 @@ export type TableItem = {
   capacity: number;
 };
 
+type LowStockItem = {
+  productId: string;
+  productName: string;
+  currentStock: number;
+  reorderPoint: number;
+  deficit: number;
+};
+
 export function KitchenDisplay({
   orders,
   activeStaff = [],
@@ -62,16 +71,14 @@ export function KitchenDisplay({
   orders: KitchenOrderRow[];
   activeStaff?: ActiveStaffRow[];
   tables?: TableItem[];
-  lowStockItems?: any[];
+  lowStockItems?: LowStockItem[];
 }) {
   const router = useRouter();
   const { toastMessage, showToast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [now, setNow] = useState(() => Date.now());
-  const [viewMode, setViewMode] = useState<"list" | "layout">("list");
   const [activeFloor, setActiveFloor] = useState(1);
-  const [gridCols, setGridCols] = useState(() => Math.max(6, ...tables.map((t) => t.posX)));
-  const [gridRows, setGridRows] = useState(() => Math.max(6, ...tables.map((t) => t.posY)));
+  const [floorCount, setFloorCount] = useState(() => Math.max(1, ...tables.map((t) => t.floor)));
 
   useEffect(() => {
     const refreshInterval = setInterval(() => router.refresh(), REFRESH_INTERVAL_MS);
@@ -101,13 +108,20 @@ export function KitchenDisplay({
     return acc;
   }, {});
 
-  const rows = Array.from({ length: gridRows }, (_, i) => i + 1);
-  const cols = Array.from({ length: gridCols }, (_, i) => i + 1);
+  const floors = Array.from({ length: floorCount }, (_, i) => i + 1);
+  const pendingCount = orders.filter((order) => order.status === "PENDING").length;
+  const cookingCount = orders.filter((order) => order.status === "ACCEPTED").length;
+  const readyCount = orders.filter((order) => order.status === "READY").length;
+  const occupiedCount = tables.filter((table) =>
+    orders.some(
+      (order) =>
+        order.tableName.toLowerCase() === table.name.toLowerCase() &&
+        order.status !== "DONE" &&
+        order.status !== "CANCELLED"
+    )
+  ).length;
 
-  function getTableAt(x: number, y: number) {
-    const table = tables.find((t) => t.posX === x && t.posY === y && t.floor === activeFloor);
-    if (!table) return null;
-
+  function resolveTableStatus(table: TableItem) {
     const order = orders.find(
       (o) =>
         o.tableName.toLowerCase() === table.name.toLowerCase() &&
@@ -115,39 +129,57 @@ export function KitchenDisplay({
         o.status !== "CANCELLED"
     );
 
-    let status: "EMPTY" | "ORDERED" | "EATING" = "EMPTY";
+    let status: "EMPTY" | "ORDERED" | "EATING" | "READY" = "EMPTY";
     if (order) {
       if (order.status === "PENDING") {
         status = "ORDERED";
+      } else if (order.status === "READY") {
+        status = "READY";
       } else {
         status = "EATING";
       }
     }
 
-    return { table, order, status };
+    return { order, status };
   }
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-[var(--color-border)] pb-4">
+    <div className="mx-auto flex min-h-[calc(100dvh-3rem)] max-w-[1720px] flex-col gap-5 rounded-[28px] border border-white/70 bg-white/45 p-4 shadow-[0_24px_70px_-42px_rgba(10,31,68,0.45)] sm:p-5">
+      <div className="flex flex-col justify-between gap-4 rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]/90 p-4 shadow-sm md:flex-row md:items-center">
         <div className="flex items-start gap-4">
           <Link
             href="/pilih-aplikasi"
-            className="flex min-h-[36px] items-center justify-center rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs font-semibold text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] transition-all cursor-pointer whitespace-nowrap mt-1"
+            className="mt-1 flex min-h-[38px] items-center justify-center whitespace-nowrap rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-xs font-semibold text-[var(--color-text-secondary)] transition-all hover:bg-white"
           >
             ← Keluar Fullscreen
           </Link>
           <div>
             <h1 className="font-display text-2xl font-semibold text-[var(--color-text)]">Command Center</h1>
-            <p className="text-sm text-[var(--color-text-secondary)]">
+            <p className="max-w-2xl text-sm leading-relaxed text-[var(--color-text-secondary)]">
               Pusat kendali operasional live: antrean pesanan, peta meja, staf hadir, dan peringatan stok bahan baku.
             </p>
           </div>
         </div>
 
         {/* Panel Karyawan Aktif */}
-        {activeStaff.length > 0 && (
-          <div className="flex flex-wrap gap-2.5 p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]/40 max-w-xl">
+        <div className="flex flex-wrap gap-2.5">
+          {[
+            { label: "Pesanan", value: orders.length },
+            { label: "Masak", value: cookingCount },
+            { label: "Siap", value: readyCount },
+            { label: "Meja isi", value: occupiedCount },
+          ].map(({ label, value }) => (
+            <div key={label} className="min-w-20 rounded-2xl border border-[var(--color-border)] bg-[var(--color-bg)] px-3 py-2 text-center">
+              <p className="tabular-nums text-lg font-bold text-[var(--color-text)]">{value}</p>
+              <p className="text-[10px] font-semibold text-[var(--color-text-secondary)]">{label}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {activeStaff.length > 0 && (
+        <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/75 p-3">
+          <div className="flex flex-wrap gap-2.5">
             <span className="text-[10px] font-bold text-[var(--color-text-secondary)] uppercase tracking-wider w-full mb-0.5">
               Staf Hadir:
             </span>
@@ -158,12 +190,12 @@ export function KitchenDisplay({
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Low Stock Alert */}
       {lowStockItems.length > 0 && (
-        <div className="w-full">
+        <div className="w-full rounded-2xl border border-red-200 bg-red-50/70 p-3">
           <p className="mb-1.5 text-xs font-bold text-red-500 uppercase tracking-wider">
             Peringatan Stok Kritis (Bahan Baku):
           </p>
@@ -175,13 +207,19 @@ export function KitchenDisplay({
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
         {/* Left: Daftar Antrean (Queue List) */}
-        <div className="lg:col-span-5 flex flex-col gap-3">
-          <h2 className="text-base font-bold text-[var(--color-text)]">Daftar Antrean Masak</h2>
+        <section className="lg:col-span-5 flex flex-col gap-3 rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]/82 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-bold text-[var(--color-text)]">Daftar Antrean Masak</h2>
+            <span className="rounded-full bg-[var(--color-primary)]/10 px-3 py-1 text-xs font-bold text-[var(--color-primary)]">
+              {pendingCount} baru
+            </span>
+          </div>
           
           <div className="max-h-[78vh] overflow-y-auto pr-1 flex flex-col gap-3">
             {orders.length === 0 ? (
-              <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-16 text-center">
-                <p className="text-sm text-[var(--color-text-secondary)]">Tidak ada pesanan aktif.</p>
+              <div className="rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg)]/70 px-6 py-16 text-center">
+                <p className="text-sm font-semibold text-[var(--color-text)]">Tidak ada pesanan aktif</p>
+                <p className="mt-1 text-xs text-[var(--color-text-secondary)]">Pesanan QR meja akan muncul di sini begitu masuk.</p>
               </div>
             ) : (
               orders.map((order) => {
@@ -191,7 +229,7 @@ export function KitchenDisplay({
                 return (
                   <div
                     key={order.id}
-                    className={`flex flex-col gap-3 rounded-xl border-2 bg-[var(--color-surface)] p-4 ${
+                    className={`flex flex-col gap-3 rounded-2xl border-2 bg-[var(--color-surface)] p-4 shadow-sm ${
                       isUrgent
                         ? "border-[var(--color-danger)] animate-pulse"
                         : isWarn
@@ -266,16 +304,21 @@ export function KitchenDisplay({
               })
             )}
           </div>
-        </div>
+        </section>
 
         {/* Right: Peta Layout Meja */}
-        <div className="lg:col-span-7 flex flex-col gap-3">
-          <h2 className="text-base font-bold text-[var(--color-text)]">Peta Layout Meja</h2>
+        <section className="lg:col-span-7 flex flex-col gap-3 rounded-3xl border border-[var(--color-border)] bg-[var(--color-surface)]/82 p-4 shadow-sm">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-base font-bold text-[var(--color-text)]">Peta Layout Meja</h2>
+            <span className="rounded-full bg-[var(--color-bg)] px-3 py-1 text-xs font-bold text-[var(--color-text-secondary)]">
+              {tables.length} meja
+            </span>
+          </div>
 
           <div className="flex justify-between items-center gap-4 flex-wrap border-b border-[var(--color-border)] pb-2">
             {/* Floor selector */}
-            <div className="flex gap-1">
-              {[1, 2, 3].map((f) => (
+            <div className="flex flex-wrap gap-1">
+              {floors.map((f) => (
                 <button
                   key={f}
                   type="button"
@@ -289,136 +332,92 @@ export function KitchenDisplay({
                   Lantai {f}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => {
+                  setFloorCount((count) => {
+                    const next = count + 1;
+                    setActiveFloor(next);
+                    return next;
+                  });
+                }}
+                className="rounded-lg border border-dashed border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1.5 text-[10px] font-bold text-[var(--color-text-secondary)] transition-all hover:border-[var(--color-primary)] hover:text-[var(--color-primary)]"
+              >
+                + Lantai
+              </button>
             </div>
 
-            {/* Grid Size Controllers */}
-            <div className="flex gap-3 items-center flex-wrap text-[10px] bg-[var(--color-surface)] p-2 rounded-lg border border-[var(--color-border)]">
-              <span className="font-bold text-[var(--color-text-secondary)]">Grid:</span>
-              <div className="flex items-center gap-1">
-                <span>X:</span>
-                <button
-                  type="button"
-                  disabled={gridCols <= 4}
-                  onClick={() => setGridCols((c) => Math.max(4, c - 1))}
-                  className="w-5.5 h-5.5 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  -
-                </button>
-                <span className="font-bold w-4 text-center text-xs">{gridCols}</span>
-                <button
-                  type="button"
-                  disabled={gridCols >= 12}
-                  onClick={() => setGridCols((c) => Math.min(12, c + 1))}
-                  className="w-5.5 h-5.5 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  +
-                </button>
-              </div>
-              <div className="flex items-center gap-1">
-                <span>Y:</span>
-                <button
-                  type="button"
-                  disabled={gridRows <= 4}
-                  onClick={() => setGridRows((r) => Math.max(4, r - 1))}
-                  className="w-5.5 h-5.5 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  -
-                </button>
-                <span className="font-bold w-4 text-center text-xs">{gridRows}</span>
-                <button
-                  type="button"
-                  disabled={gridRows >= 12}
-                  onClick={() => setGridRows((r) => Math.min(12, r + 1))}
-                  className="w-5.5 h-5.5 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  +
-                </button>
-              </div>
-            </div>
           </div>
 
           <div className="flex flex-wrap gap-4 text-[10px] font-semibold text-[var(--color-text-secondary)] bg-[var(--color-surface)] p-2 px-3 rounded-lg border border-[var(--color-border)]">
             <div className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded bg-[var(--color-bg)] border border-[var(--color-border)] inline-block" />
-              <span>Kosong</span>
+              <span className="h-2.5 w-2.5 rounded-full bg-blue-500 inline-block" />
+              <span>Kosong / Tersedia</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded bg-amber-500/20 border border-amber-500 inline-block" />
-              <span>Baru Pesan</span>
+              <span className="h-2.5 w-2.5 rounded-full bg-amber-500 inline-block" />
+              <span>Baru Pesan (Belum Masak)</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="h-3 w-3 rounded bg-indigo-500/20 border border-indigo-500 inline-block" />
-              <span>Sedang Makan</span>
+              <span className="h-2.5 w-2.5 rounded-full bg-zinc-400 inline-block" />
+              <span>Sedang Makan / Dimasak</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="h-2.5 w-2.5 rounded-full bg-emerald-500 inline-block" />
+              <span>Tagihan / Siap Sajikan</span>
             </div>
           </div>
 
           <div
-            className="grid gap-2 bg-[var(--color-surface)]/20 p-4 rounded-2xl border border-[var(--color-border)]"
-            style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
+            className="relative w-full h-[500px] rounded-3xl border border-[var(--color-border)] bg-[var(--color-bg)]/70 p-4 shadow-inner overflow-hidden"
+            style={{
+              backgroundImage: "radial-gradient(var(--color-border) 1px, transparent 1px)",
+              backgroundSize: "24px 24px",
+            }}
           >
-            {rows.flatMap((y) =>
-              cols.map((x) => {
-                const cell = getTableAt(x, y);
-                if (!cell) {
-                  return (
-                    <div
-                      key={`empty-${x}-${y}`}
-                      className="aspect-square rounded-xl border border-dashed border-[var(--color-border)]/20 bg-transparent flex items-center justify-center text-[var(--color-text-secondary)]/10 text-[8px] select-none"
-                    >
-                      {x},{y}
-                    </div>
-                  );
-                }
-
-                const { table, order, status } = cell;
-                let bgClass = "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)]";
-                let badgeLabel = "Kosong";
-                let badgeClass = "bg-[var(--color-bg)] text-[var(--color-text-secondary)] border-[var(--color-border)]";
-
-                if (status === "ORDERED") {
-                  bgClass = "bg-amber-500/5 border-amber-500/80 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10";
-                  badgeLabel = "Pesan";
-                  badgeClass = "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20";
-                } else if (status === "EATING") {
-                  bgClass = "bg-indigo-500/5 border-indigo-500/80 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/10";
-                  badgeLabel = "Makan";
-                  badgeClass = "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20";
-                }
-
-                let shapeClass = "rounded-xl aspect-square";
-                if (table.shape === "ROUND") {
-                  shapeClass = "rounded-full aspect-square";
-                } else if (table.shape === "RECTANGLE") {
-                  shapeClass = "rounded-lg w-[95%] h-[75%] aspect-[1.6/1]";
-                }
+            {tables
+              .filter((t) => t.floor === activeFloor)
+              .map((table) => {
+                const { order, status } = resolveTableStatus(table);
+                const leftPercent = table.posX < 15 ? table.posX * 8 : table.posX;
+                const topPercent = table.posY < 15 ? table.posY * 8 : table.posY;
 
                 return (
-                  <div key={table.id} className="aspect-square flex items-center justify-center">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        if (order) {
-                          const itemsStr = order.items
-                            .map((item) => `${item.qty}x ${item.productName}`)
-                            .join(", ");
-                          showToast(`${table.name}: ${itemsStr}`);
-                        } else {
-                          showToast(`${table.name} sedang kosong.`);
-                        }
-                      }}
-                      className={`border-2 flex flex-col items-center justify-center p-1.5 transition-all text-center ${shapeClass} ${bgClass} cursor-pointer`}
-                    >
-                      <span className="text-[10px] font-bold truncate max-w-full">{table.name}</span>
-                      <span className={`text-[6px] font-bold px-0.5 rounded border mt-0.5 max-w-full truncate ${badgeClass}`}>
-                        {badgeLabel} · {table.capacity}p
-                      </span>
-                    </button>
-                  </div>
+                  <button
+                    key={table.id}
+                    type="button"
+                    onClick={() => {
+                      if (order) {
+                        const itemsStr = order.items
+                          .map((item) => `${item.qty}x ${item.productName}`)
+                          .join(", ");
+                        showToast(`${table.name}: ${itemsStr}`);
+                      } else {
+                        showToast(`${table.name} sedang kosong.`);
+                      }
+                    }}
+                    style={{
+                      position: "absolute",
+                      left: `${leftPercent}%`,
+                      top: `${topPercent}%`,
+                      transform: "translate(-50%, -50%)",
+                      touchAction: "none",
+                    }}
+                    className="cursor-pointer outline-none hover:scale-105 transition-transform duration-150"
+                  >
+                    <TableVisual
+                      name={table.name}
+                      shape={table.shape}
+                      capacity={table.capacity}
+                      isActive={table.isActive}
+                      isHovered={false}
+                      status={status}
+                    />
+                  </button>
                 );
-              })
-            )}
+              })}
           </div>
-        </div>
+        </section>
       </div>
 
       <Toast message={toastMessage} />

@@ -10,7 +10,6 @@ import {
   TrendingDownIcon,
   TrendingUpIcon,
   BellIcon,
-  FlameIcon,
   CalendarIcon,
   BriefcaseIcon,
   WalletIcon,
@@ -41,19 +40,25 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/pesanan-meja", label: "Pesanan Meja", icon: BellIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "pesanan-digital", hub: "kasir" },
   { href: "/command-center", label: "Command Center", icon: GridIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "pesanan-digital", hub: "command" },
   { href: "/booking", label: "Booking", icon: CalendarIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "booking", hub: "kasir" },
-  { href: "/inventory", label: "Inventori", icon: PackageIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "kasir", hub: "kasir" },
-  { href: "/supplier", label: "Supplier", icon: UsersIcon, roles: ["OWNER", "MANAGER"], module: "kasir", hub: "kasir" },
-  { href: "/purchase-order", label: "Pembelian", icon: ReceiptIcon, roles: ["OWNER", "MANAGER"], module: "kasir", hub: "kasir" },
-  { href: "/stock-receipt", label: "Barang Masuk", icon: PackageIcon, roles: ["OWNER", "MANAGER"], module: "kasir", hub: "kasir" },
-  { href: "/stock-count", label: "Opname", icon: SettingsIcon, roles: ["OWNER", "MANAGER"], module: "kasir", hub: "kasir" },
-  { href: "/maintenance", label: "Maintenance", icon: SettingsIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "kasir", hub: "kasir" },
   { href: "/member", label: "Member", icon: UsersIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "member", hub: "kasir" },
   { href: "/kpi/analitik", label: "Analitik", icon: BarChartIcon, roles: ["OWNER", "MANAGER"], module: "kasir", hub: "kasir" },
 
-  // ===== Tim =====
-  { href: "/tim", label: "Beranda", icon: HomeIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "hr", hub: "tim" },
-  { href: "/absensi", label: "Absensi", icon: MapPinIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "hr", hub: "tim" },
-  { href: "/tim/analitik", label: "Analitik Tim", icon: BarChartIcon, roles: ["OWNER", "MANAGER"], module: "hr", hub: "tim" },
+  // ===== Inventory =====
+  { href: "/inventory", label: "Stok", icon: PackageIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "inventory", hub: "inventory" },
+  { href: "/supplier", label: "Supplier", icon: UsersIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "inventory", hub: "inventory" },
+  { href: "/purchase-order", label: "Beli", icon: ReceiptIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "inventory", hub: "inventory" },
+  { href: "/stock-receipt", label: "Masuk", icon: PackageIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "inventory", hub: "inventory" },
+  { href: "/stock-count", label: "Opname", icon: SettingsIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "inventory", hub: "inventory" },
+  { href: "/maintenance", label: "Maintenance", icon: SettingsIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "inventory", hub: "inventory" },
+
+  // ===== Laundry =====
+  { href: "/laundry", label: "Order Laundry", icon: ReceiptIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "laundry", hub: "laundry" },
+
+  // ===== Kepegawaian =====
+  { href: "/hris", label: "Database Staf", icon: UsersIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "hr", hub: "hris" },
+  { href: "/tim", label: "Jadwal Kerja", icon: HomeIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "hr", hub: "hris" },
+  { href: "/absensi", label: "Absensi Masuk", icon: MapPinIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "hr", hub: "hris" },
+  { href: "/tim/analitik", label: "Laporan Kehadiran", icon: BarChartIcon, roles: ["OWNER", "MANAGER"], module: "hr", hub: "hris" },
 
   // ===== Finance =====
   { href: "/finance", label: "Ringkasan", icon: HomeIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "keuangan", hub: "finance" },
@@ -61,6 +66,8 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/finance/pengeluaran", label: "Pengeluaran", icon: TrendingDownIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "keuangan", hub: "finance" },
   { href: "/finance/kas", label: "Kas Outlet", icon: WalletIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "keuangan", hub: "finance" },
   { href: "/finance/hutang-supplier", label: "Hutang Supplier", icon: ReceiptIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
+  { href: "/crm", label: "Sales CRM", icon: BriefcaseIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
+  { href: "/finance/jurnal", label: "Jurnal Buku Besar", icon: WalletIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
   { href: "/finance/laba-rugi", label: "Laba Rugi", icon: TrendingUpIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
   { href: "/finance/metode-bayar", label: "Metode Bayar", icon: BuildingIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
 

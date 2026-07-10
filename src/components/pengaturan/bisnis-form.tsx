@@ -1,38 +1,76 @@
 "use client";
 
 import { useEffect, useRef, useState, useTransition } from "react";
-import { updateTenantSettingAction } from "@/app/(app)/pengaturan/bisnis/actions";
+import { updateTenantSettingAction, exportTenantBackupAction } from "@/app/(app)/pengaturan/bisnis/actions";
 import { useToast, Toast } from "@/components/toast";
 import { XIcon } from "@/components/ui/icons";
+import { BUSINESS_MODES, type BusinessModeKey } from "@/lib/business-modes";
 
 export function BisnisForm({
+  businessType,
   taxPercent,
   pointsPerAmount,
   receiptFooter,
   staticQrisPayload,
+  accountingMode = "SIMPLE",
 }: {
+  businessType: BusinessModeKey;
   taxPercent: number;
   pointsPerAmount: number;
   receiptFooter: string | null;
   staticQrisPayload: string | null;
+  accountingMode?: "SIMPLE" | "ADVANCED";
 }) {
   const { toastMessage, showToast } = useToast();
+  const [mode, setMode] = useState<BusinessModeKey>(businessType);
   const [tax, setTax] = useState(String(taxPercent));
   const [points, setPoints] = useState(String(pointsPerAmount));
   const [footer, setFooter] = useState(receiptFooter ?? "");
   const [qrisPayload, setQrisPayload] = useState(staticQrisPayload ?? "");
+  const [accMode, setAccMode] = useState<"SIMPLE" | "ADVANCED">(accountingMode);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [exporting, setExporting] = useState(false);
+
+  function handleExportBackup() {
+    setExporting(true);
+    startTransition(async () => {
+      const result = await exportTenantBackupAction();
+      setExporting(false);
+      if (result.error) {
+        showToast(result.error);
+        return;
+      }
+      if (!result.data) {
+        showToast("Tidak ada data untuk dibackup.");
+        return;
+      }
+
+      const blob = new Blob([JSON.stringify(result.data, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      const filename = `altora_backup_${result.data.tenant?.slug || "data"}_${new Date().toISOString().slice(0, 10)}.json`;
+      link.setAttribute("href", url);
+      link.setAttribute("download", filename);
+      link.style.visibility = "hidden";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      showToast("Data backup berhasil diunduh.");
+    });
+  }
 
   function handleSubmit() {
     setError(null);
     startTransition(async () => {
       const result = await updateTenantSettingAction({
+        businessType: mode,
         taxPercent: Number(tax) || 0,
         pointsPerAmount: Number(points) || 10000,
         receiptFooter: footer.trim() || null,
         staticQrisPayload: qrisPayload.trim() || null,
+        accountingMode: accMode,
       });
       if (result.error) {
         setError(result.error);
@@ -51,6 +89,32 @@ export function BisnisForm({
       )}
 
       <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-1.5">
+          <label className="text-sm font-medium text-[var(--color-text)]">Mode Altora</label>
+          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
+            {BUSINESS_MODES.map((option) => (
+              <button
+                key={option.key}
+                type="button"
+                onClick={() => setMode(option.key)}
+                className={`rounded-xl border p-3 text-left transition-all ${
+                  mode === option.key
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]"
+                    : "border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] hover:bg-[var(--color-surface)]"
+                }`}
+              >
+                <span className="block text-sm font-bold">{option.shortLabel}</span>
+                <span className="mt-1 line-clamp-2 block text-[11px] text-[var(--color-text-secondary)]">
+                  {option.description}
+                </span>
+              </button>
+            ))}
+          </div>
+          <p className="text-xs text-[var(--color-text-secondary)]">
+            Mode mengatur bahasa produk dan rekomendasi modul. Modul aktif dikelola oleh Superadmin Altora.
+          </p>
+        </div>
+
         <div className="flex flex-col gap-1.5">
           <label className="text-sm font-medium text-[var(--color-text)]">Pajak transaksi (%)</label>
           <input
@@ -122,6 +186,61 @@ export function BisnisForm({
               : "Belum ada QRIS tersimpan."}
           </p>
         </div>
+
+        {/* Mode Akuntansi Switcher */}
+        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-4 mt-2">
+          <p className="text-sm font-bold text-[var(--color-text)]">Mode Pencatatan Keuangan</p>
+          <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+            Pilih bagaimana aktivitas keuangan bisnis Anda dicatat dan disajikan.
+          </p>
+
+          <div className="grid gap-3 sm:grid-cols-2 mt-3">
+            <button
+              type="button"
+              onClick={() => setAccMode("SIMPLE")}
+              className={`rounded-xl border p-4 text-left transition-all ${
+                accMode === "SIMPLE"
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]"
+                  : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+              }`}
+            >
+              <span className="block text-sm font-bold">Sederhana (Simple)</span>
+              <span className="mt-1 block text-[11px] leading-relaxed text-[var(--color-text-secondary)]">
+                Buku Kas Harian ringkas (Uang Masuk & Uang Keluar). Sangat cocok untuk operasional toko retail & cafe kecil tanpa kerumitan debit-kredit.
+              </span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setAccMode("ADVANCED")}
+              className={`rounded-xl border p-4 text-left transition-all ${
+                accMode === "ADVANCED"
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)]"
+                  : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+              }`}
+            >
+              <span className="block text-sm font-bold">Lanjutan (Advanced ERP)</span>
+              <span className="mt-1 block text-[11px] leading-relaxed text-[var(--color-text-secondary)]">
+                Audit Jurnal Buku Besar (General Ledger). Mengaktifkan pembukuan double-entry akuntansi formal, COA, dan draf otomatis invoice.
+              </span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-4 mt-4">
+        <p className="text-sm font-bold text-[var(--color-text)]">Backup & Ekspor Data</p>
+        <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+          Unduh salinan cadangan seluruh data penting usaha Anda (Profil, Outlet, Produk, Transaksi Penjualan, Member, dsb.) dalam format berkas JSON untuk kebutuhan keamanan atau migrasi data.
+        </p>
+        <button
+          type="button"
+          onClick={handleExportBackup}
+          disabled={exporting}
+          className="mt-3 flex min-h-[44px] items-center justify-center gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xs font-semibold text-[var(--color-text)] hover:bg-[var(--color-bg)] disabled:opacity-60"
+        >
+          {exporting ? "Mengekspor..." : "Unduh Backup JSON"}
+        </button>
       </div>
 
       <button

@@ -5,7 +5,8 @@ import { redirect } from "next/navigation";
 import { requireSession } from "@/server/require-session";
 import { openShift, closeShift, getOpenShift } from "@/server/services/shift-service";
 import { createSale, type CartItemInput } from "@/server/services/sale-service";
-import type { PaymentMethod } from "@prisma/client";
+import { createCashOutTransaction } from "@/server/services/cash-out-service";
+import type { CashOutMethod, OrderType, PaymentMethod } from "@prisma/client";
 
 export type ActionResult = { error?: string; success?: boolean };
 
@@ -60,6 +61,7 @@ export type CreateSalePayload = {
   items: CartItemInput[];
   discountAmount: number;
   paymentMethod: PaymentMethod;
+  orderType?: OrderType;
   amountPaid: number;
   memberId?: string | null;
 };
@@ -84,11 +86,54 @@ export async function createSaleAction(payload: CreateSalePayload): Promise<Crea
       items: payload.items,
       discountAmount: payload.discountAmount,
       paymentMethod: payload.paymentMethod,
+      orderType: payload.orderType ?? "DINE_IN",
       amountPaid: payload.amountPaid,
     });
     revalidatePath("/kasir");
     return { saleId: sale.id };
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal menyimpan transaksi." };
+  }
+}
+
+export type CreateCashOutPayload = {
+  customerName?: string;
+  customerPhone?: string;
+  withdrawAmount: number;
+  adminFee: number;
+  method: CashOutMethod;
+  note?: string;
+};
+
+export type CreateCashOutResult = { error?: string; referenceNumber?: string };
+
+export async function createCashOutAction(
+  payload: CreateCashOutPayload
+): Promise<CreateCashOutResult> {
+  const user = await requireSession();
+  const openShiftRecord = await getOpenShift(user.tenantId, user.id);
+
+  if (!openShiftRecord) {
+    return { error: "Shift belum dibuka. Buka shift dulu sebelum gesek tunai." };
+  }
+
+  try {
+    const transaction = await createCashOutTransaction({
+      tenantId: user.tenantId,
+      outletId: openShiftRecord.outletId,
+      shiftId: openShiftRecord.id,
+      cashierId: user.id,
+      customerName: payload.customerName,
+      customerPhone: payload.customerPhone,
+      withdrawAmount: payload.withdrawAmount,
+      adminFee: payload.adminFee,
+      method: payload.method,
+      note: payload.note,
+    });
+    revalidatePath("/kasir");
+    revalidatePath("/kasir/riwayat");
+    return { referenceNumber: transaction.referenceNumber };
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal menyimpan gesek tunai." };
   }
 }

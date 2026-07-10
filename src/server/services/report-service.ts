@@ -119,6 +119,72 @@ export async function getTopProducts(tenantId: string, outletIds: string[], days
     .slice(0, limit);
 }
 
+export async function getProductSalesPerformance(
+  tenantId: string,
+  outletIds: string[],
+  days: number,
+  limit = 8
+) {
+  const { start, end } = rangeForDays(days);
+
+  const [products, items] = await Promise.all([
+    prisma.product.findMany({
+      where: { tenantId, isActive: true },
+      select: {
+        id: true,
+        name: true,
+        price: true,
+        trackStock: true,
+        category: { select: { name: true } },
+        stocks: {
+          where: { outletId: { in: outletIds } },
+          select: { qty: true },
+        },
+      },
+      orderBy: { name: "asc" },
+    }),
+    prisma.saleItem.findMany({
+      where: {
+        tenantId,
+        sale: { outletId: { in: outletIds }, status: "COMPLETED", createdAt: { gte: start, lt: end } },
+      },
+      select: { productId: true, qty: true, returnedQty: true, subtotal: true },
+    }),
+  ]);
+
+  const salesMap = new Map<string, { qty: number; omzet: number }>();
+  for (const item of items) {
+    const sellableQty = Math.max(0, item.qty - item.returnedQty);
+    if (sellableQty <= 0) continue;
+
+    const netOmzet = item.qty > 0 ? Math.round((item.subtotal / item.qty) * sellableQty) : 0;
+    const entry = salesMap.get(item.productId) ?? { qty: 0, omzet: 0 };
+    entry.qty += sellableQty;
+    entry.omzet += netOmzet;
+    salesMap.set(item.productId, entry);
+  }
+
+  const rows = products.map((product) => {
+    const sales = salesMap.get(product.id) ?? { qty: 0, omzet: 0 };
+    const stockQty = product.stocks.reduce((sum, stock) => sum + stock.qty, 0);
+    return {
+      productId: product.id,
+      productName: product.name,
+      categoryName: product.category?.name ?? "Tanpa kategori",
+      qty: sales.qty,
+      omzet: sales.omzet,
+      stockQty,
+      trackStock: product.trackStock,
+      price: product.price,
+    };
+  });
+
+  return {
+    topSales: [...rows].sort((a, b) => b.qty - a.qty || b.omzet - a.omzet).slice(0, limit),
+    worstSales: [...rows].sort((a, b) => a.qty - b.qty || a.omzet - b.omzet).slice(0, limit),
+  };
+}
+
 export async function getOutletComparison(tenantId: string, outletIds: string[], days: number) {
   const { start, end } = rangeForDays(days);
 

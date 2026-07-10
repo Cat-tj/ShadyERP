@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { openShiftAction, type ActionResult } from "@/app/(app)/kasir/actions";
 
 const initialState: ActionResult = {};
@@ -11,6 +11,26 @@ export function OpenShiftForm({
   outlets: { id: string; name: string }[];
 }) {
   const [state, formAction, isPending] = useActionState(openShiftAction, initialState);
+  const [displayValue, setDisplayValue] = useState("Rp 0");
+  const [rawCash, setRawCash] = useState(0);
+
+  const formatNumber = (val: string) => {
+    const clean = val.replace(/\D/g, "");
+    if (!clean) return "";
+    return new Intl.NumberFormat("id-ID", {
+      style: "currency",
+      currency: "IDR",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
+    }).format(Number(clean));
+  };
+
+  const handleCashChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    const cleanNum = Number(rawValue.replace(/\D/g, ""));
+    setRawCash(cleanNum);
+    setDisplayValue(formatNumber(rawValue));
+  };
 
   return (
     <div className="mx-auto max-w-sm rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
@@ -55,20 +75,20 @@ export function OpenShiftForm({
             )}
 
             <div className="flex flex-col gap-1.5">
-              <label htmlFor="openingCash" className="text-sm font-medium text-[var(--color-text)]">
+              <label htmlFor="displayOpeningCash" className="text-sm font-medium text-[var(--color-text)]">
                 Modal awal
               </label>
               <input
-                id="openingCash"
-                name="openingCash"
-                type="number"
+                id="displayOpeningCash"
+                type="text"
                 inputMode="numeric"
-                min={0}
                 required
-                defaultValue={0}
-                placeholder="0"
+                value={displayValue}
+                onChange={handleCashChange}
+                placeholder="Rp 0"
                 className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base tabular-nums text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
               />
+              <input type="hidden" name="openingCash" value={rawCash} />
             </div>
 
             <button

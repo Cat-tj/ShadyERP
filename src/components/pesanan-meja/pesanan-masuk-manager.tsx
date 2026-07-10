@@ -7,6 +7,7 @@ import { formatRupiah, formatJam } from "@/lib/format";
 import { updateOrderStatusAction, completeOrderPaymentAction } from "@/app/(app)/pesanan-meja/actions";
 import { useToast, Toast } from "@/components/toast";
 import { XIcon } from "@/components/ui/icons";
+import { TableVisual } from "@/components/pengaturan/meja-manager";
 
 export type OrderItemRow = {
   id: string;
@@ -63,9 +64,6 @@ export function PesananMasukManager({
   const [viewMode, setViewMode] = useState<"list" | "layout">("list");
   const [activeFloor, setActiveFloor] = useState(1);
 
-  const [gridCols, setGridCols] = useState(() => Math.max(6, ...tables.map((t) => t.posX)));
-  const [gridRows, setGridRows] = useState(() => Math.max(6, ...tables.map((t) => t.posY)));
-
   useEffect(() => {
     const interval = setInterval(() => router.refresh(), REFRESH_INTERVAL_MS);
     return () => clearInterval(interval);
@@ -83,14 +81,7 @@ export function PesananMasukManager({
     });
   }
 
-  // Grid coordinates
-  const rows = Array.from({ length: gridRows }, (_, i) => i + 1);
-  const cols = Array.from({ length: gridCols }, (_, i) => i + 1);
-
-  function getTableAt(x: number, y: number) {
-    const table = tables.find((t) => t.posX === x && t.posY === y && t.floor === activeFloor);
-    if (!table) return null;
-
+  function resolveTableStatus(table: TableItem) {
     const order = orders.find(
       (o) =>
         o.tableName.toLowerCase() === table.name.toLowerCase() &&
@@ -98,16 +89,18 @@ export function PesananMasukManager({
         o.status !== "CANCELLED"
     );
 
-    let status: "EMPTY" | "ORDERED" | "EATING" = "EMPTY";
+    let status: "EMPTY" | "ORDERED" | "EATING" | "READY" = "EMPTY";
     if (order) {
       if (order.status === "PENDING") {
         status = "ORDERED";
+      } else if (order.status === "READY") {
+        status = "READY";
       } else {
         status = "EATING";
       }
     }
 
-    return { table, order, status };
+    return { order, status };
   }
 
   return (
@@ -166,131 +159,74 @@ export function PesananMasukManager({
               ))}
             </div>
 
-            {/* Grid Size Controllers */}
-            <div className="flex gap-4 items-center flex-wrap text-xs bg-[var(--color-surface)] p-2 px-3 rounded-lg border border-[var(--color-border)]">
-              <span className="font-bold text-[var(--color-text-secondary)]">Area Grid:</span>
-              <div className="flex items-center gap-1.5">
-                <span>Kolom (X):</span>
-                <button
-                  type="button"
-                  disabled={gridCols <= 4}
-                  onClick={() => setGridCols((c) => Math.max(4, c - 1))}
-                  className="w-6 h-6 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  -
-                </button>
-                <span className="font-bold w-4 text-center">{gridCols}</span>
-                <button
-                  type="button"
-                  disabled={gridCols >= 12}
-                  onClick={() => setGridCols((c) => Math.min(12, c + 1))}
-                  className="w-6 h-6 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  +
-                </button>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <span>Baris (Y):</span>
-                <button
-                  type="button"
-                  disabled={gridRows <= 4}
-                  onClick={() => setGridRows((r) => Math.max(4, r - 1))}
-                  className="w-6 h-6 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  -
-                </button>
-                <span className="font-bold w-4 text-center">{gridRows}</span>
-                <button
-                  type="button"
-                  disabled={gridRows >= 12}
-                  onClick={() => setGridRows((r) => Math.min(12, r + 1))}
-                  className="w-6 h-6 rounded border border-[var(--color-border)] hover:bg-[var(--color-bg)] flex items-center justify-center font-bold cursor-pointer"
-                >
-                  +
-                </button>
-              </div>
-            </div>
           </div>
 
           {/* Legend */}
           <div className="flex flex-wrap gap-4 text-xs font-semibold text-[var(--color-text-secondary)] bg-[var(--color-surface)] p-3 rounded-xl border border-[var(--color-border)]">
             <div className="flex items-center gap-1.5">
-              <span className="h-3.5 w-3.5 rounded bg-[var(--color-bg)] border border-[var(--color-border)] inline-block" />
-              <span>Kosong</span>
+              <span className="h-3 w-3 rounded-full bg-blue-500 inline-block" />
+              <span>Kosong / Tersedia</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="h-3.5 w-3.5 rounded bg-amber-500/20 border border-amber-500 inline-block" />
-              <span>Baru Pesan (Belum Makan)</span>
+              <span className="h-3 w-3 rounded-full bg-amber-500 inline-block" />
+              <span>Baru Pesan (Belum Masak)</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="h-3.5 w-3.5 rounded bg-indigo-500/20 border border-indigo-500 inline-block" />
-              <span>Sedang Makan</span>
+              <span className="h-3 w-3 rounded-full bg-zinc-400 inline-block" />
+              <span>Sedang Makan / Dimasak</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="h-3 w-3 rounded-full bg-emerald-500 inline-block" />
+              <span>Tagihan / Siap Sajikan</span>
             </div>
           </div>
 
           <div
-            className="grid gap-2 bg-[var(--color-surface)]/20 p-4 rounded-2xl border border-[var(--color-border)]"
-            style={{ gridTemplateColumns: `repeat(${gridCols}, minmax(0, 1fr))` }}
+            className="relative w-full h-[500px] bg-slate-50 dark:bg-zinc-900/40 border border-[var(--color-border)] rounded-3xl overflow-hidden select-none"
+            style={{
+              backgroundImage: "radial-gradient(var(--color-border) 1px, transparent 1px)",
+              backgroundSize: "24px 24px",
+            }}
           >
-            {rows.flatMap((y) =>
-              cols.map((x) => {
-                const cell = getTableAt(x, y);
-                if (!cell) {
-                  return (
-                    <div
-                      key={`empty-${x}-${y}`}
-                      className="aspect-square rounded-xl border border-dashed border-[var(--color-border)]/20 bg-transparent flex items-center justify-center text-[var(--color-text-secondary)]/10 text-[9px] select-none"
-                    >
-                      {x},{y}
-                    </div>
-                  );
-                }
-
-                const { table, order, status } = cell;
-                let bgClass = "bg-[var(--color-surface)] border-[var(--color-border)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)]";
-                let badgeLabel = "Kosong";
-                let badgeClass = "bg-[var(--color-bg)] text-[var(--color-text-secondary)] border-[var(--color-border)]";
-
-                if (status === "ORDERED") {
-                  bgClass = "bg-amber-500/5 border-amber-500/80 text-amber-700 dark:text-amber-300 hover:bg-amber-500/10";
-                  badgeLabel = "Baru Pesan";
-                  badgeClass = "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/20";
-                } else if (status === "EATING") {
-                  bgClass = "bg-indigo-500/5 border-indigo-500/80 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-500/10";
-                  badgeLabel = "Makan";
-                  badgeClass = "bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border-indigo-500/20";
-                }
-
-                let shapeClass = "rounded-xl aspect-square";
-                if (table.shape === "ROUND") {
-                  shapeClass = "rounded-full aspect-square";
-                } else if (table.shape === "RECTANGLE") {
-                  shapeClass = "rounded-lg w-[95%] h-[75%] aspect-[1.6/1]";
-                }
+            {tables
+              .filter((t) => t.floor === activeFloor)
+              .map((table) => {
+                const { order, status } = resolveTableStatus(table);
+                const leftPercent = table.posX < 15 ? table.posX * 8 : table.posX;
+                const topPercent = table.posY < 15 ? table.posY * 8 : table.posY;
 
                 return (
-                  <div key={table.id} className="aspect-square flex items-center justify-center">
-                    <button
-                      type="button"
-                      disabled={isPending}
-                      onClick={() => {
-                        if (order) {
-                          setPayingOrder(order);
-                        } else {
-                          showToast(`${table.name} sedang kosong.`);
-                        }
-                      }}
-                      className={`border-2 flex flex-col items-center justify-center p-1.5 transition-all text-center ${shapeClass} ${bgClass} cursor-pointer`}
-                    >
-                      <span className="text-xs font-bold truncate max-w-full">{table.name}</span>
-                      <span className={`text-[7px] font-semibold px-1 py-0.5 rounded border mt-0.5 max-w-full truncate ${badgeClass}`}>
-                        {badgeLabel} · {table.capacity}p
-                      </span>
-                    </button>
-                  </div>
+                  <button
+                    key={table.id}
+                    type="button"
+                    disabled={isPending}
+                    onClick={() => {
+                      if (order) {
+                        setPayingOrder(order);
+                      } else {
+                        showToast(`Meja ${table.name} sedang kosong.`);
+                      }
+                    }}
+                    style={{
+                      position: "absolute",
+                      left: `${leftPercent}%`,
+                      top: `${topPercent}%`,
+                      transform: "translate(-50%, -50%)",
+                      touchAction: "none",
+                    }}
+                    className="cursor-pointer outline-none hover:scale-105 transition-transform duration-150"
+                  >
+                    <TableVisual
+                      name={table.name}
+                      shape={table.shape}
+                      capacity={table.capacity}
+                      isActive={table.isActive}
+                      isHovered={false}
+                      status={status}
+                    />
+                  </button>
                 );
-              })
-            )}
+              })}
           </div>
         </div>
       )}
@@ -454,8 +390,8 @@ function PaymentSheet({
   }
 
   return (
-    <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/40 sm:items-center sm:justify-center">
-      <div className="max-h-[90vh] w-full overflow-y-auto glass-surface-strong rounded-t-2xl p-5 sm:max-w-md sm:rounded-2xl">
+    <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/50 backdrop-blur-sm sm:items-center sm:justify-center">
+      <div className="max-h-[90vh] w-full overflow-y-auto bg-[var(--color-surface)] border border-[var(--color-border)] shadow-2xl rounded-t-3xl p-6 sm:max-w-md sm:rounded-3xl">
         <div className="mb-4 flex items-center justify-between">
           <h2 className="text-lg font-bold text-[var(--color-text)]">
             Bayar · {order.tableName}
@@ -463,7 +399,7 @@ function PaymentSheet({
           <button
             onClick={onClose}
             aria-label="Tutup"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] transition-colors cursor-pointer"
           >
             <XIcon aria-hidden className="h-5 w-5" />
           </button>
@@ -576,7 +512,7 @@ function PaymentSheet({
         <button
           onClick={handleSubmit}
           disabled={isPending || isCashInsufficient}
-          className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-40"
+          className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-40 cursor-pointer"
         >
           {isPending && (
             <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)]" />

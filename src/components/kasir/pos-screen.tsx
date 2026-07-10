@@ -1,17 +1,21 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect, type KeyboardEvent } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { formatRupiah } from "@/lib/format";
 import { computeBestPromoDiscount, type PromoForCalc } from "@/lib/promo";
 import { PaymentSheet } from "@/components/kasir/payment-sheet";
 import { OfflineSyncBanner } from "@/components/kasir/offline-sync-banner";
+import { CashOutModal } from "@/components/kasir/cash-out-modal";
 import { VariantPickerModal, type VariantGroupOption } from "@/components/kasir/variant-picker-modal";
 import { XIcon } from "@/components/ui/icons";
 
 export type PosProduct = {
   id: string;
   name: string;
+  imageUrl: string | null;
+  sku: string | null;
   price: number;
   categoryId: string | null;
   categoryName: string | null;
@@ -57,17 +61,53 @@ export function PosScreen({
   const [cartDiscount, setCartDiscount] = useState(0);
   const [showCartMobile, setShowCartMobile] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
+  const [showCashOut, setShowCashOut] = useState(false);
+  const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null);
   const [variantPickerProduct, setVariantPickerProduct] = useState<PosProduct | null>(null);
+  useEffect(() => {
+    const handleGlobalKeyDown = (e: globalThis.KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      ) {
+        return;
+      }
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key.length === 1) {
+        const searchInput = document.getElementById("pos-search-input") as HTMLInputElement;
+        if (searchInput) {
+          searchInput.focus();
+        }
+      }
+    };
+    window.addEventListener("keydown", handleGlobalKeyDown);
+    return () => window.removeEventListener("keydown", handleGlobalKeyDown);
+  }, []);
 
   const filteredProducts = useMemo(() => {
+    const query = search.trim().toLowerCase();
     return products.filter((product) => {
       const matchCategory = activeCategory === "ALL" || product.categoryId === activeCategory;
-      const matchSearch = product.name.toLowerCase().includes(search.trim().toLowerCase());
+      const matchSearch =
+        !query ||
+        product.name.toLowerCase().includes(query) ||
+        (product.sku?.toLowerCase().includes(query) ?? false);
       return matchCategory && matchSearch;
     });
   }, [products, activeCategory, search]);
 
   const productCategoryMap = useMemo(() => new Map(products.map((p) => [p.id, p.categoryId])), [products]);
+  const categoryCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const product of products) {
+      const key = product.categoryId ?? "UNCATEGORIZED";
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return counts;
+  }, [products]);
 
   const subtotal = cart.reduce((sum, line) => sum + line.price * line.qty - line.discountAmount, 0);
   const appliedPromo = useMemo(() => {
@@ -88,17 +128,17 @@ export function PosScreen({
     product: PosProduct,
     variantOptionIds: string[],
     priceDelta: number,
-    variantLabel: string | null
+    variantLabel: string | null,
+    initialQty: number = 1
   ) {
+    setLastAddedProductId(product.id);
     const cartKey = `${product.id}::${[...variantOptionIds].sort().join(",")}`;
     setCart((prev) => {
       const existing = prev.find((line) => line.cartKey === cartKey);
-      const currentQty = existing?.qty ?? 0;
-      if (product.trackStock && currentQty + 1 > product.stockQty) {
-        return prev;
-      }
+      const targetQty = existing ? existing.qty + initialQty : initialQty;
+      const clampedQty = product.trackStock ? Math.min(targetQty, product.stockQty) : targetQty;
       if (existing) {
-        return prev.map((line) => (line.cartKey === cartKey ? { ...line, qty: line.qty + 1 } : line));
+        return prev.map((line) => (line.cartKey === cartKey ? { ...line, qty: clampedQty } : line));
       }
       return [
         ...prev,
@@ -107,7 +147,7 @@ export function PosScreen({
           productId: product.id,
           name: product.name,
           price: product.price + priceDelta,
-          qty: 1,
+          qty: clampedQty,
           discountAmount: 0,
           trackStock: product.trackStock,
           stockQty: product.stockQty,
@@ -124,6 +164,23 @@ export function PosScreen({
       return;
     }
     addLineToCart(product, [], 0, null);
+  }
+
+  function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key !== "Enter") return;
+    const query = search.trim().toLowerCase();
+    if (!query) return;
+    const exact = products.find((product) => product.sku?.toLowerCase() === query);
+    if (!exact) return;
+    event.preventDefault();
+    addToCart(exact);
+    setSearch("");
+  }
+
+  function decrementProduct(productId: string) {
+    const line = [...cart].reverse().find((item) => item.productId === productId);
+    if (!line) return;
+    updateQty(line.cartKey, line.qty - 1);
   }
 
   function updateQty(cartKey: string, qty: number) {
@@ -154,6 +211,28 @@ export function PosScreen({
     setCartDiscount(0);
   }
 
+  const saleItems = cart.map((line) => ({
+    productId: line.productId,
+    qty: line.qty,
+    discountAmount: line.discountAmount,
+    variantOptionIds: line.variantOptionIds,
+  }));
+
+  const desktopPaymentPanel =
+    cart.length > 0 ? (
+      <PaymentSheet
+        total={total}
+        subtotal={subtotal}
+        discountAmount={cartDiscount + promoDiscount}
+        taxAmount={taxAmount}
+        items={saleItems}
+        staticQrisPayload={staticQrisPayload}
+        onClose={() => undefined}
+        onSuccess={resetCart}
+        variant="panel"
+      />
+    ) : null;
+
   const cartPanel = (
     <CartPanel
       cart={cart}
@@ -171,6 +250,24 @@ export function PosScreen({
     />
   );
 
+  const desktopCartPanel = (
+    <CartPanel
+      cart={cart}
+      cartDiscount={cartDiscount}
+      onCartDiscountChange={setCartDiscount}
+      subtotal={subtotal}
+      appliedPromo={appliedPromo}
+      taxAmount={taxAmount}
+      total={total}
+      taxPercent={taxPercent}
+      onUpdateQty={updateQty}
+      onUpdateLineDiscount={updateLineDiscount}
+      onRemoveLine={removeLine}
+      onCheckout={() => setShowPayment(true)}
+      inlinePayment={desktopPaymentPanel}
+    />
+  );
+
   return (
     <div className="flex h-full flex-col">
       <OfflineSyncBanner />
@@ -180,6 +277,13 @@ export function PosScreen({
           <p className="text-sm text-[var(--color-text-secondary)]">{outletName}</p>
         </div>
         <div className="flex flex-wrap gap-2 sm:justify-end">
+          <button
+            type="button"
+            onClick={() => setShowCashOut(true)}
+            className="flex min-h-[40px] flex-1 items-center justify-center rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)] hover:opacity-90 sm:flex-none"
+          >
+            Gesek tunai
+          </button>
           <Link
             href="/kasir/riwayat"
             className="flex min-h-[40px] flex-1 items-center justify-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)] sm:flex-none"
@@ -199,35 +303,69 @@ export function PosScreen({
         {/* Grid produk */}
         <div className="flex-1 min-w-0">
           <input
+            id="pos-search-input"
             type="search"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
-            placeholder="Cari produk..."
+            onKeyDown={handleSearchKeyDown}
+            placeholder="Scan barcode atau cari produk..."
             className="mb-3 min-h-[48px] w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
           />
 
-          <div className="mb-3 flex gap-2 overflow-x-auto pb-1">
+          <div className="mb-4 grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-3">
             <button
               onClick={() => setActiveCategory("ALL")}
-              className={`min-h-[40px] shrink-0 rounded-full px-4 text-sm font-medium ${
+              className={`min-h-[74px] rounded-xl border px-4 text-left transition-all active:scale-[0.98] ${
                 activeCategory === "ALL"
-                  ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
-                  : "bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)]"
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)] shadow-sm"
+                  : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-white/70"
               }`}
             >
-              Semua
+              <span className="flex items-center gap-3">
+                <span
+                  className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-black ${
+                    activeCategory === "ALL"
+                      ? "bg-white/20 text-white"
+                      : "bg-[var(--color-bg)] text-[var(--color-primary)]"
+                  }`}
+                >
+                  All
+                </span>
+                <span>
+                  <span className="block text-sm font-bold">Semua</span>
+                  <span className={`block text-xs ${activeCategory === "ALL" ? "text-white/80" : "text-[var(--color-text-secondary)]"}`}>
+                    {products.length} menu
+                  </span>
+                </span>
+              </span>
             </button>
             {categories.map((category) => (
               <button
                 key={category.id}
                 onClick={() => setActiveCategory(category.id)}
-                className={`min-h-[40px] shrink-0 rounded-full px-4 text-sm font-medium ${
+                className={`min-h-[74px] rounded-xl border px-4 text-left transition-all active:scale-[0.98] ${
                   activeCategory === category.id
-                    ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
-                    : "bg-[var(--color-surface)] text-[var(--color-text)] border border-[var(--color-border)]"
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)] shadow-sm"
+                    : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-white/70"
                 }`}
               >
-                {category.name}
+                <span className="flex items-center gap-3">
+                  <span
+                    className={`flex h-10 w-10 items-center justify-center rounded-lg text-sm font-black ${
+                      activeCategory === category.id
+                        ? "bg-white/20 text-white"
+                        : "bg-[var(--color-bg)] text-[var(--color-primary)]"
+                    }`}
+                  >
+                    {category.name.slice(0, 2).toUpperCase()}
+                  </span>
+                  <span className="min-w-0">
+                    <span className="block truncate text-sm font-bold">{category.name}</span>
+                    <span className={`block text-xs ${activeCategory === category.id ? "text-white/80" : "text-[var(--color-text-secondary)]"}`}>
+                      {categoryCounts.get(category.id) ?? 0} menu
+                    </span>
+                  </span>
+                </span>
               </button>
             ))}
           </div>
@@ -240,36 +378,87 @@ export function PosScreen({
               </p>
             </div>
           ) : (
-            <div className="grid grid-cols-[repeat(auto-fit,minmax(9.5rem,1fr))] gap-3 pb-28 xl:pb-0">
+            <div className="grid grid-cols-1 gap-3 pb-28 sm:grid-cols-2 xl:pb-0 2xl:grid-cols-3">
               {filteredProducts.map((product) => {
                 const linesForProduct = cart.filter((line) => line.productId === product.id);
                 const qtyInCart = linesForProduct.reduce((sum, line) => sum + line.qty, 0);
                 const outOfStock = product.trackStock && product.stockQty <= 0;
                 const atStockLimit = product.trackStock && qtyInCart >= product.stockQty;
                 return (
-                  <button
+                  <div
                     key={product.id}
-                    onClick={() => addToCart(product)}
-                    disabled={outOfStock || atStockLimit}
-                    className="flex flex-col items-start rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-left transition-transform active:scale-[0.97] disabled:opacity-40"
+                    className={`grid min-h-[132px] grid-cols-[5.5rem_minmax(0,1fr)] gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-sm transition-shadow hover:shadow-md lg:grid-cols-[6rem_minmax(0,1fr)] ${
+                      outOfStock ? "opacity-50" : ""
+                    } ${
+                      lastAddedProductId === product.id ? "ring-2 ring-[var(--color-primary)]/30" : ""
+                    }`}
                   >
-                    <span className="text-sm font-semibold text-[var(--color-text)] line-clamp-2">
-                      {product.name}
-                    </span>
-                    <span className="mt-1 tabular-nums text-sm font-bold text-[var(--color-primary)]">
-                      {formatRupiah(product.price)}
-                    </span>
-                    {product.trackStock && (
-                      <span className="mt-1 text-xs text-[var(--color-text-secondary)]">
-                        {outOfStock ? "Stok habis" : `Stok ${product.stockQty}`}
-                      </span>
-                    )}
-                    {qtyInCart > 0 && (
-                      <span className="mt-2 rounded-full bg-[var(--color-primary)] px-2 py-0.5 text-xs font-bold text-[var(--color-on-primary)]">
-                        {qtyInCart} di keranjang
-                      </span>
-                    )}
-                  </button>
+                    <ProductVisual product={product} />
+                    <div className="flex min-w-0 flex-1 flex-col">
+                      <div className="min-w-0">
+                        <p className="line-clamp-1 text-sm font-bold text-[var(--color-text)]">{product.name}</p>
+                        <p className="mt-1 line-clamp-2 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+                          {product.categoryName ?? "Menu"} siap ditambahkan ke invoice.
+                        </p>
+                        {product.sku && (
+                          <p className="mt-1 truncate font-mono text-[10px] text-[var(--color-text-secondary)]">
+                            {product.sku}
+                          </p>
+                        )}
+                      </div>
+                      <div className="mt-auto flex min-w-0 items-end justify-between gap-2 pt-3">
+                        <div className="min-w-0">
+                          <p className="truncate tabular-nums text-base font-black text-[var(--color-text)] lg:text-lg">
+                            {formatRupiah(product.price)}
+                          </p>
+                          {product.trackStock && (
+                            <p className="text-[11px] text-[var(--color-text-secondary)]">
+                              {outOfStock ? "Stok habis" : `Stok ${product.stockQty}`}
+                            </p>
+                          )}
+                        </div>
+                        <div className="grid shrink-0 grid-cols-[2.25rem_3rem_2.25rem] items-center gap-1">
+                          <button
+                            type="button"
+                            onClick={() => decrementProduct(product.id)}
+                            disabled={qtyInCart <= 0}
+                            aria-label={`Kurangi ${product.name}`}
+                            className="flex h-9 w-9 items-center justify-center rounded-full border border-[var(--color-border)] bg-white text-lg font-semibold text-[var(--color-text)] shadow-sm disabled:opacity-35"
+                          >
+                            -
+                          </button>
+                          {product.variantGroups.length === 0 ? (
+                            <CartQtyInput
+                              qty={qtyInCart}
+                              stockQty={product.stockQty}
+                              trackStock={product.trackStock}
+                              onChange={(val) => {
+                                const line = cart.find((item) => item.productId === product.id);
+                                if (line) {
+                                  updateQty(line.cartKey, val);
+                                } else if (val > 0) {
+                                  addLineToCart(product, [], 0, null, val);
+                                }
+                              }}
+                            />
+                          ) : (
+                            <span className="w-6 text-center tabular-nums text-sm font-bold text-[var(--color-text)]">
+                              {qtyInCart}
+                            </span>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => addToCart(product)}
+                            disabled={outOfStock || atStockLimit}
+                            aria-label={`Tambah ${product.name}`}
+                            className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--color-primary)] text-lg font-semibold text-[var(--color-on-primary)] shadow-sm disabled:opacity-35"
+                          >
+                            +
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
                 );
               })}
             </div>
@@ -277,14 +466,14 @@ export function PosScreen({
         </div>
 
         {/* Cart desktop */}
-        <div className="hidden w-80 shrink-0 xl:block">{cartPanel}</div>
+        <div className="hidden w-96 shrink-0 xl:block">{desktopCartPanel}</div>
       </div>
 
       {/* Cart mobile: sticky bar + sheet */}
       {cart.length > 0 && !showCartMobile && (
         <button
           onClick={() => setShowCartMobile(true)}
-          className="fixed inset-x-4 bottom-20 z-20 flex min-h-[52px] items-center justify-between gap-3 rounded-lg bg-[var(--color-primary)] px-5 text-[var(--color-on-primary)] shadow-lg lg:bottom-6 xl:hidden"
+          className="fixed inset-x-4 bottom-20 z-20 flex min-h-[52px] items-center justify-between gap-3 rounded-lg bg-[var(--color-primary)] px-5 text-[var(--color-on-primary)] shadow-lg md:hidden"
         >
           <span className="shrink-0 text-sm font-medium">{cartCount} item</span>
           <span className="min-w-0 truncate text-right tabular-nums text-base font-bold">
@@ -294,7 +483,7 @@ export function PosScreen({
       )}
 
       {showCartMobile && (
-        <div className="fixed inset-0 z-30 flex flex-col justify-end bg-black/40 xl:hidden">
+        <div className="fixed inset-0 z-30 flex flex-col justify-end bg-black/40 md:hidden">
           <div className="max-h-[85vh] overflow-y-auto rounded-t-2xl bg-[var(--color-bg)] p-4">
             <div className="mb-2 flex items-center justify-between">
               <h2 className="text-base font-bold text-[var(--color-text)]">Keranjang</h2>
@@ -317,12 +506,7 @@ export function PosScreen({
           subtotal={subtotal}
           discountAmount={cartDiscount + promoDiscount}
           taxAmount={taxAmount}
-          items={cart.map((line) => ({
-            productId: line.productId,
-            qty: line.qty,
-            discountAmount: line.discountAmount,
-            variantOptionIds: line.variantOptionIds,
-          }))}
+          items={saleItems}
           staticQrisPayload={staticQrisPayload}
           onClose={() => setShowPayment(false)}
           onSuccess={() => {
@@ -332,6 +516,8 @@ export function PosScreen({
           }}
         />
       )}
+
+      {showCashOut && <CashOutModal onClose={() => setShowCashOut(false)} />}
 
       {variantPickerProduct && (
         <VariantPickerModal
@@ -344,6 +530,57 @@ export function PosScreen({
             setVariantPickerProduct(null);
           }}
         />
+      )}
+    </div>
+  );
+}
+
+function ProductVisual({ product }: { product: PosProduct }) {
+  const seed = product.name
+    .split("")
+    .reduce((sum, char) => sum + char.charCodeAt(0), 0);
+  const palettes = [
+    ["#fef3c7", "#f97316"],
+    ["#dcfce7", "#16a34a"],
+    ["#e0f2fe", "#0284c7"],
+    ["#fce7f3", "#db2777"],
+    ["#ede9fe", "#7c3aed"],
+  ];
+  const [bg, accent] = palettes[seed % palettes.length];
+  const initials = product.name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((part) => part[0]?.toUpperCase())
+    .join("");
+
+  return (
+    <div
+      className="relative flex h-[5.5rem] w-[5.5rem] shrink-0 items-center justify-center overflow-hidden rounded-xl lg:h-24 lg:w-24"
+      style={{ backgroundColor: bg }}
+    >
+      {product.imageUrl ? (
+        <Image
+          src={product.imageUrl}
+          alt={product.name}
+          fill
+          sizes="96px"
+          className="object-cover"
+        />
+      ) : (
+        <>
+          <div
+            className="absolute -right-5 -top-5 h-16 w-16 rounded-full opacity-20"
+            style={{ backgroundColor: accent }}
+          />
+          <div
+            className="absolute -bottom-7 -left-5 h-20 w-20 rounded-full opacity-20"
+            style={{ backgroundColor: accent }}
+          />
+          <span className="relative text-2xl font-black tracking-normal" style={{ color: accent }}>
+            {initials || "M"}
+          </span>
+        </>
       )}
     </div>
   );
@@ -362,6 +599,7 @@ function CartPanel({
   onUpdateLineDiscount,
   onRemoveLine,
   onCheckout,
+  inlinePayment,
 }: {
   cart: CartLine[];
   cartDiscount: number;
@@ -375,10 +613,11 @@ function CartPanel({
   onUpdateLineDiscount: (cartKey: string, discount: number) => void;
   onRemoveLine: (cartKey: string) => void;
   onCheckout: () => void;
+  inlinePayment?: React.ReactNode;
 }) {
   return (
-    <div className="flex flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 xl:sticky xl:top-4">
-      <h2 className="hidden text-base font-bold text-[var(--color-text)] md:block">Keranjang</h2>
+    <div className="flex flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 md:sticky md:top-4 md:max-h-[calc(100dvh-7rem)] md:overflow-y-auto">
+      <h2 className="hidden text-base font-bold text-[var(--color-text)] md:block">Invoice</h2>
 
       {cart.length === 0 ? (
         <p className="py-8 text-center text-sm text-[var(--color-text-secondary)]">
@@ -415,7 +654,12 @@ function CartPanel({
                   >
                     −
                   </button>
-                  <span className="w-6 text-center tabular-nums text-sm font-semibold">{line.qty}</span>
+                   <CartQtyInput
+                    qty={line.qty}
+                    stockQty={line.stockQty}
+                    trackStock={line.trackStock}
+                    onChange={(val) => onUpdateQty(line.cartKey, val)}
+                  />
                   <button
                     onClick={() => onUpdateQty(line.cartKey, line.qty + 1)}
                     disabled={line.trackStock && line.qty >= line.stockQty}
@@ -489,13 +733,62 @@ function CartPanel({
         </div>
       </div>
 
-      <button
-        onClick={onCheckout}
-        disabled={cart.length === 0}
-        className="flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] disabled:opacity-40"
-      >
-        Bayar — {formatRupiah(total)}
-      </button>
+      {inlinePayment ? (
+        <div className="border-t border-[var(--color-border)] pt-3">{inlinePayment}</div>
+      ) : (
+        <button
+          onClick={onCheckout}
+          disabled={cart.length === 0}
+          className="flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] disabled:opacity-40"
+        >
+          Bayar — {formatRupiah(total)}
+        </button>
+      )}
     </div>
+  );
+}
+
+function CartQtyInput({
+  qty,
+  stockQty,
+  trackStock,
+  onChange,
+}: {
+  qty: number;
+  stockQty: number;
+  trackStock: boolean;
+  onChange: (val: number) => void;
+}) {
+  const [val, setVal] = useState(String(qty));
+
+  useEffect(() => {
+    setVal(String(qty));
+  }, [qty]);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, "");
+    setVal(raw);
+    if (raw !== "") {
+      const num = Number(raw);
+      const clamped = trackStock ? Math.min(num, stockQty) : num;
+      onChange(clamped);
+    }
+  };
+
+  const handleBlur = () => {
+    if (val === "" || Number(val) <= 0) {
+      onChange(0);
+    }
+  };
+
+  return (
+    <input
+      type="text"
+      inputMode="numeric"
+      value={val}
+      onChange={handleChange}
+      onBlur={handleBlur}
+      className="w-12 h-8 rounded border border-[var(--color-border)] bg-[var(--color-surface)] text-center tabular-nums text-sm font-semibold outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]/20"
+    />
   );
 }

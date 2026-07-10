@@ -1,4 +1,4 @@
-const CACHE_VERSION = "altora-v2";
+const CACHE_VERSION = "altora-v3";
 const STATIC_CACHE = `${CACHE_VERSION}-static`;
 const PAGE_CACHE = `${CACHE_VERSION}-pages`;
 
@@ -29,6 +29,10 @@ function isImmutableStaticAsset(url) {
   );
 }
 
+function isLocalDevOrigin(url) {
+  return url.hostname === "localhost" || url.hostname === "127.0.0.1" || url.hostname === "::1";
+}
+
 self.addEventListener("fetch", (event) => {
   const { request } = event;
   if (request.method !== "GET") return;
@@ -42,6 +46,13 @@ self.addEventListener("fetch", (event) => {
   // Aset statis (JS/CSS hash, font, gambar) aman di-cache selamanya karena
   // nama filenya berubah tiap build — cache-first bikin load berikutnya instan.
   if (isImmutableStaticAsset(url)) {
+    if (isLocalDevOrigin(url) && url.pathname.startsWith("/_next/static/")) {
+      event.respondWith(
+        fetch(request).catch(() => caches.match(request).then((cached) => cached ?? Response.error()))
+      );
+      return;
+    }
+
     event.respondWith(
       caches.open(STATIC_CACHE).then(async (cache) => {
         const cached = await cache.match(request);

@@ -3,6 +3,7 @@ import { buildInvoiceNumber, buildInvoicePrefix } from "@/lib/invoice";
 import { computeVariantSelection, loadVariantGroupsByProduct } from "@/server/services/product-variant-service";
 import { recordAuditLog } from "@/server/services/audit-log-service";
 import { formatRupiah } from "@/lib/format";
+import { logSaleToJournal } from "@/server/services/accounting-service";
 import type { PaymentMethod, OrderType } from "@prisma/client";
 
 /**
@@ -57,7 +58,7 @@ export async function createSale(input: CreateSaleInput) {
     const recipes = await tx.productRecipeItem.findMany({
       where: { tenantId: input.tenantId, productId: { in: productIds } },
     });
-    const ingredientIds = recipes.map((r: any) => r.ingredientId);
+    const ingredientIds = recipes.map((r) => r.ingredientId);
 
     // Fetch produk + stok produk dan stok bahan baku sekaligus
     const [products, ingredientStocks, variantGroupsByProduct] = await Promise.all([
@@ -73,7 +74,7 @@ export async function createSale(input: CreateSaleInput) {
     ]);
 
     const productMap = new Map(products.map((p) => [p.id, p]));
-    const recipeMap = new Map<string, any[]>();
+    const recipeMap = new Map<string, (typeof recipes)[number][]>();
     for (const r of recipes) {
       if (!recipeMap.has(r.productId)) recipeMap.set(r.productId, []);
       recipeMap.get(r.productId)!.push(r);
@@ -230,6 +231,107 @@ export async function createSale(input: CreateSaleInput) {
       }
     }
 
+    // Autopilot low stock reorder checks (Only in ADVANCED mode)
+    const accountingSetting = await tx.tenantSetting.findUnique({
+      where: { tenantId: input.tenantId },
+    });
+    if (deductStock && accountingSetting?.accountingMode === "ADVANCED") {
+      const checkProductIds = new Set<string>();
+      for (const item of input.items) {
+        const product = productMap.get(item.productId)!;
+        const productRecipes = recipeMap.get(item.productId);
+        if (productRecipes && productRecipes.length > 0) {
+          for (const recipe of productRecipes) {
+            checkProductIds.add(recipe.ingredientId);
+          }
+        } else if (product.trackStock) {
+          checkProductIds.add(item.productId);
+        }
+      }
+
+      for (const pId of checkProductIds) {
+        const reorderPoint = await tx.stockReorderPoint.findFirst({
+          where: { tenantId: input.tenantId, productId: pId, outletId: input.outletId },
+        });
+
+        if (reorderPoint) {
+          const stock = await tx.productStock.findUnique({
+            where: { productId_outletId: { productId: pId, outletId: input.outletId } },
+          });
+          const currentQty = stock?.qty ?? 0;
+
+          if (currentQty <= reorderPoint.minQty) {
+            const contract = await tx.supplierPricingContract.findFirst({
+              where: { tenantId: input.tenantId, productId: pId, isActive: true },
+            });
+            let supplierId = contract?.supplierId;
+
+            if (!supplierId) {
+              const firstSupplier = await tx.supplier.findFirst({
+                where: { tenantId: input.tenantId, status: "ACTIVE" },
+              });
+              supplierId = firstSupplier?.id;
+            }
+
+            if (supplierId) {
+              let po = await tx.purchaseOrder.findFirst({
+                where: { tenantId: input.tenantId, supplierId, status: "DRAFT" },
+                include: { items: true },
+              });
+
+              if (!po) {
+                const today = new Date();
+                const count = await tx.purchaseOrder.count({ where: { tenantId: input.tenantId } });
+                const poNumber = `PO-${today.getFullYear()}${(today.getMonth() + 1)
+                  .toString()
+                  .padStart(2, "0")}-${String(count + 1).padStart(3, "0")}`;
+
+                po = await tx.purchaseOrder.create({
+                  data: {
+                    tenantId: input.tenantId,
+                    supplierId,
+                    poNumber,
+                    status: "DRAFT",
+                    totalAmount: 0,
+                    expectedAt: new Date(today.getTime() + 5 * 24 * 60 * 60 * 1000),
+                  },
+                  include: { items: true },
+                });
+              }
+
+              const hasItem = po.items.some((i: { productId: string }) => i.productId === pId);
+              if (!hasItem) {
+                const reorderQty = contract?.minQty ?? 10;
+                const productObj = await tx.product.findUnique({
+                  where: { id: pId },
+                  select: { cost: true },
+                });
+                const unitPrice = contract?.unitPrice ?? productObj?.cost ?? 0;
+
+                await tx.purchaseOrderItem.create({
+                  data: {
+                    poId: po.id,
+                    productId: pId,
+                    qty: reorderQty,
+                    unitPrice,
+                    subtotal: reorderQty * unitPrice,
+                  },
+                });
+
+                // Update PO totalAmount
+                await tx.purchaseOrder.update({
+                  where: { id: po.id },
+                  data: {
+                    totalAmount: { increment: reorderQty * unitPrice },
+                  },
+                });
+              }
+            }
+          }
+        }
+      }
+    }
+
     if (member) {
       await tx.member.update({
         where: { id: member.id },
@@ -256,6 +358,9 @@ export async function createSale(input: CreateSaleInput) {
         });
       }
     }
+
+    // Auto-post to accounting journal
+    await logSaleToJournal(input.tenantId, sale.id, tx);
 
     return sale;
   }, { timeout: 15000 });
@@ -343,6 +448,43 @@ export async function voidSale(tenantId: string, saleId: string, reason: string,
   });
 }
 
+export async function correctSalePaymentMethod(
+  tenantId: string,
+  saleId: string,
+  paymentMethod: Exclude<PaymentMethod, "DEPOSIT">,
+  reason: string,
+  changedById: string
+) {
+  if (!reason.trim()) throw new Error("Alasan koreksi wajib diisi.");
+
+  return prisma.$transaction(async (tx) => {
+    const sale = await tx.sale.findFirst({ where: { id: saleId, tenantId } });
+    if (!sale) throw new Error("Transaksi tidak ditemukan.");
+    if (sale.status === "VOIDED") throw new Error("Transaksi batal tidak bisa dikoreksi.");
+    if (sale.paymentMethod === "DEPOSIT") {
+      throw new Error("Transaksi deposit tidak bisa dikoreksi dari sini karena memengaruhi saldo member.");
+    }
+    if (sale.paymentMethod === paymentMethod) return sale;
+
+    await recordAuditLog(
+      tx,
+      tenantId,
+      changedById,
+      "SALE_PAYMENT_CORRECTION",
+      `Koreksi metode bayar ${sale.invoiceNumber}: ${sale.paymentMethod} → ${paymentMethod} — alasan: ${reason}`
+    );
+
+    return tx.sale.update({
+      where: { id: sale.id },
+      data: {
+        paymentMethod,
+        amountPaid: sale.total,
+        changeAmount: 0,
+      },
+    });
+  });
+}
+
 export type ReturnItemInput = { saleItemId: string; qty: number };
 
 /**
@@ -354,7 +496,8 @@ export async function processReturn(
   saleId: string,
   processedById: string,
   items: ReturnItemInput[],
-  reason: string
+  reason: string,
+  refundMethod: string = "CASH"
 ) {
   if (!reason.trim()) {
     throw new Error("Alasan retur wajib diisi.");
@@ -402,16 +545,27 @@ export async function processReturn(
       tenantId,
       processedById,
       "SALE_RETURN",
-      `Retur ${returnItemsData.length} item dari transaksi ${sale.invoiceNumber} (${formatRupiah(totalRefund)}) — alasan: ${reason}`
+      `Retur ${returnItemsData.length} item dari transaksi ${sale.invoiceNumber} (${formatRupiah(totalRefund)}) lewat ${refundMethod} — alasan: ${reason}`
     );
+
+    const openShift = await tx.cashierShift.findFirst({
+      where: {
+        tenantId,
+        userId: processedById,
+        outletId: sale.outletId,
+        status: "OPEN",
+      },
+    });
 
     const saleReturn = await tx.saleReturn.create({
       data: {
         tenantId,
         saleId: sale.id,
         processedById,
+        shiftId: openShift?.id ?? null,
         reason,
         totalRefund,
+        refundMethod,
         items: { create: returnItemsData },
       },
       include: { items: true },
@@ -432,7 +586,7 @@ export async function processReturn(
       }
     }
 
-    if (sale.memberId && sale.paymentMethod === "DEPOSIT" && totalRefund > 0) {
+    if (sale.memberId && refundMethod === "DEPOSIT" && totalRefund > 0) {
       await tx.member.update({
         where: { id: sale.memberId },
         data: { depositBalance: { increment: totalRefund } },

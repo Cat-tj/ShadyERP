@@ -5,6 +5,7 @@ import { AuthError } from "next-auth";
 import { signIn } from "@/lib/auth";
 import { registerTenant } from "@/server/services/tenant-service";
 import { checkRateLimit, getClientIp, formatRetryMessage } from "@/lib/rate-limit";
+import { BUSINESS_MODES } from "@/lib/business-modes";
 
 export type RegisterState = {
   error?: string;
@@ -17,9 +18,14 @@ export type RegisterState = {
   };
 };
 
+const businessModeKeys = BUSINESS_MODES.map((mode) => mode.key) as [
+  (typeof BUSINESS_MODES)[number]["key"],
+  ...(typeof BUSINESS_MODES)[number]["key"][],
+];
+
 const registerSchema = z.object({
   businessName: z.string().min(2, "Nama usaha minimal 2 karakter."),
-  businessType: z.enum(["FNB", "BARBERSHOP", "RETAIL", "SERVICE", "OTHER"]),
+  businessType: z.enum(businessModeKeys),
   outletName: z.string().min(2, "Nama outlet minimal 2 karakter."),
   ownerName: z.string().min(2, "Nama pemilik minimal 2 karakter."),
   email: z.string().email("Format email tidak valid."),
@@ -32,7 +38,7 @@ export async function registerAction(
 ): Promise<RegisterState> {
   const values = {
     businessName: String(formData.get("businessName") ?? ""),
-    businessType: String(formData.get("businessType") ?? "FNB"),
+    businessType: String(formData.get("businessType") ?? "CAFE"),
     outletName: String(formData.get("outletName") ?? ""),
     ownerName: String(formData.get("ownerName") ?? ""),
     email: String(formData.get("email") ?? ""),
@@ -42,7 +48,7 @@ export async function registerAction(
   let disabledModules: string[] = [];
   try {
     disabledModules = JSON.parse(disabledModulesStr);
-  } catch (e) {}
+  } catch {}
 
   const seedSampleData = formData.get("seedSampleData") === "true";
 

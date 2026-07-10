@@ -1,35 +1,23 @@
 "use client";
 
-import { useState, useTransition, useActionState, useEffect } from "react";
+import { useState, useActionState } from "react";
 import Link from "next/link";
 import { registerAction, type RegisterState } from "@/app/register/actions";
+import { BUSINESS_MODES, BUSINESS_MODE_MAP, type BusinessModeKey } from "@/lib/business-modes";
 
 const initialState: RegisterState = {};
 
-const BUSINESS_TYPES = [
-  { value: "FNB", label: "Makanan & Minuman", desc: "Kafe, resto, depot" },
-  { value: "BARBERSHOP", label: "Barbershop & Salon", desc: "Cukur, salon, kecantikan" },
-  { value: "RETAIL", label: "Toko & Retail", desc: "Minimarket, butik, warung" },
-  { value: "SERVICE", label: "Jasa & Layanan", desc: "Laundry, bimbel, bengkel" },
-  { value: "OTHER", label: "Usaha Lainnya", desc: "Sektor industri lainnya" },
-] as const;
-
 const TOGGLEABLE_MODULES = [
+  { key: "inventory", label: "Inventory", desc: "Produk, stok, supplier, pembelian, barang masuk, opname" },
   { key: "pesanan-digital", label: "Pemesanan Digital", desc: "Menu QR meja & kitchen display" },
   { key: "booking", label: "Booking & Janji Temu", desc: "Sistem reservasi & jadwal kerja" },
+  { key: "laundry", label: "Laundry", desc: "Order kiloan/satuan, pickup, delivery, status cucian" },
   { key: "member", label: "Member & Loyalitas", desc: "Poin belanja, saldo deposit, kartu QR" },
   { key: "hr", label: "HR & Absensi", desc: "Jadwal shift & absensi foto + GPS" },
   { key: "keuangan", label: "Laporan Keuangan", desc: "Arus kas, laba-rugi, & pengeluaran" },
   { key: "promo", label: "Promo & Marketing", desc: "Happy hour & diskon otomatis" },
+  { key: "resep", label: "Resep & Bahan Baku", desc: "Bahan baku, resep, dan HPP menu" },
 ] as const;
-
-const MODULE_RECOMMENDATIONS: Record<string, string[]> = {
-  FNB: ["pesanan-digital", "member", "hr", "keuangan", "promo"],
-  BARBERSHOP: ["booking", "member", "hr", "keuangan", "promo"],
-  RETAIL: ["member", "hr", "keuangan", "promo"],
-  SERVICE: ["booking", "hr", "keuangan"],
-  OTHER: ["hr", "keuangan"],
-};
 
 export function RegisterForm() {
   const [state, formAction, isPending] = useActionState(registerAction, initialState);
@@ -41,25 +29,13 @@ export function RegisterForm() {
   const [email, setEmail] = useState(state.values?.email ?? "");
   const [password, setPassword] = useState("");
   const [businessName, setBusinessName] = useState(state.values?.businessName ?? "");
-  const [businessType, setBusinessType] = useState<"FNB" | "BARBERSHOP" | "RETAIL" | "SERVICE" | "OTHER">("FNB");
+  const [businessType, setBusinessType] = useState<BusinessModeKey>("CAFE");
   const [outletName, setOutletName] = useState(state.values?.outletName ?? "");
-  const [enabledModules, setEnabledModules] = useState<string[]>([]);
-  const [seedSampleData, setSeedSampleData] = useState(true);
+  const [enabledModules, setEnabledModules] = useState<string[]>(BUSINESS_MODE_MAP.CAFE.recommendedModules);
+  const [seedSampleData, setSeedSampleData] = useState(false);
+  const displayedError = localError ?? state.error ?? null;
 
-  // Sync recommendations based on business type once on init or type change
-  useEffect(() => {
-    const recommended = MODULE_RECOMMENDATIONS[businessType] ?? ["hr", "keuangan"];
-    setEnabledModules(recommended);
-  }, [businessType]);
-
-  // Sync server errors back to local state
-  useEffect(() => {
-    if (state.error) {
-      setLocalError(state.error);
-    }
-  }, [state.error]);
-
-  const allKeys = ["pesanan-digital", "booking", "member", "hr", "keuangan", "promo"];
+  const allKeys = TOGGLEABLE_MODULES.map((m) => m.key);
   const disabledModules = allKeys.filter((k) => !enabledModules.includes(k));
 
   function validateStep1() {
@@ -135,9 +111,9 @@ export function RegisterForm() {
         </span>
       </div>
 
-      {localError && (
+      {displayedError && (
         <div className="rounded-lg bg-[var(--color-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning-text)] transition-all">
-          {localError}
+          {displayedError}
         </div>
       )}
 
@@ -220,18 +196,22 @@ export function RegisterForm() {
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-[var(--color-text)]">Jenis Usaha</label>
             <div className="grid grid-cols-2 gap-2 mt-1 sm:grid-cols-3">
-              {BUSINESS_TYPES.map((t) => (
+              {BUSINESS_MODES.map((t) => (
                 <button
-                  key={t.value}
+                  key={t.key}
                   type="button"
-                  onClick={() => setBusinessType(t.value as any)}
+                  onClick={() => {
+                    setBusinessType(t.key);
+                    setEnabledModules(t.recommendedModules);
+                  }}
                   className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center transition-all ${
-                    businessType === t.value
+                    businessType === t.key
                       ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)] font-semibold shadow-sm"
                       : "border-[var(--color-border)] bg-white/50 hover:bg-white text-[var(--color-text)]"
                   }`}
                 >
-                  <span className="text-xs font-semibold leading-tight">{t.label}</span>
+                  <span className="text-xs font-semibold leading-tight">{t.shortLabel}</span>
+                  <span className="mt-1 line-clamp-2 text-[10px] font-medium opacity-70">{t.description}</span>
                 </button>
               ))}
             </div>
@@ -319,7 +299,7 @@ export function RegisterForm() {
               />
               <div className="flex-1">
                 <span className="text-xs font-bold text-[var(--color-text)]">
-                  Muat Data Sampel Bawaan ({businessType})
+                  Muat Data Sampel Bawaan ({BUSINESS_MODE_MAP[businessType].shortLabel})
                 </span>
                 <p className="text-[10px] text-[var(--color-text-secondary)] mt-0.5">
                   Membuat beberapa produk, kategori, stok, dan pengaturan sampel otomatis agar Anda bisa langsung mencoba sistem kasir dan operasional.

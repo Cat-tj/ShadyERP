@@ -2,11 +2,9 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { Supplier } from "@prisma/client";
 import { createSupplierAction, updateSupplierAction, setSupplierStatusAction } from "@/app/(app)/supplier/actions";
 import { useToast, Toast } from "@/components/toast";
 import { XIcon } from "@/components/ui/icons";
-import { GlassPanel } from "@/components/ui/glass-panel";
 
 export type SupplierRow = {
   id: string;
@@ -33,7 +31,6 @@ function SupplierFormModal({
   const [phone, setPhone] = useState(supplier?.phone ?? "");
   const [email, setEmail] = useState(supplier?.email ?? "");
   const [contactPerson, setContactPerson] = useState(supplier?.contactPerson ?? "");
-  const [address, setAddress] = useState("");
   const [paymentTerms, setPaymentTerms] = useState(supplier?.paymentTerms ?? "");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -45,7 +42,7 @@ function SupplierFormModal({
     startTransition(async () => {
       const result = supplier
         ? await updateSupplierAction(supplier.id, { name: name.trim(), phone, email, contactPerson, paymentTerms })
-        : await createSupplierAction({ name: name.trim(), phone, email, contactPerson, address, paymentTerms });
+        : await createSupplierAction({ name: name.trim(), phone, email, contactPerson, address: "", paymentTerms });
 
       if (result.error) {
         setError(result.error);
