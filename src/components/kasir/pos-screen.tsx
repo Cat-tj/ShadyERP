@@ -65,6 +65,7 @@ export function PosScreen({
   const [showPayment, setShowPayment] = useState(false);
   const [showCashOut, setShowCashOut] = useState(false);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
+  const [scannerAlwaysOn, setScannerAlwaysOn] = useState(false);
   const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null);
   const [variantPickerProduct, setVariantPickerProduct] = useState<PosProduct | null>(null);
   const { toastMessage, showToast } = useToast();
@@ -316,11 +317,46 @@ export function PosScreen({
             />
             <button
               type="button"
-              onClick={() => setShowBarcodeScanner(true)}
+              onClick={() => {
+                setScannerAlwaysOn(false);
+                setShowBarcodeScanner(true);
+              }}
               aria-label="Scan barcode produk dengan kamera"
               className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] hover:text-[var(--color-text)]"
             >
               <CameraIcon aria-hidden className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="mb-3 flex justify-end">
+            <button
+              type="button"
+              role="switch"
+              aria-checked={scannerAlwaysOn}
+              onClick={() => {
+                setShowBarcodeScanner(false);
+                setScannerAlwaysOn((current) => !current);
+              }}
+              className={`inline-flex min-h-10 items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-colors active:scale-[0.98] ${
+                scannerAlwaysOn
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                  : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)]"
+              }`}
+            >
+              <CameraIcon aria-hidden className="h-4 w-4" />
+              Scanner selalu aktif
+              <span
+                aria-hidden
+                className={`relative h-5 w-9 rounded-full transition-colors ${
+                  scannerAlwaysOn ? "bg-white/35" : "bg-[var(--color-border)]"
+                }`}
+              >
+                <span
+                  className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
+                    scannerAlwaysOn ? "translate-x-4" : "translate-x-0.5"
+                  }`}
+                />
+              </span>
             </button>
           </div>
 
@@ -525,6 +561,16 @@ export function PosScreen({
           description="Barcode/QR yang cocok dengan SKU akan langsung masuk invoice."
           onDetected={handleBarcodeDetected}
           onClose={() => setShowBarcodeScanner(false)}
+        />
+      )}
+
+      {scannerAlwaysOn && (
+        <BarcodeScannerModal
+          title="Scanner aktif"
+          description="Setiap barcode atau QR yang terbaca langsung ditambahkan ke invoice."
+          persistent
+          onDetected={handleBarcodeDetected}
+          onClose={() => setScannerAlwaysOn(false)}
         />
       )}
 
