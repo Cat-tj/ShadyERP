@@ -1,53 +1,167 @@
 @import "tailwindcss";
 
 :root {
-  /* Palet terang, aksen navy + biru terinspirasi algora.id */
-  --color-bg: #f5f7fa;
-  --color-bg-secondary: #eceef2;
+  /* ─── Background & Surface ─────────────────────────────── */
+  --color-bg: #F8FAFC;
+  --color-bg-secondary: #F1F5F9;
   --color-surface: #ffffff;
-  --color-border: #e2e6ec;
-  --color-text: #0a1f44;
-  --color-text-secondary: #5b6478;
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
+  --color-surface-muted: #F8FAFC;
+  --color-surface-elevated: #ffffff;
+
+  /* ─── Text ─────────────────────────────────────────────── */
+  --color-text: #0F172A;
+  --color-text-secondary: #475569;
+  --color-text-muted: #94A3B8;
+
+  /* ─── Border ───────────────────────────────────────────── */
+  --color-border: #E2E8F0;
+  --color-border-strong: #CBD5E1;
+
+  /* ─── Primary (Blue) ───────────────────────────────────── */
+  --color-primary: #2563EB;
+  --color-primary-dark: #1D4ED8;
+  --color-primary-soft: #EFF6FF;
   --color-on-primary: #ffffff;
+
+  /* ─── Semantic Colors ──────────────────────────────────── */
+  --color-success: #16A34A;
+  --color-success-surface: #DCFCE7;
+  --color-warning: #D97706;
+  --color-warning-surface: #FEF3C7;
+  --color-danger: #DC2626;
+  --color-danger-surface: #FEE2E2;
+  --color-info: #2563EB;
+  --color-info-surface: #DBEAFE;
+
+  /* ─── Legacy aliases (agar tidak break kode lama) ──────── */
   --color-gold: #60a5fa;
   --color-gold-soft: rgba(96, 165, 250, 0.4);
-  --color-danger: #dc2626;
-  --color-warning-bg: #fee2e2;
-  --color-warning-text: #991b1b;
+  --color-warning-bg: var(--color-warning-surface);
+  --color-warning-text: #92400E;
 
-  /* Permukaan kaca — HANYA dipakai di sidebar/topbar, bottom sheet, modal, kartu ringkasan, kartu portal pelanggan */
+  /* ─── Shadows ──────────────────────────────────────────── */
+  --shadow-card: 0 1px 2px rgba(15, 23, 42, 0.06);
+  --shadow-elevated: 0 8px 24px rgba(15, 23, 42, 0.08);
+  --shadow-modal: 0 20px 60px rgba(15, 23, 42, 0.18);
+  --shadow-soft: 0 20px 50px -24px rgba(10, 31, 68, 0.18), 0 2px 10px rgba(10, 31, 68, 0.05);
+  --shadow-soft-sm: 0 10px 24px -16px rgba(10, 31, 68, 0.16), 0 1px 4px rgba(10, 31, 68, 0.04);
+
+  /* ─── Glass / Blur ─────────────────────────────────────── */
   --glass-bg: rgba(255, 255, 255, 0.6);
   --glass-bg-strong: rgba(255, 255, 255, 0.75);
   --glass-border: rgba(255, 255, 255, 0.5);
   --glass-blur: 14px;
-  --shadow-soft: 0 20px 50px -24px rgba(10, 31, 68, 0.18), 0 2px 10px rgba(10, 31, 68, 0.05);
-  --shadow-soft-sm: 0 10px 24px -16px rgba(10, 31, 68, 0.16), 0 1px 4px rgba(10, 31, 68, 0.04);
+
+  /* ─── Layout & Density Tokens ──────────────────────────── */
+  --ui-scale: 0.98; /* Mobile default */
+  --bottom-nav-height: 72px;
+  --mobile-cart-height: 64px;
+  --topbar-height: 56px;
+  --content-max-width: 1280px;
+  --content-padding-x: 16px;
+  --content-padding-y: 16px;
+  --content-padding-bottom: calc(var(--bottom-nav-height) + 24px);
+  --invoice-panel-width: 100%;
+}
+
+@media (min-width: 768px) {
+  :root {
+    --ui-scale: 1; /* Tablet — no shrink */
+    --content-padding-x: 20px;
+    --content-padding-y: 20px;
+    --bottom-nav-height: 76px;
+    --topbar-height: 64px;
+    --invoice-panel-width: 380px;
+  }
+}
+
+@media (min-width: 1024px) {
+  :root {
+    --ui-scale: 1; /* Desktop — full size, never shrink below mobile */
+    --content-padding-x: 28px;
+    --content-padding-y: 24px;
+    --topbar-height: 72px;
+    --content-max-width: 1600px;
+    --invoice-panel-width: 400px;
+  }
+}
+
+@media (min-width: 1440px) {
+  :root {
+    --content-padding-x: 32px;
+    --invoice-panel-width: 440px;
+  }
 }
 
 @theme inline {
   --color-primary: var(--color-primary);
   --color-primary-dark: var(--color-primary-dark);
+  --color-primary-soft: var(--color-primary-soft);
   --color-on-primary: var(--color-on-primary);
   --color-bg: var(--color-bg);
   --color-bg-secondary: var(--color-bg-secondary);
   --color-surface: var(--color-surface);
+  --color-surface-muted: var(--color-surface-muted);
   --color-border: var(--color-border);
+  --color-border-strong: var(--color-border-strong);
   --color-text: var(--color-text);
   --color-text-secondary: var(--color-text-secondary);
-  --color-gold: var(--color-gold);
+  --color-text-muted: var(--color-text-muted);
+  --color-success: var(--color-success);
+  --color-success-surface: var(--color-success-surface);
+  --color-warning: var(--color-warning);
+  --color-warning-surface: var(--color-warning-surface);
   --color-danger: var(--color-danger);
+  --color-danger-surface: var(--color-danger-surface);
+  --color-info: var(--color-info);
+  --color-info-surface: var(--color-info-surface);
+  --color-gold: var(--color-gold);
   --color-warning-bg: var(--color-warning-bg);
   --color-warning-text: var(--color-warning-text);
   --font-sans: var(--font-inter);
   --font-display: var(--font-inter);
   --font-mono-data: var(--font-jetbrains-mono);
 
-  /* Radius premium konsisten: kartu 16px, tombol/input 12px, lembar bawah 24px */
-  --radius-lg: 0.75rem;
-  --radius-xl: 1rem;
-  --radius-2xl: 1.5rem;
+  /* Radius premium konsisten dengan scaling */
+  --radius-sm: calc(0.5rem * var(--ui-scale, 1));   /* 8px -> 7.2px */
+  --radius-md: calc(0.75rem * var(--ui-scale, 1));  /* 12px -> 10.8px */
+  --radius-lg: calc(0.875rem * var(--ui-scale, 1)); /* 14px -> 12.6px */
+  --radius-xl: calc(1rem * var(--ui-scale, 1));     /* 16px -> 14.4px */
+  --radius-2xl: calc(1.25rem * var(--ui-scale, 1)); /* 20px -> 18px */
+  --radius-full: 9999px;
+
+  /* Typography clamped scaling */
+  --font-size-xs: calc(max(0.7rem, 0.75rem * var(--ui-scale, 1)));
+  --font-size-sm: calc(max(0.8rem, 0.875rem * var(--ui-scale, 1)));
+  --font-size-base: calc(max(0.9rem, 1rem * var(--ui-scale, 1)));
+  --font-size-lg: calc(max(1rem, 1.125rem * var(--ui-scale, 1)));
+  --font-size-xl: calc(max(1.1rem, 1.25rem * var(--ui-scale, 1)));
+  --font-size-2xl: calc(max(1.3rem, 1.5rem * var(--ui-scale, 1)));
+  --font-size-3xl: calc(max(1.6rem, 1.875rem * var(--ui-scale, 1)));
+
+  /* Spacing system scaling */
+  --spacing-0_5: calc(0.125rem * var(--ui-scale, 1));
+  --spacing-1: calc(0.25rem * var(--ui-scale, 1));
+  --spacing-1_5: calc(0.375rem * var(--ui-scale, 1));
+  --spacing-2: calc(0.5rem * var(--ui-scale, 1));
+  --spacing-2_5: calc(0.625rem * var(--ui-scale, 1));
+  --spacing-3: calc(0.75rem * var(--ui-scale, 1));
+  --spacing-3_5: calc(0.875rem * var(--ui-scale, 1));
+  --spacing-4: calc(1rem * var(--ui-scale, 1));
+  --spacing-5: calc(1.25rem * var(--ui-scale, 1));
+  --spacing-6: calc(1.5rem * var(--ui-scale, 1));
+  --spacing-7: calc(1.75rem * var(--ui-scale, 1));
+  --spacing-8: calc(2rem * var(--ui-scale, 1));
+  --spacing-9: calc(2.25rem * var(--ui-scale, 1));
+  --spacing-10: calc(2.5rem * var(--ui-scale, 1));
+  --spacing-11: calc(2.75rem * var(--ui-scale, 1));
+  --spacing-12: calc(3rem * var(--ui-scale, 1));
+  --spacing-14: calc(3.5rem * var(--ui-scale, 1));
+  --spacing-16: calc(4rem * var(--ui-scale, 1));
+  --spacing-20: calc(5rem * var(--ui-scale, 1));
+  --spacing-24: calc(6rem * var(--ui-scale, 1));
+  --spacing-28: calc(7rem * var(--ui-scale, 1));
+  --spacing-32: calc(8rem * var(--ui-scale, 1));
 }
 
 html {
@@ -175,5 +289,89 @@ body::before {
     color: #000000 !important;
     border-color: #d4d4d4 !important;
     box-shadow: none !important;
+  }
+}
+
+/* Hide scrollbar but keep scrollable */
+.scrollbar-none {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;             /* Chrome, Safari, Opera */
+}
+
+/* Custom premium compact classes */
+.card-premium {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-xl);
+  padding: calc(1rem * var(--ui-scale));
+  box-shadow: var(--shadow-card);
+  transition: all 0.2s ease-in-out;
+}
+
+.card-premium:hover {
+  box-shadow: var(--shadow-elevated);
+}
+
+.input-premium {
+  min-height: calc(2.75rem * var(--ui-scale));
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  padding: 0 calc(1rem * var(--ui-scale));
+  font-size: var(--font-size-sm);
+  outline: none;
+  transition: border-color 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+}
+
+.input-premium:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+}
+
+.btn-premium {
+  min-height: calc(2.75rem * var(--ui-scale));
+  border-radius: var(--radius-md);
+  padding: 0 calc(1.25rem * var(--ui-scale));
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: opacity 0.15s ease-in-out, transform 0.1s ease-in-out;
+  cursor: pointer;
+}
+
+.btn-premium:active {
+  transform: scale(0.98);
+}
+
+.modal-scrollbar {
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(100, 116, 139, 0.25) transparent;
+}
+
+.modal-scrollbar::-webkit-scrollbar {
+  width: 4px;
+}
+
+.modal-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.modal-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.22);
+  border-radius: 999px;
+}
+
+@media (max-width: 640px) {
+  .modal-scrollbar {
+    scrollbar-width: none;
+  }
+  .modal-scrollbar::-webkit-scrollbar {
+    display: none;
   }
 }

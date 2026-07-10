@@ -12,8 +12,17 @@ import { MemberPicker, type MemberOption } from "@/components/kasir/member-picke
 import { XIcon } from "@/components/ui/icons";
 import type { OrderType } from "@prisma/client";
 
-const QUICK_CASH = [20000, 50000, 100000];
 const STATIC_QRIS_STORAGE_KEY = "altora-static-qris-placeholder";
+
+/** "Uang pas" + dua pembulatan naik yang wajar (mis. total 60.000 -> Uang pas, 70.000, 100.000). */
+function quickCashOptions(total: number): number[] {
+  if (total <= 0) return [20000, 50000, 100000];
+  const roundUp = (value: number, step: number) => Math.ceil(value / step) * step;
+  const nearTen = roundUp(total, 10000) === total ? total + 10000 : roundUp(total, 10000);
+  let nearBig = roundUp(total, 50000);
+  if (nearBig <= nearTen) nearBig += 50000;
+  return [total, nearTen, nearBig];
+}
 
 const PAYMENT_METHODS: { value: CreateSalePayload["paymentMethod"]; label: string }[] = [
   { value: "CASH", label: "Tunai" },
@@ -53,7 +62,6 @@ export function PaymentSheet({
   staticQrisPayload,
   onClose,
   onSuccess,
-  variant = "modal",
 }: {
   total: number;
   subtotal: number;
@@ -63,7 +71,6 @@ export function PaymentSheet({
   staticQrisPayload: string | null;
   onClose: () => void;
   onSuccess: () => void;
-  variant?: "modal" | "panel";
 }) {
   const router = useRouter();
   const [method, setMethod] = useState<CreateSalePayload["paymentMethod"]>("CASH");
@@ -195,255 +202,241 @@ export function PaymentSheet({
     );
   }
 
-  const content = (
-      <div
-        className={
-          variant === "panel"
-            ? "w-full bg-transparent"
-            : "max-h-[90vh] w-full overflow-y-auto bg-[var(--color-bg)] border border-[var(--color-border)] shadow-2xl rounded-t-3xl p-6 sm:max-w-md sm:rounded-3xl"
-        }
-      >
-        <div className={`mb-4 flex items-center justify-between ${variant === "panel" ? "hidden" : ""}`}>
+  const formBody = (
+    <>
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-center">
+        <p className="text-xs text-[var(--color-text-secondary)]">Total belanja</p>
+        <p className="truncate tabular-nums text-2xl font-bold text-[var(--color-text)]">{formatRupiah(total)}</p>
+      </div>
+
+      <div className="mt-4">
+        <p className="mb-1.5 text-sm font-medium text-[var(--color-text)]">Jenis pesanan</p>
+        <div className="grid grid-cols-3 gap-2">
+          {ORDER_MODE_OPTIONS.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => setOrderMode(option.value)}
+              className={`min-h-[44px] rounded-lg border text-xs font-semibold sm:text-sm ${
+                orderMode === option.value
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                  : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]"
+              }`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </div>
+
+        {orderMode === "DELIVERY" && (
+          <div className="mt-3">
+            <p className="mb-2 text-xs font-bold tracking-normal text-[var(--color-text-secondary)]">
+              Channel Delivery
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {DELIVERY_CHANNELS.map((channel) => {
+                const active = deliveryChannel === channel.value;
+                return (
+                  <button
+                    key={channel.value}
+                    type="button"
+                    onClick={() => setDeliveryChannel(channel.value)}
+                    className={`flex min-h-[64px] items-center gap-3 rounded-xl border px-3 text-left transition-all active:scale-[0.98] ${
+                      active
+                        ? "border-[var(--color-primary)] bg-[var(--color-surface)] shadow-sm"
+                        : "border-[var(--color-border)] bg-[var(--color-bg)] hover:bg-[var(--color-surface)]"
+                    }`}
+                  >
+                    <DeliveryLogo channel={channel} active={active} />
+                    <div className="min-w-0">
+                      <span className="block text-xs font-bold text-[var(--color-text)]">{channel.label}</span>
+                      <span className="block text-[10px] text-[var(--color-text-secondary)] truncate">
+                        {channel.subtitle}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="mt-4">
+        <p className="mb-1.5 text-sm font-medium text-[var(--color-text)]">Metode pembayaran</p>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+          {PAYMENT_METHODS.map((m) => (
+            <button
+              key={m.value}
+              type="button"
+              onClick={() => setMethod(m.value)}
+              className={`min-h-[44px] rounded-lg border text-xs font-semibold sm:text-sm ${
+                method === m.value
+                  ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                  : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]"
+              }`}
+            >
+              {m.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-4">
+        <MemberPicker value={member} onChange={setMember} />
+      </div>
+
+      {method === "CASH" ? (
+        <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <p className="text-sm font-medium text-[var(--color-text)]">Uang diterima</p>
+          <div className="mt-2.5 grid grid-cols-3 gap-2">
+            {quickCashOptions(total).map((val, index) => (
+              <button
+                key={val}
+                type="button"
+                onClick={() => setAmountInput(String(val))}
+                className={`min-h-[44px] rounded-lg border text-sm font-semibold transition-colors ${
+                  amountInput === String(val)
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                    : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+                }`}
+              >
+                {index === 0 ? "Uang pas" : formatRupiah(val)}
+              </button>
+            ))}
+          </div>
+          <div className="relative mt-3 flex items-center">
+            <span className="absolute left-4 text-sm text-[var(--color-text-secondary)] font-medium">Rp</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              value={amountInput}
+              onChange={(event) => setAmountInput(event.target.value)}
+              placeholder="Masukkan nominal"
+              className="min-h-[48px] w-full rounded-lg border border-[var(--color-border)] pl-10 pr-4 text-sm outline-none focus:border-[var(--color-primary)]"
+            />
+          </div>
+
+          <div className="mt-4 flex items-center justify-between border-t border-[var(--color-border)] pt-3 text-sm">
+            <span className="text-[var(--color-text-secondary)]">Kembalian</span>
+            <span className="font-bold tabular-nums text-[var(--color-success)]">{formatRupiah(change)}</span>
+          </div>
+          {isCashInsufficient && amountInput !== "" && (
+            <p className="mt-2 text-xs font-medium text-[var(--color-danger)]">
+              Uang diterima kurang dari total belanja.
+            </p>
+          )}
+        </div>
+      ) : method === "QRIS" ? (
+        <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-center">
+          {isQrisUnavailable ? (
+            <p className="text-xs text-[var(--color-danger)] font-medium">
+              Payload QRIS statis belum diset di pengaturan outlet / pengaturan bisnis.
+            </p>
+          ) : (
+            <div className="mx-auto flex flex-col items-center">
+              {qrisDataUrl && (
+                <div className="relative h-48 w-48 overflow-hidden rounded-xl border p-2 bg-white">
+                  <Image
+                    src={qrisDataUrl}
+                    alt="QRIS Code"
+                    fill
+                    sizes="192px"
+                    className="object-contain"
+                    priority
+                  />
+                </div>
+              )}
+              <p className="mt-2 text-xs text-[var(--color-text-secondary)] font-medium">
+                Scan kode QRIS di atas untuk membayar {formatRupiah(total)}
+              </p>
+            </div>
+          )}
+
+          <details className="mt-4 text-left">
+            <summary className="cursor-pointer text-xs font-semibold text-[var(--color-primary)]">
+              Atur payload QRIS statis manual
+            </summary>
+            <textarea
+              value={staticQris}
+              onChange={(event) => saveStaticQris(event.target.value)}
+              rows={4}
+              placeholder="Scan QRIS di Pengaturan > Bisnis, atau tempel payload QRIS statis di sini."
+              className="mt-3 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 font-mono text-xs text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+            />
+            <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
+              Tersimpan di device kasir ini supaya tetap bisa dipakai saat offline.
+            </p>
+          </details>
+
+          {qrisError && (
+            <div className="mt-3 rounded-lg bg-[var(--color-warning-bg)] px-3 py-2 text-xs text-[var(--color-warning-text)]">
+              {qrisError}
+            </div>
+          )}
+        </div>
+      ) : method === "DEPOSIT" ? (
+        <div className="mt-4 flex items-center justify-between rounded-lg bg-[var(--color-surface)] px-4 py-3">
+          <span className="text-sm text-[var(--color-text-secondary)]">Saldo {member?.name ?? "member"}</span>
+          <span
+            className={`tabular-nums text-lg font-bold ${
+              isDepositInsufficient ? "text-[var(--color-danger)]" : "text-[var(--color-text)]"
+            }`}
+          >
+            {formatRupiah(member?.depositBalance ?? 0)}
+          </span>
+        </div>
+      ) : (
+        <p className="mt-4 text-sm text-[var(--color-text-secondary)]">
+          Pastikan pembayaran {formatRupiah(total)} sudah diterima lewat {PAYMENT_METHODS.find((m) => m.value === method)?.label} sebelum lanjut.
+        </p>
+      )}
+    </>
+  );
+
+  return (
+    <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/50 backdrop-blur-sm sm:items-center sm:justify-center">
+      <div className="max-h-[90vh] w-full overflow-y-auto scrollbar-none bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-modal)] rounded-t-3xl sm:max-w-md sm:rounded-3xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between bg-[var(--color-surface)]/80 backdrop-blur-md px-6 py-4 border-b border-[var(--color-border)]/50">
           <h2 className="text-lg font-bold text-[var(--color-text)]">Pembayaran</h2>
           <button
             onClick={onClose}
             aria-label="Tutup"
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)] transition-colors cursor-pointer"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] transition-colors cursor-pointer"
           >
             <XIcon aria-hidden className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 text-center">
-          <p className="text-sm text-[var(--color-text-secondary)]">Total belanja</p>
-          <p className="tabular-nums text-3xl font-bold text-[var(--color-text)]">{formatRupiah(total)}</p>
-        </div>
-
-        <div className="mt-4">
-          <p className="mb-1.5 text-sm font-medium text-[var(--color-text)]">Jenis pesanan</p>
-          <div className="grid grid-cols-3 gap-2">
-            {ORDER_MODE_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => setOrderMode(option.value)}
-                className={`min-h-[48px] rounded-lg border text-xs font-semibold ${
-                  orderMode === option.value
-                    ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)]"
-                    : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]"
-                }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-
-          {orderMode === "DELIVERY" && (
-            <div className="mt-3">
-              <p className="mb-2 text-xs font-bold tracking-normal text-[var(--color-text-secondary)]">
-                Channel Delivery
-              </p>
-              <div className="grid grid-cols-2 gap-2">
-                {DELIVERY_CHANNELS.map((channel) => {
-                  const active = deliveryChannel === channel.value;
-                  return (
-                    <button
-                      key={channel.value}
-                      type="button"
-                      onClick={() => setDeliveryChannel(channel.value)}
-                      className={`flex min-h-[64px] items-center gap-3 rounded-xl border px-3 text-left transition-all active:scale-[0.98] ${
-                        active
-                          ? "border-[var(--color-primary)] bg-[var(--color-surface)] shadow-sm"
-                          : "border-[var(--color-border)] bg-[var(--color-bg)] hover:bg-[var(--color-surface)]"
-                      }`}
-                    >
-                      <DeliveryLogo channel={channel} active={active} />
-                      <span className="min-w-0">
-                        <span className="block truncate text-xs font-bold text-[var(--color-text)]">
-                          {channel.label}
-                        </span>
-                        <span className="block truncate text-[11px] text-[var(--color-text-secondary)]">
-                          {channel.subtitle}
-                        </span>
-                      </span>
-                    </button>
-                  );
-                })}
-              </div>
+        <div className="p-6">
+          {formBody}
+          {error && (
+            <div className="mt-4 rounded-lg bg-[var(--color-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning-text)]">
+              {error}
             </div>
           )}
         </div>
 
-        <div className="mt-4">
-          <p className="mb-1.5 text-sm font-medium text-[var(--color-text)]">Member (opsional)</p>
-          <MemberPicker value={member} onChange={setMember} />
-        </div>
-
-        <div className="mt-4">
-          <p className="mb-1.5 text-sm font-medium text-[var(--color-text)]">Metode pembayaran</p>
-          <div className="grid grid-cols-3 gap-2">
-            {PAYMENT_METHODS.map((option) => {
-              const disabled = option.value === "DEPOSIT" && !member;
-              return (
-                <button
-                  key={option.value}
-                  onClick={() => {
-                    setMethod(option.value);
-                    setAmountInput("");
-                  }}
-                  disabled={disabled}
-                  className={`min-h-[48px] rounded-lg border text-xs font-medium disabled:opacity-40 ${
-                    method === option.value
-                      ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)]"
-                      : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]"
-                  }`}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
-          {method === "DEPOSIT" && !member && (
-            <p className="mt-1.5 text-xs text-[var(--color-text-secondary)]">
-              Pilih member dulu untuk bayar pakai saldo.
-            </p>
-          )}
-        </div>
-
-        {method === "CASH" ? (
-          <div className="mt-4">
-            <label htmlFor="amountPaid" className="mb-1.5 block text-sm font-medium text-[var(--color-text)]">
-              Uang diterima
-            </label>
-            <input
-              id="amountPaid"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              value={amountInput}
-              onChange={(event) => setAmountInput(event.target.value)}
-              placeholder="0"
-              className="min-h-[52px] w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-xl font-bold tabular-nums text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
-            />
-            <div className="mt-2 flex flex-wrap gap-2">
-              <button
-                onClick={() => setAmountInput(String(total))}
-                className="min-h-[40px] rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm font-medium text-[var(--color-text)]"
-              >
-                Uang pas
-              </button>
-              {QUICK_CASH.map((amount) => (
-                <button
-                  key={amount}
-                  data-testid="quick-cash"
-                  onClick={() => setAmountInput(String(amount))}
-                  className="min-h-[40px] rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm font-medium text-[var(--color-text)]"
-                >
-                  {formatRupiah(amount)}
-                </button>
-              ))}
-            </div>
-
-            <div className="mt-3 flex items-center justify-between rounded-lg bg-[var(--color-surface)] px-4 py-3">
-              <span className="text-sm text-[var(--color-text-secondary)]">Kembalian</span>
-              <span className="tabular-nums text-lg font-bold text-[var(--color-text)]">
-                {formatRupiah(change)}
-              </span>
-            </div>
-          </div>
-        ) : method === "QRIS" ? (
-          <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-start">
-              <div className="flex min-h-[184px] flex-1 items-center justify-center rounded-xl bg-white p-3">
-                {qrisDataUrl ? (
-                  // Data URL dibuat client-side agar QRIS tetap bisa muncul saat ALTORA offline.
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={qrisDataUrl} alt={`QRIS dinamis ${formatRupiah(total)}`} className="h-40 w-40" />
-                ) : (
-                  <div className="flex h-40 w-40 items-center justify-center rounded-lg border border-dashed border-[var(--color-border)] text-center text-xs text-[var(--color-text-secondary)]">
-                    QRIS dinamis muncul di sini
-                  </div>
-                )}
-              </div>
-              <div className="flex-1">
-                <p className="text-sm font-semibold text-[var(--color-text)]">QRIS dinamis manual</p>
-                <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
-                  QR dibuat dari QRIS statis usaha dan nominal transaksi. Kasir tetap perlu cek bukti
-                  pembayaran lalu tekan selesai.
-                </p>
-                <p className="mt-3 text-xs font-medium text-[var(--color-text)]">Nominal QRIS</p>
-                <p className="tabular-nums text-xl font-bold text-[var(--color-primary)]">{formatRupiah(total)}</p>
-              </div>
-            </div>
-
-            <details className="mt-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
-              <summary className="cursor-pointer text-sm font-medium text-[var(--color-text)]">
-                QRIS statis usaha
-              </summary>
-              {staticQrisPayload?.trim() && (
-                <p className="mt-3 rounded-lg bg-[var(--color-bg)] px-3 py-2 text-xs text-[var(--color-text-secondary)]">
-                  QRIS dari Pengaturan Bisnis sudah aktif. Edit manual di sini hanya tersimpan di device kasir ini.
-                </p>
-              )}
-              <textarea
-                value={staticQris}
-                onChange={(event) => saveStaticQris(event.target.value)}
-                rows={4}
-                placeholder="Scan QRIS di Pengaturan > Bisnis, atau tempel payload QRIS statis di sini."
-                className="mt-3 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 font-mono text-xs text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
-              />
-              <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
-                Tersimpan di device kasir ini supaya tetap bisa dipakai saat offline.
-              </p>
-            </details>
-
-            {qrisError && (
-              <div className="mt-3 rounded-lg bg-[var(--color-warning-bg)] px-3 py-2 text-xs text-[var(--color-warning-text)]">
-                {qrisError}
-              </div>
+        <div className="sticky bottom-0 z-10 bg-[var(--color-surface)]/80 backdrop-blur-md px-6 py-4 border-t border-[var(--color-border)]/50">
+          <button
+            onClick={handleSubmit}
+            disabled={isPending || isCashInsufficient || isDepositInsufficient || isQrisUnavailable}
+            className="flex min-h-[48px] w-full items-center justify-center gap-1.5 rounded-2xl bg-[var(--color-primary)] px-3 text-sm font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-40 cursor-pointer"
+          >
+            {isPending && (
+              <span className="h-4 w-4 shrink-0 animate-spin rounded-full border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)]" />
             )}
-          </div>
-        ) : method === "DEPOSIT" ? (
-          <div className="mt-4 flex items-center justify-between rounded-lg bg-[var(--color-surface)] px-4 py-3">
-            <span className="text-sm text-[var(--color-text-secondary)]">Saldo {member?.name ?? "member"}</span>
-            <span
-              className={`tabular-nums text-lg font-bold ${
-                isDepositInsufficient ? "text-[var(--color-danger)]" : "text-[var(--color-text)]"
-              }`}
-            >
-              {formatRupiah(member?.depositBalance ?? 0)}
-            </span>
-          </div>
-        ) : (
-          <p className="mt-4 text-sm text-[var(--color-text-secondary)]">
-            Pastikan pembayaran {formatRupiah(total)} sudah diterima lewat {PAYMENT_METHODS.find((m) => m.value === method)?.label} sebelum lanjut.
-          </p>
-        )}
-
-        {error && (
-          <div className="mt-4 rounded-lg bg-[var(--color-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning-text)]">
-            {error}
-          </div>
-        )}
-
-        <button
-          onClick={handleSubmit}
-          disabled={isPending || isCashInsufficient || isDepositInsufficient || isQrisUnavailable}
-          className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-40 cursor-pointer"
-        >
-          {isPending && (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)]" />
-          )}
-          {isPending ? "Menyimpan..." : `Selesaikan — ${formatRupiah(total)}`}
-        </button>
+            {isPending ? (
+              "Menyimpan..."
+            ) : (
+              <>
+                <span>Selesaikan Transaksi</span>
+                <span className="truncate tabular-nums">• {formatRupiah(total)}</span>
+              </>
+            )}
+          </button>
+        </div>
       </div>
-  );
-
-  if (variant === "panel") return content;
-
-  return (
-    <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/50 backdrop-blur-sm sm:items-center sm:justify-center">
-      {content}
     </div>
   );
 }

@@ -89,27 +89,28 @@ export function UserFormModal({
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/50 backdrop-blur-sm sm:items-center sm:justify-center">
-      <div className="max-h-[90vh] w-full overflow-y-auto bg-[var(--color-surface)] border border-[var(--color-border)] shadow-2xl rounded-t-3xl p-6 sm:max-w-md sm:rounded-3xl">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="max-h-[90vh] w-full overflow-y-auto scrollbar-none bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-modal)] rounded-t-3xl sm:max-w-md sm:rounded-3xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between bg-[var(--color-surface)]/80 backdrop-blur-md px-6 py-4 border-b border-[var(--color-border)]/50">
           <h2 className="text-lg font-bold text-[var(--color-text)]">
             {user ? "Ubah karyawan" : "Tambah karyawan"}
           </h2>
           <button
             onClick={onClose}
             aria-label="Tutup"
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] transition-colors cursor-pointer"
+            className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] transition-colors cursor-pointer"
           >
             <XIcon aria-hidden className="h-5 w-5" />
           </button>
         </div>
 
-        {error && (
-          <div className="mb-4 rounded-lg bg-[var(--color-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning-text)]">
-            {error}
-          </div>
-        )}
+        <div className="p-6">
+          {error && (
+            <div className="mb-4 rounded-lg bg-[var(--color-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning-text)]">
+              {error}
+            </div>
+          )}
 
-        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-[var(--color-text)]">Nama</label>
             <input
@@ -219,17 +220,20 @@ export function UserFormModal({
             )}
           </div>
         </div>
+      </div>
 
-        <button
-          onClick={handleSubmit}
-          disabled={isPending}
-          className="mt-5 flex min-h-[52px] w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-40 cursor-pointer"
-        >
-          {isPending && (
-            <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)]" />
-          )}
-          {isPending ? "Menyimpan..." : "Simpan karyawan"}
-        </button>
+      <div className="sticky bottom-0 z-10 bg-[var(--color-surface)]/80 backdrop-blur-md px-6 py-4 border-t border-[var(--color-border)]/50">
+          <button
+            onClick={handleSubmit}
+            disabled={isPending}
+            className="flex min-h-[48px] w-full items-center justify-center gap-2 rounded-2xl bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-40 cursor-pointer"
+          >
+            {isPending && (
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)]" />
+            )}
+            {isPending ? "Menyimpan..." : "Simpan karyawan"}
+          </button>
+        </div>
       </div>
     </div>
   );

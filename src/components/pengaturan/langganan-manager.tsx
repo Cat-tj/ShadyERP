@@ -42,9 +42,15 @@ function UsageBar({ label, used, max }: { label: string; used: number; max: numb
         </span>
       </div>
       {max !== Infinity && (
-        <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-[var(--color-bg)]">
+        <div className="mt-1 h-2 w-full overflow-hidden rounded-full bg-[var(--color-bg-secondary)]">
           <div
-            className={`h-full rounded-full ${pct >= 100 ? "bg-[var(--color-danger)]" : "bg-[var(--color-primary)]"}`}
+            className={`h-full rounded-full transition-all duration-300 ${
+              pct >= 90
+                ? "bg-[var(--color-danger)]"
+                : pct >= 70
+                  ? "bg-[var(--color-warning)]"
+                  : "bg-[var(--color-primary)]"
+            }`}
             style={{ width: `${pct}%` }}
           />
         </div>

@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import { formatRupiah, formatJam, formatTanggal } from "@/lib/format";
 import { correctSalePaymentMethodAction, voidSaleAction, processReturnAction } from "@/app/(app)/kasir/riwayat/actions";
 import { Toast, useToast } from "@/components/toast";
+import { ReceiptIcon } from "@/components/ui/icons";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export type SaleRow = {
   id: string;
@@ -122,10 +124,16 @@ export function RiwayatList({
 
   if (sales.length === 0) {
     return (
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-16 text-center">
-        <p className="text-sm text-[var(--color-text-secondary)]">
-          Belum ada transaksi. Transaksi dari layar kasir akan muncul di sini.
-        </p>
+      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]">
+        <EmptyState
+          icon={ReceiptIcon}
+          title="Belum ada transaksi"
+          description="Setiap transaksi dari POS kasir atau pesanan masuk akan tercatat otomatis di sini."
+          action={{
+            label: "Mulai Transaksi POS",
+            href: "/kasir",
+          }}
+        />
       </div>
     );
   }

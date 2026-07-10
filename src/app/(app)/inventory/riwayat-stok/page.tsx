@@ -2,29 +2,37 @@ import Link from "next/link";
 import { requireRole } from "@/server/require-session";
 import { getStockAdjustments } from "@/server/services/product-service";
 import { formatTanggal, formatJam } from "@/lib/format";
+import { EmptyState } from "@/components/ui/empty-state";
+import { ClockIcon } from "@/components/ui/icons";
 
 export default async function RiwayatStokPage() {
   const user = await requireRole(["OWNER", "MANAGER"]);
   const adjustments = await getStockAdjustments(user.tenantId);
 
   return (
-    <div className="mx-auto max-w-3xl">
-      <Link href="/produk" className="text-sm font-medium text-[var(--color-primary)]">
+    <div className="mx-auto max-w-3xl pb-8">
+      <Link href="/produk" className="text-xs font-bold text-[var(--color-primary)] hover:underline">
         ← Kembali ke Produk
       </Link>
 
-      <h1 className="mt-2 font-display text-2xl font-semibold text-[var(--color-text)]">
-        Riwayat perubahan stok
+      <h1 className="mt-2 font-display text-2xl font-bold tracking-tight text-[var(--color-text)] sm:text-3xl">
+        Riwayat Perubahan Stok
       </h1>
       <p className="text-sm text-[var(--color-text-secondary)]">
-        Catatan setiap kali stok produk diubah manual lewat halaman Produk.
+        Catatan setiap kali stok produk diubah manual lewat halaman detail Produk.
       </p>
 
-      <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+      <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-card)]">
         {adjustments.length === 0 ? (
-          <p className="px-6 py-16 text-center text-sm text-[var(--color-text-secondary)]">
-            Belum ada perubahan stok manual. Riwayat akan muncul di sini setiap kali stok produk diubah.
-          </p>
+          <EmptyState
+            icon={ClockIcon}
+            title="Belum ada perubahan stok manual"
+            description="Setiap penyesuaian stok dari halaman detail produk akan tercatat otomatis di sini."
+            action={{
+              label: "Kembali ke Produk",
+              href: "/produk",
+            }}
+          />
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
             {adjustments.map((adj) => (

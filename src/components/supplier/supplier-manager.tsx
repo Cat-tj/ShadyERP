@@ -4,7 +4,8 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { createSupplierAction, updateSupplierAction, setSupplierStatusAction } from "@/app/(app)/supplier/actions";
 import { useToast, Toast } from "@/components/toast";
-import { XIcon } from "@/components/ui/icons";
+import { XIcon, PackageIcon } from "@/components/ui/icons";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export type SupplierRow = {
   id: string;
@@ -181,9 +182,18 @@ export function SupplierManager({ suppliers }: { suppliers: SupplierRow[] }) {
 
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
         {suppliers.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <p className="text-sm text-[var(--color-text-secondary)]">Belum ada supplier. Tambahkan supplier pertamamu →</p>
-          </div>
+          <EmptyState
+            icon={PackageIcon}
+            title="Belum ada supplier"
+            description="Tambahkan supplier agar pembelian, hutang, dan penerimaan barang bisa tercatat rapi."
+            action={{
+              label: "+ Tambah Supplier",
+              onClick: () => {
+                setEditing(null);
+                setModalOpen(true);
+              },
+            }}
+          />
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
             {suppliers.map((supplier) => (

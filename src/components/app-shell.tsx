@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { navItemsForHub, type Role, hubsAvailableForRole } from "@/lib/nav";
 import { UserIcon, PowerIcon, GridIcon, ChevronDownIcon } from "@/components/ui/icons";
+import MobileCartBar from "@/components/ui/mobile-cart-bar";
 import { resolveEnabledModules, getModuleForPath, MODULE_MAP } from "@/lib/modules";
 import { HUBS, HUB_MAP, getHubForPath, type HubKey } from "@/lib/hubs";
 
@@ -105,7 +106,7 @@ export function AppShell({
           <div className="relative border-b border-[var(--color-gold-soft)]">
             <button
               onClick={() => setShowSwitcher(!showSwitcher)}
-              className="flex h-16 w-full items-center gap-3 px-5 text-left transition-colors hover:bg-white/40 cursor-pointer"
+              className="flex h-14 w-full items-center gap-3 px-5 text-left transition-colors hover:bg-white/40 cursor-pointer"
             >
               <div
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg font-display text-sm font-semibold text-white shadow-sm"
@@ -121,12 +122,12 @@ export function AppShell({
               </div>
               <ChevronDownIcon className="h-4 w-4 shrink-0 text-[var(--color-text-secondary)] transition-transform duration-200" style={{ transform: showSwitcher ? "rotate(180deg)" : undefined }} />
             </button>
-
+ 
             {/* Popover Desktop Switcher */}
             {showSwitcher && (
               <>
                 <div className="fixed inset-0 z-40 bg-transparent" onClick={() => setShowSwitcher(false)} />
-                <div className="absolute left-4 right-4 top-14 z-50 flex flex-col gap-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-2 shadow-2xl animate-[fadeInUp_0.15s_ease-out_forwards]">
+                <div className="absolute left-4 right-4 top-12 z-50 flex flex-col gap-1 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-2 shadow-2xl animate-[fadeInUp_0.15s_ease-out_forwards]">
                   <p className="px-3 py-1.5 text-[10px] font-bold tracking-wider text-[var(--color-text-secondary)] uppercase">
                     Pindah Aplikasi
                   </p>
@@ -161,7 +162,7 @@ export function AppShell({
               </>
             )}
           </div>
-          <nav className="flex-1 space-y-1 overflow-y-auto px-3 py-4">
+          <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-2">
             {items.map((item) => {
               const active = item.href === activeHref;
               const Icon = item.icon;
@@ -177,7 +178,7 @@ export function AppShell({
                         ? { backgroundColor: activeHub.color, color: "#fff" }
                         : undefined
                   }
-                  className={`flex min-h-[48px] items-center gap-3 rounded-lg px-3 text-sm font-medium transition-colors duration-150 ${
+                  className={`flex min-h-[40px] items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-150 ${
                     active ? "" : "text-[var(--color-text)] hover:bg-white/40"
                   }`}
                 >
@@ -191,23 +192,23 @@ export function AppShell({
               );
             })}
           </nav>
-          <div className="border-t border-[var(--color-gold-soft)] p-3">
+          <div className="border-t border-[var(--color-gold-soft)] p-2">
             <Link
               href="/pilih-aplikasi"
-              className="flex min-h-[44px] items-center gap-3 rounded-lg px-3 text-sm font-medium text-[var(--color-text)] hover:bg-white/40"
+              className="flex min-h-[38px] items-center gap-3 rounded-lg px-3 text-sm font-medium text-[var(--color-text)] hover:bg-white/40"
             >
               <GridIcon aria-hidden className="h-5 w-5 shrink-0 text-[var(--color-text-secondary)]" />
               Ganti Aplikasi
             </Link>
           </div>
-          <div className="border-t border-[var(--color-gold-soft)] p-4">
+          <div className="border-t border-[var(--color-gold-soft)] p-3">
             <Link href="/akun" className="block hover:opacity-80">
               <p className="truncate text-sm font-semibold text-[var(--color-text)]">{userName}</p>
               <p className="text-xs text-[var(--color-text-secondary)]">{ROLE_LABEL[role]}</p>
             </Link>
             <button
               onClick={() => signOut({ callbackUrl: "/login" })}
-              className="mt-3 min-h-[40px] w-full rounded-lg border border-[var(--color-border)] bg-white/40 text-sm font-medium text-[var(--color-text)] transition-colors duration-150 hover:bg-white/70"
+              className="mt-2.5 min-h-[36px] w-full rounded-lg border border-[var(--color-border)] bg-white/40 text-xs font-semibold text-[var(--color-text)] transition-colors duration-150 hover:bg-white/70"
             >
               Keluar
             </button>
@@ -308,16 +309,28 @@ export function AppShell({
           className={`flex-1 overflow-y-auto bg-transparent ${
             isCommandCenter
               ? "p-4 lg:p-6"
-              : "px-4 py-5 pb-24 sm:px-5 lg:px-8 lg:py-8 lg:pb-8"
+              : "mx-auto w-full max-w-[var(--content-max-width)] px-[var(--content-padding-x)] py-[var(--content-padding-y)]"
           }`}
-          style={contentThemeStyle}
+          style={{
+            ...contentThemeStyle,
+            // Ensure content never hides under bottom nav on mobile. If a mobile
+            // cart bar is present, add its height as well so content never
+            // becomes hidden under stacked fixed elements.
+            paddingBottom: isCommandCenter ? undefined : "calc(var(--bottom-nav-height) + 24px + var(--mobile-cart-height))",
+          }}
         >
           {children}
         </main>
 
+        {/* Mobile cart bar */}
+        <MobileCartBar />
+
         {/* Bottom nav mobile */}
         {!isCommandCenter && bottomItems.length > 0 && (
-          <nav className="glass-nav fixed inset-x-0 bottom-0 z-10 flex rounded-none border-x-0 border-b-0 lg:hidden">
+          <nav
+            className="glass-nav fixed inset-x-0 bottom-0 z-20 flex rounded-none border-x-0 border-b-0 lg:hidden"
+            style={{ height: "var(--bottom-nav-height)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+          >
             {bottomItems.map((item) => {
               const active = item.href === activeHref;
               const Icon = item.icon;
@@ -328,12 +341,18 @@ export function AppShell({
                   key={item.href}
                   href={item.href}
                   style={{ color: active ? activeColor : undefined }}
-                  className={`flex min-h-[56px] flex-1 flex-col items-center justify-center gap-0.5 text-xs font-medium transition-colors duration-150 ${
+                  className={`flex flex-1 flex-col items-center justify-center gap-0.5 py-2 text-[11px] font-medium transition-colors duration-150 ${
                     active ? "" : "text-[var(--color-text-secondary)]"
                   }`}
                 >
-                  <Icon aria-hidden className="h-5 w-5" />
-                  {item.label}
+                  <span
+                    className={`flex h-6 w-6 items-center justify-center rounded-full transition-all duration-150 ${
+                      active ? "scale-110" : ""
+                    }`}
+                  >
+                    <Icon aria-hidden className="h-5 w-5" />
+                  </span>
+                  <span className="leading-none">{item.label}</span>
                 </Link>
               );
             })}

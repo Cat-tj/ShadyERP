@@ -171,3 +171,18 @@ extensions/                # Optional add-ons (DataForSEO, Firecrawl, Banana, AS
 Created by [@AgriciDaniel](https://github.com/AgriciDaniel).
 v1.9.0 community contributions by Lutfiya Miller, Chris Muller, Florian Schmitz,
 Dan Colta, and Matej Marjanovic. See [CONTRIBUTORS.md](CONTRIBUTORS.md).
+
+## Altora UI/UX Design System & Customizations
+
+### 1. Fondasi Visual (Minimalist + Premium UI)
+*   **Warna & Kontras**: Gunakan warna latar belakang surface murni (`--color-surface` / `#ffffff`) untuk seluruh popup modal dan dialog card, hindari warna abu-abu transparan yang meredupkan kontras.
+*   **Segmentasi Elemen**: Kontrol pilihan (seperti tipe produk) yang tidak terpilih wajib menggunakan latar belakang kontras berwarna abu-abu muda (`bg-[var(--color-bg)]`) agar tidak menyatu dengan background putih popup.
+*   **Scrollbar Tersembunyi**: Seluruh container/modal yang memiliki properti scrollable wajib menyembunyikan scrollbar track (`scrollbar-none` / `-webkit-scrollbar { display: none }`) tetapi tetap bisa di-scroll oleh gestur/mouse.
+
+### 2. Pedoman Komponen (shadcn UI & Dashboard)
+*   **Kepadatan Data (Data-Dense)**: Pertahankan tata letak yang bersih, minimalis, namun padat informasi untuk ERP/POS. Hindari whitespace berlebihan yang memboroskan area pandang.
+*   **Target Sentuh (Accessibility)**: Pastikan setiap tombol aksi di layar POS memiliki target klik minimal `44px` atau `min-h-[48px]` untuk mencegah kesalahan input kasir di tablet/ponsel.
+
+### 3. UX Copy & Aksesibilitas
+*   **Pemberitahuan & Validasi**: Gunakan status badge berwarna lembut. Setiap pesan kesalahan harus langsung mengarahkan pengguna ke kolom yang bermasalah.
+*   **Komunikasi Intuitif**: Teks empty-state wajib menyajikan ajakan bertindak (Call-to-Action) yang jelas dan spesifik.

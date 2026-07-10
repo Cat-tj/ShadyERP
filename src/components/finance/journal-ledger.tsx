@@ -52,8 +52,55 @@ export function JournalLedger({ entries }: JournalLedgerProps) {
         </div>
       </div>
 
+      {/* Mobile Card List (Alternative to Table) */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {filteredEntries.length === 0 ? (
+          <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-8 text-center text-sm text-[var(--color-text-secondary)] shadow-sm">
+            Tidak ada transaksi jurnal buku besar ditemukan.
+          </div>
+        ) : (
+          filteredEntries.map((entry) => (
+            <div key={entry.id} className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-[var(--shadow-card)] flex flex-col gap-3">
+              <div className="flex items-center justify-between gap-2 border-b border-[var(--color-border)] pb-2">
+                <span className="text-[11px] font-semibold text-[var(--color-text-secondary)]">
+                  {formatTanggalPendek(entry.date)}
+                </span>
+                <span className="font-mono-data text-xs font-bold text-[var(--color-primary)]">
+                  {entry.reference || "-"}
+                </span>
+              </div>
+              <div>
+                <p className="font-bold text-sm text-[var(--color-text)]">{entry.description}</p>
+                <div className="mt-2.5 flex flex-col gap-1.5 border-l-2 border-[var(--color-border)] pl-2.5">
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="inline-flex items-center gap-1">
+                      <span className="rounded bg-blue-500/10 px-1 py-0.5 text-[9px] font-black text-blue-600">Dr</span>
+                      <span className="text-[var(--color-text)] truncate max-w-[160px]">{entry.debitCode} - {entry.debitName}</span>
+                    </span>
+                    <span className="font-mono-data font-bold text-blue-600">{formatRupiah(entry.amount)}</span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs pl-4">
+                    <span className="inline-flex items-center gap-1">
+                      <span className="rounded bg-amber-500/10 px-1 py-0.5 text-[9px] font-black text-amber-600">Cr</span>
+                      <span className="text-[var(--color-text-secondary)] truncate max-w-[140px]">{entry.creditCode} - {entry.creditName}</span>
+                    </span>
+                    <span className="font-mono-data font-bold text-amber-600">{formatRupiah(entry.amount)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+        
+        {filteredEntries.length > 0 && (
+          <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-bg-secondary)] p-3 text-center text-xs font-bold text-[var(--color-text)]">
+            Total Balance: {formatRupiah(totalAmount)}
+          </div>
+        )}
+      </div>
+
       {/* Main double-entry general ledger table */}
-      <div className="overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
+      <div className="hidden md:block overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-sm">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse text-left text-xs">
             <thead>

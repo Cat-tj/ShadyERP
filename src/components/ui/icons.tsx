@@ -271,3 +271,51 @@ export function ChevronDownIcon(props: IconProps) {
     </svg>
   );
 }
+
+// Additional icons used by mobile cart bar
+export function ShoppingCart(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5" {...props}>
+      <path d="M6 6h15l-1.5 9h-11z" />
+      <circle cx="9" cy="20" r="1" />
+      <circle cx="18" cy="20" r="1" />
+    </svg>
+  );
+}
+
+export function CurrencyIcon(props: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className="h-4 w-4" {...props}>
+      <path d="M12 1v22" />
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7H15a3.5 3.5 0 0 1 0 7H7" />
+    </svg>
+  );
+}
+
+export function AlertCircleIcon(props: IconProps) {
+  return (
+    <svg {...base} className="h-5 w-5" {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <line x1="12" y1="8" x2="12" y2="12" />
+      <line x1="12" y1="16" x2="12.01" y2="16" />
+    </svg>
+  );
+}
+
+export function AwardIcon(props: IconProps) {
+  return (
+    <svg {...base} className="h-5 w-5" {...props}>
+      <circle cx="12" cy="8" r="7" />
+      <polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88" />
+    </svg>
+  );
+}
+
+export function ClockIcon(props: IconProps) {
+  return (
+    <svg {...base} className="h-5 w-5" {...props}>
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  );
+}

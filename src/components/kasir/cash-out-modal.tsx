@@ -64,29 +64,30 @@ export function CashOutModal({ onClose }: { onClose: () => void }) {
   return (
     <>
       <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-        <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-5 shadow-2xl">
-          <div className="flex items-start justify-between gap-3">
+        <div className="max-h-[90vh] w-full max-w-lg overflow-y-auto scrollbar-none rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] shadow-[var(--shadow-modal)]">
+          <div className="sticky top-0 z-10 flex items-center justify-between bg-[var(--color-surface)]/80 backdrop-blur-md px-6 py-4 border-b border-[var(--color-border)]/50">
             <div>
               <h2 className="text-lg font-bold text-[var(--color-text)]">Gesek tunai</h2>
-              <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-                Catat cash yang keluar dari laci dan total yang dibayar customer via non-tunai.
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                Catat cash keluar dari laci dan total dibayar customer via non-tunai.
               </p>
             </div>
             <button
               type="button"
               onClick={onClose}
-              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--color-border)] text-xl leading-none text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
+              className="flex h-10 w-10 items-center justify-center rounded-lg border border-[var(--color-border)] text-sm text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
               aria-label="Tutup"
             >
-              x
+              ✕
             </button>
           </div>
 
-          {error && (
-            <div className="mt-4 rounded-lg bg-[var(--color-warning-bg)] px-3 py-2 text-sm text-[var(--color-warning-text)]">
-              {error}
-            </div>
-          )}
+          <div className="p-6">
+            {error && (
+              <div className="mb-4 rounded-lg bg-[var(--color-warning-bg)] px-3 py-2 text-sm text-[var(--color-warning-text)]">
+                {error}
+              </div>
+            )}
 
           <div className="mt-4 grid gap-3 sm:grid-cols-2">
             <label className="text-sm font-medium text-[var(--color-text)]">
@@ -152,7 +153,7 @@ export function CashOutModal({ onClose }: { onClose: () => void }) {
             </label>
           </div>
 
-          <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
             <div className="flex items-center justify-between gap-3 text-sm">
               <span className="text-[var(--color-text-secondary)]">Cash keluar dari laci</span>
               <span className="font-semibold tabular-nums text-[var(--color-danger)]">
@@ -175,11 +176,13 @@ export function CashOutModal({ onClose }: { onClose: () => void }) {
             </div>
           </div>
 
-          <div className="mt-5 flex gap-2">
+          </div>
+
+          <div className="sticky bottom-0 z-10 flex gap-3 bg-[var(--color-surface)]/80 backdrop-blur-md px-6 py-4 border-t border-[var(--color-border)]/50">
             <button
               type="button"
               onClick={onClose}
-              className="min-h-[48px] flex-1 rounded-lg border border-[var(--color-border)] text-sm font-medium text-[var(--color-text)]"
+              className="min-h-[48px] flex-1 rounded-lg border border-[var(--color-border)] text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface-muted)]"
             >
               Batal
             </button>

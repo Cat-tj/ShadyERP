@@ -131,6 +131,7 @@ model Tenant {
   journalEntries           JournalEntry[]
   leads                    Lead[]
   cashFlows                CashFlow[]
+  subscription             Subscription?
 }
 
 model Outlet {
@@ -1834,4 +1835,128 @@ model CashFlow {
 
   @@index([tenantId])
   @@index([outletId])
+}
+
+// ================== BILLING & SUBSCRIPTION (SUMOPOD) ==================
+
+enum SubscriptionStatus {
+  ACTIVE
+  EXPIRED
+  CANCELLED
+  PAST_DUE
+  TRIALING
+}
+
+model Subscription {
+  id String @id @default(cuid())
+  tenantId String @unique
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  plan Plan @default(FREE)
+  status SubscriptionStatus @default(ACTIVE)
+
+  billingCycle String @default("MONTHLY") // MONTHLY, YEARLY
+  currentPeriodStart DateTime
+  currentPeriodEnd DateTime
+  nextBillingDate DateTime?
+
+  lastPaymentId String?
+  lastPaymentAmount Int?
+  lastPaymentDate DateTime?
+
+  trialStartDate DateTime?
+  trialEndDate DateTime?
+  isOnTrial Boolean @default(false)
+
+  autoRenew Boolean @default(true)
+  cancelledAt DateTime?
+  cancelledReason String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  invoices Invoice[]
+  paymentHistory PaymentHistory[]
+
+  @@index([tenantId])
+  @@index([status])
+  @@index([currentPeriodEnd])
+}
+
+enum InvoiceStatus {
+  DRAFT
+  ISSUED
+  PAID
+  OVERDUE
+  CANCELLED
+}
+
+model Invoice {
+  id String @id @default(cuid())
+  subscriptionId String
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  invoiceNumber String @unique
+  sumopodPaymentId String?
+
+  amount Int
+  tax Int @default(0)
+  total Int
+
+  currency String @default("IDR")
+
+  status InvoiceStatus @default(DRAFT)
+  dueDate DateTime
+  paidDate DateTime?
+
+  description String
+
+  fromDate DateTime
+  toDate DateTime
+
+  items Json?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  paymentHistory PaymentHistory[]
+
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([invoiceNumber])
+}
+
+enum PaymentStatus {
+  PENDING
+  SUCCESS
+  FAILED
+  CANCELLED
+  EXPIRED
+}
+
+model PaymentHistory {
+  id String @id @default(cuid())
+  subscriptionId String
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  sumopodPaymentId String @unique
+  invoiceId String
+  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+
+  amount Int
+  currency String @default("IDR")
+
+  paymentMethod String?
+  status PaymentStatus @default(PENDING)
+
+  failureReason String?
+
+  createdAt DateTime @default(now())
+  processedAt DateTime?
+
+  metadata Json?
+
+  @@index([subscriptionId])
+  @@index([sumopodPaymentId])
+  @@index([status])
 }

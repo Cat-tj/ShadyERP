@@ -10,7 +10,8 @@ import {
   confirmPurchaseOrderAction,
 } from "@/app/(app)/purchase-order/actions";
 import { useToast, Toast } from "@/components/toast";
-import { XIcon } from "@/components/ui/icons";
+import { XIcon, PackageIcon } from "@/components/ui/icons";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export type PurchaseOrderRow = {
   id: string;
@@ -308,11 +309,17 @@ export function PurchaseOrderManager({
 
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
         {purchaseOrders.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              Belum ada pemesanan. Buat pemesanan pertamamu →
-            </p>
-          </div>
+          <EmptyState
+            icon={PackageIcon}
+            title="Belum ada pemesanan"
+            description="Buat pesanan ke supplier untuk mencatat stok yang dipesan, estimasi biaya, dan status penerimaan."
+            action={{
+              label: "+ Buat Pemesanan",
+              onClick: () => {
+                setModalOpen(true);
+              },
+            }}
+          />
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
             {purchaseOrders.map((po) => (

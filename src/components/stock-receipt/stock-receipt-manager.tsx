@@ -11,7 +11,8 @@ import {
   rejectStockReceiptAction,
 } from "@/app/(app)/stock-receipt/actions";
 import { useToast, Toast } from "@/components/toast";
-import { XIcon } from "@/components/ui/icons";
+import { XIcon, PackageIcon } from "@/components/ui/icons";
+import { EmptyState } from "@/components/ui/empty-state";
 
 type PurchaseOrderSummary = PurchaseOrder & {
   supplier?: Pick<Supplier, "id" | "name"> | null;
@@ -604,11 +605,18 @@ export function StockReceiptManager({
 
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
         {receipts.length === 0 ? (
-          <div className="px-6 py-16 text-center">
-            <p className="text-sm text-[var(--color-text-secondary)]">
-              Belum ada penerimaan barang. Terima barang pertamamu →
-            </p>
-          </div>
+          <EmptyState
+            icon={PackageIcon}
+            title="Belum ada penerimaan barang"
+            description="Catat barang masuk dari supplier agar stok dan riwayat pembelian tetap akurat."
+            action={{
+              label: "+ Terima Barang",
+              onClick: () => {
+                setSelectedPO(null);
+                setModalOpen(true);
+              },
+            }}
+          />
         ) : (
           <div className="divide-y divide-[var(--color-border)]">
             {receipts.map((receipt) => (

@@ -66,19 +66,20 @@ export function VariantPickerModal({
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40 sm:items-center sm:justify-center">
-      <div className="max-h-[85vh] w-full overflow-y-auto rounded-t-2xl bg-[var(--color-bg)] p-5 sm:max-w-md sm:rounded-2xl">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="max-h-[85vh] w-full overflow-y-auto scrollbar-none rounded-t-2xl bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-modal)] sm:max-w-md sm:rounded-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between bg-[var(--color-surface)]/80 backdrop-blur-md px-6 py-4 border-b border-[var(--color-border)]/50">
           <h2 className="text-lg font-bold text-[var(--color-text)]">{productName}</h2>
           <button
             onClick={onClose}
             aria-label="Tutup"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
           >
             <XIcon aria-hidden className="h-5 w-5" />
           </button>
         </div>
 
-        <div className="flex flex-col gap-4">
+        <div className="p-6">
+          <div className="flex flex-col gap-4">
           {groups.map((group) => (
             <div key={group.id}>
               <p className="mb-1.5 text-sm font-semibold text-[var(--color-text)]">
@@ -92,10 +93,10 @@ export function VariantPickerModal({
                     <button
                       key={option.id}
                       onClick={() => toggle(group, option.id)}
-                      className={`flex min-h-[44px] items-center justify-between rounded-lg border px-3 text-sm ${
+                      className={`flex min-h-[44px] items-center justify-between rounded-lg border px-3 text-sm transition-all ${
                         checked
-                          ? "border-[var(--color-primary)] bg-[var(--color-primary)]/10 text-[var(--color-text)]"
-                          : "border-[var(--color-border)] text-[var(--color-text)]"
+                          ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)] font-bold shadow-sm"
+                          : "border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text)] hover:bg-[var(--color-surface)]"
                       }`}
                     >
                       <span>{option.name}</span>
@@ -110,18 +111,21 @@ export function VariantPickerModal({
           ))}
         </div>
 
-        {error && (
-          <div className="mt-4 rounded-lg bg-[var(--color-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning-text)]">
-            {error}
-          </div>
-        )}
+          {error && (
+            <div className="mt-4 rounded-lg bg-[var(--color-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning-text)]">
+              {error}
+            </div>
+          )}
+        </div>
 
-        <button
-          onClick={confirm}
-          className="mt-5 flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)]"
-        >
-          Tambah — {formatRupiah(basePrice + priceDelta)}
-        </button>
+        <div className="sticky bottom-0 z-10 bg-[var(--color-surface)]/80 backdrop-blur-md px-6 py-4 border-t border-[var(--color-border)]/50">
+          <button
+            onClick={confirm}
+            className="flex min-h-[48px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90"
+          >
+            Tambah — {formatRupiah(basePrice + priceDelta)}
+          </button>
+        </div>
       </div>
     </div>
   );

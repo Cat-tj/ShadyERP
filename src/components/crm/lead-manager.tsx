@@ -26,6 +26,7 @@ export function LeadManager({ leads }: LeadManagerProps) {
   const [selectedLead, setSelectedLead] = useState<LeadRow | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
+  const [activeTab, setActiveTab] = useState<"NEW" | "CONTACTED" | "WON" | "LOST">("NEW");
 
   // Form states
   const [name, setName] = useState("");
@@ -174,6 +175,32 @@ export function LeadManager({ leads }: LeadManagerProps) {
         </button>
       </div>
 
+      {/* Mobile Segmented Tab Control */}
+      <div className="flex md:hidden rounded-lg bg-[var(--color-bg-secondary)] p-1">
+        {(["NEW", "CONTACTED", "WON", "LOST"] as const).map((status) => {
+          let label = "Baru";
+          if (status === "CONTACTED") label = "Dihubungi";
+          if (status === "WON") label = "Berhasil";
+          if (status === "LOST") label = "Gagal";
+          const count = leads.filter((l) => l.status === status).length;
+          const active = activeTab === status;
+          return (
+            <button
+              key={status}
+              type="button"
+              onClick={() => setActiveTab(status)}
+              className={`flex-1 text-center py-2 text-xs font-semibold rounded-md transition-all ${
+                active
+                  ? "bg-[var(--color-surface)] text-[var(--color-text)] shadow-xs"
+                  : "text-[var(--color-text-secondary)] hover:text-[var(--color-text)]"
+              }`}
+            >
+              {label} ({count})
+            </button>
+          );
+        })}
+      </div>
+
       {/* Grid status columns (Kanban Style) */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         {(["NEW", "CONTACTED", "WON", "LOST"] as const).map((colStatus) => {
@@ -192,7 +219,12 @@ export function LeadManager({ leads }: LeadManagerProps) {
           }
 
           return (
-            <div key={colStatus} className="flex flex-col gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/45 p-3 min-h-[350px]">
+            <div
+              key={colStatus}
+              className={`flex-col gap-3 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)]/45 p-3 min-h-[350px] ${
+                activeTab === colStatus ? "flex" : "hidden md:flex"
+              }`}
+            >
               <div className={`rounded-xl border px-3 py-1.5 text-center text-xs font-bold ${colHeaderBg}`}>
                 {colTitle} · {colLeads.length}
               </div>

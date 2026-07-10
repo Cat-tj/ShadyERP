@@ -74,6 +74,25 @@ export async function getMemberPublicProfile(memberId: string) {
   return { member, sales };
 }
 
+export async function createQuickMember(
+  tenantId: string,
+  input: { name: string; phone: string }
+) {
+  const name = input.name.trim();
+  const phone = input.phone.trim();
+  if (!name) throw new Error("Nama wajib diisi.");
+  if (!phone) throw new Error("Nomor HP wajib diisi.");
+
+  const duplicate = await prisma.member.findFirst({ where: { tenantId, phone } });
+  if (duplicate) {
+    throw new Error("Nomor HP ini sudah terdaftar sebagai member.");
+  }
+
+  return prisma.member.create({
+    data: { tenantId, name, phone },
+  });
+}
+
 export async function updateMemberInfo(
   tenantId: string,
   memberId: string,

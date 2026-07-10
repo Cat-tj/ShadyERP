@@ -11,7 +11,8 @@ import {
   deleteBookingAction,
 } from "@/app/(app)/booking/actions";
 import { useToast, Toast } from "@/components/toast";
-import { XIcon } from "@/components/ui/icons";
+import { XIcon, CalendarIcon } from "@/components/ui/icons";
+import { EmptyState } from "@/components/ui/empty-state";
 
 export type OutletOption = { id: string; name: string };
 export type StaffOption = { id: string; name: string };
@@ -129,8 +130,19 @@ export function BookingManager({
       </div>
 
       {groups.length === 0 ? (
-        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-16 text-center">
-          <p className="text-sm text-[var(--color-text-secondary)]">Belum ada booking dalam 30 hari ke depan.</p>
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)]">
+          <EmptyState
+            icon={CalendarIcon}
+            title="Belum ada booking"
+            description="Buat booking pertama untuk janji temu, pesanan event, atau layanan terjadwal."
+            action={{
+              label: "+ Booking",
+              onClick: () => {
+                setEditing(null);
+                setModalOpen(true);
+              },
+            }}
+          />
         </div>
       ) : (
         groups.map((group) => (

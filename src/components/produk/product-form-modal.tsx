@@ -140,27 +140,28 @@ export function ProductFormModal({
 
   return (
     <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/40 sm:items-center sm:justify-center">
-      <div className="max-h-[90vh] w-full overflow-y-auto glass-surface-strong rounded-t-2xl p-6 sm:max-w-lg sm:rounded-2xl">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="max-h-[90vh] w-full modal-scrollbar bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-modal)] rounded-t-2xl sm:max-w-2xl sm:rounded-2xl">
+        <div className="sticky top-0 z-10 flex items-center justify-between bg-[var(--color-surface)]/80 backdrop-blur-md px-6 py-4 border-b border-[var(--color-border)]/50">
           <h2 className="text-lg font-bold text-[var(--color-text)]">
             {product ? "Ubah Produk" : "Tambah Produk Baru"}
           </h2>
           <button
             onClick={onClose}
             aria-label="Tutup"
-            className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)]"
           >
             <XIcon aria-hidden className="h-5 w-5" />
           </button>
         </div>
 
-        {error && (
-          <div className="mb-4 rounded-lg bg-[var(--color-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning-text)]">
-            {error}
-          </div>
-        )}
+        <div className="p-6">
+          {error && (
+            <div className="mb-4 rounded-lg bg-[var(--color-warning-bg)] px-4 py-3 text-sm text-[var(--color-warning-text)]">
+              {error}
+            </div>
+          )}
 
-        <div className="flex flex-col gap-5">
+          <div className="flex flex-col gap-5">
           {/* Dasar Produk */}
           <div className="flex flex-col gap-3.5">
             <h3 className="text-xs font-bold uppercase tracking-wider text-[var(--color-text-secondary)]">Dasar Produk</h3>
@@ -241,7 +242,7 @@ export function ProductFormModal({
                     className={`flex items-start gap-3 p-3 rounded-lg border text-left transition-all ${
                       isSelected
                         ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)] font-bold shadow-sm"
-                        : "border-[var(--color-border)] bg-transparent text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
+                        : "border-[var(--color-border)] bg-[var(--color-bg)] text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
                     }`}
                   >
                     <span className="text-lg shrink-0 mt-0.5">{option.icon}</span>
@@ -459,29 +460,30 @@ export function ProductFormModal({
             {info}
           </div>
         )}
-
-        <div className="mt-6 flex gap-3">
-          <button
-            type="button"
-            onClick={onClose}
-            className="flex min-h-[52px] flex-1 items-center justify-center rounded-lg border border-[var(--color-border)] text-base font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface)]"
-          >
-            Batal
-          </button>
-          <button
-            onClick={handleSubmit}
-            disabled={isPending}
-            className="flex min-h-[52px] flex-[2] items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-60"
-          >
-            {isPending ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)]" />
-            ) : (
-              <span className="text-lg">✓</span>
-            )}
-            {isPending ? "Menyimpan..." : "Simpan Produk"}
-          </button>
-        </div>
       </div>
+
+      <div className="sticky bottom-0 z-10 flex gap-3 bg-[var(--color-surface)]/80 backdrop-blur-md px-6 py-4 border-t border-[var(--color-border)]/50">
+        <button
+          type="button"
+          onClick={onClose}
+          className="flex min-h-[48px] flex-1 items-center justify-center rounded-lg border border-[var(--color-border)] text-base font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface-muted)]"
+        >
+          Batal
+        </button>
+        <button
+          onClick={handleSubmit}
+          disabled={isPending}
+          className="flex min-h-[48px] flex-[2] items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-60"
+        >
+          {isPending ? (
+            <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)]" />
+          ) : (
+            <span className="text-lg">✓</span>
+          )}
+          {isPending ? "Menyimpan..." : "Simpan Produk"}
+        </button>
+      </div>
+    </div>
     </div>
   );
 }

@@ -20,7 +20,7 @@ export function SettingsTabs({ disabledModules = [] }: { disabledModules?: strin
   const disabledSet = new Set(disabledModules);
 
   return (
-    <div className="hairline-gold mb-4 flex gap-2 overflow-x-auto border-b pb-px">
+    <div className="hairline-gold mb-4 hidden md:flex gap-2 overflow-x-auto border-b pb-px">
       {TABS.map((tab) => {
         const active = pathname.startsWith(tab.href);
         const isDisabled = tab.module && disabledSet.has(tab.module);
