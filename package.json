@@ -9,6 +9,7 @@
     "lint": "eslint",
     "postinstall": "prisma generate",
     "seed": "tsx prisma/seed.ts",
+    "knowledge": "node scripts/generate-knowledge.mjs",
     "db:clear-demo": "tsx prisma/scripts/clear-demo-data.ts",
     "db:create-super-admin": "tsx prisma/scripts/create-super-admin.ts"
   },
