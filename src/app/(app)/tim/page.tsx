@@ -5,8 +5,10 @@ import { listUsers } from "@/server/services/user-service";
 import { getTodayAttendance, listTeamAttendance } from "@/server/services/attendance-service";
 import { getTodayScheduleForUser, listUpcomingSchedules } from "@/server/services/schedule-service";
 import { formatTanggal, formatJam } from "@/lib/format";
-import { GlassPanel } from "@/components/ui/glass-panel";
 import { MapPinIcon, UsersIcon, CalendarIcon } from "@/components/ui/icons";
+import { StatTile } from "@/components/laporan/stat-tile";
+import { EyebrowBadge } from "@/components/ui/eyebrow-badge";
+import { SectionCard } from "@/components/ui/section-card";
 
 export default async function TimHomePage() {
   const user = await requireSession();
@@ -42,48 +44,23 @@ export default async function TimHomePage() {
   return (
     <div className="mx-auto flex max-w-3xl flex-col gap-6">
       <div>
-        <p className="text-sm text-[var(--color-text-secondary)]">{formatTanggal(new Date())}</p>
-        <h1 className="font-display text-2xl font-semibold tracking-tight text-[var(--color-text)] sm:text-3xl">
+        <EyebrowBadge>{formatTanggal(new Date())}</EyebrowBadge>
+        <h1 className="mt-2 font-display text-2xl font-semibold tracking-tight text-[var(--color-text)] sm:text-3xl">
           Halo, {user.name.split(" ")[0]}
         </h1>
-        <p className="text-sm text-[var(--color-text-secondary)]">Ringkasan tim & absensi hari ini.</p>
+        <p className="mt-1 text-sm text-[var(--color-text-secondary)]">Ringkasan tim & absensi hari ini.</p>
       </div>
 
       {teamStats && (
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <GlassPanel className="rounded-xl p-4">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 text-[var(--color-primary)]">
-              <UsersIcon aria-hidden className="h-5 w-5" />
-            </div>
-            <p className="mt-3 font-mono-data tabular-nums text-xl font-semibold leading-tight text-[var(--color-text)] [overflow-wrap:anywhere] sm:text-2xl">
-              {teamStats.totalStaff}
-            </p>
-            <p className="mt-1 text-xs leading-snug text-[var(--color-text-secondary)]">Karyawan aktif</p>
-          </GlassPanel>
-          <GlassPanel className="rounded-xl p-4">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 text-[var(--color-primary)]">
-              <MapPinIcon aria-hidden className="h-5 w-5" />
-            </div>
-            <p className="mt-3 font-mono-data tabular-nums text-xl font-semibold leading-tight text-[var(--color-text)] [overflow-wrap:anywhere] sm:text-2xl">
-              {teamStats.hadirHariIni}
-            </p>
-            <p className="mt-1 text-xs leading-snug text-[var(--color-text-secondary)]">Hadir hari ini</p>
-          </GlassPanel>
-          <GlassPanel className="rounded-xl p-4">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white/50 text-[var(--color-primary)]">
-              <CalendarIcon aria-hidden className="h-5 w-5" />
-            </div>
-            <p className="mt-3 font-mono-data tabular-nums text-xl font-semibold leading-tight text-[var(--color-text)] [overflow-wrap:anywhere] sm:text-2xl">
-              {teamStats.jadwalHariIni}
-            </p>
-            <p className="mt-1 text-xs leading-snug text-[var(--color-text-secondary)]">Jadwal hari ini</p>
-          </GlassPanel>
+          <StatTile label="Karyawan aktif" value={String(teamStats.totalStaff)} icon={UsersIcon} />
+          <StatTile label="Hadir hari ini" value={String(teamStats.hadirHariIni)} icon={MapPinIcon} />
+          <StatTile label="Jadwal hari ini" value={String(teamStats.jadwalHariIni)} icon={CalendarIcon} />
         </div>
       )}
 
-      <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
-        <h2 className="font-display text-base font-semibold text-[var(--color-text)]">Status kamu hari ini</h2>
-        <div className="mt-3 flex flex-col gap-2 text-sm text-[var(--color-text-secondary)]">
+      <SectionCard eyebrow="Hari ini" title="Status kamu hari ini">
+        <div className="flex flex-col gap-2 text-sm text-[var(--color-text-secondary)]">
           <p>
             Absen masuk:{" "}
             <span className="font-medium text-[var(--color-text)]">
@@ -109,7 +86,7 @@ export default async function TimHomePage() {
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
           <Link
             href="/absensi"
-            className="flex min-h-[44px] flex-1 items-center justify-center rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)]"
+            className="flex min-h-[44px] flex-1 items-center justify-center rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)] transition-colors duration-150 hover:bg-[var(--color-primary-dark)]"
           >
             Buka Absensi
           </Link>
@@ -122,7 +99,7 @@ export default async function TimHomePage() {
             </Link>
           )}
         </div>
-      </div>
+      </SectionCard>
     </div>
   );
 }

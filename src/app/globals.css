@@ -16,6 +16,13 @@
   --color-danger: #dc2626;
   --color-warning-bg: #fee2e2;
   --color-warning-text: #991b1b;
+  --color-good-bg: #dcfce7;
+  --color-good-text: #15803d;
+
+  /* Tint dari --color-primary — pakai color-mix (bukan rgba tetap) supaya otomatis
+     ikut warna modul saat contentThemeStyle di AppShell override --color-primary. */
+  --color-primary-soft: color-mix(in srgb, var(--color-primary) 10%, transparent);
+  --color-primary-soft-strong: color-mix(in srgb, var(--color-primary) 16%, transparent);
 
   /* Logomark "a" — sama persis dengan landing.css & AltoraLogomark, dipakai untuk gradient-text/badge di dalam app */
   --logo-c1: #2f3ba3;

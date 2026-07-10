@@ -25,8 +25,11 @@ export function RankingBarChart({ items }: { items: RankingItem[] }) {
           </div>
           <div className="h-2 w-full overflow-hidden rounded-full bg-[var(--color-bg)]">
             <div
-              className="h-full rounded-full bg-[var(--color-primary)]"
-              style={{ width: `${Math.max(2, (item.value / max) * 100)}%` }}
+              className="h-full rounded-full"
+              style={{
+                width: `${Math.max(2, (item.value / max) * 100)}%`,
+                backgroundImage: "linear-gradient(90deg, var(--color-primary-dark), var(--color-primary))",
+              }}
             />
           </div>
           {item.sublabel && (
