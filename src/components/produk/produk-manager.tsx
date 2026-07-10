@@ -12,6 +12,7 @@ import {
   type OutletOption,
   type VariantGroupRow,
 } from "@/components/produk/product-form-modal";
+import { ScanBarcodeModal } from "@/components/produk/scan-barcode-modal";
 import { useToast, Toast } from "@/components/toast";
 
 export type ProductRow = {
@@ -55,6 +56,8 @@ export function ProdukManager({
   const { toastMessage, showToast } = useToast();
   const [modalOpen, setModalOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [prefillSku, setPrefillSku] = useState<string | undefined>(undefined);
+  const [scanModalOpen, setScanModalOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   // Diambil ulang dari `products` (bukan snapshot) supaya varian/topping tetap
@@ -82,11 +85,27 @@ export function ProdukManager({
 
   function openCreate() {
     setEditingId(null);
+    setPrefillSku(undefined);
     setModalOpen(true);
   }
 
   function openEdit(product: ProductRow) {
     setEditingId(product.id);
+    setPrefillSku(undefined);
+    setModalOpen(true);
+  }
+
+  function handleScan(sku: string) {
+    const match = products.find((p) => p.sku?.toLowerCase() === sku.toLowerCase());
+    setScanModalOpen(false);
+    if (match) {
+      showToast(`Produk ditemukan: ${match.name}`);
+      openEdit(match);
+      return;
+    }
+    showToast("Barcode belum terdaftar — lengkapi data produk baru");
+    setEditingId(null);
+    setPrefillSku(sku);
     setModalOpen(true);
   }
 
@@ -129,6 +148,18 @@ export function ProdukManager({
           >
             Import CSV
           </Link>
+          <Link
+            href="/produk/label-barcode"
+            className="flex min-h-[44px] items-center justify-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+          >
+            Cetak label
+          </Link>
+          <button
+            onClick={() => setScanModalOpen(true)}
+            className="flex min-h-[44px] items-center justify-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+          >
+            Scan barcode
+          </button>
           <button
             onClick={openCreate}
             className="min-h-[44px] rounded-lg bg-[var(--color-primary)] px-4 text-sm font-semibold text-[var(--color-on-primary)]"
@@ -221,10 +252,13 @@ export function ProdukManager({
           categories={categories}
           outlets={outlets}
           product={editing}
+          initialSku={prefillSku}
           onClose={() => setModalOpen(false)}
           onSaved={showToast}
         />
       )}
+
+      {scanModalOpen && <ScanBarcodeModal onScan={handleScan} onClose={() => setScanModalOpen(false)} />}
 
       <Toast message={toastMessage} />
     </div>

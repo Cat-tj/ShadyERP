@@ -41,18 +41,21 @@ export function ProductFormModal({
   categories,
   outlets,
   product,
+  initialSku,
   onClose,
   onSaved,
 }: {
   categories: CategoryOption[];
   outlets: OutletOption[];
   product: EditingProduct | null;
+  /** Prefill SKU pas buka form "Tambah produk" dari hasil scan barcode yang belum kenal. */
+  initialSku?: string;
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
   const router = useRouter();
   const [name, setName] = useState(product?.name ?? "");
-  const [sku, setSku] = useState(product?.sku ?? "");
+  const [sku, setSku] = useState(product?.sku ?? initialSku ?? "");
   const [categoryId, setCategoryId] = useState(product?.categoryId ?? "");
   const [price, setPrice] = useState(product ? String(product.price) : "");
   const [cost, setCost] = useState(product?.cost ? String(product.cost) : "");

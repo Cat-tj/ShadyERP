@@ -10,6 +10,7 @@ import { OfflineSyncBanner } from "@/components/kasir/offline-sync-banner";
 import { CashOutModal } from "@/components/kasir/cash-out-modal";
 import { VariantPickerModal, type VariantGroupOption } from "@/components/kasir/variant-picker-modal";
 import { XIcon } from "@/components/ui/icons";
+import { useToast, Toast } from "@/components/toast";
 
 export type PosProduct = {
   id: string;
@@ -64,6 +65,7 @@ export function PosScreen({
   const [showCashOut, setShowCashOut] = useState(false);
   const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null);
   const [variantPickerProduct, setVariantPickerProduct] = useState<PosProduct | null>(null);
+  const { toastMessage, showToast } = useToast();
   useEffect(() => {
     const handleGlobalKeyDown = (e: globalThis.KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -171,7 +173,10 @@ export function PosScreen({
     const query = search.trim().toLowerCase();
     if (!query) return;
     const exact = products.find((product) => product.sku?.toLowerCase() === query);
-    if (!exact) return;
+    if (!exact) {
+      showToast(`Barcode "${search.trim()}" tidak ditemukan`);
+      return;
+    }
     event.preventDefault();
     addToCart(exact);
     setSearch("");
@@ -499,6 +504,8 @@ export function PosScreen({
           }}
         />
       )}
+
+      <Toast message={toastMessage} />
     </div>
   );
 }
