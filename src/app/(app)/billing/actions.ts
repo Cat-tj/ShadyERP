@@ -9,8 +9,8 @@ export async function upgradeSubscription(
   newPlan: string,
   billingCycle: 'MONTHLY' | 'YEARLY'
 ) {
-  const session = await requireSession();
-  const tenantId = session.user?.tenantId || (session as any).tenantId;
+  const user = await requireSession();
+  const tenantId = user.tenantId;
 
   if (!['BASIC', 'PRO'].includes(newPlan)) {
     throw new Error('Invalid plan');
@@ -27,11 +27,11 @@ export async function upgradeSubscription(
 }
 
 export async function getSubscription() {
-  const session = await requireSession();
-  const tenantId = session.user?.tenantId || (session as any).tenantId;
+  const user = await requireSession();
+  const tenantId = user.tenantId;
 
   // Auto-create subscription if doesn't exist
-  let subscription = await prisma.subscription.findUnique({
+  let subscription: any = await prisma.subscription.findUnique({
     where: { tenantId },
     include: {
       invoices: {
@@ -67,8 +67,8 @@ export async function getSubscription() {
 }
 
 export async function cancelSubscription(reason?: string) {
-  const session = await requireSession();
-  const tenantId = session.user?.tenantId || (session as any).tenantId;
+  const user = await requireSession();
+  const tenantId = user.tenantId;
 
   const subscription = await prisma.subscription.update({
     where: { tenantId },

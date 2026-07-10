@@ -60,7 +60,7 @@ export default async function BillingPage() {
                 </tr>
               </thead>
               <tbody>
-                {subscription.invoices.map((invoice) => (
+                {subscription.invoices.map((invoice: any) => (
                   <tr key={invoice.id} className="border-b hover:bg-gray-50">
                     <td className="px-4 py-2 font-mono">{invoice.invoiceNumber}</td>
                     <td className="px-4 py-2">

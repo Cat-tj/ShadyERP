@@ -235,15 +235,9 @@ export async function checkAndExpireTrials() {
  * List subscription history (stub for existing code)
  */
 export async function listSubscriptionHistory(tenantId: string) {
-  return prisma.paymentHistory.findMany({
-    where: {
-      subscription: {
-        tenantId,
-      },
-    },
-    orderBy: {
-      createdAt: 'desc',
-    },
+  return prisma.subscriptionRequest.findMany({
+    where: { tenantId },
+    orderBy: { createdAt: 'desc' },
   });
 }
 
@@ -267,11 +261,17 @@ export async function getUsageForTenant(tenantId: string) {
     where: { tenantId },
   });
 
+  const [outletCount, userCount, productCount] = await Promise.all([
+    prisma.outlet.count({ where: { tenantId } }),
+    prisma.user.count({ where: { tenantId } }),
+    prisma.product.count({ where: { tenantId } }),
+  ]);
+
   return {
     plan: subscription?.plan || 'FREE',
-    outlets: 0,
-    employees: 0,
-    products: 0,
+    outletCount,
+    userCount,
+    productCount,
   };
 }
 
@@ -279,7 +279,10 @@ export async function getUsageForTenant(tenantId: string) {
  * Get pending request (stub)
  */
 export async function getPendingRequestForTenant(tenantId: string) {
-  return null;
+  return prisma.subscriptionRequest.findFirst({
+    where: { tenantId, status: 'PENDING' },
+    orderBy: { createdAt: 'desc' },
+  });
 }
 
 /**
@@ -298,6 +301,18 @@ export async function assertCanAddOutlet(tenantId: string): Promise<boolean> {
  * Assert can add product (stub - checks plan limits)
  */
 export async function assertCanAddProduct(tenantId: string): Promise<boolean> {
+  const subscription = await prisma.subscription.findUnique({
+    where: { tenantId },
+  });
+
+  // For now, allow all
+  return true;
+}
+
+/**
+ * Assert can add user (stub - checks plan limits)
+ */
+export async function assertCanAddUser(tenantId: string): Promise<boolean> {
   const subscription = await prisma.subscription.findUnique({
     where: { tenantId },
   });
