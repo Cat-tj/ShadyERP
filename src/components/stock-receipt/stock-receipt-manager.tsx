@@ -10,8 +10,9 @@ import {
   completeStockReceiptAction,
   rejectStockReceiptAction,
 } from "@/app/(app)/stock-receipt/actions";
+import { BarcodeScannerModal } from "@/components/shared/barcode-scanner-modal";
 import { useToast, Toast } from "@/components/toast";
-import { XIcon, PackageIcon } from "@/components/ui/icons";
+import { CameraIcon, XIcon, PackageIcon } from "@/components/ui/icons";
 import { EmptyState } from "@/components/ui/empty-state";
 
 type PurchaseOrderSummary = PurchaseOrder & {
@@ -304,6 +305,7 @@ function DirectStockReceiptModal({
   const [supplierId, setSupplierId] = useState("");
   const [note, setNote] = useState("");
   const [skuInput, setSkuInput] = useState("");
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [items, setItems] = useState<DirectReceiptItem[]>([
     { productId: products[0]?.id ?? "", qtyReceived: "1", unitPrice: String(products[0]?.cost ?? 0), batchNumber: "", expirationDate: "" },
   ]);
@@ -321,8 +323,8 @@ function DirectStockReceiptModal({
     ]);
   }
 
-  function addBySku() {
-    const query = skuInput.trim().toLowerCase();
+  function addBySku(value = skuInput) {
+    const query = value.trim().toLowerCase();
     if (!query) return;
     const product = products.find(
       (item) => item.sku?.toLowerCase() === query || item.name.toLowerCase().includes(query)
@@ -430,7 +432,15 @@ function DirectStockReceiptModal({
             />
             <button
               type="button"
-              onClick={addBySku}
+              onClick={() => setScannerOpen(true)}
+              aria-label="Scan barcode produk dengan kamera"
+              className="flex min-h-[42px] w-11 items-center justify-center rounded-lg border border-[var(--color-border)] text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+            >
+              <CameraIcon aria-hidden className="h-5 w-5" />
+            </button>
+            <button
+              type="button"
+              onClick={() => addBySku()}
               className="min-h-[42px] rounded-lg border border-[var(--color-border)] px-3 text-sm font-semibold text-[var(--color-text)]"
             >
               Tambah
@@ -520,6 +530,14 @@ function DirectStockReceiptModal({
           {isPending ? "Menyimpan..." : "Buat penerimaan"}
         </button>
       </div>
+      {scannerOpen && (
+        <BarcodeScannerModal
+          title="Scan barang masuk"
+          description="Barcode/QR yang cocok dengan SKU akan ditambahkan ke daftar penerimaan."
+          onDetected={(value) => addBySku(value)}
+          onClose={() => setScannerOpen(false)}
+        />
+      )}
     </div>
   );
 }

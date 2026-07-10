@@ -9,9 +9,10 @@ import {
   updateStockAction,
   updateReorderPointAction,
 } from "@/app/(app)/produk/actions";
+import { BarcodeScannerModal } from "@/components/shared/barcode-scanner-modal";
 import type { CategoryOption } from "@/components/produk/kategori-manager";
 import { VariantGroupsEditor, type VariantGroupRow } from "@/components/produk/variant-groups-editor";
-import { XIcon } from "@/components/ui/icons";
+import { CameraIcon, XIcon } from "@/components/ui/icons";
 
 export type { VariantGroupRow };
 
@@ -76,6 +77,7 @@ export function ProductFormModal({
   const [stockNote, setStockNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
 
   function generateInternalSku() {
@@ -198,13 +200,23 @@ export function ProductFormModal({
               <div className="flex flex-col gap-1.5">
                 <div className="flex justify-between items-center">
                   <label className="text-sm font-medium text-[var(--color-text)]">SKU / Barcode</label>
-                  <button
-                    type="button"
-                    onClick={generateInternalSku}
-                    className="text-xs font-bold text-[var(--color-primary)] hover:underline"
-                  >
-                    Buat SKU
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setScannerOpen(true)}
+                      className="inline-flex items-center gap-1 text-xs font-bold text-[var(--color-primary)] hover:underline"
+                    >
+                      <CameraIcon aria-hidden className="h-3.5 w-3.5" />
+                      Scan
+                    </button>
+                    <button
+                      type="button"
+                      onClick={generateInternalSku}
+                      className="text-xs font-bold text-[var(--color-primary)] hover:underline"
+                    >
+                      Buat SKU
+                    </button>
+                  </div>
                 </div>
                 <input
                   value={sku}
@@ -486,7 +498,15 @@ export function ProductFormModal({
           {isPending ? "Menyimpan..." : "Simpan Produk"}
         </button>
       </div>
-    </div>
+      </div>
+      {scannerOpen && (
+        <BarcodeScannerModal
+          title="Scan SKU / barcode"
+          description="Kode yang terbaca akan disimpan sebagai SKU produk ini."
+          onDetected={(value) => setSku(value)}
+          onClose={() => setScannerOpen(false)}
+        />
+      )}
     </div>
   );
 }

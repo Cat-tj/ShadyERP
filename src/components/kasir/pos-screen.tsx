@@ -9,7 +9,8 @@ import { PaymentSheet } from "@/components/kasir/payment-sheet";
 import { OfflineSyncBanner } from "@/components/kasir/offline-sync-banner";
 import { CashOutModal } from "@/components/kasir/cash-out-modal";
 import { VariantPickerModal, type VariantGroupOption } from "@/components/kasir/variant-picker-modal";
-import { XIcon } from "@/components/ui/icons";
+import { BarcodeScannerModal } from "@/components/shared/barcode-scanner-modal";
+import { CameraIcon, XIcon } from "@/components/ui/icons";
 import { useToast, Toast } from "@/components/toast";
 
 export type PosProduct = {
@@ -63,6 +64,7 @@ export function PosScreen({
   const [showCartSheet, setShowCartSheet] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [showCashOut, setShowCashOut] = useState(false);
+  const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null);
   const [variantPickerProduct, setVariantPickerProduct] = useState<PosProduct | null>(null);
   const { toastMessage, showToast } = useToast();
@@ -170,9 +172,9 @@ export function PosScreen({
 
   function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
     if (event.key !== "Enter") return;
-    const query = search.trim().toLowerCase();
+    const query = search.trim();
     if (!query) return;
-    const exact = products.find((product) => product.sku?.toLowerCase() === query);
+    const exact = findProductByBarcode(query);
     if (!exact) {
       showToast(`Barcode "${search.trim()}" tidak ditemukan`);
       return;
@@ -180,6 +182,23 @@ export function PosScreen({
     event.preventDefault();
     addToCart(exact);
     setSearch("");
+  }
+
+  function findProductByBarcode(value: string) {
+    const query = value.trim().toLowerCase();
+    return products.find((product) => product.sku?.trim().toLowerCase() === query) ?? null;
+  }
+
+  function handleBarcodeDetected(value: string) {
+    const product = findProductByBarcode(value);
+    if (product) {
+      addToCart(product);
+      setSearch("");
+      return;
+    }
+    setSearch(value);
+    const searchInput = document.getElementById("pos-search-input") as HTMLInputElement | null;
+    searchInput?.focus();
   }
 
   function decrementProduct(productId: string) {
@@ -293,8 +312,16 @@ export function PosScreen({
               onChange={(event) => setSearch(event.target.value)}
               onKeyDown={handleSearchKeyDown}
               placeholder="Cari nama produk, SKU, atau scan barcode"
-              className="min-h-[48px] w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] pl-11 pr-4 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+              className="min-h-[48px] w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] pl-11 pr-14 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
             />
+            <button
+              type="button"
+              onClick={() => setShowBarcodeScanner(true)}
+              aria-label="Scan barcode produk dengan kamera"
+              className="absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] hover:text-[var(--color-text)]"
+            >
+              <CameraIcon aria-hidden className="h-5 w-5" />
+            </button>
           </div>
 
           <div className="mb-4 flex gap-2 overflow-x-auto pb-1 shrink-0 scrollbar-none">
@@ -491,6 +518,15 @@ export function PosScreen({
       )}
 
       {showCashOut && <CashOutModal onClose={() => setShowCashOut(false)} />}
+
+      {showBarcodeScanner && (
+        <BarcodeScannerModal
+          title="Scan barcode produk"
+          description="Barcode/QR yang cocok dengan SKU akan langsung masuk invoice."
+          onDetected={handleBarcodeDetected}
+          onClose={() => setShowBarcodeScanner(false)}
+        />
+      )}
 
       {variantPickerProduct && (
         <VariantPickerModal
