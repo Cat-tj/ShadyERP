@@ -1,21 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  /* Palet terang, aksen navy + biru terinspirasi algora.id */
+  /* Palet terang, aksen magenta Altora — disamakan dengan landing page (lihat src/app/landing.css) */
   --color-bg: #f5f7fa;
   --color-bg-secondary: #eceef2;
   --color-surface: #ffffff;
   --color-border: #e2e6ec;
   --color-text: #0a1f44;
   --color-text-secondary: #5b6478;
-  --color-primary: #2563eb;
-  --color-primary-dark: #1d4ed8;
+  --color-primary: #a730a8;
+  --color-primary-dark: #7e2582;
   --color-on-primary: #ffffff;
-  --color-gold: #60a5fa;
-  --color-gold-soft: rgba(96, 165, 250, 0.4);
+  --color-gold: #d94a86;
+  --color-gold-soft: rgba(217, 74, 134, 0.4);
   --color-danger: #dc2626;
   --color-warning-bg: #fee2e2;
   --color-warning-text: #991b1b;
+
+  /* Logomark "a" — sama persis dengan landing.css & AltoraLogomark, dipakai untuk gradient-text/badge di dalam app */
+  --logo-c1: #2f3ba3;
+  --logo-c2: #6a3cc0;
+  --logo-c3: #a730a8;
+  --logo-c4: #d94a86;
+  --logo-c5: #f28a4e;
+  --logo-c6: #f6c945;
 
   /* Permukaan kaca — HANYA dipakai di sidebar/topbar, bottom sheet, modal, kartu ringkasan, kartu portal pelanggan */
   --glass-bg: rgba(255, 255, 255, 0.6);
