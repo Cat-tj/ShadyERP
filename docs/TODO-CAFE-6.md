@@ -8,7 +8,7 @@
 ## ☕ Fitur Cafe (lanjutan)
 
 - [x] **D1** — Auto-hide menu yang gak bisa dijual: kalau bahan resep (langsung/turunan) habis, produk otomatis nonaktif/gray di grid POS + indikator alasan — `dc88052`
-- [ ] **D2** — Saran harga jual dari HPP: owner isi target margin %, sistem hitung & saranin harga jual di form produk (pakai HPP dari resep/modal yang sudah ada)
+- [x] **D2** — Saran harga jual dari HPP: owner isi target margin %, sistem hitung & saranin harga jual di form produk (pakai HPP dari resep/modal yang sudah ada), harga saran dibulatkan ke atas kelipatan Rp500 — `6de7b00`
 - [ ] **D3** — Peringatan selisih kas pas tutup shift: kalau `closingCash` vs `expectedCash` beda lebih dari batas wajar, wajib isi catatan alasan sebelum submit
 - [ ] **D4** — Split payment: bayar 1 transaksi pakai lebih dari 1 metode (mis. sebagian cash sebagian QRIS)
 - [ ] **D5** — Harga beda per jam (happy hour): markup/diskon otomatis berdasarkan jam transaksi, mirip pola markup channel (C8) tapi berbasis waktu
