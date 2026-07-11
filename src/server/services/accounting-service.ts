@@ -351,3 +351,49 @@ export async function getBalanceSheet(
     isBalanced: assets.total === totalLiabilitiesAndEquity,
   };
 }
+
+export type IncomeStatementLine = { code: string; name: string; amount: number };
+export type IncomeStatementSection = { lines: IncomeStatementLine[]; total: number };
+
+/**
+ * Laba Rugi resmi dari COA — beda dari "Laba Rugi Simple" di
+ * finance-analytics-service.ts (yang hitung langsung dari Sale/Expense
+ * mentah, tersedia di mode Simpel). Ini murni dari JournalEntry yang sudah
+ * diposting, jadi angkanya = apa yang tercatat di pembukuan resmi. Rentang
+ * periode (bukan "as of" seperti Neraca) karena laba rugi itu laporan
+ * pergerakan dalam satu periode, bukan snapshot titik waktu.
+ */
+export async function getIncomeStatement(
+  tenantId: string,
+  range: { start: Date; end: Date }
+): Promise<{ revenue: IncomeStatementSection; expense: IncomeStatementSection; netIncome: number }> {
+  const [accounts, entries] = await Promise.all([
+    prisma.account.findMany({
+      where: { tenantId, type: { in: [AccountType.REVENUE, AccountType.EXPENSE] } },
+      orderBy: { code: "asc" },
+    }),
+    prisma.journalEntry.findMany({ where: { tenantId, date: { gte: range.start, lt: range.end } } }),
+  ]);
+
+  function periodBalance(account: { code: string; type: AccountType }): number {
+    const debitNormal = isDebitNormal(account.type);
+    let balance = 0;
+    for (const entry of entries) {
+      if (entry.debitCode === account.code) balance += debitNormal ? entry.amount : -entry.amount;
+      if (entry.creditCode === account.code) balance += debitNormal ? -entry.amount : entry.amount;
+    }
+    return balance;
+  }
+
+  function section(type: AccountType): IncomeStatementSection {
+    const lines = accounts
+      .filter((a) => a.type === type)
+      .map((a) => ({ code: a.code, name: a.name, amount: periodBalance(a) }));
+    return { lines, total: lines.reduce((sum, l) => sum + l.amount, 0) };
+  }
+
+  const revenue = section(AccountType.REVENUE);
+  const expense = section(AccountType.EXPENSE);
+
+  return { revenue, expense, netIncome: revenue.total - expense.total };
+}

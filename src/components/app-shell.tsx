@@ -78,6 +78,7 @@ export function AppShell({
     "/finance/buku-besar",
     "/finance/neraca-saldo",
     "/finance/neraca",
+    "/finance/laba-rugi-coa",
   ]);
   const rawItems = navItemsForHub(role, activeHub.key, enabledModules);
   const items = accountingMode === "SIMPLE"
