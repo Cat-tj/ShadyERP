@@ -111,7 +111,6 @@ model Tenant {
   equipmentMaintenanceLogs EquipmentMaintenanceLog[]
   reorderPoints            StockReorderPoint[]
   stockBatches             StockBatch[]
-  warehouseLocations       WarehouseLocation[]
   suppliers                Supplier[]
   supplierContracts        SupplierPricingContract[]
   purchaseOrders           PurchaseOrder[]
@@ -164,7 +163,6 @@ model Outlet {
   equipmentMaintenanceLogs EquipmentMaintenanceLog[]
   reorderPoints            StockReorderPoint[]
   stockBatches             StockBatch[]
-  warehouseLocations       WarehouseLocation[]
   stockReceipts            StockReceipt[]
   stockCounts              StockCount[]
   laundryOrders            LaundryOrder[]
@@ -1262,24 +1260,6 @@ model StockBatch {
 
 /// Warehouse/toko location tracking — rak mana barang disimpan.
 /// Gunakan format sederhana: "Rak A1", "Freezer B", "Display 1", dll.
-model WarehouseLocation {
-  id        String   @id @default(cuid())
-  tenantId  String
-  outletId  String
-  code      String // "A1", "B2", "Freezer", "Display", dll
-  name      String
-  capacity  Int? // opsional: kapasitas lokasi
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
-
-  @@unique([outletId, code])
-  @@index([tenantId])
-}
-
 // ================== SUPPLIER & PURCHASE MANAGEMENT ==================
 
 enum SupplierStatus {

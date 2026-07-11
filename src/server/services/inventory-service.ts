@@ -144,39 +144,3 @@ export async function getBatchesForProduct(tenantId: string, productId: string, 
   });
 }
 
-// ============ WAREHOUSE LOCATION ============
-
-export async function createWarehouseLocation(
-  tenantId: string,
-  outletId: string,
-  code: string,
-  name: string,
-  capacity?: number
-) {
-  return prisma.warehouseLocation.create({
-    data: {
-      tenantId,
-      outletId,
-      code,
-      name,
-      capacity,
-    },
-  });
-}
-
-export async function getWarehouseLocations(tenantId: string, outletId: string) {
-  return prisma.warehouseLocation.findMany({
-    where: { tenantId, outletId, isActive: true },
-    orderBy: { code: "asc" },
-  });
-}
-
-export async function updateWarehouseLocation(
-  id: string,
-  data: { name?: string; capacity?: number | null; isActive?: boolean }
-) {
-  return prisma.warehouseLocation.update({
-    where: { id },
-    data,
-  });
-}
