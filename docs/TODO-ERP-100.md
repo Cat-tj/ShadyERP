@@ -22,7 +22,7 @@
 - [x] **I1** — Sambungkan `consumeBatchFIFO` ke `sale-service.ts` (bug: fungsi sudah ada, tidak pernah dipanggil) — `40c0098`
 - [x] **I2** — Bungkus moving-average calc di `stock-receipt-service.ts` (`completeReceipt`) dalam `prisma.$transaction` — `c2bb05f`
 - [x] **I3** — Keputusan sadar: buang model `WarehouseLocation` (dead code, zero UI, `ProductStock` tidak punya field lokasi jadi tidak akan pernah nyambung) daripada bikin UI dekoratif yang tidak mengisi apa-apa — `7787314`
-- [ ] **I4** — Landed cost: field ongkir/biaya lain di `StockReceipt`, distribusi pro-rata ke cost tiap item
+- [x] **I4** — Landed cost: field ongkir/biaya lain di `StockReceipt`, distribusi pro-rata ke cost tiap item — `fff7417`
 - [ ] **I5** — Serial number per unit di `Product` (retail elektronik/HP dengan IMEI/serial)
 
 ---
