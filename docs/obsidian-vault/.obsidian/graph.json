@@ -1,0 +1,27 @@
+{
+  "collapse-filter": true,
+  "search": "",
+  "showTags": false,
+  "showAttachments": false,
+  "hideUnresolved": false,
+  "showOrphans": true,
+  "collapse-color-groups": false,
+  "colorGroups": [
+    { "query": "path:Domain", "color": { "a": 1, "rgb": 3095459 } },
+    { "query": "path:Fitur", "color": { "a": 1, "rgb": 10956968 } },
+    { "query": "path:Database", "color": { "a": 1, "rgb": 15895118 } },
+    { "query": "path:\"Alur Kerja\"", "color": { "a": 1, "rgb": 1013358 } }
+  ],
+  "collapse-display": true,
+  "showArrow": true,
+  "textFadeMultiplier": 0,
+  "nodeSizeMultiplier": 1,
+  "lineSizeMultiplier": 1,
+  "collapse-forces": true,
+  "centerStrength": 0.5,
+  "repelStrength": 12,
+  "linkStrength": 1,
+  "linkDistance": 220,
+  "scale": 1,
+  "close": false
+}

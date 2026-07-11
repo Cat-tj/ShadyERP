@@ -1,8 +1,8 @@
 # Master Guideline Altora
 
 > Dokumen acuan tertinggi produk. Semua keputusan fitur, UI, dan copy landing page
-> harus konsisten dengan dokumen ini. Berlaku untuk semua kontributor — manusia
-> maupun AI agent (Claude, Codex, Antigravity). Kalau ragu, kembali ke sini.
+> harus konsisten dengan dokumen ini. Berlaku untuk semua kontributor tim.
+> Kalau ragu, kembali ke sini.
 
 ---
 

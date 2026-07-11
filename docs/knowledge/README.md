@@ -1,17 +1,26 @@
 # Knowledge System Altora
 
-Pusat pengetahuan proyek — untuk manusia **dan** AI agent (Claude/Codex/
-Antigravity). Tujuannya: siapa pun bisa memvisualisasikan alur kerja, relasi
-database, dan relasi antar fitur tanpa harus membaca ribuan baris kode.
+Pusat pengetahuan proyek — supaya siapa pun di tim bisa memvisualisasikan alur
+kerja, relasi database, dan relasi antar fitur tanpa harus membaca ribuan baris
+kode.
 
 ## Isi
 
 | Dokumen | Isi | Sumber |
 |---|---|---|
 | [alur-kerja.md](./alur-kerja.md) | Diagram alur bisnis utama (penjualan, stok, QR meja, absensi, laundry, KPI, uang) | ✍️ manual |
-| [relasi-fitur.md](./relasi-fitur.md) | Graf service↔service + peta halaman→service | 🤖 digenerate |
-| [database/README.md](./database/README.md) | Index ERD — 22 domain, 66 model | 🤖 digenerate |
-| [database/*.md](./database/) | ERD Mermaid per domain + relasi keluar domain | 🤖 digenerate |
+| [relasi-fitur.md](./relasi-fitur.md) | Graf service↔service + peta halaman→service | ⚙️ auto |
+| [database/README.md](./database/README.md) | Index ERD — 22 domain, 66 model | ⚙️ auto |
+| [database/*.md](./database/) | ERD Mermaid per domain + relasi keluar domain | ⚙️ auto |
+
+## Versi Obsidian (peta interaktif)
+
+Semua isi di atas juga tersedia dalam bentuk vault Obsidian di
+[`docs/obsidian-vault/`](../obsidian-vault/) — catatan atomik (66 model
+Database, 41 Fitur, 22 Domain, 7 Alur Kerja) saling terhubung lewat
+`[[wikilink]]`, bisa dijelajah lewat **Graph View** (peta relasi interaktif,
+bukan diagram statis). Cara buka: lihat
+[`docs/obsidian-vault/README.md`](../obsidian-vault/README.md).
 
 Dokumen level atas yang berkaitan:
 
@@ -21,7 +30,7 @@ Dokumen level atas yang berkaitan:
 
 ## Cara update
 
-Yang bertanda 🤖 **jangan diedit manual** — regenerate dari kode asli:
+Yang bertanda ⚙️ **jangan diedit manual** — regenerate dari kode asli:
 
 ```bash
 npm run knowledge
