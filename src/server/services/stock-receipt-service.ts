@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import type { StockReceipt, StockReceiptStatus, QCStatus } from "@prisma/client";
+import type { Prisma, StockReceipt, StockReceiptStatus, QCStatus } from "@prisma/client";
 import { receiveBatch } from "@/server/services/inventory-service";
 
 export interface ReceiptItemInput {
@@ -118,8 +118,13 @@ export async function createDirectStockReceipt(
   });
 }
 
-export async function getReceiptById(tenantId: string, receiptId: string) {
-  return prisma.stockReceipt.findFirst({
+export async function getReceiptById(
+  tenantId: string,
+  receiptId: string,
+  tx?: Prisma.TransactionClient
+) {
+  const client = tx || prisma;
+  return client.stockReceipt.findFirst({
     where: { id: receiptId, tenantId },
     include: {
       po: { include: { supplier: true } },
@@ -208,147 +213,159 @@ export async function completeReceipt(
   tenantId: string,
   receiptId: string
 ): Promise<StockReceipt> {
-  const receipt = await getReceiptById(tenantId, receiptId);
-  if (!receipt) throw new Error("Receipt not found");
+  // Semua langkah di bawah harus atomik — sebelumnya ini deretan write
+  // terpisah (moving average cost, stok, batch, invoice supplier). Kalau
+  // salah satu gagal di tengah jalan, stok/cost bisa nyangkut setengah
+  // ter-update sementara status GR masih PENDING, atau GR yang sama bisa
+  // ke-complete dua kali (dobel tambah stok & bikin cost drift) kalau
+  // tombol "Selesaikan" ke-klik dua kali.
+  return prisma.$transaction(async (tx) => {
+    const receipt = await getReceiptById(tenantId, receiptId, tx);
+    if (!receipt) throw new Error("Receipt not found");
+    if (receipt.status === "COMPLETED") {
+      throw new Error("Penerimaan barang ini sudah diselesaikan sebelumnya.");
+    }
 
-  let totalInvoiceAmount = 0;
+    let totalInvoiceAmount = 0;
 
-  // Move accepted qty to actual stock & compute moving average cost
-  for (const item of receipt.items) {
-    if (item.qtyAccepted > 0) {
-      // Get unitPrice from PurchaseOrder
-      const poItem = await prisma.purchaseOrderItem.findFirst({
-        where: {
-          poId: receipt.poId,
-          productId: item.productId,
-        },
-      });
-      const receivedCost = poItem?.unitPrice ?? 0;
-      totalInvoiceAmount += item.qtyAccepted * receivedCost;
-
-      // Update current stocks
-      const stock = await prisma.productStock.findUnique({
-        where: {
-          productId_outletId: {
+    // Move accepted qty to actual stock & compute moving average cost
+    for (const item of receipt.items) {
+      if (item.qtyAccepted > 0) {
+        // Get unitPrice from PurchaseOrder
+        const poItem = await tx.purchaseOrderItem.findFirst({
+          where: {
+            poId: receipt.poId,
             productId: item.productId,
-            outletId: receipt.outletId,
-          },
-        },
-      });
-
-      // Calculate total stock across all outlets to compute overall average cost
-      const totalStockAgg = await prisma.productStock.aggregate({
-        where: {
-          productId: item.productId,
-          tenantId,
-        },
-        _sum: { qty: true },
-      });
-      const currentTotalStock = totalStockAgg._sum.qty ?? 0;
-
-      // Fetch current product cost
-      const product = await prisma.product.findUnique({
-        where: { id: item.productId },
-        select: { cost: true, trackExpiry: true },
-      });
-      const previousCost = product?.cost ?? 0;
-
-      // Moving Average Cost calculation
-      const newCost = (currentTotalStock + item.qtyAccepted) > 0
-        ? Math.round(
-            (currentTotalStock * previousCost + item.qtyAccepted * receivedCost) /
-              (currentTotalStock + item.qtyAccepted)
-          )
-        : receivedCost;
-
-      // Update Product cost & cost history
-      await prisma.product.update({
-        where: { id: item.productId },
-        data: { cost: newCost },
-      });
-
-      await prisma.productCostHistory.create({
-        data: {
-          tenantId,
-          productId: item.productId,
-          previousCost,
-          newCost,
-          reason: `Auto Moving Average (GR: ${receipt.receiptNumber})`,
-        },
-      });
-
-      if (stock) {
-        await prisma.productStock.update({
-          where: { id: stock.id },
-          data: {
-            qty: { increment: item.qtyAccepted },
           },
         });
-      } else {
-        await prisma.productStock.create({
+        const receivedCost = poItem?.unitPrice ?? 0;
+        totalInvoiceAmount += item.qtyAccepted * receivedCost;
+
+        // Update current stocks
+        const stock = await tx.productStock.findUnique({
+          where: {
+            productId_outletId: {
+              productId: item.productId,
+              outletId: receipt.outletId,
+            },
+          },
+        });
+
+        // Calculate total stock across all outlets to compute overall average cost
+        const totalStockAgg = await tx.productStock.aggregate({
+          where: {
+            productId: item.productId,
+            tenantId,
+          },
+          _sum: { qty: true },
+        });
+        const currentTotalStock = totalStockAgg._sum.qty ?? 0;
+
+        // Fetch current product cost
+        const product = await tx.product.findUnique({
+          where: { id: item.productId },
+          select: { cost: true, trackExpiry: true },
+        });
+        const previousCost = product?.cost ?? 0;
+
+        // Moving Average Cost calculation
+        const newCost = (currentTotalStock + item.qtyAccepted) > 0
+          ? Math.round(
+              (currentTotalStock * previousCost + item.qtyAccepted * receivedCost) /
+                (currentTotalStock + item.qtyAccepted)
+            )
+          : receivedCost;
+
+        // Update Product cost & cost history
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { cost: newCost },
+        });
+
+        await tx.productCostHistory.create({
           data: {
             tenantId,
             productId: item.productId,
-            outletId: receipt.outletId,
-            qty: item.qtyAccepted,
+            previousCost,
+            newCost,
+            reason: `Auto Moving Average (GR: ${receipt.receiptNumber})`,
           },
         });
-      }
 
-      if (item.batchNumber || item.expirationDate || product?.trackExpiry) {
-        await receiveBatch(
-          tenantId,
-          item.productId,
-          receipt.outletId,
-          item.batchNumber || `${receipt.receiptNumber}-${item.productId.slice(-4)}`,
-          item.qtyAccepted,
-          item.expirationDate ?? undefined,
-          `Dari penerimaan ${receipt.receiptNumber}`
-        );
+        if (stock) {
+          await tx.productStock.update({
+            where: { id: stock.id },
+            data: {
+              qty: { increment: item.qtyAccepted },
+            },
+          });
+        } else {
+          await tx.productStock.create({
+            data: {
+              tenantId,
+              productId: item.productId,
+              outletId: receipt.outletId,
+              qty: item.qtyAccepted,
+            },
+          });
+        }
+
+        if (item.batchNumber || item.expirationDate || product?.trackExpiry) {
+          await receiveBatch(
+            tenantId,
+            item.productId,
+            receipt.outletId,
+            item.batchNumber || `${receipt.receiptNumber}-${item.productId.slice(-4)}`,
+            item.qtyAccepted,
+            item.expirationDate ?? undefined,
+            `Dari penerimaan ${receipt.receiptNumber}`,
+            tx
+          );
+        }
       }
     }
-  }
 
-  // Auto-generate SupplierInvoice if totalInvoiceAmount > 0 and ADVANCED mode
-  const setting = await prisma.tenantSetting.findUnique({ where: { tenantId } });
-  const isAdvanced = setting?.accountingMode === "ADVANCED";
-  const supplierId = receipt.po?.supplier?.id;
-  if (isAdvanced && supplierId && totalInvoiceAmount > 0) {
-    const today = new Date();
-    const dueDate = new Date();
-    dueDate.setDate(today.getDate() + 30);
+    // Auto-generate SupplierInvoice if totalInvoiceAmount > 0 and ADVANCED mode
+    const setting = await tx.tenantSetting.findUnique({ where: { tenantId } });
+    const isAdvanced = setting?.accountingMode === "ADVANCED";
+    const supplierId = receipt.po?.supplier?.id;
+    if (isAdvanced && supplierId && totalInvoiceAmount > 0) {
+      const today = new Date();
+      const dueDate = new Date();
+      dueDate.setDate(today.getDate() + 30);
 
-    const count = await prisma.supplierInvoice.count({
-      where: { tenantId },
-    });
-    const invoiceNumber = `INV-SUP-${today.getFullYear()}${(today.getMonth() + 1)
-      .toString()
-      .padStart(2, "0")}-${String(count + 1).padStart(3, "0")}`;
+      const count = await tx.supplierInvoice.count({
+        where: { tenantId },
+      });
+      const invoiceNumber = `INV-SUP-${today.getFullYear()}${(today.getMonth() + 1)
+        .toString()
+        .padStart(2, "0")}-${String(count + 1).padStart(3, "0")}`;
 
-    await prisma.supplierInvoice.create({
+      await tx.supplierInvoice.create({
+        data: {
+          tenantId,
+          supplierId,
+          outletId: receipt.outletId,
+          invoiceNumber,
+          invoiceDate: today,
+          dueDate,
+          subtotal: totalInvoiceAmount,
+          total: totalInvoiceAmount,
+          status: "UNPAID",
+          purchaseOrderId: receipt.poId,
+          stockReceiptId: receipt.id,
+          notes: `Auto-generated from Stock Receipt ${receipt.receiptNumber}`,
+        },
+      });
+    }
+
+    return tx.stockReceipt.update({
+      where: { id: receiptId },
       data: {
-        tenantId,
-        supplierId,
-        outletId: receipt.outletId,
-        invoiceNumber,
-        invoiceDate: today,
-        dueDate,
-        subtotal: totalInvoiceAmount,
-        total: totalInvoiceAmount,
-        status: "UNPAID",
-        purchaseOrderId: receipt.poId,
-        stockReceiptId: receipt.id,
-        notes: `Auto-generated from Stock Receipt ${receipt.receiptNumber}`,
+        status: "COMPLETED",
+        completedAt: new Date(),
       },
     });
-  }
-
-  return prisma.stockReceipt.update({
-    where: { id: receiptId },
-    data: {
-      status: "COMPLETED",
-      completedAt: new Date(),
-    },
   });
 }
 

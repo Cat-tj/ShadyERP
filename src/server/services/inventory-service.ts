@@ -67,9 +67,11 @@ export async function receiveBatch(
   batchNumber: string,
   qtyReceived: number,
   expirationDate?: Date,
-  note?: string
+  note?: string,
+  tx?: Prisma.TransactionClient
 ) {
-  return prisma.stockBatch.create({
+  const client = tx || prisma;
+  return client.stockBatch.create({
     data: {
       tenantId,
       productId,
