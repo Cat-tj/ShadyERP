@@ -73,9 +73,10 @@ export function AppShell({
     (hub) => availableHubKeys.includes(hub.key) && hub.key !== activeHub.key
   );
 
+  const ADVANCED_ONLY_HREFS = new Set(["/finance/jurnal", "/finance/buku-besar"]);
   const rawItems = navItemsForHub(role, activeHub.key, enabledModules);
   const items = accountingMode === "SIMPLE"
-    ? rawItems.filter((item) => item.href !== "/finance/jurnal")
+    ? rawItems.filter((item) => !ADVANCED_ONLY_HREFS.has(item.href))
     : rawItems;
   const bottomItems = items.filter((item) => item.showOnBottomNav).slice(0, 5);
   // Beberapa href saling jadi prefix (mis. /kpi & /kpi/analitik) — hanya item

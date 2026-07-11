@@ -157,3 +157,82 @@ export async function logExpenseToJournal(tenantId: string, expenseId: string, t
     tx: client,
   });
 }
+
+/** Sisi normal saldo akun — Asset & Expense naik lewat debit, sisanya naik lewat kredit. */
+function isDebitNormal(type: AccountType): boolean {
+  return type === "ASSET" || type === "EXPENSE";
+}
+
+export type LedgerLine = {
+  date: Date;
+  description: string;
+  reference: string | null;
+  debit: number;
+  credit: number;
+  runningBalance: number;
+};
+
+export type LedgerAccount = {
+  code: string;
+  name: string;
+  type: AccountType;
+  openingBalance: number;
+  lines: LedgerLine[];
+  closingBalance: number;
+};
+
+/**
+ * Buku Besar (General Ledger): "bongkar" tiap JournalEntry (yang cuma
+ * berbentuk pasangan debitCode+creditCode) jadi baris per akun dengan saldo
+ * berjalan. Tidak butuh model baru — cukup query di atas JournalEntry yang
+ * sudah ada.
+ */
+export async function getGeneralLedger(
+  tenantId: string,
+  range: { start: Date; end: Date }
+): Promise<LedgerAccount[]> {
+  const [accounts, priorEntries, periodEntries] = await Promise.all([
+    prisma.account.findMany({ where: { tenantId }, orderBy: { code: "asc" } }),
+    prisma.journalEntry.findMany({ where: { tenantId, date: { lt: range.start } } }),
+    prisma.journalEntry.findMany({
+      where: { tenantId, date: { gte: range.start, lt: range.end } },
+      orderBy: { date: "asc" },
+    }),
+  ]);
+
+  return accounts.map((account) => {
+    const debitNormal = isDebitNormal(account.type);
+
+    let opening = 0;
+    for (const entry of priorEntries) {
+      if (entry.debitCode === account.code) opening += debitNormal ? entry.amount : -entry.amount;
+      if (entry.creditCode === account.code) opening += debitNormal ? -entry.amount : entry.amount;
+    }
+
+    let running = opening;
+    const lines: LedgerLine[] = [];
+    for (const entry of periodEntries) {
+      const debit = entry.debitCode === account.code ? entry.amount : 0;
+      const credit = entry.creditCode === account.code ? entry.amount : 0;
+      if (debit === 0 && credit === 0) continue;
+      running += debitNormal ? debit - credit : credit - debit;
+      lines.push({
+        date: entry.date,
+        description: entry.description,
+        reference: entry.reference,
+        debit,
+        credit,
+        runningBalance: running,
+      });
+    }
+
+    return {
+      code: account.code,
+      name: account.name,
+      type: account.type,
+      openingBalance: opening,
+      lines,
+      closingBalance: running,
+    };
+  });
+}
