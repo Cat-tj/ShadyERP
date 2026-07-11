@@ -12,6 +12,7 @@ import {
   BellIcon,
   CalendarIcon,
   FlameIcon,
+  CurrencyIcon,
   BriefcaseIcon,
   WalletIcon,
   BuildingIcon,
@@ -45,6 +46,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/command-center", label: "Command Center", icon: GridIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "pesanan-digital", hub: "command" },
   { href: "/booking", label: "Booking", icon: CalendarIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "booking", hub: "kasir" },
   { href: "/member", label: "Member", icon: UsersIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "member", hub: "kasir" },
+  { href: "/voucher", label: "Voucher", icon: CurrencyIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "kasir", hub: "kasir" },
   { href: "/kpi/analitik", label: "Analitik", icon: BarChartIcon, roles: ["OWNER", "MANAGER"], module: "kasir", hub: "kasir" },
 
   // ===== Inventory =====

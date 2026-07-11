@@ -85,6 +85,8 @@ model Tenant {
   members                  Member[]
   pointTransactions        PointTransaction[]
   stampTransactions        StampTransaction[]
+  giftCards                GiftCard[]
+  giftCardTransactions     GiftCardTransaction[]
   categories               Category[]
   products                 Product[]
   productStocks            ProductStock[]
@@ -226,6 +228,7 @@ model User {
   stockCountsVerified      StockCount[]              @relation("StockCountVerifiedBy")
   costHistoryChanges       ProductCostHistory[]
   documentsUploaded        Document[]                @relation("DocumentUploader")
+  giftCardsSold            GiftCard[]
   documentVersions         DocumentVersion[]
   documentSignings         DocumentSigner[]
   documentAccess           DocumentAccess[]
@@ -376,6 +379,59 @@ model PointTransaction {
 
   @@index([tenantId])
   @@index([memberId])
+}
+
+enum GiftCardStatus {
+  ACTIVE
+  REDEEMED
+  VOIDED
+}
+
+/// Voucher/gift card yang dijual di muka lalu ditukar sebagai metode bayar
+/// saat checkout (saldo berkurang tiap dipakai, tidak terikat member tertentu).
+model GiftCard {
+  id           String         @id @default(cuid())
+  tenantId     String
+  code         String         @unique
+  initialValue Int
+  balance      Int
+  status       GiftCardStatus @default(ACTIVE)
+  buyerName    String?
+  buyerPhone   String?
+  note         String?
+  soldById     String
+  createdAt    DateTime       @default(now())
+  updatedAt    DateTime       @updatedAt
+
+  tenant       Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  soldBy       User                  @relation(fields: [soldById], references: [id])
+  transactions GiftCardTransaction[]
+
+  @@index([tenantId])
+}
+
+enum GiftCardTransactionType {
+  SALE
+  REDEEM
+  ADJUST
+}
+
+model GiftCardTransaction {
+  id         String                   @id @default(cuid())
+  tenantId   String
+  giftCardId String
+  type       GiftCardTransactionType
+  amount     Int // positif untuk SALE (isi saldo), negatif untuk REDEEM/ADJUST
+  saleId     String?
+  note       String?
+  createdAt  DateTime                 @default(now())
+
+  tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  giftCard GiftCard @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
+  sale     Sale?    @relation(fields: [saleId], references: [id])
+
+  @@index([tenantId])
+  @@index([giftCardId])
 }
 
 // ================== PRODUK & STOK ==================
@@ -691,6 +747,7 @@ enum PaymentMethod {
   TRANSFER
   EWALLET
   DEPOSIT
+  GIFT_CARD
 }
 
 enum SaleStatus {
@@ -740,10 +797,11 @@ model Sale {
   cashier User          @relation("SaleCashier", fields: [cashierId], references: [id])
   member  Member?       @relation(fields: [memberId], references: [id])
 
-  items             SaleItem[]
-  pointTransactions PointTransaction[]
-  stampTransactions StampTransaction[]
-  saleReturns       SaleReturn[]
+  items                SaleItem[]
+  pointTransactions    PointTransaction[]
+  stampTransactions    StampTransaction[]
+  giftCardTransactions GiftCardTransaction[]
+  saleReturns          SaleReturn[]
   tableOrder        TableOrder?
   bookingId         String?
   booking           Booking?      @relation(fields: [bookingId], references: [id])

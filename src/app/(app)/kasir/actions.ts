@@ -77,6 +77,7 @@ export type CreateSalePayload = {
   amountPaid: number;
   memberId?: string | null;
   redeemStamp?: boolean;
+  giftCardCode?: string;
 };
 
 export type CreateSaleResult = { error?: string; saleId?: string };
@@ -102,6 +103,7 @@ export async function createSaleAction(payload: CreateSalePayload): Promise<Crea
       orderType: payload.orderType ?? "DINE_IN",
       amountPaid: payload.amountPaid,
       redeemStamp: payload.redeemStamp,
+      giftCardCode: payload.giftCardCode,
     });
     revalidatePath("/kasir");
     return { saleId: sale.id };

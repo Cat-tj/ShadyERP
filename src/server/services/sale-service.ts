@@ -105,6 +105,8 @@ export type CreateSaleInput = {
   parkingFee?: number;
   /** Tukar stempel member jadi reward gratis (butuh memberId & stempel cukup). */
   redeemStamp?: boolean;
+  /** Wajib diisi kalau paymentMethod GIFT_CARD — kode voucher yang mau dipakai bayar. */
+  giftCardCode?: string;
   /**
    * Set `false` kalau stok item-item ini SUDAH dipotong sebelumnya (mis. sudah
    * direservasi saat pesanan QR meja dibuat) — supaya tidak dipotong dua kali.
@@ -269,7 +271,22 @@ export async function createSale(input: CreateSaleInput) {
       }
     }
 
-    const amountPaid = input.paymentMethod === "DEPOSIT" ? total : input.amountPaid;
+    let giftCard = null;
+    if (input.paymentMethod === "GIFT_CARD") {
+      if (!input.giftCardCode?.trim()) {
+        throw new Error("Masukkan kode voucher dulu.");
+      }
+      giftCard = await tx.giftCard.findFirst({
+        where: { tenantId: input.tenantId, code: input.giftCardCode.trim().toUpperCase() },
+      });
+      if (!giftCard) throw new Error("Kode voucher tidak ditemukan.");
+      if (giftCard.status !== "ACTIVE") throw new Error("Voucher ini sudah tidak aktif.");
+      if (giftCard.balance < total) {
+        throw new Error(`Saldo voucher tinggal ${giftCard.balance} — kurang untuk bayar ${total}.`);
+      }
+    }
+
+    const amountPaid = input.paymentMethod === "DEPOSIT" || input.paymentMethod === "GIFT_CARD" ? total : input.amountPaid;
     const changeAmount = input.paymentMethod === "CASH" ? input.amountPaid - total : 0;
 
     const now = new Date();
@@ -453,6 +470,24 @@ export async function createSale(input: CreateSaleInput) {
       });
     }
 
+    if (giftCard) {
+      const newBalance = giftCard.balance - total;
+      await tx.giftCard.update({
+        where: { id: giftCard.id },
+        data: { balance: newBalance, status: newBalance <= 0 ? "REDEEMED" : "ACTIVE" },
+      });
+      await tx.giftCardTransaction.create({
+        data: {
+          tenantId: input.tenantId,
+          giftCardId: giftCard.id,
+          type: "REDEEM",
+          amount: -total,
+          saleId: sale.id,
+          note: `Dipakai bayar transaksi ${invoiceNumber}`,
+        },
+      });
+    }
+
     if (input.memberId) {
       const points = Math.floor(total / (setting?.pointsPerAmount ?? 10000));
       if (points > 0) {
@@ -608,6 +643,27 @@ export async function voidSale(tenantId: string, saleId: string, reason: string,
           data: { stampCount: { decrement: netStampDelta } },
         });
       }
+    }
+
+    const giftCardRedeemTx = await tx.giftCardTransaction.findFirst({
+      where: { saleId: sale.id, type: "REDEEM" },
+    });
+    if (giftCardRedeemTx && giftCardRedeemTx.amount < 0) {
+      const refundAmount = -giftCardRedeemTx.amount;
+      await tx.giftCardTransaction.create({
+        data: {
+          tenantId,
+          giftCardId: giftCardRedeemTx.giftCardId,
+          type: "ADJUST",
+          amount: refundAmount,
+          saleId: sale.id,
+          note: `Pembatalan transaksi ${sale.invoiceNumber}`,
+        },
+      });
+      await tx.giftCard.update({
+        where: { id: giftCardRedeemTx.giftCardId },
+        data: { balance: { increment: refundAmount }, status: "ACTIVE" },
+      });
     }
 
     return tx.sale.update({

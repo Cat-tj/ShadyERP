@@ -7,6 +7,7 @@ import QRCode from "qrcode";
 import { formatRupiah } from "@/lib/format";
 import { buildDynamicQris } from "@/lib/qris-dynamic";
 import { createSaleAction, type CreateSalePayload } from "@/app/(app)/kasir/actions";
+import { lookupGiftCardAction, type LookupGiftCardResult } from "@/app/(app)/voucher/actions";
 import { queueSale } from "@/lib/offline-queue";
 import { MemberPicker, type MemberOption } from "@/components/kasir/member-picker";
 import { XIcon } from "@/components/ui/icons";
@@ -30,6 +31,7 @@ const PAYMENT_METHODS: { value: CreateSalePayload["paymentMethod"]; label: strin
   { value: "TRANSFER", label: "Transfer" },
   { value: "EWALLET", label: "E-Wallet" },
   { value: "DEPOSIT", label: "Saldo" },
+  { value: "GIFT_CARD", label: "Voucher" },
 ];
 
 const ORDER_MODE_OPTIONS: { value: "DINE_IN" | "TAKEAWAY" | "DELIVERY"; label: string }[] = [
@@ -88,6 +90,9 @@ export function PaymentSheet({
   const [amountInput, setAmountInput] = useState("");
   const [member, setMember] = useState<MemberOption | null>(null);
   const [redeemStamp, setRedeemStamp] = useState(false);
+  const [giftCardCode, setGiftCardCode] = useState("");
+  const [giftCardLookup, setGiftCardLookup] = useState<LookupGiftCardResult | null>(null);
+  const [giftCardChecking, setGiftCardChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [queuedOffline, setQueuedOffline] = useState(false);
   const [staticQris, setStaticQris] = useState(() =>
@@ -97,6 +102,7 @@ export function PaymentSheet({
   const [qrisDataUrl, setQrisDataUrl] = useState<string | null>(null);
   const [qrisError, setQrisError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const [, startGiftCardTransition] = useTransition();
 
   const canRedeemStamp = Boolean(
     stampProgram.enabled && member && member.stampCount >= stampProgram.target
@@ -110,10 +116,30 @@ export function PaymentSheet({
   const isDepositInsufficient =
     method === "DEPOSIT" && (!member || member.depositBalance < effectiveTotal);
   const isQrisUnavailable = method === "QRIS" && (!staticQris.trim() || !qrisDataUrl || Boolean(qrisError));
+  const isGiftCardInsufficient =
+    method === "GIFT_CARD" &&
+    (!giftCardLookup ||
+      Boolean(giftCardLookup.error) ||
+      giftCardLookup.status !== "ACTIVE" ||
+      (giftCardLookup.balance ?? 0) < effectiveTotal);
 
   useEffect(() => {
     if (!canRedeemStamp) setRedeemStamp(false);
   }, [canRedeemStamp]);
+
+  function checkGiftCard() {
+    const code = giftCardCode.trim();
+    if (!code) {
+      setGiftCardLookup(null);
+      return;
+    }
+    setGiftCardChecking(true);
+    startGiftCardTransition(async () => {
+      const result = await lookupGiftCardAction(code);
+      setGiftCardLookup(result);
+      setGiftCardChecking(false);
+    });
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -172,6 +198,7 @@ export function PaymentSheet({
         amountPaid,
         memberId: member?.id ?? null,
         redeemStamp: canRedeemStamp && redeemStamp,
+        giftCardCode: method === "GIFT_CARD" ? giftCardCode.trim() : undefined,
       };
 
       try {
@@ -445,6 +472,46 @@ export function PaymentSheet({
             {formatRupiah(member?.depositBalance ?? 0)}
           </span>
         </div>
+      ) : method === "GIFT_CARD" ? (
+        <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <p className="text-sm font-medium text-[var(--color-text)]">Kode voucher</p>
+          <div className="mt-2 flex gap-2">
+            <input
+              type="text"
+              value={giftCardCode}
+              onChange={(event) => {
+                setGiftCardCode(event.target.value.toUpperCase());
+                setGiftCardLookup(null);
+              }}
+              onBlur={checkGiftCard}
+              placeholder="GC-XXXX-XXXX"
+              className="min-h-[44px] flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 font-mono text-sm outline-none focus:border-[var(--color-primary)]"
+            />
+            <button
+              type="button"
+              onClick={checkGiftCard}
+              disabled={giftCardChecking || !giftCardCode.trim()}
+              className="rounded-lg border border-[var(--color-border)] px-4 text-sm font-semibold text-[var(--color-text)] disabled:opacity-40"
+            >
+              {giftCardChecking ? "Cek..." : "Cek"}
+            </button>
+          </div>
+          {giftCardLookup && (
+            <p
+              className={`mt-2 text-sm ${
+                giftCardLookup.error || isGiftCardInsufficient
+                  ? "text-[var(--color-danger)]"
+                  : "text-[var(--color-good-text)]"
+              }`}
+            >
+              {giftCardLookup.error
+                ? giftCardLookup.error
+                : giftCardLookup.status !== "ACTIVE"
+                  ? "Voucher ini sudah tidak aktif."
+                  : `Saldo voucher: ${formatRupiah(giftCardLookup.balance ?? 0)}`}
+            </p>
+          )}
+        </div>
       ) : (
         <p className="mt-4 text-sm text-[var(--color-text-secondary)]">
           Pastikan pembayaran {formatRupiah(effectiveTotal)} sudah diterima lewat {PAYMENT_METHODS.find((m) => m.value === method)?.label} sebelum lanjut.
@@ -479,7 +546,7 @@ export function PaymentSheet({
         <div className="sticky bottom-0 z-10 bg-[var(--color-surface)]/80 backdrop-blur-md px-6 py-4 border-t border-[var(--color-border)]/50">
           <button
             onClick={handleSubmit}
-            disabled={isPending || isCashInsufficient || isDepositInsufficient || isQrisUnavailable}
+            disabled={isPending || isCashInsufficient || isDepositInsufficient || isQrisUnavailable || isGiftCardInsufficient}
             className="flex min-h-[48px] w-full items-center justify-center gap-1.5 rounded-2xl bg-[var(--color-primary)] px-3 text-sm font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-40 cursor-pointer"
           >
             {isPending && (
