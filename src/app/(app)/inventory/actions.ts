@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/server/require-session";
 import { prisma } from "@/lib/prisma";
-import type { Prisma } from "@prisma/client";
+import type { Prisma, StockAdjustmentReason } from "@prisma/client";
 import {
   createCategory,
   updateCategory,
@@ -20,6 +20,7 @@ import {
   type ProductInput,
 } from "@/server/services/product-service";
 import { setReorderPoint } from "@/server/services/inventory-service";
+import { recordWaste } from "@/server/services/waste-service";
 import {
   createVariantGroup,
   updateVariantGroup,
@@ -531,6 +532,7 @@ export async function disposeExpiredBatchAction(batchId: string, note?: string):
           previousQty: currentQty,
           newQty: Math.max(0, currentQty - disposeQty),
           delta: -disposeQty,
+          reason: "EXPIRED",
           note: `Expired/rusak batch ${batch.batchNumber}: ${note?.trim() || "dibuang"}`,
         },
       });
@@ -541,5 +543,32 @@ export async function disposeExpiredBatchAction(batchId: string, note?: string):
   revalidatePath("/inventory");
   revalidatePath("/produk/riwayat-stok");
   revalidatePath("/simple/data");
+  return { success: true };
+}
+
+export async function recordWasteAction(input: {
+  productId: string;
+  outletId: string;
+  qty: number;
+  reason: StockAdjustmentReason;
+  note?: string;
+}): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  try {
+    await recordWaste({
+      tenantId: user.tenantId,
+      productId: input.productId,
+      outletId: input.outletId,
+      qty: input.qty,
+      reason: input.reason,
+      note: input.note,
+      changedById: user.id,
+    });
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal mencatat kerugian." };
+  }
+  revalidatePath("/inventory/waste");
+  revalidatePath("/inventory");
+  revalidatePath("/produk/riwayat-stok");
   return { success: true };
 }

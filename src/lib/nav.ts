@@ -53,6 +53,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/purchase-order", label: "Beli", icon: ReceiptIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "inventory", hub: "inventory" },
   { href: "/stock-receipt", label: "Masuk", icon: PackageIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "inventory", hub: "inventory" },
   { href: "/stock-count", label: "Opname", icon: SettingsIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "inventory", hub: "inventory" },
+  { href: "/inventory/waste", label: "Catat Kerugian", icon: TrendingDownIcon, roles: ["OWNER", "MANAGER"], module: "inventory", hub: "inventory" },
   { href: "/maintenance", label: "Maintenance", icon: SettingsIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "inventory", hub: "inventory" },
 
   // ===== Laundry =====

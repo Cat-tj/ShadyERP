@@ -568,6 +568,13 @@ model ProductStock {
 /// Jejak audit perubahan stok manual (lewat halaman Produk > Ubah).
 /// Perubahan stok otomatis dari penjualan/void/retur TIDAK dicatat di sini
 /// karena sudah punya jejaknya sendiri lewat Sale/SaleReturn.
+enum StockAdjustmentReason {
+  WASTE
+  EXPIRED
+  DAMAGED
+  OTHER
+}
+
 model StockAdjustment {
   id          String   @id @default(cuid())
   tenantId    String
@@ -578,6 +585,9 @@ model StockAdjustment {
   newQty      Int
   delta       Int
   note        String?
+  /// Kategori alasan kalau ini adalah catatan kerugian (waste/expired/rusak/dll).
+  /// null = koreksi stok biasa (bukan dari alur catat kerugian).
+  reason      StockAdjustmentReason?
   createdAt   DateTime @default(now())
 
   tenant    Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
