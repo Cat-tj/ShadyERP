@@ -40,6 +40,7 @@ export default async function RiwayatPage({
       memberName: sale.member?.name ?? null,
       total: sale.total,
       paymentMethod: sale.paymentMethod,
+      isSplitPayment: sale.isSplitPayment,
       orderType: sale.orderType,
       status: sale.status,
       voidReason: sale.voidReason,

@@ -34,6 +34,11 @@ const PAYMENT_METHODS: { value: CreateSalePayload["paymentMethod"]; label: strin
   { value: "GIFT_CARD", label: "Voucher" },
 ];
 
+/** Deposit & voucher butuh cek saldo/kode khusus, jadi gak bisa dipakai buat split payment. */
+const SPLIT_PAYMENT_METHODS = PAYMENT_METHODS.filter(
+  (m) => m.value !== "DEPOSIT" && m.value !== "GIFT_CARD"
+);
+
 const ORDER_MODE_OPTIONS: { value: "DINE_IN" | "TAKEAWAY" | "DELIVERY"; label: string }[] = [
   { value: "DINE_IN", label: "Dine-in" },
   { value: "TAKEAWAY", label: "Takeaway" },
@@ -87,6 +92,10 @@ export function PaymentSheet({
 }) {
   const router = useRouter();
   const [method, setMethod] = useState<CreateSalePayload["paymentMethod"]>("CASH");
+  const [splitMode, setSplitMode] = useState(false);
+  const [splitMethodA, setSplitMethodA] = useState<CreateSalePayload["paymentMethod"]>("CASH");
+  const [splitMethodB, setSplitMethodB] = useState<CreateSalePayload["paymentMethod"]>("QRIS");
+  const [splitAmountAInput, setSplitAmountAInput] = useState("");
   const [orderMode, setOrderMode] = useState<"DINE_IN" | "TAKEAWAY" | "DELIVERY">("DINE_IN");
   const [deliveryChannel, setDeliveryChannel] = useState<OrderType>("GOFOOD");
   const [amountInput, setAmountInput] = useState("");
@@ -117,6 +126,15 @@ export function PaymentSheet({
   const channelMarkupAmount = Math.round((stampAdjustedTotal * channelMarkupPercent) / 100);
   const effectiveTotal = stampAdjustedTotal + channelMarkupAmount;
   const hasTotalAdjustment = effectiveTotal !== total;
+
+  const splitAmountA = Math.min(Number(splitAmountAInput) || 0, effectiveTotal);
+  const splitAmountB = Math.max(0, effectiveTotal - splitAmountA);
+  const isSplitInvalid =
+    splitMode &&
+    (splitAmountAInput === "" ||
+      splitAmountA <= 0 ||
+      splitAmountA >= effectiveTotal ||
+      splitMethodA === splitMethodB);
 
   const amountPaid = method === "CASH" ? Number(amountInput) || 0 : effectiveTotal;
   const change = method === "CASH" ? Math.max(0, amountPaid - effectiveTotal) : 0;
@@ -197,16 +215,30 @@ export function PaymentSheet({
   function handleSubmit() {
     setError(null);
     startTransition(async () => {
-      const payload: CreateSalePayload = {
-        items,
-        discountAmount,
-        paymentMethod: method,
-        orderType: selectedOrderType,
-        amountPaid,
-        memberId: member?.id ?? null,
-        redeemStamp: canRedeemStamp && redeemStamp,
-        giftCardCode: method === "GIFT_CARD" ? giftCardCode.trim() : undefined,
-      };
+      const payload: CreateSalePayload = splitMode
+        ? {
+            items,
+            discountAmount,
+            paymentMethod: splitAmountA >= splitAmountB ? splitMethodA : splitMethodB,
+            orderType: selectedOrderType,
+            amountPaid: effectiveTotal,
+            memberId: member?.id ?? null,
+            redeemStamp: canRedeemStamp && redeemStamp,
+            splitPayments: [
+              { method: splitMethodA, amount: splitAmountA },
+              { method: splitMethodB, amount: splitAmountB },
+            ],
+          }
+        : {
+            items,
+            discountAmount,
+            paymentMethod: method,
+            orderType: selectedOrderType,
+            amountPaid,
+            memberId: member?.id ?? null,
+            redeemStamp: canRedeemStamp && redeemStamp,
+            giftCardCode: method === "GIFT_CARD" ? giftCardCode.trim() : undefined,
+          };
 
       try {
         const result = await createSaleAction(payload);
@@ -219,7 +251,7 @@ export function PaymentSheet({
       } catch {
         // Panggilan ke server gagal total (bukan error validasi/stok dari
         // server) — kemungkinan besar sedang offline.
-        if (method === "DEPOSIT") {
+        if (!splitMode && method === "DEPOSIT") {
           setError(
             "Sedang offline — bayar pakai saldo deposit tidak bisa diantre, pilih metode lain dulu."
           );
@@ -341,23 +373,87 @@ export function PaymentSheet({
       </div>
 
       <div className="mt-4">
-        <p className="mb-1.5 text-sm font-medium text-[var(--color-text)]">Metode pembayaran</p>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-          {PAYMENT_METHODS.map((m) => (
-            <button
-              key={m.value}
-              type="button"
-              onClick={() => setMethod(m.value)}
-              className={`min-h-[44px] rounded-lg border text-xs font-semibold sm:text-sm ${
-                method === m.value
-                  ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)]"
-                  : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]"
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
+        <div className="flex items-center justify-between">
+          <p className="mb-1.5 text-sm font-medium text-[var(--color-text)]">Metode pembayaran</p>
+          <button
+            type="button"
+            onClick={() => setSplitMode(!splitMode)}
+            className="text-xs font-semibold text-[var(--color-primary)]"
+          >
+            {splitMode ? "Bayar 1 metode saja" : "Bayar 2 metode (split)"}
+          </button>
         </div>
+
+        {splitMode ? (
+          <div className="flex flex-col gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+            <div className="flex items-center gap-2">
+              <select
+                value={splitMethodA}
+                onChange={(e) => setSplitMethodA(e.target.value as CreateSalePayload["paymentMethod"])}
+                className="min-h-[44px] flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
+              >
+                {SPLIT_PAYMENT_METHODS.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+              <div className="relative flex-1">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-[var(--color-text-secondary)]">
+                  Rp
+                </span>
+                <input
+                  id="splitAmountA"
+                  type="number"
+                  inputMode="numeric"
+                  value={splitAmountAInput}
+                  onChange={(e) => setSplitAmountAInput(e.target.value)}
+                  placeholder="0"
+                  className="min-h-[44px] w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] pl-8 pr-2 text-sm tabular-nums text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <select
+                value={splitMethodB}
+                onChange={(e) => setSplitMethodB(e.target.value as CreateSalePayload["paymentMethod"])}
+                className="min-h-[44px] flex-1 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-2 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
+              >
+                {SPLIT_PAYMENT_METHODS.map((m) => (
+                  <option key={m.value} value={m.value}>
+                    {m.label}
+                  </option>
+                ))}
+              </select>
+              <div className="flex min-h-[44px] flex-1 items-center rounded-lg bg-[var(--color-bg)] px-3 text-sm tabular-nums font-medium text-[var(--color-text-secondary)]">
+                {formatRupiah(splitAmountB)}
+              </div>
+            </div>
+            <p className="text-xs text-[var(--color-text-secondary)]">
+              Sisa tagihan otomatis masuk ke metode kedua. Jumlah keduanya harus pas {formatRupiah(effectiveTotal)}.
+            </p>
+            {splitMode && splitMethodA === splitMethodB && (
+              <p className="text-xs font-medium text-[var(--color-danger)]">Pilih 2 metode yang beda.</p>
+            )}
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+            {PAYMENT_METHODS.map((m) => (
+              <button
+                key={m.value}
+                type="button"
+                onClick={() => setMethod(m.value)}
+                className={`min-h-[44px] rounded-lg border text-xs font-semibold sm:text-sm ${
+                  method === m.value
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                    : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)]"
+                }`}
+              >
+                {m.label}
+              </button>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="mt-4">
@@ -388,7 +484,7 @@ export function PaymentSheet({
         </div>
       )}
 
-      {method === "CASH" ? (
+      {splitMode ? null : method === "CASH" ? (
         <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
           <p className="text-sm font-medium text-[var(--color-text)]">Uang diterima</p>
           <div className="mt-2.5 grid grid-cols-3 gap-2">
@@ -562,7 +658,12 @@ export function PaymentSheet({
         <div className="sticky bottom-0 z-10 bg-[var(--color-surface)]/80 backdrop-blur-md px-6 py-4 border-t border-[var(--color-border)]/50">
           <button
             onClick={handleSubmit}
-            disabled={isPending || isCashInsufficient || isDepositInsufficient || isQrisUnavailable || isGiftCardInsufficient}
+            disabled={
+              isPending ||
+              (splitMode
+                ? isSplitInvalid
+                : isCashInsufficient || isDepositInsufficient || isQrisUnavailable || isGiftCardInsufficient)
+            }
             className="flex min-h-[48px] w-full items-center justify-center gap-1.5 rounded-2xl bg-[var(--color-primary)] px-3 text-sm font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-40 cursor-pointer"
           >
             {isPending && (

@@ -1,7 +1,41 @@
 import { prisma } from "@/lib/prisma";
+import type { PaymentMethod } from "@prisma/client";
 
 /** Batas selisih kas (Rp) yang masih dianggap wajar tanpa perlu catatan alasan. */
 export const CASH_VARIANCE_THRESHOLD = 10000;
+
+/**
+ * Total penjualan per metode bayar dalam satu shift, termasuk porsi dari transaksi
+ * split payment (Sale.isSplitPayment) yang rinciannya ada di SalePayment. Dipakai
+ * buat rekonsiliasi kas (closeShift) dan ringkasan shift (getShiftSummary) supaya
+ * keduanya selalu konsisten — jangan hitung total per metode di tempat lain.
+ */
+async function getPaymentMethodTotals(
+  tenantId: string,
+  shiftId: string
+): Promise<Map<PaymentMethod, { amount: number; count: number }>> {
+  const [nonSplitSales, splitPayments] = await Promise.all([
+    prisma.sale.findMany({
+      where: { tenantId, shiftId, status: "COMPLETED", isSplitPayment: false },
+      select: { paymentMethod: true, total: true },
+    }),
+    prisma.salePayment.findMany({
+      where: { tenantId, sale: { shiftId, status: "COMPLETED" } },
+      select: { method: true, amount: true },
+    }),
+  ]);
+
+  const totals = new Map<PaymentMethod, { amount: number; count: number }>();
+  for (const sale of nonSplitSales) {
+    const current = totals.get(sale.paymentMethod) ?? { amount: 0, count: 0 };
+    totals.set(sale.paymentMethod, { amount: current.amount + sale.total, count: current.count + 1 });
+  }
+  for (const payment of splitPayments) {
+    const current = totals.get(payment.method) ?? { amount: 0, count: 0 };
+    totals.set(payment.method, { amount: current.amount + payment.amount, count: current.count + 1 });
+  }
+  return totals;
+}
 
 /**
  * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
@@ -54,16 +88,8 @@ export async function closeShift(input: {
     throw new Error("Shift ini sudah ditutup sebelumnya.");
   }
 
-  const [cashSalesTotal, totalCashback, cashOutTotal, cashRefundsTotal] = await Promise.all([
-    prisma.sale.aggregate({
-      where: {
-        tenantId: input.tenantId,
-        shiftId: shift.id,
-        status: "COMPLETED",
-        paymentMethod: "CASH",
-      },
-      _sum: { total: true },
-    }),
+  const [methodTotals, totalCashback, cashOutTotal, cashRefundsTotal] = await Promise.all([
+    getPaymentMethodTotals(input.tenantId, shift.id),
     prisma.sale.aggregate({
       where: {
         tenantId: input.tenantId,
@@ -92,7 +118,7 @@ export async function closeShift(input: {
 
   const expectedCash =
     shift.openingCash +
-    (cashSalesTotal._sum?.total ?? 0) -
+    (methodTotals.get("CASH")?.amount ?? 0) -
     (totalCashback._sum?.cashbackAmount ?? 0) -
     (cashOutTotal._sum?.withdrawAmount ?? 0) -
     (cashRefundsTotal._sum?.totalRefund ?? 0);
@@ -125,10 +151,11 @@ export async function getShiftSummary(tenantId: string, shiftId: string) {
   });
   if (!shift) return null;
 
-  const [sales, cashOutTransactions, saleReturns] = await Promise.all([
+  const [sales, methodTotals, cashOutTransactions, saleReturns] = await Promise.all([
     prisma.sale.findMany({
       where: { tenantId, shiftId, status: "COMPLETED" },
     }),
+    getPaymentMethodTotals(tenantId, shiftId),
     prisma.cashOutTransaction.findMany({
       where: { tenantId, shiftId, status: "COMPLETED" },
     }),
@@ -138,26 +165,20 @@ export async function getShiftSummary(tenantId: string, shiftId: string) {
     }),
   ]);
 
-  const cashSales = sales.filter((sale) => sale.paymentMethod === "CASH");
-  const digitalSales = sales.filter((sale) => sale.paymentMethod !== "CASH");
   const totalPenjualan = sales.reduce((sum, sale) => sum + sale.total, 0);
-  const totalPenjualanCash = cashSales.reduce((sum, sale) => sum + sale.total, 0);
-  const totalPenjualanDigital = digitalSales.reduce((sum, sale) => sum + sale.total, 0);
+  const totalPenjualanCash = methodTotals.get("CASH")?.amount ?? 0;
+  const jumlahTransaksiCash = methodTotals.get("CASH")?.count ?? 0;
+  const digitalSalesByMethod = Array.from(methodTotals.entries())
+    .filter(([method]) => method !== "CASH")
+    .map(([method, value]) => ({ method, ...value }));
+  const totalPenjualanDigital = digitalSalesByMethod.reduce((sum, m) => sum + m.amount, 0);
+  const jumlahTransaksiDigital = digitalSalesByMethod.reduce((sum, m) => sum + m.count, 0);
   const jumlahTransaksi = sales.length;
-  const jumlahTransaksiCash = cashSales.length;
-  const jumlahTransaksiDigital = digitalSales.length;
   const totalCashback = sales.reduce((sum, sale) => sum + sale.cashbackAmount, 0);
   const totalGesekTunai = cashOutTransactions.reduce((sum, row) => sum + row.withdrawAmount, 0);
   const totalAdminGesekTunai = cashOutTransactions.reduce((sum, row) => sum + row.adminFee, 0);
   const totalTagihanGesekTunai = cashOutTransactions.reduce((sum, row) => sum + row.totalCharged, 0);
   const jumlahGesekTunai = cashOutTransactions.length;
-  const digitalSalesByMethod = Object.entries(
-    digitalSales.reduce<Record<string, { amount: number; count: number }>>((map, sale) => {
-      const current = map[sale.paymentMethod] ?? { amount: 0, count: 0 };
-      map[sale.paymentMethod] = { amount: current.amount + sale.total, count: current.count + 1 };
-      return map;
-    }, {})
-  ).map(([method, value]) => ({ method, ...value }));
   const cashOutByMethod = Object.entries(
     cashOutTransactions.reduce<Record<string, { amount: number; count: number }>>((map, row) => {
       const current = map[row.method] ?? { amount: 0, count: 0 };

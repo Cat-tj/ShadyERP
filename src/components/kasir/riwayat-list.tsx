@@ -17,6 +17,7 @@ export type SaleRow = {
   memberName: string | null;
   total: number;
   paymentMethod: string;
+  isSplitPayment: boolean;
   orderType: string;
   status: "COMPLETED" | "VOIDED";
   voidReason: string | null;
@@ -169,7 +170,7 @@ export function RiwayatList({
                   {formatRupiah(sale.total)}
                 </p>
                 <p className="text-xs text-[var(--color-text-secondary)]">
-                  {PAYMENT_LABEL[sale.paymentMethod] ?? sale.paymentMethod}
+                  {sale.isSplitPayment ? "Split" : PAYMENT_LABEL[sale.paymentMethod] ?? sale.paymentMethod}
                 </p>
               </div>
             </div>
@@ -196,7 +197,7 @@ export function RiwayatList({
                 )}
                 {canVoid && (
                   <>
-                    {sale.paymentMethod !== "DEPOSIT" && (
+                    {sale.paymentMethod !== "DEPOSIT" && !sale.isSplitPayment && (
                       <button
                         onClick={() => openPaymentCorrection(sale)}
                         className="min-h-[36px] rounded-lg border border-[var(--color-border)] px-3 py-1.5 text-xs font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"

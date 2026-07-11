@@ -72,6 +72,8 @@ export type ReceiptData = {
   paymentMethod: string;
   amountPaid: number;
   changeAmount: number;
+  /** Isi kalau transaksi split payment — dicetak sebagai baris per metode, gantiin paymentMethod/amountPaid. */
+  payments?: { label: string; amount: number }[];
   footerNote: string | null;
 };
 
@@ -122,8 +124,14 @@ export function buildReceiptEscPos(data: ReceiptData): Uint8Array {
   r.bold(true);
   r.text(totalsRow("TOTAL", formatMoney(data.total)));
   r.bold(false);
-  r.text(totalsRow(data.paymentMethod, formatMoney(data.amountPaid)));
-  if (data.changeAmount > 0) r.text(totalsRow("Kembalian", formatMoney(data.changeAmount)));
+  if (data.payments && data.payments.length > 0) {
+    for (const payment of data.payments) {
+      r.text(totalsRow(payment.label, formatMoney(payment.amount)));
+    }
+  } else {
+    r.text(totalsRow(data.paymentMethod, formatMoney(data.amountPaid)));
+    if (data.changeAmount > 0) r.text(totalsRow("Kembalian", formatMoney(data.changeAmount)));
+  }
 
   if (data.footerNote) {
     r.feed(1);

@@ -92,6 +92,7 @@ model Tenant {
   productStocks            ProductStock[]
   cashierShifts            CashierShift[]
   sales                    Sale[]
+  salePayments             SalePayment[]
   cashOutTransactions      CashOutTransaction[]
   saleItems                SaleItem[]
   saleReturns              SaleReturn[]
@@ -785,9 +786,12 @@ model Sale {
   /// Markup harga per channel (mis. GoFood/GrabFood buat nutup potongan platform) — dari ChannelPricingRule.
   channelMarkupAmount Int      @default(0)
   total          Int
+  /// Metode bayar utama — kalau isSplitPayment true, ini metode dengan porsi terbesar (buat laporan/summary lama tetap jalan).
   paymentMethod  PaymentMethod
   amountPaid     Int
   changeAmount   Int           @default(0)
+  /// True kalau transaksi dibayar pakai lebih dari 1 metode — rincian per metode ada di relasi `payments`.
+  isSplitPayment Boolean       @default(false)
   orderType      OrderType     @default(DINE_IN)
   cashbackAmount Int           @default(0)
   parkingFee     Int           @default(0)
@@ -803,6 +807,7 @@ model Sale {
   member  Member?       @relation(fields: [memberId], references: [id])
 
   items                SaleItem[]
+  payments             SalePayment[]
   pointTransactions    PointTransaction[]
   stampTransactions    StampTransaction[]
   giftCardTransactions GiftCardTransaction[]
@@ -815,6 +820,21 @@ model Sale {
   @@index([outletId])
   @@index([shiftId])
   @@index([memberId])
+}
+
+/// Rincian per-metode buat transaksi split payment (Sale.isSplitPayment true) — mis. sebagian cash, sebagian QRIS.
+model SalePayment {
+  id       String        @id @default(cuid())
+  tenantId String
+  saleId   String
+  method   PaymentMethod
+  amount   Int
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sale   Sale   @relation(fields: [saleId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([saleId])
 }
 
 model CashOutTransaction {

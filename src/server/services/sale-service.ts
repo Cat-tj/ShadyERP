@@ -113,6 +113,15 @@ export type CreateSaleInput = {
    * Default `true` untuk alur kasir normal.
    */
   deductStock?: boolean;
+  /**
+   * Isi kalau kasir bayar 1 transaksi pakai lebih dari 1 metode (mis. sebagian
+   * cash sebagian QRIS). Jumlah semua baris harus pas sama dengan total tagihan —
+   * gak ada kembalian buat split payment. Deposit & voucher tidak boleh dipakai
+   * di sini (butuh cek saldo/kode terpisah). `paymentMethod`/`amountPaid` di atas
+   * tetap harus diisi (dipakai sebagai metode utama & jumlah bayar tercatat) —
+   * biasanya caller isi dengan metode porsi terbesar & total tagihan.
+   */
+  splitPayments?: { method: PaymentMethod; amount: number }[];
 };
 
 export async function createSale(input: CreateSaleInput) {
@@ -284,6 +293,24 @@ export async function createSale(input: CreateSaleInput) {
 
     const total = afterDiscount + taxAmount + channelMarkupAmount;
 
+    if (input.splitPayments && input.splitPayments.length > 0) {
+      if (input.splitPayments.length < 2) {
+        throw new Error("Split payment butuh minimal 2 metode bayar.");
+      }
+      if (input.splitPayments.some((p) => p.method === "DEPOSIT" || p.method === "GIFT_CARD")) {
+        throw new Error("Saldo deposit dan voucher tidak bisa dipakai buat split payment.");
+      }
+      if (input.splitPayments.some((p) => !Number.isFinite(p.amount) || p.amount <= 0)) {
+        throw new Error("Jumlah tiap metode bayar harus lebih dari 0.");
+      }
+      const splitSum = input.splitPayments.reduce((sum, p) => sum + p.amount, 0);
+      if (splitSum !== total) {
+        throw new Error(
+          `Total split payment (${formatRupiah(splitSum)}) harus pas sama dengan total tagihan (${formatRupiah(total)}).`
+        );
+      }
+    }
+
     if (input.paymentMethod === "CASH" && input.amountPaid < total) {
       throw new Error("Uang diterima kurang dari total belanja.");
     }
@@ -343,12 +370,24 @@ export async function createSale(input: CreateSaleInput) {
         paymentMethod: input.paymentMethod,
         amountPaid,
         changeAmount,
+        isSplitPayment: Boolean(input.splitPayments && input.splitPayments.length > 0),
         orderType: input.orderType ?? "DINE_IN",
         cashbackAmount: input.cashbackAmount ?? 0,
         parkingFee: input.parkingFee ?? 0,
         status: "COMPLETED",
       },
     });
+
+    if (input.splitPayments && input.splitPayments.length > 0) {
+      await tx.salePayment.createMany({
+        data: input.splitPayments.map((p) => ({
+          tenantId: input.tenantId,
+          saleId: saleRow.id,
+          method: p.method,
+          amount: p.amount,
+        })),
+      });
+    }
 
     // Dibuat satu-satu (bukan nested create) supaya urutan createdItems[i]
     // selalu berkorelasi 1:1 dengan input.items[i] — dibutuhkan untuk
@@ -582,6 +621,7 @@ export async function getSaleById(tenantId: string, saleId: string) {
     where: { id: saleId, tenantId },
     include: {
       items: true,
+      payments: true,
       outlet: true,
       cashier: true,
       member: true,
@@ -720,6 +760,9 @@ export async function correctSalePaymentMethod(
     if (sale.status === "VOIDED") throw new Error("Transaksi batal tidak bisa dikoreksi.");
     if (sale.paymentMethod === "DEPOSIT") {
       throw new Error("Transaksi deposit tidak bisa dikoreksi dari sini karena memengaruhi saldo member.");
+    }
+    if (sale.isSplitPayment) {
+      throw new Error("Transaksi split payment tidak bisa dikoreksi dari sini — batalkan (void) kalau salah metode.");
     }
     if (sale.paymentMethod === paymentMethod) return sale;
 

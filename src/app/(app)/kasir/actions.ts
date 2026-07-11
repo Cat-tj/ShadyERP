@@ -79,6 +79,8 @@ export type CreateSalePayload = {
   memberId?: string | null;
   redeemStamp?: boolean;
   giftCardCode?: string;
+  /** Isi kalau kasir bayar pakai lebih dari 1 metode — lihat CreateSaleInput di sale-service.ts. */
+  splitPayments?: { method: PaymentMethod; amount: number }[];
 };
 
 export type CreateSaleResult = { error?: string; saleId?: string };
@@ -105,6 +107,7 @@ export async function createSaleAction(payload: CreateSalePayload): Promise<Crea
       amountPaid: payload.amountPaid,
       redeemStamp: payload.redeemStamp,
       giftCardCode: payload.giftCardCode,
+      splitPayments: payload.splitPayments,
     });
     revalidatePath("/kasir");
     return { saleId: sale.id };

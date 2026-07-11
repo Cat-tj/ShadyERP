@@ -65,7 +65,10 @@ export default async function StrukPage({
       total: sale.total,
       paymentMethod: PAYMENT_LABEL[sale.paymentMethod] ?? sale.paymentMethod,
       amountPaid: sale.amountPaid,
-      changeAmount: sale.paymentMethod === "CASH" ? sale.changeAmount : 0,
+      changeAmount: sale.paymentMethod === "CASH" && !sale.isSplitPayment ? sale.changeAmount : 0,
+      payments: sale.isSplitPayment
+        ? sale.payments.map((p) => ({ label: PAYMENT_LABEL[p.method] ?? p.method, amount: p.amount }))
+        : undefined,
       footerNote: setting?.receiptFooter ?? null,
     })
   );
@@ -163,11 +166,20 @@ export default async function StrukPage({
             <span>Total</span>
             <span className="tabular-nums">{formatRupiah(sale.total)}</span>
           </div>
-          <div className="flex justify-between text-[var(--color-text-secondary)]">
-            <span>{PAYMENT_LABEL[sale.paymentMethod]}</span>
-            <span className="tabular-nums">{formatRupiah(sale.amountPaid)}</span>
-          </div>
-          {sale.paymentMethod === "CASH" && (
+          {sale.isSplitPayment ? (
+            sale.payments.map((payment) => (
+              <div key={payment.id} className="flex justify-between text-[var(--color-text-secondary)]">
+                <span>{PAYMENT_LABEL[payment.method] ?? payment.method}</span>
+                <span className="tabular-nums">{formatRupiah(payment.amount)}</span>
+              </div>
+            ))
+          ) : (
+            <div className="flex justify-between text-[var(--color-text-secondary)]">
+              <span>{PAYMENT_LABEL[sale.paymentMethod]}</span>
+              <span className="tabular-nums">{formatRupiah(sale.amountPaid)}</span>
+            </div>
+          )}
+          {sale.paymentMethod === "CASH" && !sale.isSplitPayment && (
             <div className="flex justify-between text-[var(--color-text-secondary)]">
               <span>Kembalian</span>
               <span className="tabular-nums">{formatRupiah(sale.changeAmount)}</span>
