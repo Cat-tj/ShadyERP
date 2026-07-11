@@ -8,7 +8,7 @@
 
 - [x] **C1** — Kalkulator uang kembalian pas tutup shift: breakdown pecahan uang (100rb/50rb/.../koin), auto-total ke `closingCash`, simpan breakdown buat audit — `93e54b5`
 - [x] **C2** — Profitabilitas menu: laporan HPP vs harga jual per produk (dari `cost`/resep bahan baku), margin Rp & %, kontribusi profit per item dari histori penjualan — `336941a`
-- [ ] **C3** — Kartu stempel (buy X get 1 free): program stempel per tenant, 1 stempel per transaksi, redeem reward gratis di kasir saat target tercapai
+- [x] **C3** — Kartu stempel (buy X get 1 free): program stempel per tenant, 1 stempel per transaksi, redeem reward gratis di kasir saat target tercapai — `a338f82`
 - [ ] **C4** — Verifikasi & permudah Paket/Kombo: mekanisme `ASSEMBLY` + resep produk-jadi (bukan cuma bahan mentah) sudah ada di schema tapi belum pernah dites end-to-end — verifikasi, perbaiki UX kalau perlu, dan pastikan benar-benar jalan
 - [ ] **C5** — Catat waste/kerugian bahan: kategori alasan di `StockAdjustment` (Waste/Expired/Rusak/dll), halaman catat cepat, laporan total kerugian per periode
 - [ ] **C6** — Auto-suggest reorder point: hitung rata-rata penjualan harian dari histori, saranin `minQty` di halaman reorder point dengan tombol "pakai saran"
