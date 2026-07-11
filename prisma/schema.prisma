@@ -1756,17 +1756,25 @@ model SupplierPayment {
 }
 
 model Account {
-  id        String   @id @default(cuid())
+  id        String      @id @default(cuid())
   tenantId  String
-  code      String   // e.g., "11100" for Cash Drawer
-  name      String   // e.g., "Cash Drawer"
-  type      String   // "ASSET", "LIABILITY", "EQUITY", "REVENUE", "EXPENSE"
-  createdAt DateTime @default(now())
+  code      String // e.g., "11100" for Cash Drawer
+  name      String // e.g., "Cash Drawer"
+  type      AccountType
+  createdAt DateTime    @default(now())
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@unique([tenantId, code])
   @@index([tenantId])
+}
+
+enum AccountType {
+  ASSET
+  LIABILITY
+  EQUITY
+  REVENUE
+  EXPENSE
 }
 
 model JournalEntry {

@@ -1,15 +1,15 @@
-import { Prisma } from "@prisma/client";
+import { Prisma, AccountType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
-export const DEFAULT_ACCOUNTS = [
-  { code: "11100", name: "Cash Drawer", type: "ASSET" },
-  { code: "11200", name: "Bank Clearing", type: "ASSET" },
-  { code: "11300", name: "Inventory Asset", type: "ASSET" },
-  { code: "21100", name: "Accounts Payable (Hutang)", type: "LIABILITY" },
-  { code: "41100", name: "Sales Revenue", type: "REVENUE" },
-  { code: "41200", name: "Discounts & Promos", type: "REVENUE" },
-  { code: "51100", name: "Cost of Goods Sold (HPP)", type: "EXPENSE" },
-  { code: "51200", name: "Operational Expenses", type: "EXPENSE" },
+export const DEFAULT_ACCOUNTS: { code: string; name: string; type: AccountType }[] = [
+  { code: "11100", name: "Cash Drawer", type: AccountType.ASSET },
+  { code: "11200", name: "Bank Clearing", type: AccountType.ASSET },
+  { code: "11300", name: "Inventory Asset", type: AccountType.ASSET },
+  { code: "21100", name: "Accounts Payable (Hutang)", type: AccountType.LIABILITY },
+  { code: "41100", name: "Sales Revenue", type: AccountType.REVENUE },
+  { code: "41200", name: "Discounts & Promos", type: AccountType.REVENUE },
+  { code: "51100", name: "Cost of Goods Sold (HPP)", type: AccountType.EXPENSE },
+  { code: "51200", name: "Operational Expenses", type: AccountType.EXPENSE },
 ];
 
 export async function ensureDefaultAccounts(tenantId: string, tx?: Prisma.TransactionClient) {
