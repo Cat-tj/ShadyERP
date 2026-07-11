@@ -1,5 +1,8 @@
 import { prisma } from "@/lib/prisma";
 
+/** Batas selisih kas (Rp) yang masih dianggap wajar tanpa perlu catatan alasan. */
+export const CASH_VARIANCE_THRESHOLD = 10000;
+
 /**
  * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
  */
@@ -38,6 +41,8 @@ export async function closeShift(input: {
   closingCash: number;
   /** Rincian jumlah lembar/koin per pecahan (mis. {"100000": 5}) — opsional, hasil kalkulator pecahan uang. */
   closingCashBreakdown?: Record<string, number>;
+  /** Catatan alasan selisih kas — wajib diisi kalau selisih melebihi CASH_VARIANCE_THRESHOLD. */
+  varianceNote?: string;
 }) {
   const shift = await prisma.cashierShift.findFirst({
     where: { id: input.shiftId, tenantId: input.tenantId },
@@ -92,6 +97,14 @@ export async function closeShift(input: {
     (cashOutTotal._sum?.withdrawAmount ?? 0) -
     (cashRefundsTotal._sum?.totalRefund ?? 0);
 
+  const varianceNote = input.varianceNote?.trim() || undefined;
+  const selisih = Math.abs(input.closingCash - expectedCash);
+  if (selisih > CASH_VARIANCE_THRESHOLD && !varianceNote) {
+    throw new Error(
+      `Selisih kas ${selisih.toLocaleString("id-ID")} melebihi batas wajar (Rp${CASH_VARIANCE_THRESHOLD.toLocaleString("id-ID")}). Isi catatan alasan dulu sebelum tutup shift.`
+    );
+  }
+
   return prisma.cashierShift.update({
     where: { id: shift.id },
     data: {
@@ -100,6 +113,7 @@ export async function closeShift(input: {
       closingCash: input.closingCash,
       closingCashBreakdown: input.closingCashBreakdown ?? undefined,
       expectedCash,
+      varianceNote,
     },
   });
 }

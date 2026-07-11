@@ -8,6 +8,9 @@ const initialState: CloseShiftResult = {};
 
 const DENOMINATIONS = [100000, 50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100];
 
+/** Harus sama dengan CASH_VARIANCE_THRESHOLD di shift-service.ts. */
+const CASH_VARIANCE_THRESHOLD = 10000;
+
 const METHOD_LABEL: Record<string, string> = {
   QRIS: "QRIS",
   TRANSFER: "Transfer",
@@ -59,6 +62,7 @@ export function CloseShiftForm({
   const [rawCash, setRawCash] = useState(0);
   const [mode, setMode] = useState<"breakdown" | "manual">("breakdown");
   const [counts, setCounts] = useState<Record<number, string>>({});
+  const [varianceNote, setVarianceNote] = useState("");
 
   const formatNumber = (val: string) => {
     const clean = val.replace(/\D/g, "");
@@ -97,6 +101,10 @@ export function CloseShiftForm({
 
   const expectedCash = openingCash + totalPenjualanCash - totalCashback - totalGesekTunai - totalRefundCash;
   const expectedDigital = totalPenjualanDigital + totalTagihanGesekTunai - totalRefundDigital;
+
+  const currentCash = mode === "breakdown" ? breakdownTotal : rawCash;
+  const selisih = currentCash - expectedCash;
+  const needsVarianceNote = Math.abs(selisih) > CASH_VARIANCE_THRESHOLD;
 
   return (
     <div className="mx-auto max-w-3xl rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-6">
@@ -255,9 +263,27 @@ export function CloseShiftForm({
           {mode === "manual" && <input type="hidden" name="closingCash" value={rawCash} />}
         </div>
 
+        {needsVarianceNote && (
+          <div className="flex flex-col gap-2 rounded-lg bg-[var(--color-warning-bg)] p-4">
+            <p className="text-sm font-semibold text-[var(--color-warning-text)]">
+              Selisih kas {selisih > 0 ? "lebih" : "kurang"} {formatRupiah(Math.abs(selisih))} — di luar batas wajar
+              ({formatRupiah(CASH_VARIANCE_THRESHOLD)}). Isi catatan alasannya dulu sebelum tutup shift.
+            </p>
+            <textarea
+              name="varianceNote"
+              required
+              value={varianceNote}
+              onChange={(e) => setVarianceNote(e.target.value)}
+              placeholder="Contoh: kembalian kurang pas, ada uang jatuh, dsb."
+              rows={2}
+              className="min-h-[64px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)]"
+            />
+          </div>
+        )}
+
         <button
           type="submit"
-          disabled={isPending}
+          disabled={isPending || (needsVarianceNote && !varianceNote.trim())}
           className="flex min-h-[52px] w-full items-center justify-center gap-2 rounded-lg bg-[var(--color-danger)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-60"
         >
           {isPending && (

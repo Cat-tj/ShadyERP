@@ -44,6 +44,7 @@ export async function closeShiftAction(
   const shiftId = String(formData.get("shiftId") ?? "");
   const closingCash = Number(formData.get("closingCash") ?? 0);
   const breakdownRaw = String(formData.get("closingCashBreakdown") ?? "");
+  const varianceNote = String(formData.get("varianceNote") ?? "").trim() || undefined;
 
   if (!Number.isFinite(closingCash) || closingCash < 0) {
     return { error: "Uang yang dihitung tidak valid." };
@@ -60,7 +61,7 @@ export async function closeShiftAction(
   }
 
   try {
-    await closeShift({ tenantId: user.tenantId, shiftId, closingCash, closingCashBreakdown });
+    await closeShift({ tenantId: user.tenantId, shiftId, closingCash, closingCashBreakdown, varianceNote });
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal menutup shift." };
   }

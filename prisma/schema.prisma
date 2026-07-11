@@ -724,6 +724,8 @@ model CashierShift {
   /// — opsional, cuma keisi kalau kasir pakai kalkulator pecahan uang. Buat audit/dispute.
   closingCashBreakdown Json?
   expectedCash Int?
+  /// Catatan alasan kalau selisih kas (closingCash vs expectedCash) melebihi batas wajar — wajib diisi saat itu terjadi.
+  varianceNote String?
   status       ShiftStatus @default(OPEN)
   openedAt     DateTime    @default(now())
   closedAt     DateTime?

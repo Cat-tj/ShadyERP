@@ -136,6 +136,15 @@ export default async function ShiftSelesaiPage({
               : "Uang di laci kurang dari catatan. Coba periksa lagi hitungannya."}
         </p>
 
+        {shift.varianceNote && (
+          <div className="mt-3 rounded-lg bg-[var(--color-warning-bg)] p-3 text-left text-sm">
+            <p className="text-xs font-bold uppercase tracking-wide text-[var(--color-warning-text)]">
+              Catatan alasan selisih
+            </p>
+            <p className="mt-1 text-[var(--color-text)]">{shift.varianceNote}</p>
+          </div>
+        )}
+
         <Link
           href="/kasir"
           className="mt-5 flex min-h-[52px] w-full items-center justify-center rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)]"
