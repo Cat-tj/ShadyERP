@@ -6,6 +6,7 @@ export const DEFAULT_ACCOUNTS: { code: string; name: string; type: AccountType }
   { code: "11200", name: "Bank Clearing", type: AccountType.ASSET },
   { code: "11300", name: "Inventory Asset", type: AccountType.ASSET },
   { code: "21100", name: "Accounts Payable (Hutang)", type: AccountType.LIABILITY },
+  { code: "31100", name: "Retained Earnings (Laba Ditahan)", type: AccountType.EQUITY },
   { code: "41100", name: "Sales Revenue", type: AccountType.REVENUE },
   { code: "41200", name: "Discounts & Promos", type: AccountType.REVENUE },
   { code: "51100", name: "Cost of Goods Sold (HPP)", type: AccountType.EXPENSE },
@@ -14,21 +15,23 @@ export const DEFAULT_ACCOUNTS: { code: string; name: string; type: AccountType }
 
 export async function ensureDefaultAccounts(tenantId: string, tx?: Prisma.TransactionClient) {
   const client = tx || prisma;
+  // Self-healing: kalau DEFAULT_ACCOUNTS nambah akun baru di kemudian hari
+  // (seperti Equity di sini), tenant lama yang sudah punya sebagian akun
+  // tetap kebagian akun barunya — bukan cuma dicek sekali pas tenant kosong.
+  // Skip createMany kalau sudah lengkap, biar tidak round-trip percuma tiap
+  // posting jurnal (logSaleToJournal bisa panggil ini sampai 3x per sale).
   const count = await client.account.count({ where: { tenantId } });
-  if (count === 0) {
-    // skipDuplicates: jaga-jaga kalau 2 transaksi pertama tenant baru masuk
-    // hampir bersamaan (mis. sale pertama & expense pertama) — tanpa ini,
-    // createMany kedua akan gagal karena @@unique([tenantId, code]).
-    await client.account.createMany({
-      data: DEFAULT_ACCOUNTS.map((acc) => ({
-        tenantId,
-        code: acc.code,
-        name: acc.name,
-        type: acc.type,
-      })),
-      skipDuplicates: true,
-    });
-  }
+  if (count >= DEFAULT_ACCOUNTS.length) return;
+
+  await client.account.createMany({
+    data: DEFAULT_ACCOUNTS.map((acc) => ({
+      tenantId,
+      code: acc.code,
+      name: acc.name,
+      type: acc.type,
+    })),
+    skipDuplicates: true,
+  });
 }
 
 export async function postJournalEntry(params: {
