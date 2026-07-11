@@ -13,6 +13,10 @@ export function BisnisForm({
   receiptFooter,
   staticQrisPayload,
   accountingMode = "SIMPLE",
+  stampProgramEnabled = false,
+  stampTarget = 10,
+  stampRewardName = null,
+  stampRewardValue = 0,
 }: {
   businessType: BusinessModeKey;
   taxPercent: number;
@@ -20,6 +24,10 @@ export function BisnisForm({
   receiptFooter: string | null;
   staticQrisPayload: string | null;
   accountingMode?: "SIMPLE" | "ADVANCED";
+  stampProgramEnabled?: boolean;
+  stampTarget?: number;
+  stampRewardName?: string | null;
+  stampRewardValue?: number;
 }) {
   const { toastMessage, showToast } = useToast();
   const [mode, setMode] = useState<BusinessModeKey>(businessType);
@@ -28,6 +36,10 @@ export function BisnisForm({
   const [footer, setFooter] = useState(receiptFooter ?? "");
   const [qrisPayload, setQrisPayload] = useState(staticQrisPayload ?? "");
   const [accMode, setAccMode] = useState<"SIMPLE" | "ADVANCED">(accountingMode);
+  const [stampEnabled, setStampEnabled] = useState(stampProgramEnabled);
+  const [stampTargetInput, setStampTargetInput] = useState(String(stampTarget));
+  const [stampReward, setStampReward] = useState(stampRewardName ?? "");
+  const [stampRewardValueInput, setStampRewardValueInput] = useState(String(stampRewardValue));
   const [scannerOpen, setScannerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -71,6 +83,10 @@ export function BisnisForm({
         receiptFooter: footer.trim() || null,
         staticQrisPayload: qrisPayload.trim() || null,
         accountingMode: accMode,
+        stampProgramEnabled: stampEnabled,
+        stampTarget: Number(stampTargetInput) || 10,
+        stampRewardName: stampReward.trim() || null,
+        stampRewardValue: Number(stampRewardValueInput) || 0,
       });
       if (result.error) {
         setError(result.error);
@@ -225,6 +241,80 @@ export function BisnisForm({
               </span>
             </button>
           </div>
+        </div>
+
+        {/* Kartu Stempel */}
+        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="text-sm font-bold text-[var(--color-text)]">Kartu Stempel</p>
+              <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+                Member dapat 1 stempel tiap transaksi. Kalau sudah cukup, kasir bisa tukar jadi reward gratis saat bayar.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setStampEnabled(!stampEnabled)}
+              role="switch"
+              aria-checked={stampEnabled}
+              className={`relative h-7 w-12 shrink-0 rounded-full transition-colors ${
+                stampEnabled ? "bg-[var(--color-primary)]" : "bg-[var(--color-border)]"
+              }`}
+            >
+              <span
+                className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-transform ${
+                  stampEnabled ? "translate-x-6" : "translate-x-1"
+                }`}
+              />
+            </button>
+          </div>
+
+          {stampEnabled && (
+            <div className="mt-3 grid gap-3 sm:grid-cols-2">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-[var(--color-text-secondary)]">
+                  Target jumlah stempel
+                </label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={1}
+                  value={stampTargetInput}
+                  onChange={(e) => setStampTargetInput(e.target.value)}
+                  className="min-h-[44px] w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-xs font-medium text-[var(--color-text-secondary)]">
+                  Nilai reward gratis (Rp)
+                </label>
+                <input
+                  type="number"
+                  inputMode="numeric"
+                  min={0}
+                  value={stampRewardValueInput}
+                  onChange={(e) => setStampRewardValueInput(e.target.value)}
+                  className="min-h-[44px] w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+                />
+              </div>
+              <div className="flex flex-col gap-1.5 sm:col-span-2">
+                <label className="text-xs font-medium text-[var(--color-text-secondary)]">
+                  Nama reward
+                </label>
+                <input
+                  type="text"
+                  value={stampReward}
+                  onChange={(e) => setStampReward(e.target.value)}
+                  placeholder="mis. Gratis 1 Kopi Susu"
+                  className="min-h-[44px] w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-sm outline-none focus:border-[var(--color-primary)]"
+                />
+              </div>
+              <p className="text-xs text-[var(--color-text-secondary)] sm:col-span-2">
+                Contoh: target 10 stempel, reward &quot;Gratis 1 Kopi Susu&quot; senilai Rp 18.000 — begitu member
+                punya 10 stempel, kasir bisa tukar dan total belanja otomatis dipotong Rp 18.000.
+              </p>
+            </div>
+          )}
         </div>
       </div>
 

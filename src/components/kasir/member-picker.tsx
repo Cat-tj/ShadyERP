@@ -8,6 +8,7 @@ export type MemberOption = {
   phone: string;
   points: number;
   depositBalance: number;
+  stampCount: number;
 };
 
 export function MemberPicker({

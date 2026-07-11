@@ -26,6 +26,14 @@ export async function updateTenantSettingAction(
   if (!Number.isFinite(input.pointsPerAmount) || input.pointsPerAmount <= 0) {
     return { error: "Rasio poin harus lebih dari 0." };
   }
+  if (input.stampProgramEnabled) {
+    if (!Number.isFinite(input.stampTarget) || (input.stampTarget ?? 0) <= 0) {
+      return { error: "Target stempel harus lebih dari 0." };
+    }
+    if (!Number.isFinite(input.stampRewardValue) || (input.stampRewardValue ?? 0) < 0) {
+      return { error: "Nilai reward stempel tidak valid." };
+    }
+  }
   if (staticQrisPayload) {
     try {
       staticQrisPayload = normalizeStaticQrisPayload(staticQrisPayload);
@@ -46,6 +54,10 @@ export async function updateTenantSettingAction(
       receiptFooter: input.receiptFooter,
       staticQrisPayload,
       accountingMode: input.accountingMode,
+      stampProgramEnabled: input.stampProgramEnabled ?? false,
+      stampTarget: input.stampTarget ?? 10,
+      stampRewardName: input.stampRewardName?.trim() || null,
+      stampRewardValue: input.stampRewardValue ?? 0,
     });
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal menyimpan pengaturan." };

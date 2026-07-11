@@ -55,11 +55,19 @@ const DELIVERY_CHANNELS: {
   { value: "DELIVERY_OTHER", label: "Lainnya", logoSrc: "/delivery-logos/truck.png", subtitle: "Channel lain", color: "#334155", bg: "#f8fafc" },
 ];
 
+export type StampProgramSettings = {
+  enabled: boolean;
+  target: number;
+  rewardName: string | null;
+  rewardValue: number;
+};
+
 export function PaymentSheet({
   total,
   items,
   discountAmount,
   staticQrisPayload,
+  stampProgram,
   onClose,
   onSuccess,
 }: {
@@ -69,6 +77,7 @@ export function PaymentSheet({
   taxAmount: number;
   items: { productId: string; qty: number; discountAmount: number; variantOptionIds?: string[] }[];
   staticQrisPayload: string | null;
+  stampProgram: StampProgramSettings;
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -78,6 +87,7 @@ export function PaymentSheet({
   const [deliveryChannel, setDeliveryChannel] = useState<OrderType>("GOFOOD");
   const [amountInput, setAmountInput] = useState("");
   const [member, setMember] = useState<MemberOption | null>(null);
+  const [redeemStamp, setRedeemStamp] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [queuedOffline, setQueuedOffline] = useState(false);
   const [staticQris, setStaticQris] = useState(() =>
@@ -88,11 +98,22 @@ export function PaymentSheet({
   const [qrisError, setQrisError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const amountPaid = method === "CASH" ? Number(amountInput) || 0 : total;
-  const change = method === "CASH" ? Math.max(0, amountPaid - total) : 0;
-  const isCashInsufficient = method === "CASH" && amountPaid < total;
-  const isDepositInsufficient = method === "DEPOSIT" && (!member || member.depositBalance < total);
+  const canRedeemStamp = Boolean(
+    stampProgram.enabled && member && member.stampCount >= stampProgram.target
+  );
+  const effectiveTotal =
+    canRedeemStamp && redeemStamp ? Math.max(0, total - stampProgram.rewardValue) : total;
+
+  const amountPaid = method === "CASH" ? Number(amountInput) || 0 : effectiveTotal;
+  const change = method === "CASH" ? Math.max(0, amountPaid - effectiveTotal) : 0;
+  const isCashInsufficient = method === "CASH" && amountPaid < effectiveTotal;
+  const isDepositInsufficient =
+    method === "DEPOSIT" && (!member || member.depositBalance < effectiveTotal);
   const isQrisUnavailable = method === "QRIS" && (!staticQris.trim() || !qrisDataUrl || Boolean(qrisError));
+
+  useEffect(() => {
+    if (!canRedeemStamp) setRedeemStamp(false);
+  }, [canRedeemStamp]);
 
   useEffect(() => {
     let cancelled = false;
@@ -110,7 +131,7 @@ export function PaymentSheet({
       }
 
       try {
-        const dynamicPayload = buildDynamicQris(staticQris, total);
+        const dynamicPayload = buildDynamicQris(staticQris, effectiveTotal);
         const dataUrl = await QRCode.toDataURL(dynamicPayload, {
           errorCorrectionLevel: "M",
           margin: 1,
@@ -132,7 +153,7 @@ export function PaymentSheet({
     return () => {
       cancelled = true;
     };
-  }, [method, staticQris, total]);
+  }, [method, staticQris, effectiveTotal]);
 
   function saveStaticQris(value: string) {
     setStaticQris(value);
@@ -150,6 +171,7 @@ export function PaymentSheet({
         orderType,
         amountPaid,
         memberId: member?.id ?? null,
+        redeemStamp: canRedeemStamp && redeemStamp,
       };
 
       try {
@@ -186,7 +208,7 @@ export function PaymentSheet({
             Tersimpan offline
           </h2>
           <p className="mt-1 text-sm text-[var(--color-text-secondary)]">
-            Internet sedang terputus. Transaksi {formatRupiah(total)} disimpan di HP ini dan akan
+            Internet sedang terputus. Transaksi {formatRupiah(effectiveTotal)} disimpan di HP ini dan akan
             otomatis dikirim & dicatat begitu koneksi kembali.
           </p>
           <button
@@ -206,7 +228,20 @@ export function PaymentSheet({
     <>
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-center">
         <p className="text-xs text-[var(--color-text-secondary)]">Total belanja</p>
-        <p className="truncate tabular-nums text-2xl font-bold text-[var(--color-text)]">{formatRupiah(total)}</p>
+        {canRedeemStamp && redeemStamp ? (
+          <>
+            <p className="truncate tabular-nums text-sm font-medium text-[var(--color-text-secondary)] line-through">
+              {formatRupiah(total)}
+            </p>
+            <p className="truncate tabular-nums text-2xl font-bold text-[var(--color-success)]">
+              {formatRupiah(effectiveTotal)}
+            </p>
+          </>
+        ) : (
+          <p className="truncate tabular-nums text-2xl font-bold text-[var(--color-text)]">
+            {formatRupiah(effectiveTotal)}
+          </p>
+        )}
       </div>
 
       <div className="mt-4">
@@ -286,11 +321,35 @@ export function PaymentSheet({
         <MemberPicker value={member} onChange={setMember} />
       </div>
 
+      {stampProgram.enabled && member && (
+        <div className="mt-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+          {canRedeemStamp ? (
+            <label className="flex items-center justify-between gap-3">
+              <span className="text-sm text-[var(--color-text)]">
+                🎉 {member.name} punya {member.stampCount} stempel — tukar jadi{" "}
+                <span className="font-semibold">{stampProgram.rewardName ?? "reward gratis"}</span>{" "}
+                (hemat {formatRupiah(stampProgram.rewardValue)})
+              </span>
+              <input
+                type="checkbox"
+                checked={redeemStamp}
+                onChange={(e) => setRedeemStamp(e.target.checked)}
+                className="h-5 w-5 shrink-0 accent-[var(--color-primary)]"
+              />
+            </label>
+          ) : (
+            <p className="text-xs text-[var(--color-text-secondary)]">
+              Stempel {member.name}: {member.stampCount}/{stampProgram.target}
+            </p>
+          )}
+        </div>
+      )}
+
       {method === "CASH" ? (
         <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
           <p className="text-sm font-medium text-[var(--color-text)]">Uang diterima</p>
           <div className="mt-2.5 grid grid-cols-3 gap-2">
-            {quickCashOptions(total).map((val, index) => (
+            {quickCashOptions(effectiveTotal).map((val, index) => (
               <button
                 key={val}
                 type="button"
@@ -348,7 +407,7 @@ export function PaymentSheet({
                 </div>
               )}
               <p className="mt-2 text-xs text-[var(--color-text-secondary)] font-medium">
-                Scan kode QRIS di atas untuk membayar {formatRupiah(total)}
+                Scan kode QRIS di atas untuk membayar {formatRupiah(effectiveTotal)}
               </p>
             </div>
           )}
@@ -388,7 +447,7 @@ export function PaymentSheet({
         </div>
       ) : (
         <p className="mt-4 text-sm text-[var(--color-text-secondary)]">
-          Pastikan pembayaran {formatRupiah(total)} sudah diterima lewat {PAYMENT_METHODS.find((m) => m.value === method)?.label} sebelum lanjut.
+          Pastikan pembayaran {formatRupiah(effectiveTotal)} sudah diterima lewat {PAYMENT_METHODS.find((m) => m.value === method)?.label} sebelum lanjut.
         </p>
       )}
     </>
@@ -431,7 +490,7 @@ export function PaymentSheet({
             ) : (
               <>
                 <span>Selesaikan Transaksi</span>
-                <span className="truncate tabular-nums">• {formatRupiah(total)}</span>
+                <span className="truncate tabular-nums">• {formatRupiah(effectiveTotal)}</span>
               </>
             )}
           </button>

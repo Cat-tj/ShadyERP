@@ -84,6 +84,7 @@ model Tenant {
   uidCards                 UidCard[]
   members                  Member[]
   pointTransactions        PointTransaction[]
+  stampTransactions        StampTransaction[]
   categories               Category[]
   products                 Product[]
   productStocks            ProductStock[]
@@ -312,6 +313,8 @@ model Member {
   email          String?
   points         Int      @default(0)
   depositBalance Int      @default(0)
+  /// Jumlah stempel kartu loyalitas saat ini (buy X get 1 free) — direset ke 0 saat ditukar.
+  stampCount     Int      @default(0)
   joinedAt       DateTime @default(now())
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
@@ -320,6 +323,7 @@ model Member {
 
   uidCard           UidCard?
   pointTransactions PointTransaction[]
+  stampTransactions StampTransaction[]
   sales             Sale[]
 
   @@unique([tenantId, phone])
@@ -330,6 +334,30 @@ enum PointTransactionType {
   EARN
   REDEEM
   ADJUST
+}
+
+enum StampTransactionType {
+  EARN
+  REDEEM
+  ADJUST
+}
+
+model StampTransaction {
+  id        String                @id @default(cuid())
+  tenantId  String
+  memberId  String
+  type      StampTransactionType
+  count     Int // positif untuk EARN, negatif untuk REDEEM/ADJUST
+  saleId    String?
+  note      String?
+  createdAt DateTime              @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  sale   Sale?  @relation(fields: [saleId], references: [id])
+
+  @@index([tenantId])
+  @@index([memberId])
 }
 
 model PointTransaction {
@@ -704,6 +732,7 @@ model Sale {
 
   items             SaleItem[]
   pointTransactions PointTransaction[]
+  stampTransactions StampTransaction[]
   saleReturns       SaleReturn[]
   tableOrder        TableOrder?
   bookingId         String?
@@ -1619,6 +1648,12 @@ model TenantSetting {
   /// baru/void/retur/hapus pengeluaran yang boleh menyentuh tanggal ini ke belakang.
   /// null = belum pernah tutup buku, semua tanggal masih terbuka.
   periodLockDate    DateTime?
+  /// Kartu stempel: 1 stempel per transaksi member, gratis reward saat capai target.
+  stampProgramEnabled Boolean @default(false)
+  stampTarget         Int     @default(10)
+  stampRewardName     String?
+  /// Nilai reward gratis (Rp) yang dipotong dari total saat stempel ditukar.
+  stampRewardValue    Int     @default(0)
   updatedAt         DateTime       @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)

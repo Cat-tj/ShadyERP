@@ -253,6 +253,10 @@ export type TenantSettingInput = {
   receiptFooter: string | null;
   staticQrisPayload?: string | null;
   accountingMode?: AccountingMode;
+  stampProgramEnabled?: boolean;
+  stampTarget?: number;
+  stampRewardName?: string | null;
+  stampRewardValue?: number;
 };
 
 export async function getTenantSetting(tenantId: string) {

@@ -17,6 +17,10 @@ export default async function BisnisSettingsPage() {
       receiptFooter={setting?.receiptFooter ?? null}
       staticQrisPayload={setting?.staticQrisPayload ?? null}
       accountingMode={setting?.accountingMode ?? "SIMPLE"}
+      stampProgramEnabled={setting?.stampProgramEnabled ?? false}
+      stampTarget={setting?.stampTarget ?? 10}
+      stampRewardName={setting?.stampRewardName ?? null}
+      stampRewardValue={setting?.stampRewardValue ?? 0}
     />
   );
 }

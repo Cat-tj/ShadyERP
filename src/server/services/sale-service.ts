@@ -41,6 +41,8 @@ export type CreateSaleInput = {
   orderType?: OrderType;
   cashbackAmount?: number;
   parkingFee?: number;
+  /** Tukar stempel member jadi reward gratis (butuh memberId & stempel cukup). */
+  redeemStamp?: boolean;
   /**
    * Set `false` kalau stok item-item ini SUDAH dipotong sebelumnya (mis. sudah
    * direservasi saat pesanan QR meja dibuat) — supaya tidak dipotong dua kali.
@@ -168,8 +170,26 @@ export async function createSale(input: CreateSaleInput) {
     }
 
     const setting = await tx.tenantSetting.findUnique({ where: { tenantId: input.tenantId } });
+
+    let stampRewardDiscount = 0;
+    if (input.redeemStamp) {
+      if (!input.memberId) throw new Error("Pilih member dulu untuk tukar stempel.");
+      if (!setting?.stampProgramEnabled) throw new Error("Program kartu stempel belum diaktifkan.");
+      const memberForStamp = await tx.member.findFirst({
+        where: { id: input.memberId, tenantId: input.tenantId },
+      });
+      if (!memberForStamp) throw new Error("Member tidak ditemukan.");
+      if (memberForStamp.stampCount < setting.stampTarget) {
+        throw new Error(
+          `Stempel ${memberForStamp.name} belum cukup — ${memberForStamp.stampCount}/${setting.stampTarget}.`
+        );
+      }
+      stampRewardDiscount = setting.stampRewardValue;
+    }
+
     const taxPercent = setting?.taxPercent ?? 0;
-    const afterDiscount = subtotal - input.discountAmount;
+    const totalDiscountAmount = input.discountAmount + stampRewardDiscount;
+    const afterDiscount = subtotal - totalDiscountAmount;
     const taxAmount = Math.round((afterDiscount * taxPercent) / 100);
     const total = afterDiscount + taxAmount;
 
@@ -210,7 +230,7 @@ export async function createSale(input: CreateSaleInput) {
         memberId: input.memberId ?? null,
         invoiceNumber,
         subtotal,
-        discountAmount: input.discountAmount,
+        discountAmount: totalDiscountAmount,
         taxAmount,
         total,
         paymentMethod: input.paymentMethod,
@@ -395,6 +415,36 @@ export async function createSale(input: CreateSaleInput) {
       }
     }
 
+    if (input.memberId && setting?.stampProgramEnabled) {
+      if (input.redeemStamp) {
+        await tx.stampTransaction.create({
+          data: {
+            tenantId: input.tenantId,
+            memberId: input.memberId,
+            type: "REDEEM",
+            count: -setting.stampTarget,
+            saleId: sale.id,
+            note: `Tukar stempel: ${setting.stampRewardName ?? "reward"} (transaksi ${invoiceNumber})`,
+          },
+        });
+      }
+      await tx.stampTransaction.create({
+        data: {
+          tenantId: input.tenantId,
+          memberId: input.memberId,
+          type: "EARN",
+          count: 1,
+          saleId: sale.id,
+          note: `Stempel dari transaksi ${invoiceNumber}`,
+        },
+      });
+      const stampDelta = 1 - (input.redeemStamp ? setting.stampTarget : 0);
+      await tx.member.update({
+        where: { id: input.memberId },
+        data: { stampCount: { increment: stampDelta } },
+      });
+    }
+
     // Auto-post to accounting journal
     await logSaleToJournal(input.tenantId, sale.id, tx);
 
@@ -477,6 +527,27 @@ export async function voidSale(tenantId: string, saleId: string, reason: string,
         await tx.member.update({
           where: { id: sale.memberId },
           data: { points: { decrement: earnTx.points } },
+        });
+      }
+
+      const stampTxs = await tx.stampTransaction.findMany({
+        where: { saleId: sale.id, type: { in: ["EARN", "REDEEM"] } },
+      });
+      const netStampDelta = stampTxs.reduce((sum, t) => sum + t.count, 0);
+      if (netStampDelta !== 0) {
+        await tx.stampTransaction.create({
+          data: {
+            tenantId,
+            memberId: sale.memberId,
+            type: "ADJUST",
+            count: -netStampDelta,
+            saleId: sale.id,
+            note: `Pembatalan transaksi ${sale.invoiceNumber}`,
+          },
+        });
+        await tx.member.update({
+          where: { id: sale.memberId },
+          data: { stampCount: { decrement: netStampDelta } },
         });
       }
     }

@@ -40,6 +40,12 @@ export default async function KasirPage() {
       outletName={shift.outlet.name}
       taxPercent={setting?.taxPercent ?? 0}
       staticQrisPayload={setting?.staticQrisPayload ?? null}
+      stampProgram={{
+        enabled: setting?.stampProgramEnabled ?? false,
+        target: setting?.stampTarget ?? 10,
+        rewardName: setting?.stampRewardName ?? null,
+        rewardValue: setting?.stampRewardValue ?? 0,
+      }}
       products={activeProducts.map((product) => ({
         id: product.id,
         name: product.name,

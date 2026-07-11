@@ -5,7 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { formatRupiah } from "@/lib/format";
 import { computeBestPromoDiscount, type PromoForCalc } from "@/lib/promo";
-import { PaymentSheet } from "@/components/kasir/payment-sheet";
+import { PaymentSheet, type StampProgramSettings } from "@/components/kasir/payment-sheet";
 import { OfflineSyncBanner } from "@/components/kasir/offline-sync-banner";
 import { CashOutModal } from "@/components/kasir/cash-out-modal";
 import { VariantPickerModal, type VariantGroupOption } from "@/components/kasir/variant-picker-modal";
@@ -53,6 +53,7 @@ export function PosScreen({
   taxPercent,
   staticQrisPayload,
   promos,
+  stampProgram,
 }: {
   outletName: string;
   products: PosProduct[];
@@ -60,6 +61,7 @@ export function PosScreen({
   taxPercent: number;
   staticQrisPayload: string | null;
   promos: PosPromo[];
+  stampProgram: StampProgramSettings;
 }) {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("ALL");
@@ -581,6 +583,7 @@ export function PosScreen({
           taxAmount={taxAmount}
           items={saleItems}
           staticQrisPayload={staticQrisPayload}
+          stampProgram={stampProgram}
           onClose={() => setShowPayment(false)}
           onSuccess={() => {
             resetCart();
