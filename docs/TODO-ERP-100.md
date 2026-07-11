@@ -10,7 +10,7 @@
 - [x] **A2** — `Account.type` jadi enum `AccountType` (ASSET/LIABILITY/EQUITY/REVENUE/EXPENSE) + migration + backfill data lama — `90745ad`
 - [x] **A3** — Tambah akun Equity default ("Retained Earnings/Laba Ditahan") ke `DEFAULT_ACCOUNTS` — `324f73b`
 - [x] **A4** — Buku Besar per akun: query "bongkar" tiap `JournalEntry` jadi 2 baris (debit/kredit), kelompokkan per akun, saldo berjalan + UI — `1fcb99c`
-- [ ] **A5** — Neraca Saldo (Trial Balance): total debit vs kredit per akun dalam satu rentang tanggal, harus balance ke Rp0 + UI
+- [x] **A5** — Neraca Saldo (Trial Balance): total debit vs kredit per akun dalam satu rentang tanggal, harus balance ke Rp0 + UI — `b1c3384`
 - [ ] **A6** — Neraca (Balance Sheet): saldo akhir per tipe akun (Asset/Liability/Equity) per tanggal + UI — mode Advanced saja
 - [ ] **A7** — Laba Rugi resmi dari COA (Revenue−Expense per periode dari `JournalEntry`, bukan versi simple lama) + UI — mode Advanced saja
 - [ ] **A8** — Tutup buku periode: kunci tanggal per tenant, tolak posting/edit entri sebelum tanggal kunci — mode Advanced saja
