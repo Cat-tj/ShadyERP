@@ -19,7 +19,7 @@
 
 ## 📦 Inventory
 
-- [ ] **I1** — Sambungkan `consumeBatchFIFO` ke `sale-service.ts` (bug: fungsi sudah ada, tidak pernah dipanggil)
+- [x] **I1** — Sambungkan `consumeBatchFIFO` ke `sale-service.ts` (bug: fungsi sudah ada, tidak pernah dipanggil) — `40c0098`
 - [ ] **I2** — Bungkus moving-average calc di `stock-receipt-service.ts` (`completeReceipt`) dalam `prisma.$transaction`
 - [ ] **I3** — UI untuk `WarehouseLocation` (assign stok ke lokasi gudang) — atau keputusan sadar untuk membuang modelnya kalau tidak dipakai
 - [ ] **I4** — Landed cost: field ongkir/biaya lain di `StockReceipt`, distribusi pro-rata ke cost tiap item
