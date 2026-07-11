@@ -11,6 +11,7 @@ import {
   TrendingUpIcon,
   BellIcon,
   CalendarIcon,
+  FlameIcon,
   BriefcaseIcon,
   WalletIcon,
   BuildingIcon,
@@ -66,6 +67,7 @@ export const NAV_ITEMS: NavItem[] = [
   // ===== Finance =====
   { href: "/finance", label: "Ringkasan", icon: HomeIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "keuangan", hub: "finance" },
   { href: "/finance/laporan", label: "Penjualan", icon: BarChartIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "keuangan", hub: "finance" },
+  { href: "/finance/profitabilitas-menu", label: "Profitabilitas Menu", icon: FlameIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
   { href: "/finance/pengeluaran", label: "Pengeluaran", icon: TrendingDownIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "keuangan", hub: "finance" },
   { href: "/finance/kas", label: "Kas Outlet", icon: WalletIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "keuangan", hub: "finance" },
   { href: "/finance/hutang-supplier", label: "Hutang Supplier", icon: ReceiptIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
