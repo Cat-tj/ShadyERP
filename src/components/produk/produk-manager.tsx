@@ -11,6 +11,7 @@ import {
   type EditingProduct,
   type OutletOption,
   type VariantGroupRow,
+  type RecipeItemRow,
 } from "@/components/produk/product-form-modal";
 import { ScanBarcodeModal } from "@/components/produk/scan-barcode-modal";
 import { useToast, Toast } from "@/components/toast";
@@ -35,6 +36,7 @@ export type ProductRow = {
   reorderPointByOutlet: Record<string, number>;
   variantGroups: VariantGroupRow[];
   excludedModifierGroupIds: string[];
+  recipeItems: RecipeItemRow[];
 };
 
 const PRODUCT_KIND_LABEL: Record<ProductRow["kind"], string> = {
@@ -84,8 +86,11 @@ export function ProdukManager({
         reorderPointByOutlet: editingProduct.reorderPointByOutlet,
         variantGroups: editingProduct.variantGroups,
         excludedModifierGroupIds: editingProduct.excludedModifierGroupIds,
+        recipeItems: editingProduct.recipeItems,
       }
     : null;
+
+  const ingredientOptions = products.map((p) => ({ id: p.id, name: p.name }));
 
   function openCreate() {
     setEditingId(null);
@@ -262,6 +267,7 @@ export function ProdukManager({
           categories={categories}
           outlets={outlets}
           product={editing}
+          ingredientOptions={ingredientOptions}
           initialSku={prefillSku}
           onClose={() => setModalOpen(false)}
           onSaved={showToast}

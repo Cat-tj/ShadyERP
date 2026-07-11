@@ -6,11 +6,73 @@ import { formatRupiah } from "@/lib/format";
 import { logSaleToJournal, assertPeriodNotLocked } from "@/server/services/accounting-service";
 import { consumeBatchFIFO } from "@/server/services/inventory-service";
 import { assignSerialToSaleItem, releaseSerialsForSaleItem } from "@/server/services/product-serial-service";
-import type { PaymentMethod, OrderType } from "@prisma/client";
+import type { PaymentMethod, OrderType, Prisma } from "@prisma/client";
 
 /**
  * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
  */
+
+/**
+ * Resep produk boleh nested — komponen paket/kombo bisa berupa menu jadi lain yang
+ * PUNYA resep sendiri (mis. Paket Hemat -> Cappuccino -> susu+kopi+gula). Fungsi ini
+ * menurunkan resep tiap produk keranjang sampai ke bahan/produk paling dasar (yang
+ * tidak punya resep lagi), supaya stok yang dipotong selalu bahan asli — bukan stok
+ * produk racikan perantara yang biasanya tidak dilacak. `qty` hasil sudah dikali
+ * penuh lewat semua level nested, jadi bentuknya tetap kompatibel dengan pemakaian
+ * lama `{ ingredientId, qty }[]` (qty = kebutuhan per 1 unit produk keranjang).
+ */
+async function buildFlattenedRecipeMap(
+  tx: Prisma.TransactionClient,
+  tenantId: string,
+  productIds: string[]
+): Promise<Map<string, { ingredientId: string; qty: number }[]>> {
+  const directRecipeCache = new Map<string, { ingredientId: string; qty: number }[]>();
+
+  async function getDirectRecipe(productId: string) {
+    let cached = directRecipeCache.get(productId);
+    if (!cached) {
+      cached = await tx.productRecipeItem.findMany({
+        where: { tenantId, productId },
+        select: { ingredientId: true, qty: true },
+      });
+      directRecipeCache.set(productId, cached);
+    }
+    return cached;
+  }
+
+  async function flatten(productId: string, multiplier: number, visited: Set<string>): Promise<Map<string, number>> {
+    if (visited.has(productId)) return new Map();
+    const direct = await getDirectRecipe(productId);
+    if (direct.length === 0) return new Map();
+
+    const nextVisited = new Set(visited).add(productId);
+    const result = new Map<string, number>();
+    for (const item of direct) {
+      const subDirect = await getDirectRecipe(item.ingredientId);
+      if (subDirect.length === 0) {
+        result.set(item.ingredientId, (result.get(item.ingredientId) ?? 0) + item.qty * multiplier);
+      } else {
+        const sub = await flatten(item.ingredientId, item.qty * multiplier, nextVisited);
+        for (const [pid, qty] of sub) {
+          result.set(pid, (result.get(pid) ?? 0) + qty);
+        }
+      }
+    }
+    return result;
+  }
+
+  const recipeMap = new Map<string, { ingredientId: string; qty: number }[]>();
+  for (const productId of productIds) {
+    const flattened = await flatten(productId, 1, new Set());
+    if (flattened.size > 0) {
+      recipeMap.set(
+        productId,
+        Array.from(flattened.entries()).map(([ingredientId, qty]) => ({ ingredientId, qty }))
+      );
+    }
+  }
+  return recipeMap;
+}
 
 export type CartItemInput = {
   productId: string;
@@ -60,11 +122,12 @@ export async function createSale(input: CreateSaleInput) {
   return prisma.$transaction(async (tx) => {
     const productIds = input.items.map((item) => item.productId);
 
-    // Fetch resep untuk produk-produk di keranjang
-    const recipes = await tx.productRecipeItem.findMany({
-      where: { tenantId: input.tenantId, productId: { in: productIds } },
-    });
-    const ingredientIds = recipes.map((r) => r.ingredientId);
+    // Resep produk-produk di keranjang, diturunkan sampai ke bahan/produk paling
+    // dasar (mendukung paket/kombo yang komponennya sendiri berupa menu racikan).
+    const recipeMap = await buildFlattenedRecipeMap(tx, input.tenantId, productIds);
+    const ingredientIds = Array.from(recipeMap.values())
+      .flat()
+      .map((r) => r.ingredientId);
 
     // Fetch produk + stok produk dan stok bahan baku sekaligus
     const [products, ingredientStocks, variantGroupsByProduct] = await Promise.all([
@@ -80,11 +143,6 @@ export async function createSale(input: CreateSaleInput) {
     ]);
 
     const productMap = new Map(products.map((p) => [p.id, p]));
-    const recipeMap = new Map<string, (typeof recipes)[number][]>();
-    for (const r of recipes) {
-      if (!recipeMap.has(r.productId)) recipeMap.set(r.productId, []);
-      recipeMap.get(r.productId)!.push(r);
-    }
     const ingredientStockMap = new Map(ingredientStocks.map((s) => [s.productId, s]));
 
     let subtotal = 0;

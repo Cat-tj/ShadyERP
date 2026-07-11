@@ -59,9 +59,43 @@ export async function listProductsFull(tenantId: string) {
       stocks: { include: { outlet: true } },
       reorderPoints: true,
       variantGroups: { include: { options: { orderBy: { sortOrder: "asc" } } }, orderBy: { sortOrder: "asc" } },
+      recipes: { include: { ingredient: { select: { id: true, name: true } } } },
     },
     orderBy: { name: "asc" },
   });
+}
+
+/**
+ * Resep/komponen produk (dipakai buat produk racikan mis. Cappuccino = susu+kopi+gula,
+ * atau paket/kombo mis. Paket Hemat = Burger+Kentang+Es Teh — komponennya boleh bahan
+ * mentah ATAU menu jadi lain). Ingredient boleh punya resepnya sendiri (nested).
+ */
+export async function addRecipeItem(tenantId: string, productId: string, ingredientId: string, qty: number) {
+  if (productId === ingredientId) {
+    throw new Error("Produk tidak bisa jadi bahan/komponen untuk dirinya sendiri.");
+  }
+  const [product, ingredient] = await Promise.all([
+    prisma.product.findFirst({ where: { id: productId, tenantId } }),
+    prisma.product.findFirst({ where: { id: ingredientId, tenantId } }),
+  ]);
+  if (!product) throw new Error("Produk tidak ditemukan.");
+  if (!ingredient) throw new Error("Bahan/komponen tidak ditemukan.");
+
+  return prisma.productRecipeItem.create({
+    data: { tenantId, productId, ingredientId, qty },
+  });
+}
+
+export async function updateRecipeItemQty(tenantId: string, id: string, qty: number) {
+  const item = await prisma.productRecipeItem.findFirst({ where: { id, tenantId } });
+  if (!item) throw new Error("Item resep tidak ditemukan.");
+  return prisma.productRecipeItem.update({ where: { id }, data: { qty } });
+}
+
+export async function removeRecipeItem(tenantId: string, id: string) {
+  const item = await prisma.productRecipeItem.findFirst({ where: { id, tenantId } });
+  if (!item) throw new Error("Item resep tidak ditemukan.");
+  return prisma.productRecipeItem.delete({ where: { id } });
 }
 
 export type ProductInput = {

@@ -13,9 +13,10 @@ import {
 import { BarcodeScannerModal } from "@/components/shared/barcode-scanner-modal";
 import type { CategoryOption } from "@/components/produk/kategori-manager";
 import { VariantGroupsEditor, type VariantGroupRow } from "@/components/produk/variant-groups-editor";
+import { RecipeEditor, type RecipeItemRow, type IngredientOption } from "@/components/produk/recipe-editor";
 import { CameraIcon, XIcon } from "@/components/ui/icons";
 
-export type { VariantGroupRow };
+export type { VariantGroupRow, RecipeItemRow, IngredientOption };
 
 export type OutletOption = { id: string; name: string };
 type ProductKindOption = "GOODS" | "SERVICE" | "ASSEMBLY" | "NON_INVENTORY" | "COST";
@@ -39,12 +40,14 @@ export type EditingProduct = {
   reorderPointByOutlet: Record<string, number>;
   variantGroups: VariantGroupRow[];
   excludedModifierGroupIds: string[];
+  recipeItems: RecipeItemRow[];
 };
 
 export function ProductFormModal({
   categories,
   outlets,
   product,
+  ingredientOptions,
   initialSku,
   onClose,
   onSaved,
@@ -52,6 +55,8 @@ export function ProductFormModal({
   categories: CategoryOption[];
   outlets: OutletOption[];
   product: EditingProduct | null;
+  /** Semua produk lain di tenant (buat dipilih jadi bahan/komponen resep). */
+  ingredientOptions: IngredientOption[];
   /** Prefill SKU pas buka form "Tambah produk" dari hasil scan barcode yang belum kenal. */
   initialSku?: string;
   onClose: () => void;
@@ -529,6 +534,19 @@ export function ProductFormModal({
             ) : (
               <p className="text-xs text-[var(--color-text-secondary)]">
                 Simpan produk dulu untuk menambahkan varian & topping (mis. Ukuran, Level Gula, Topping).
+              </p>
+            )}
+
+            {product ? (
+              <RecipeEditor
+                productId={product.id}
+                items={product.recipeItems}
+                ingredientOptions={ingredientOptions.filter((option) => option.id !== product.id)}
+                onNotify={setInfo}
+              />
+            ) : (
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                Simpan produk dulu untuk menambahkan resep/komponen (buat menu racikan atau paket/kombo).
               </p>
             )}
           </div>

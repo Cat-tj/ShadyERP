@@ -109,6 +109,12 @@ export default async function ProdukPage() {
             })),
           })),
           excludedModifierGroupIds: exclusionsByProduct.get(product.id) ?? [],
+          recipeItems: product.recipes.map((recipe) => ({
+            id: recipe.id,
+            ingredientId: recipe.ingredientId,
+            ingredientName: recipe.ingredient.name,
+            qty: recipe.qty,
+          })),
         }))}
       />
     </div>

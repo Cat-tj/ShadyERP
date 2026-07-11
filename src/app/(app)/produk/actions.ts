@@ -15,6 +15,9 @@ import {
   sendStockTransfer,
   receiveStockTransfer,
   rejectStockTransfer,
+  addRecipeItem,
+  updateRecipeItemQty,
+  removeRecipeItem,
   type ProductInput,
 } from "@/server/services/product-service";
 import { setReorderPoint } from "@/server/services/inventory-service";
@@ -232,6 +235,56 @@ export async function deleteVariantOptionAction(id: string): Promise<ActionResul
   }
   revalidatePath("/produk");
   revalidatePath("/kasir");
+  return { success: true };
+}
+
+export async function addRecipeItemAction(
+  productId: string,
+  ingredientId: string,
+  qty: number
+): Promise<CreateResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  if (!ingredientId) return { error: "Pilih bahan/komponen dulu." };
+  if (!Number.isFinite(qty) || qty <= 0) return { error: "Jumlah harus lebih dari 0." };
+  let item;
+  try {
+    item = await addRecipeItem(user.tenantId, productId, ingredientId, qty);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal menambah bahan resep." };
+  }
+  revalidatePath("/produk");
+  revalidatePath("/inventory");
+  revalidatePath("/kasir");
+  revalidatePath("/finance/profitabilitas-menu");
+  return { success: true, id: item.id };
+}
+
+export async function updateRecipeItemQtyAction(id: string, qty: number): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  if (!Number.isFinite(qty) || qty <= 0) return { error: "Jumlah harus lebih dari 0." };
+  try {
+    await updateRecipeItemQty(user.tenantId, id, qty);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal mengubah jumlah bahan." };
+  }
+  revalidatePath("/produk");
+  revalidatePath("/inventory");
+  revalidatePath("/kasir");
+  revalidatePath("/finance/profitabilitas-menu");
+  return { success: true };
+}
+
+export async function removeRecipeItemAction(id: string): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  try {
+    await removeRecipeItem(user.tenantId, id);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal menghapus bahan resep." };
+  }
+  revalidatePath("/produk");
+  revalidatePath("/inventory");
+  revalidatePath("/kasir");
+  revalidatePath("/finance/profitabilitas-menu");
   return { success: true };
 }
 
