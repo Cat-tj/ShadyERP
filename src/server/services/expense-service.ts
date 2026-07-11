@@ -28,20 +28,25 @@ export async function createExpense(tenantId: string, createdById: string, input
     throw new Error("Jumlah pengeluaran tidak valid.");
   }
 
-  const expense = await prisma.expense.create({
-    data: {
-      tenantId,
-      outletId: input.outletId,
-      createdById,
-      category: input.category,
-      amount: input.amount,
-      note: input.note?.trim() || null,
-      spentAt: input.spentAt ?? new Date(),
-    },
-  });
+  // Expense + jurnal harus atomik — kalau salah satu gagal, dua-duanya batal.
+  // Sebelumnya dipisah jadi 2 write independen: expense bisa tersimpan tanpa
+  // jurnal kalau logExpenseToJournal gagal, bikin data akuntansi drift diam-diam.
+  return prisma.$transaction(async (tx) => {
+    const expense = await tx.expense.create({
+      data: {
+        tenantId,
+        outletId: input.outletId,
+        createdById,
+        category: input.category,
+        amount: input.amount,
+        note: input.note?.trim() || null,
+        spentAt: input.spentAt ?? new Date(),
+      },
+    });
 
-  await logExpenseToJournal(tenantId, expense.id);
-  return expense;
+    await logExpenseToJournal(tenantId, expense.id, tx);
+    return expense;
+  });
 }
 
 export async function listExpenses(tenantId: string, outletIds: string[], days: number) {

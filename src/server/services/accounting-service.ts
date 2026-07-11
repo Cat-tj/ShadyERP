@@ -12,16 +12,21 @@ export const DEFAULT_ACCOUNTS = [
   { code: "51200", name: "Operational Expenses", type: "EXPENSE" },
 ];
 
-export async function ensureDefaultAccounts(tenantId: string) {
-  const count = await prisma.account.count({ where: { tenantId } });
+export async function ensureDefaultAccounts(tenantId: string, tx?: Prisma.TransactionClient) {
+  const client = tx || prisma;
+  const count = await client.account.count({ where: { tenantId } });
   if (count === 0) {
-    await prisma.account.createMany({
+    // skipDuplicates: jaga-jaga kalau 2 transaksi pertama tenant baru masuk
+    // hampir bersamaan (mis. sale pertama & expense pertama) — tanpa ini,
+    // createMany kedua akan gagal karena @@unique([tenantId, code]).
+    await client.account.createMany({
       data: DEFAULT_ACCOUNTS.map((acc) => ({
         tenantId,
         code: acc.code,
         name: acc.name,
         type: acc.type,
       })),
+      skipDuplicates: true,
     });
   }
 }
@@ -46,7 +51,7 @@ export async function postJournalEntry(params: {
   }
   
   // Ensure default accounts are present
-  await ensureDefaultAccounts(params.tenantId);
+  await ensureDefaultAccounts(params.tenantId, params.tx);
 
   return client.journalEntry.create({
     data: {
