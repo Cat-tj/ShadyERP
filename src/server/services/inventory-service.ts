@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import type { Prisma } from "@prisma/client";
 
 /**
  * Inventory management service dengan fitur:
@@ -83,8 +84,15 @@ export async function receiveBatch(
 }
 
 /** Konsumsi batch saat penjualan (FIFO strategy — gunakan batch tertua dulu) */
-export async function consumeBatchFIFO(tenantId: string, productId: string, outletId: string, qty: number) {
-  const batches = await prisma.stockBatch.findMany({
+export async function consumeBatchFIFO(
+  tenantId: string,
+  productId: string,
+  outletId: string,
+  qty: number,
+  tx?: Prisma.TransactionClient
+) {
+  const client = tx || prisma;
+  const batches = await client.stockBatch.findMany({
     where: { tenantId, productId, outletId, qtyRemaining: { gt: 0 } },
     orderBy: { receivedDate: "asc" }, // FIFO — batch paling tua dulu
   });
@@ -96,7 +104,7 @@ export async function consumeBatchFIFO(tenantId: string, productId: string, outl
     if (remainingQty <= 0) break;
 
     const consumeQty = Math.min(batch.qtyRemaining, remainingQty);
-    await prisma.stockBatch.update({
+    await client.stockBatch.update({
       where: { id: batch.id },
       data: { qtyRemaining: batch.qtyRemaining - consumeQty },
     });

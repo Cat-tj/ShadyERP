@@ -4,6 +4,7 @@ import { computeVariantSelection, loadVariantGroupsByProduct } from "@/server/se
 import { recordAuditLog } from "@/server/services/audit-log-service";
 import { formatRupiah } from "@/lib/format";
 import { logSaleToJournal, assertPeriodNotLocked } from "@/server/services/accounting-service";
+import { consumeBatchFIFO } from "@/server/services/inventory-service";
 import type { PaymentMethod, OrderType } from "@prisma/client";
 
 /**
@@ -227,6 +228,11 @@ export async function createSale(input: CreateSaleInput) {
             where: { productId_outletId: { productId: item.productId, outletId: input.outletId } },
             data: { qty: { decrement: item.qty } },
           });
+          // Produk yang lacak kedaluwarsa (mis. makanan/farmasi) juga potong
+          // batch tertua dulu (FIFO), supaya sisa & tanggal exp per batch akurat.
+          if (product.trackExpiry) {
+            await consumeBatchFIFO(input.tenantId, item.productId, input.outletId, item.qty, tx);
+          }
         }
       }
     }
