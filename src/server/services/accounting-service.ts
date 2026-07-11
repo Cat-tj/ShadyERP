@@ -284,3 +284,70 @@ export async function getTrialBalance(
 
   return { rows, totalDebit, totalCredit, isBalanced: totalDebit === totalCredit };
 }
+
+export type BalanceSheetLine = { code: string; name: string; balance: number };
+export type BalanceSheetSection = { lines: BalanceSheetLine[]; total: number };
+
+/**
+ * Neraca (Balance Sheet): Assets = Liabilities + Equity. Karena belum ada
+ * mekanisme tutup buku (A8), laba/rugi periode berjalan (Revenue−Expense)
+ * belum "resmi" masuk ke akun Equity manapun — jadi dihitung on-the-fly
+ * sebagai baris "Laba Berjalan (belum ditutup)" di seksi Equity, praktik
+ * standar untuk neraca interim (bukan neraca akhir tahun).
+ */
+export async function getBalanceSheet(
+  tenantId: string,
+  asOf: Date
+): Promise<{
+  assets: BalanceSheetSection;
+  liabilities: BalanceSheetSection;
+  equity: BalanceSheetSection;
+  currentEarnings: number;
+  totalLiabilitiesAndEquity: number;
+  isBalanced: boolean;
+}> {
+  const [accounts, entries] = await Promise.all([
+    prisma.account.findMany({ where: { tenantId }, orderBy: { code: "asc" } }),
+    prisma.journalEntry.findMany({ where: { tenantId, date: { lt: asOf } } }),
+  ]);
+
+  function naturalBalance(account: { code: string; type: AccountType }): number {
+    const debitNormal = isDebitNormal(account.type);
+    let balance = 0;
+    for (const entry of entries) {
+      if (entry.debitCode === account.code) balance += debitNormal ? entry.amount : -entry.amount;
+      if (entry.creditCode === account.code) balance += debitNormal ? -entry.amount : entry.amount;
+    }
+    return balance;
+  }
+
+  function section(type: AccountType): BalanceSheetSection {
+    const lines = accounts
+      .filter((a) => a.type === type)
+      .map((a) => ({ code: a.code, name: a.name, balance: naturalBalance(a) }));
+    return { lines, total: lines.reduce((sum, l) => sum + l.balance, 0) };
+  }
+
+  const assets = section("ASSET");
+  const liabilities = section("LIABILITY");
+  const equityRaw = section("EQUITY");
+  const revenue = section("REVENUE");
+  const expense = section("EXPENSE");
+
+  const currentEarnings = revenue.total - expense.total;
+  const equity: BalanceSheetSection = {
+    lines: [...equityRaw.lines, { code: "", name: "Laba Berjalan (belum ditutup)", balance: currentEarnings }],
+    total: equityRaw.total + currentEarnings,
+  };
+
+  const totalLiabilitiesAndEquity = liabilities.total + equity.total;
+
+  return {
+    assets,
+    liabilities,
+    equity,
+    currentEarnings,
+    totalLiabilitiesAndEquity,
+    isBalanced: assets.total === totalLiabilitiesAndEquity,
+  };
+}
