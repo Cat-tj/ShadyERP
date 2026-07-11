@@ -21,6 +21,7 @@ import {
   addWholesalePriceTier,
   updateWholesalePriceTier,
   removeWholesalePriceTier,
+  suggestSellPrice,
   type ProductInput,
 } from "@/server/services/product-service";
 import { setReorderPoint, suggestReorderPoint } from "@/server/services/inventory-service";
@@ -499,6 +500,28 @@ export async function getReorderSuggestionAction(
       avgDailyQty: 0,
       suggestedMinQty: null,
       error: error instanceof Error ? error.message : "Gagal menghitung saran.",
+    };
+  }
+}
+
+export type PriceSuggestion = { hpp: number; suggestedPrice: number | null; error?: string };
+
+export async function getSuggestedPriceAction(
+  productId: string,
+  targetMarginPercent: number
+): Promise<PriceSuggestion> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  if (!Number.isFinite(targetMarginPercent) || targetMarginPercent <= 0 || targetMarginPercent >= 100) {
+    return { hpp: 0, suggestedPrice: null, error: "Target margin harus antara 1-99%." };
+  }
+  try {
+    const result = await suggestSellPrice(user.tenantId, productId, targetMarginPercent);
+    return result;
+  } catch (error) {
+    return {
+      hpp: 0,
+      suggestedPrice: null,
+      error: error instanceof Error ? error.message : "Gagal menghitung saran harga.",
     };
   }
 }

@@ -10,12 +10,15 @@ import {
   updateReorderPointAction,
   setProductModifierExclusionsAction,
   getReorderSuggestionAction,
+  getSuggestedPriceAction,
 } from "@/app/(app)/produk/actions";
 import { BarcodeScannerModal } from "@/components/shared/barcode-scanner-modal";
 import type { CategoryOption } from "@/components/produk/kategori-manager";
 import { VariantGroupsEditor, type VariantGroupRow } from "@/components/produk/variant-groups-editor";
 import { RecipeEditor, type RecipeItemRow, type IngredientOption } from "@/components/produk/recipe-editor";
 import { WholesaleTierEditor, type WholesaleTierRow } from "@/components/produk/wholesale-tier-editor";
+import { computeSuggestedPrice } from "@/lib/pricing";
+import { formatRupiah } from "@/lib/format";
 import { CameraIcon, XIcon } from "@/components/ui/icons";
 
 export type { VariantGroupRow, RecipeItemRow, IngredientOption, WholesaleTierRow };
@@ -118,6 +121,40 @@ export function ProductFormModal({
     const suggestion = reorderSuggestionByOutlet[outletId];
     if (!suggestion?.suggestedMinQty) return;
     setReorderPointByOutlet((prev) => ({ ...prev, [outletId]: String(suggestion.suggestedMinQty) }));
+  }
+
+  const [targetMargin, setTargetMargin] = useState("30");
+  const [priceSuggestion, setPriceSuggestion] = useState<{ hpp: number; suggestedPrice: number | null } | null>(null);
+  const [loadingPriceSuggestion, setLoadingPriceSuggestion] = useState(false);
+
+  function fetchPriceSuggestion() {
+    const marginNumber = Number(targetMargin);
+    if (!Number.isFinite(marginNumber) || marginNumber <= 0 || marginNumber >= 100) {
+      setInfo("Target margin harus antara 1-99%.");
+      return;
+    }
+    if (product) {
+      setLoadingPriceSuggestion(true);
+      startSuggestionTransition(async () => {
+        const result = await getSuggestedPriceAction(product.id, marginNumber);
+        setLoadingPriceSuggestion(false);
+        if (result.error) {
+          setInfo(result.error);
+          return;
+        }
+        setPriceSuggestion(result);
+      });
+    } else {
+      // Produk baru: belum bisa dapat HPP dari resep (resep cuma bisa diisi setelah
+      // produk tersimpan), jadi pakai field Modal yang lagi diisi di form ini.
+      const hpp = Number(cost) || 0;
+      setPriceSuggestion({ hpp, suggestedPrice: computeSuggestedPrice(hpp, marginNumber) });
+    }
+  }
+
+  function applyPriceSuggestion() {
+    if (!priceSuggestion?.suggestedPrice) return;
+    setPrice(String(priceSuggestion.suggestedPrice));
   }
 
   const categoryModifierGroups = categories.find((c) => c.id === categoryId)?.modifierGroups ?? [];
@@ -357,6 +394,47 @@ export function ProductFormModal({
                   />
                 </div>
               </div>
+            </div>
+
+            <div className="flex items-center gap-2 rounded-lg bg-[var(--color-bg)] p-3">
+              <span className="text-xs text-[var(--color-text-secondary)]">Target margin</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min={1}
+                max={99}
+                value={targetMargin}
+                onChange={(event) => setTargetMargin(event.target.value)}
+                className="h-9 w-16 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-center text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+              />
+              <span className="text-xs text-[var(--color-text-secondary)]">%</span>
+              <button
+                type="button"
+                onClick={fetchPriceSuggestion}
+                disabled={loadingPriceSuggestion}
+                className="h-9 shrink-0 rounded-md border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-xs font-semibold text-[var(--color-text)] disabled:opacity-40"
+              >
+                {loadingPriceSuggestion ? "Menghitung..." : "Saran harga dari HPP"}
+              </button>
+              {priceSuggestion && (
+                <span className="ml-auto text-xs text-[var(--color-text-secondary)]">
+                  {priceSuggestion.hpp <= 0 ? (
+                    "HPP belum ada."
+                  ) : priceSuggestion.suggestedPrice ? (
+                    <>
+                      HPP {formatRupiah(priceSuggestion.hpp)} &rarr;{" "}
+                      <span className="font-semibold text-[var(--color-text)]">
+                        {formatRupiah(priceSuggestion.suggestedPrice)}
+                      </span>{" "}
+                      <button type="button" onClick={applyPriceSuggestion} className="font-semibold text-[var(--color-primary)]">
+                        Pakai
+                      </button>
+                    </>
+                  ) : (
+                    "Margin tidak valid."
+                  )}
+                </span>
+              )}
             </div>
           </div>
 

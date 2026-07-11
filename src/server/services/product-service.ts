@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { assertCanAddProduct } from "@/server/services/billing-service";
 import { recordAuditLog } from "@/server/services/audit-log-service";
 import { formatRupiah } from "@/lib/format";
+import { computeSuggestedPrice } from "@/lib/pricing";
 
 /**
  * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
@@ -169,6 +170,58 @@ export async function getUnsellableProductIds(tenantId: string, outletId: string
     if (maxSellable(productId, new Set()) <= 0) unsellable.add(productId);
   }
   return unsellable;
+}
+
+/**
+ * HPP produk: dari resep bahan baku (rekursif kalau bahannya sendiri juga
+ * racikan) kalau ada, kalau tidak pakai `cost` langsung. Sama persis dengan
+ * logika di menu-profitability-service.ts, dipakai buat saran harga jual.
+ */
+async function resolveProductHpp(tenantId: string, productId: string): Promise<number> {
+  const [allRecipeItems, allProducts] = await Promise.all([
+    prisma.productRecipeItem.findMany({
+      where: { tenantId },
+      select: { productId: true, ingredientId: true, qty: true },
+    }),
+    prisma.product.findMany({ where: { tenantId }, select: { id: true, cost: true } }),
+  ]);
+
+  const recipeByProduct = new Map<string, { ingredientId: string; qty: number }[]>();
+  for (const item of allRecipeItems) {
+    const list = recipeByProduct.get(item.productId) ?? [];
+    list.push({ ingredientId: item.ingredientId, qty: item.qty });
+    recipeByProduct.set(item.productId, list);
+  }
+  const costByProduct = new Map(allProducts.map((p) => [p.id, p.cost ?? 0]));
+
+  const cache = new Map<string, number>();
+  function resolve(pid: string, visited: Set<string>): number {
+    if (visited.has(pid)) return 0;
+    const cached = cache.get(pid);
+    if (cached !== undefined) return cached;
+    const recipe = recipeByProduct.get(pid);
+    let hpp: number;
+    if (recipe && recipe.length > 0) {
+      const nextVisited = new Set(visited).add(pid);
+      hpp = recipe.reduce((sum, r) => sum + resolve(r.ingredientId, nextVisited) * r.qty, 0);
+    } else {
+      hpp = costByProduct.get(pid) ?? 0;
+    }
+    cache.set(pid, hpp);
+    return hpp;
+  }
+  return resolve(productId, new Set());
+}
+
+export async function suggestSellPrice(
+  tenantId: string,
+  productId: string,
+  targetMarginPercent: number
+): Promise<{ hpp: number; suggestedPrice: number | null }> {
+  const product = await prisma.product.findFirst({ where: { id: productId, tenantId } });
+  if (!product) throw new Error("Produk tidak ditemukan.");
+  const hpp = await resolveProductHpp(tenantId, productId);
+  return { hpp, suggestedPrice: computeSuggestedPrice(hpp, targetMarginPercent) };
 }
 
 export type ProductInput = {
