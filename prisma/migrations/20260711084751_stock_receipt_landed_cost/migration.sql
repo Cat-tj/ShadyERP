@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "StockReceipt" ADD COLUMN     "otherCost" INTEGER NOT NULL DEFAULT 0,
+ADD COLUMN     "shippingCost" INTEGER NOT NULL DEFAULT 0;

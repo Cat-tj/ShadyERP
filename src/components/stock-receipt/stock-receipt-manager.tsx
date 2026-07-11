@@ -14,6 +14,7 @@ import { BarcodeScannerModal } from "@/components/shared/barcode-scanner-modal";
 import { useToast, Toast } from "@/components/toast";
 import { CameraIcon, XIcon, PackageIcon } from "@/components/ui/icons";
 import { EmptyState } from "@/components/ui/empty-state";
+import { formatRupiah } from "@/lib/format";
 
 type PurchaseOrderSummary = PurchaseOrder & {
   supplier?: Pick<Supplier, "id" | "name"> | null;
@@ -29,6 +30,8 @@ export type StockReceiptRow = {
   po: PurchaseOrderSummary;
   outlet: Outlet;
   status: "PENDING" | "PARTIAL_QC" | "COMPLETED" | "REJECTED";
+  shippingCost: number;
+  otherCost: number;
   receivedAt?: Date;
   completedAt?: Date;
   items: Array<{
@@ -81,6 +84,8 @@ function StockReceiptFormModal({
   const [items] = useState<ReceiptFormItem[]>(
     po.items.map((i) => ({ productId: i.productId, qtyReceived: i.qty }))
   );
+  const [shippingCost, setShippingCost] = useState("");
+  const [otherCost, setOtherCost] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -89,7 +94,10 @@ function StockReceiptFormModal({
     if (!outletId.trim()) return setError("Outlet wajib dipilih.");
 
     startTransition(async () => {
-      const result = await createStockReceiptAction(po.id, outletId, items);
+      const result = await createStockReceiptAction(po.id, outletId, items, {
+        shippingCost: Math.max(0, Math.round(Number(shippingCost) || 0)),
+        otherCost: Math.max(0, Math.round(Number(otherCost) || 0)),
+      });
       if (result.error) {
         setError(result.error);
         return;
@@ -152,6 +160,39 @@ function StockReceiptFormModal({
                 );
               })}
             </div>
+          </div>
+
+          <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+            <h3 className="mb-3 text-sm font-semibold text-[var(--color-text)]">Ongkos kirim & biaya lain (opsional)</h3>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--color-text)]">
+                Ongkos kirim
+                <input
+                  type="number"
+                  min={0}
+                  inputMode="numeric"
+                  value={shippingCost}
+                  onChange={(e) => setShippingCost(e.target.value)}
+                  placeholder="Rp0"
+                  className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--color-text)]">
+                Biaya lain (bongkar, dll)
+                <input
+                  type="number"
+                  min={0}
+                  inputMode="numeric"
+                  value={otherCost}
+                  onChange={(e) => setOtherCost(e.target.value)}
+                  placeholder="Rp0"
+                  className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+                />
+              </label>
+            </div>
+            <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
+              Biaya ini dibagi otomatis ke modal tiap produk (sesuai porsi nilainya) saat penerimaan diselesaikan.
+            </p>
           </div>
         </div>
 
@@ -309,6 +350,8 @@ function DirectStockReceiptModal({
   const [items, setItems] = useState<DirectReceiptItem[]>([
     { productId: products[0]?.id ?? "", qtyReceived: "1", unitPrice: String(products[0]?.cost ?? 0), batchNumber: "", expirationDate: "" },
   ]);
+  const [shippingCost, setShippingCost] = useState("");
+  const [otherCost, setOtherCost] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -356,7 +399,10 @@ function DirectStockReceiptModal({
     if (parsed.length === 0) return setError("Isi minimal satu produk dengan jumlah valid.");
 
     startTransition(async () => {
-      const result = await createDirectStockReceiptAction(outletId, supplierId || null, parsed, note.trim() || null);
+      const result = await createDirectStockReceiptAction(outletId, supplierId || null, parsed, note.trim() || null, {
+        shippingCost: Math.max(0, Math.round(Number(shippingCost) || 0)),
+        otherCost: Math.max(0, Math.round(Number(otherCost) || 0)),
+      });
       if (result.error) {
         setError(result.error);
         return;
@@ -514,6 +560,39 @@ function DirectStockReceiptModal({
           + Tambah item
         </button>
 
+        <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3">
+          <h3 className="mb-2 text-sm font-semibold text-[var(--color-text)]">Ongkos kirim & biaya lain (opsional)</h3>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--color-text)]">
+              Ongkos kirim
+              <input
+                type="number"
+                min={0}
+                inputMode="numeric"
+                value={shippingCost}
+                onChange={(e) => setShippingCost(e.target.value)}
+                placeholder="Rp0"
+                className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm font-medium text-[var(--color-text)]">
+              Biaya lain (bongkar, dll)
+              <input
+                type="number"
+                min={0}
+                inputMode="numeric"
+                value={otherCost}
+                onChange={(e) => setOtherCost(e.target.value)}
+                placeholder="Rp0"
+                className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+              />
+            </label>
+          </div>
+          <p className="mt-2 text-xs text-[var(--color-text-secondary)]">
+            Biaya ini dibagi otomatis ke modal tiap produk (sesuai porsi nilainya) saat penerimaan diselesaikan.
+          </p>
+        </div>
+
         <textarea
           value={note}
           onChange={(event) => setNote(event.target.value)}
@@ -652,6 +731,11 @@ export function StockReceiptManager({
                   <p className="text-xs text-[var(--color-text-secondary)]">
                     {receipt.items.length} item · {receipt.outlet.name}
                   </p>
+                  {receipt.shippingCost + receipt.otherCost > 0 && (
+                    <p className="text-xs text-[var(--color-text-secondary)]">
+                      Ongkir & biaya lain: {formatRupiah(receipt.shippingCost + receipt.otherCost)}
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {receipt.status === "PENDING" && (

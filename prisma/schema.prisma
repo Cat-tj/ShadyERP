@@ -1382,6 +1382,10 @@ model StockReceipt {
   outletId      String
   receiptNumber String // Auto: GR-20250704-001
   status        StockReceiptStatus @default(PENDING)
+  /// Landed cost — ongkos kirim & biaya lain (bea, handling, dll) yang
+  /// didistribusi pro-rata ke cost tiap item saat completeReceipt().
+  shippingCost  Int                @default(0)
+  otherCost     Int                @default(0)
   receivedAt    DateTime           @default(now())
   completedAt   DateTime?
   receivedById  String?

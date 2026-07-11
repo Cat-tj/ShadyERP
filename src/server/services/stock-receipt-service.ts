@@ -23,7 +23,8 @@ export async function createStockReceipt(
   poId: string,
   outletId: string,
   items: ReceiptItemInput[],
-  receivedById: string
+  receivedById: string,
+  landedCost?: { shippingCost?: number; otherCost?: number }
 ): Promise<StockReceipt> {
   const receiptNumber = await generateReceiptNumber(tenantId);
 
@@ -35,6 +36,8 @@ export async function createStockReceipt(
       receiptNumber,
       status: "PENDING",
       receivedById,
+      shippingCost: Math.max(0, landedCost?.shippingCost ?? 0),
+      otherCost: Math.max(0, landedCost?.otherCost ?? 0),
       items: {
         create: items.map((item) => ({
           productId: item.productId,
@@ -56,7 +59,8 @@ export async function createDirectStockReceipt(
   supplierId: string | null,
   items: ReceiptItemInput[],
   receivedById: string,
-  note?: string | null
+  note?: string | null,
+  landedCost?: { shippingCost?: number; otherCost?: number }
 ) {
   if (!items.length) throw new Error("Minimal satu item barang wajib diisi.");
   let supplier = supplierId
@@ -101,6 +105,8 @@ export async function createDirectStockReceipt(
         receiptNumber,
         status: "PENDING",
         receivedById,
+        shippingCost: Math.max(0, landedCost?.shippingCost ?? 0),
+        otherCost: Math.max(0, landedCost?.otherCost ?? 0),
         notes: note?.trim() || "Penerimaan langsung tanpa PO manual",
         items: {
           create: items.map((item) => ({
@@ -228,18 +234,34 @@ export async function completeReceipt(
 
     let totalInvoiceAmount = 0;
 
+    // Landed cost (ongkir + biaya lain) didistribusi pro-rata ke tiap item
+    // berdasarkan porsi nilai barangnya — item lebih mahal/banyak menyerap
+    // porsi ongkir lebih besar, sesuai praktik landed cost standar.
+    const poItems = await tx.purchaseOrderItem.findMany({ where: { poId: receipt.poId } });
+    const unitPriceByProduct = new Map(poItems.map((pi) => [pi.productId, pi.unitPrice]));
+    const totalGoodsValue = receipt.items.reduce(
+      (sum, item) => sum + (item.qtyAccepted > 0 ? item.qtyAccepted * (unitPriceByProduct.get(item.productId) ?? 0) : 0),
+      0
+    );
+    const totalLandedCost = receipt.shippingCost + receipt.otherCost;
+    const acceptedQtyTotal = receipt.items.reduce((sum, item) => sum + Math.max(0, item.qtyAccepted), 0);
+
     // Move accepted qty to actual stock & compute moving average cost
     for (const item of receipt.items) {
       if (item.qtyAccepted > 0) {
-        // Get unitPrice from PurchaseOrder
-        const poItem = await tx.purchaseOrderItem.findFirst({
-          where: {
-            poId: receipt.poId,
-            productId: item.productId,
-          },
-        });
-        const receivedCost = poItem?.unitPrice ?? 0;
-        totalInvoiceAmount += item.qtyAccepted * receivedCost;
+        const baseCost = unitPriceByProduct.get(item.productId) ?? 0;
+        const itemGoodsValue = item.qtyAccepted * baseCost;
+        totalInvoiceAmount += itemGoodsValue;
+
+        // Porsi landed cost item ini: berdasarkan nilai barang, fallback ke
+        // porsi qty kalau semua barang di GR ini nilainya 0 (mis. sampel gratis).
+        const landedShare =
+          totalLandedCost > 0
+            ? totalGoodsValue > 0
+              ? (totalLandedCost * itemGoodsValue) / totalGoodsValue
+              : (totalLandedCost * item.qtyAccepted) / acceptedQtyTotal
+            : 0;
+        const receivedCost = baseCost + Math.round(landedShare / item.qtyAccepted);
 
         // Update current stocks
         const stock = await tx.productStock.findUnique({

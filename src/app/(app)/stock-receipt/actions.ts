@@ -24,14 +24,26 @@ export interface QCInput {
   qcNotes?: string;
 }
 
-export async function createStockReceiptAction(poId: string, outletId: string, items: ReceiptItemInput[]) {
+export async function createStockReceiptAction(
+  poId: string,
+  outletId: string,
+  items: ReceiptItemInput[],
+  landedCost?: { shippingCost?: number; otherCost?: number }
+) {
   try {
     const session = await auth();
     if (!session?.user?.tenantId || !session.user.id) {
       return { error: "Unauthorized" };
     }
 
-    const receipt = await createStockReceipt(session.user.tenantId, poId, outletId, items, session.user.id);
+    const receipt = await createStockReceipt(
+      session.user.tenantId,
+      poId,
+      outletId,
+      items,
+      session.user.id,
+      landedCost
+    );
 
     return { data: receipt };
   } catch (err) {
@@ -44,7 +56,8 @@ export async function createDirectStockReceiptAction(
   outletId: string,
   supplierId: string | null,
   items: ReceiptItemInput[],
-  note?: string | null
+  note?: string | null,
+  landedCost?: { shippingCost?: number; otherCost?: number }
 ) {
   try {
     const session = await auth();
@@ -58,7 +71,8 @@ export async function createDirectStockReceiptAction(
       supplierId,
       items,
       session.user.id,
-      note
+      note,
+      landedCost
     );
 
     return { data: receipt };
