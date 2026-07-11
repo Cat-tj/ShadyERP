@@ -36,6 +36,8 @@ export async function closeShift(input: {
   tenantId: string;
   shiftId: string;
   closingCash: number;
+  /** Rincian jumlah lembar/koin per pecahan (mis. {"100000": 5}) — opsional, hasil kalkulator pecahan uang. */
+  closingCashBreakdown?: Record<string, number>;
 }) {
   const shift = await prisma.cashierShift.findFirst({
     where: { id: input.shiftId, tenantId: input.tenantId },
@@ -96,6 +98,7 @@ export async function closeShift(input: {
       status: "CLOSED",
       closedAt: new Date(),
       closingCash: input.closingCash,
+      closingCashBreakdown: input.closingCashBreakdown ?? undefined,
       expectedCash,
     },
   });

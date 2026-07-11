@@ -6,6 +6,8 @@ import { formatRupiah } from "@/lib/format";
 
 const initialState: CloseShiftResult = {};
 
+const DENOMINATIONS = [100000, 50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100];
+
 const METHOD_LABEL: Record<string, string> = {
   QRIS: "QRIS",
   TRANSFER: "Transfer",
@@ -55,6 +57,8 @@ export function CloseShiftForm({
   const [state, formAction, isPending] = useActionState(closeShiftAction, initialState);
   const [displayValue, setDisplayValue] = useState("Rp 0");
   const [rawCash, setRawCash] = useState(0);
+  const [mode, setMode] = useState<"breakdown" | "manual">("breakdown");
+  const [counts, setCounts] = useState<Record<number, string>>({});
 
   const formatNumber = (val: string) => {
     const clean = val.replace(/\D/g, "");
@@ -73,6 +77,23 @@ export function CloseShiftForm({
     setRawCash(cleanNum);
     setDisplayValue(formatNumber(rawValue));
   };
+
+  const breakdownTotal = DENOMINATIONS.reduce(
+    (sum, denom) => sum + denom * (Number(counts[denom]) || 0),
+    0
+  );
+
+  const handleCountChange = (denom: number, value: string) => {
+    const clean = value.replace(/\D/g, "");
+    setCounts((prev) => ({ ...prev, [denom]: clean }));
+  };
+
+  const breakdownForSubmit = Object.fromEntries(
+    DENOMINATIONS.filter((denom) => Number(counts[denom]) > 0).map((denom) => [
+      String(denom),
+      Number(counts[denom]),
+    ])
+  );
 
   const expectedCash = openingCash + totalPenjualanCash - totalCashback - totalGesekTunai - totalRefundCash;
   const expectedDigital = totalPenjualanDigital + totalTagihanGesekTunai - totalRefundDigital;
@@ -179,21 +200,59 @@ export function CloseShiftForm({
           </div>
         )}
 
-        <div className="flex flex-col gap-1.5">
-          <label htmlFor="displayClosingCash" className="text-sm font-medium text-[var(--color-text)]">
-            Uang yang dihitung sekarang
-          </label>
-          <input
-            id="displayClosingCash"
-            type="text"
-            inputMode="numeric"
-            required
-            value={displayValue}
-            onChange={handleCashChange}
-            placeholder="Rp 0"
-            className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base tabular-nums text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
-          />
-          <input type="hidden" name="closingCash" value={rawCash} />
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center justify-between">
+            <label className="text-sm font-medium text-[var(--color-text)]">Uang yang dihitung sekarang</label>
+            <button
+              type="button"
+              onClick={() => setMode(mode === "breakdown" ? "manual" : "breakdown")}
+              className="text-xs font-semibold text-[var(--color-primary)]"
+            >
+              {mode === "breakdown" ? "Isi total langsung" : "Pakai kalkulator pecahan uang"}
+            </button>
+          </div>
+
+          {mode === "breakdown" ? (
+            <div className="flex flex-col gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+              <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                {DENOMINATIONS.map((denom) => (
+                  <div key={denom} className="flex flex-col gap-1 rounded-md bg-[var(--color-surface)] p-2">
+                    <span className="text-xs font-semibold text-[var(--color-text-secondary)]">
+                      {formatRupiah(denom)}
+                    </span>
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      value={counts[denom] ?? ""}
+                      onChange={(e) => handleCountChange(denom, e.target.value)}
+                      placeholder="0"
+                      className="min-h-[38px] rounded border border-[var(--color-border)] bg-[var(--color-bg)] px-2 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+                    />
+                  </div>
+                ))}
+              </div>
+              <div className="flex justify-between border-t border-[var(--color-border)] pt-2 text-sm">
+                <span className="font-semibold text-[var(--color-text)]">Total hitungan</span>
+                <span className="tabular-nums font-bold text-[var(--color-text)]">
+                  {formatRupiah(breakdownTotal)}
+                </span>
+              </div>
+              <input type="hidden" name="closingCash" value={breakdownTotal} />
+              <input type="hidden" name="closingCashBreakdown" value={JSON.stringify(breakdownForSubmit)} />
+            </div>
+          ) : (
+            <input
+              id="displayClosingCash"
+              type="text"
+              inputMode="numeric"
+              required
+              value={displayValue}
+              onChange={handleCashChange}
+              placeholder="Rp 0"
+              className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base tabular-nums text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+            />
+          )}
+          {mode === "manual" && <input type="hidden" name="closingCash" value={rawCash} />}
         </div>
 
         <button

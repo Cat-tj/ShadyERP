@@ -43,13 +43,24 @@ export async function closeShiftAction(
   const user = await requireSession();
   const shiftId = String(formData.get("shiftId") ?? "");
   const closingCash = Number(formData.get("closingCash") ?? 0);
+  const breakdownRaw = String(formData.get("closingCashBreakdown") ?? "");
 
   if (!Number.isFinite(closingCash) || closingCash < 0) {
     return { error: "Uang yang dihitung tidak valid." };
   }
 
+  let closingCashBreakdown: Record<string, number> | undefined;
+  if (breakdownRaw) {
+    try {
+      const parsed = JSON.parse(breakdownRaw);
+      if (parsed && typeof parsed === "object") closingCashBreakdown = parsed;
+    } catch {
+      // Abaikan breakdown yang tidak valid — closingCash tetap dipakai sebagai sumber kebenaran.
+    }
+  }
+
   try {
-    await closeShift({ tenantId: user.tenantId, shiftId, closingCash });
+    await closeShift({ tenantId: user.tenantId, shiftId, closingCash, closingCashBreakdown });
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal menutup shift." };
   }

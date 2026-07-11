@@ -625,6 +625,9 @@ model CashierShift {
   userId       String
   openingCash  Int
   closingCash  Int?
+  /// Rincian hitungan pecahan uang saat tutup shift, mis. {"100000": 5, "50000": 3, ...}
+  /// — opsional, cuma keisi kalau kasir pakai kalkulator pecahan uang. Buat audit/dispute.
+  closingCashBreakdown Json?
   expectedCash Int?
   status       ShiftStatus @default(OPEN)
   openedAt     DateTime    @default(now())
