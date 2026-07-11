@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { ExpenseCategory } from "@prisma/client";
 import { todayRangeJakarta } from "@/lib/date-range";
-import { logExpenseToJournal } from "@/server/services/accounting-service";
+import { logExpenseToJournal, assertPeriodNotLocked } from "@/server/services/accounting-service";
 
 /**
  * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
@@ -31,7 +31,10 @@ export async function createExpense(tenantId: string, createdById: string, input
   // Expense + jurnal harus atomik — kalau salah satu gagal, dua-duanya batal.
   // Sebelumnya dipisah jadi 2 write independen: expense bisa tersimpan tanpa
   // jurnal kalau logExpenseToJournal gagal, bikin data akuntansi drift diam-diam.
+  const spentAt = input.spentAt ?? new Date();
   return prisma.$transaction(async (tx) => {
+    await assertPeriodNotLocked(tenantId, spentAt, tx);
+
     const expense = await tx.expense.create({
       data: {
         tenantId,
@@ -40,7 +43,7 @@ export async function createExpense(tenantId: string, createdById: string, input
         category: input.category,
         amount: input.amount,
         note: input.note?.trim() || null,
-        spentAt: input.spentAt ?? new Date(),
+        spentAt,
       },
     });
 
@@ -65,6 +68,7 @@ export async function listExpenses(tenantId: string, outletIds: string[], days: 
 export async function deleteExpense(tenantId: string, id: string) {
   const expense = await prisma.expense.findFirst({ where: { id, tenantId } });
   if (!expense) throw new Error("Pengeluaran tidak ditemukan.");
+  await assertPeriodNotLocked(tenantId, expense.spentAt);
   return prisma.expense.delete({ where: { id } });
 }
 

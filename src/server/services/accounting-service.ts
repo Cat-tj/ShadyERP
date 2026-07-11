@@ -1,5 +1,6 @@
 import { Prisma, AccountType } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { recordAuditLog } from "@/server/services/audit-log-service";
 
 export const DEFAULT_ACCOUNTS: { code: string; name: string; type: AccountType }[] = [
   { code: "11100", name: "Cash Drawer", type: AccountType.ASSET },
@@ -34,6 +35,74 @@ export async function ensureDefaultAccounts(tenantId: string, tx?: Prisma.Transa
   });
 }
 
+/**
+ * Tanggal tutup buku tenant ini — null berarti belum pernah tutup buku sama
+ * sekali, semua tanggal masih bebas diposting.
+ */
+export async function getPeriodLockDate(
+  tenantId: string,
+  tx?: Prisma.TransactionClient
+): Promise<Date | null> {
+  const client = tx || prisma;
+  const setting = await client.tenantSetting.findUnique({ where: { tenantId } });
+  return setting?.periodLockDate ?? null;
+}
+
+/**
+ * Tolak aksi apa pun (posting jurnal baru, void/retur penjualan, hapus
+ * pengeluaran) yang menyentuh tanggal yang sudah dikunci lewat tutup buku.
+ * Dipanggil dari dalam transaction supaya seluruh aksi ikut batal kalau kena.
+ */
+export async function assertPeriodNotLocked(
+  tenantId: string,
+  date: Date,
+  tx?: Prisma.TransactionClient
+) {
+  const lockDate = await getPeriodLockDate(tenantId, tx);
+  if (lockDate && date <= lockDate) {
+    const formatted = lockDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+    throw new Error(
+      `Periode sampai ${formatted} sudah ditutup. Tidak bisa memposting atau mengubah transaksi di tanggal ini lagi.`
+    );
+  }
+}
+
+/**
+ * Tutup buku sampai tanggal tertentu. Hanya boleh maju (tidak bisa
+ * mengunci ke tanggal yang lebih awal dari kunci sebelumnya) supaya
+ * proteksi periode yang sudah tertutup tidak sengaja hilang.
+ */
+export async function setPeriodLockDate(tenantId: string, lockDate: Date, actingUserId: string) {
+  const current = await getPeriodLockDate(tenantId);
+  if (current && lockDate <= current) {
+    throw new Error("Tanggal tutup buku baru harus lebih baru dari tanggal kunci sebelumnya.");
+  }
+  if (lockDate > new Date()) {
+    throw new Error("Tidak bisa menutup buku untuk tanggal yang belum terjadi.");
+  }
+  const formatted = lockDate.toLocaleDateString("id-ID", { day: "numeric", month: "long", year: "numeric" });
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.tenantSetting.update({
+      where: { tenantId },
+      data: { periodLockDate: lockDate },
+    });
+    await recordAuditLog(tx, tenantId, actingUserId, "PERIOD_LOCK", `Tutup buku sampai ${formatted}.`);
+    return updated;
+  });
+}
+
+/** Buka kunci tutup buku (jalan darurat kalau ada salah input tanggal). */
+export async function clearPeriodLockDate(tenantId: string, actingUserId: string) {
+  return prisma.$transaction(async (tx) => {
+    const updated = await tx.tenantSetting.update({
+      where: { tenantId },
+      data: { periodLockDate: null },
+    });
+    await recordAuditLog(tx, tenantId, actingUserId, "PERIOD_UNLOCK", "Membuka kunci tutup buku.");
+    return updated;
+  });
+}
+
 export async function postJournalEntry(params: {
   tenantId: string;
   description: string;
@@ -41,10 +110,11 @@ export async function postJournalEntry(params: {
   creditCode: string;
   amount: number;
   reference?: string;
+  date?: Date;
   tx?: Prisma.TransactionClient;
 }) {
   const client = params.tx || prisma;
-  
+
   // Skip posting if tenant is in SIMPLE mode
   const setting = await client.tenantSetting.findUnique({
     where: { tenantId: params.tenantId },
@@ -52,7 +122,17 @@ export async function postJournalEntry(params: {
   if (!setting || setting.accountingMode !== "ADVANCED") {
     return null;
   }
-  
+
+  const date = params.date ?? new Date();
+  if (setting.periodLockDate && date <= setting.periodLockDate) {
+    const formatted = setting.periodLockDate.toLocaleDateString("id-ID", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    throw new Error(`Periode sampai ${formatted} sudah ditutup. Tidak bisa memposting jurnal baru di tanggal ini.`);
+  }
+
   // Ensure default accounts are present
   await ensureDefaultAccounts(params.tenantId, params.tx);
 
@@ -64,6 +144,7 @@ export async function postJournalEntry(params: {
       creditCode: params.creditCode,
       amount: params.amount,
       reference: params.reference,
+      date,
     },
   });
 }
@@ -147,6 +228,8 @@ export async function logExpenseToJournal(tenantId: string, expenseId: string, t
   if (!expense) return;
 
   // Debet Operational Expenses, Kredit Cash Drawer
+  // date pakai spentAt (bukan waktu posting) supaya jurnal tercatat di
+  // tanggal transaksi yang sebenarnya kalau pengeluaran diinput mundur.
   await postJournalEntry({
     tenantId,
     description: `Expense: ${expense.note || expense.category}`,
@@ -154,6 +237,7 @@ export async function logExpenseToJournal(tenantId: string, expenseId: string, t
     creditCode: "11100", // Cash Drawer (debit/credit cash)
     amount: expense.amount,
     reference: `EXP-${expense.id}`,
+    date: expense.spentAt,
     tx: client,
   });
 }

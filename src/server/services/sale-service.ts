@@ -3,7 +3,7 @@ import { buildInvoiceNumber, buildInvoicePrefix } from "@/lib/invoice";
 import { computeVariantSelection, loadVariantGroupsByProduct } from "@/server/services/product-variant-service";
 import { recordAuditLog } from "@/server/services/audit-log-service";
 import { formatRupiah } from "@/lib/format";
-import { logSaleToJournal } from "@/server/services/accounting-service";
+import { logSaleToJournal, assertPeriodNotLocked } from "@/server/services/accounting-service";
 import type { PaymentMethod, OrderType } from "@prisma/client";
 
 /**
@@ -400,6 +400,7 @@ export async function voidSale(tenantId: string, saleId: string, reason: string,
     });
     if (!sale) throw new Error("Transaksi tidak ditemukan.");
     if (sale.status === "VOIDED") throw new Error("Transaksi ini sudah dibatalkan sebelumnya.");
+    await assertPeriodNotLocked(tenantId, sale.createdAt, tx);
 
     await recordAuditLog(
       tx,
@@ -515,6 +516,7 @@ export async function processReturn(
     if (sale.status === "VOIDED") {
       throw new Error("Transaksi ini sudah dibatalkan, tidak bisa diretur.");
     }
+    await assertPeriodNotLocked(tenantId, sale.createdAt, tx);
 
     const saleItemMap = new Map(sale.items.map((i) => [i.id, i]));
     let totalRefund = 0;

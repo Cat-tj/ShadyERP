@@ -962,6 +962,8 @@ enum AuditAction {
   PRODUCT_ACTIVATE
   PRODUCT_DELETE
   USER_PASSWORD_RESET
+  PERIOD_LOCK
+  PERIOD_UNLOCK
 }
 
 /// Jejak aksi sensitif: siapa melakukan apa dan kapan. Hanya dicatat untuk
@@ -1530,6 +1532,10 @@ model TenantSetting {
   staticQrisPayload String?
   enableParkingFee  Boolean        @default(false)
   accountingMode    AccountingMode @default(SIMPLE)
+  /// Tanggal terakhir yang sudah "ditutup" (kunci pembukuan) — tidak ada jurnal
+  /// baru/void/retur/hapus pengeluaran yang boleh menyentuh tanggal ini ke belakang.
+  /// null = belum pernah tutup buku, semua tanggal masih terbuka.
+  periodLockDate    DateTime?
   updatedAt         DateTime       @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
