@@ -27,6 +27,8 @@ export type PosProduct = {
   trackSerial: boolean;
   stockQty: number;
   variantGroups: VariantGroupOption[];
+  /** true kalau produk racikan tapi salah satu bahan resepnya (langsung/turunan) habis di outlet ini. */
+  recipeUnavailable?: boolean;
 };
 
 export type PosCategory = { id: string; name: string };
@@ -447,7 +449,7 @@ export function PosScreen({
                 {filteredProducts.map((product) => {
                   const linesForProduct = cart.filter((line) => line.productId === product.id);
                   const qtyInCart = linesForProduct.reduce((sum, line) => sum + line.qty, 0);
-                  const outOfStock = product.trackStock && product.stockQty <= 0;
+                  const outOfStock = (product.trackStock && product.stockQty <= 0) || Boolean(product.recipeUnavailable);
                   const atStockLimit = product.trackStock && qtyInCart >= product.stockQty;
                   const cardDisabled = outOfStock || atStockLimit;
                   return (
@@ -486,10 +488,14 @@ export function PosScreen({
                             <p className="tabular-nums text-sm font-bold text-[var(--color-text)]">
                               {formatRupiah(product.price)}
                             </p>
-                            {product.trackStock && (
-                              <p className="text-xs text-[var(--color-text-secondary)]">
-                                {outOfStock ? "Stok habis" : `Stok ${product.stockQty}`}
-                              </p>
+                            {product.recipeUnavailable ? (
+                              <p className="text-xs font-medium text-[var(--color-danger)]">Bahan habis</p>
+                            ) : (
+                              product.trackStock && (
+                                <p className="text-xs text-[var(--color-text-secondary)]">
+                                  {outOfStock ? "Stok habis" : `Stok ${product.stockQty}`}
+                                </p>
+                              )
                             )}
                           </div>
                         </div>

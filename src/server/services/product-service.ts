@@ -122,6 +122,55 @@ export async function removeRecipeItem(tenantId: string, id: string) {
   return prisma.productRecipeItem.delete({ where: { id } });
 }
 
+/**
+ * Produk racikan/kombo yang tidak bisa dijual sekarang karena salah satu bahan
+ * resepnya (langsung atau turunan, mis. kombo -> cappuccino -> susu) stoknya
+ * tidak cukup buat 1 unit di outlet ini. Dipakai buat gray-out otomatis di POS.
+ */
+export async function getUnsellableProductIds(tenantId: string, outletId: string): Promise<Set<string>> {
+  const [allProducts, allRecipeItems, stocks] = await Promise.all([
+    prisma.product.findMany({ where: { tenantId }, select: { id: true, trackStock: true } }),
+    prisma.productRecipeItem.findMany({
+      where: { tenantId },
+      select: { productId: true, ingredientId: true, qty: true },
+    }),
+    prisma.productStock.findMany({ where: { tenantId, outletId }, select: { productId: true, qty: true } }),
+  ]);
+
+  const trackStockByProduct = new Map(allProducts.map((p) => [p.id, p.trackStock]));
+  const recipeByProduct = new Map<string, { ingredientId: string; qty: number }[]>();
+  for (const item of allRecipeItems) {
+    const list = recipeByProduct.get(item.productId) ?? [];
+    list.push({ ingredientId: item.ingredientId, qty: item.qty });
+    recipeByProduct.set(item.productId, list);
+  }
+  const stockByProduct = new Map(stocks.map((s) => [s.productId, s.qty]));
+
+  const cache = new Map<string, number>();
+  function maxSellable(productId: string, visited: Set<string>): number {
+    if (visited.has(productId)) return 0;
+    const cached = cache.get(productId);
+    if (cached !== undefined) return cached;
+
+    const recipe = recipeByProduct.get(productId);
+    let result: number;
+    if (recipe && recipe.length > 0) {
+      const nextVisited = new Set(visited).add(productId);
+      result = Math.min(...recipe.map((r) => Math.floor(maxSellable(r.ingredientId, nextVisited) / r.qty)));
+    } else {
+      result = trackStockByProduct.get(productId) ? (stockByProduct.get(productId) ?? 0) : Infinity;
+    }
+    cache.set(productId, result);
+    return result;
+  }
+
+  const unsellable = new Set<string>();
+  for (const productId of recipeByProduct.keys()) {
+    if (maxSellable(productId, new Set()) <= 0) unsellable.add(productId);
+  }
+  return unsellable;
+}
+
 export type ProductInput = {
   name: string;
   sku: string | null;

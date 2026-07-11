@@ -1,7 +1,7 @@
 import { requireSession } from "@/server/require-session";
 import { getOpenShift } from "@/server/services/shift-service";
 import { listOutletsForUser } from "@/server/services/outlet-service";
-import { listProductsWithStock, listCategories } from "@/server/services/product-service";
+import { listProductsWithStock, listCategories, getUnsellableProductIds } from "@/server/services/product-service";
 import { getActivePromosNow } from "@/server/services/promo-service";
 import { loadEffectiveGroupsByProduct } from "@/server/services/product-variant-service";
 import { listChannelPricingRules } from "@/server/services/channel-pricing-service";
@@ -22,12 +22,13 @@ export default async function KasirPage() {
     );
   }
 
-  const [products, categories, setting, activePromos, channelPricingRules] = await Promise.all([
+  const [products, categories, setting, activePromos, channelPricingRules, unsellableProductIds] = await Promise.all([
     listProductsWithStock(user.tenantId, shift.outletId),
     listCategories(user.tenantId),
     prisma.tenantSetting.findUnique({ where: { tenantId: user.tenantId } }),
     getActivePromosNow(user.tenantId),
     listChannelPricingRules(user.tenantId),
+    getUnsellableProductIds(user.tenantId, shift.outletId),
   ]);
 
   const activeProducts = products.filter((product) => product.isActive);
@@ -63,6 +64,7 @@ export default async function KasirPage() {
         trackSerial: product.trackSerial,
         stockQty: product.stockQty,
         variantGroups: effectiveGroupsByProduct.get(product.id) ?? [],
+        recipeUnavailable: unsellableProductIds.has(product.id),
       }))}
       categories={categories.map((category) => ({ id: category.id, name: category.name }))}
       promos={activePromos.map((promo) => ({
