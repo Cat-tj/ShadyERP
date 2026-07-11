@@ -8,6 +8,7 @@ import {
   updateProductAction,
   updateStockAction,
   updateReorderPointAction,
+  setProductModifierExclusionsAction,
 } from "@/app/(app)/produk/actions";
 import { BarcodeScannerModal } from "@/components/shared/barcode-scanner-modal";
 import type { CategoryOption } from "@/components/produk/kategori-manager";
@@ -37,6 +38,7 @@ export type EditingProduct = {
   stockByOutlet: Record<string, number>;
   reorderPointByOutlet: Record<string, number>;
   variantGroups: VariantGroupRow[];
+  excludedModifierGroupIds: string[];
 };
 
 export function ProductFormModal({
@@ -76,11 +78,22 @@ export function ProductFormModal({
   const [reorderPointByOutlet, setReorderPointByOutlet] = useState<Record<string, string>>(
     Object.fromEntries(outlets.map((outlet) => [outlet.id, String(product?.reorderPointByOutlet[outlet.id] ?? 5)]))
   );
+  const [excludedModifierGroupIds, setExcludedModifierGroupIds] = useState<string[]>(
+    product?.excludedModifierGroupIds ?? []
+  );
   const [stockNote, setStockNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const categoryModifierGroups = categories.find((c) => c.id === categoryId)?.modifierGroups ?? [];
+
+  function toggleModifierExclusion(modifierGroupId: string) {
+    setExcludedModifierGroupIds((prev) =>
+      prev.includes(modifierGroupId) ? prev.filter((id) => id !== modifierGroupId) : [...prev, modifierGroupId]
+    );
+  }
 
   function generateInternalSku() {
     const prefix = kind === "SERVICE" ? "ALT-SVC" : "ALT-PRD";
@@ -124,20 +137,23 @@ export function ProductFormModal({
         return;
       }
 
-      if (input.trackStock) {
-        const productId = product?.id ?? ("id" in result ? result.id : undefined);
-        if (typeof productId === "string") {
-          for (const outlet of outlets) {
-            const qty = Number(stockByOutlet[outlet.id] ?? 0);
-            if (Number.isFinite(qty) && qty >= 0) {
-              await updateStockAction(productId, outlet.id, qty, stockNote.trim() || undefined);
-            }
-            const minQty = Number(reorderPointByOutlet[outlet.id] ?? 5);
-            if (Number.isFinite(minQty) && minQty >= 0) {
-              await updateReorderPointAction(productId, outlet.id, minQty);
-            }
+      const productId = product?.id ?? ("id" in result ? result.id : undefined);
+
+      if (input.trackStock && typeof productId === "string") {
+        for (const outlet of outlets) {
+          const qty = Number(stockByOutlet[outlet.id] ?? 0);
+          if (Number.isFinite(qty) && qty >= 0) {
+            await updateStockAction(productId, outlet.id, qty, stockNote.trim() || undefined);
+          }
+          const minQty = Number(reorderPointByOutlet[outlet.id] ?? 5);
+          if (Number.isFinite(minQty) && minQty >= 0) {
+            await updateReorderPointAction(productId, outlet.id, minQty);
           }
         }
+      }
+
+      if (typeof productId === "string" && categoryModifierGroups.length > 0) {
+        await setProductModifierExclusionsAction(productId, excludedModifierGroupIds);
       }
 
       onSaved(product ? "Produk disimpan" : "Produk ditambahkan");
@@ -415,6 +431,38 @@ export function ProductFormModal({
                     ? "Dipakai untuk biaya rakitan, tenaga kerja, atau pencatatan HPP. Item biaya tidak tampil di POS."
                     : "Cocok untuk ongkir, biaya layanan, atau item yang dijual tanpa mengurangi stok."}
                 </p>
+              </div>
+            )}
+
+            {categoryModifierGroups.length > 0 && (
+              <div className="flex flex-col gap-2 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+                <p className="text-sm font-medium text-[var(--color-text)]">Modifier dari kategori</p>
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  Modifier ini otomatis aktif untuk semua produk di kategori ini. Uncek kalau produk ini tidak
+                  perlu modifier tertentu.
+                </p>
+                <div className="mt-1 flex flex-col gap-2">
+                  {categoryModifierGroups.map((group) => (
+                    <label
+                      key={group.id}
+                      className="flex items-center gap-3 text-sm font-medium text-[var(--color-text)] cursor-pointer select-none"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!excludedModifierGroupIds.includes(group.id)}
+                        onChange={() => toggleModifierExclusion(group.id)}
+                        className="h-5 w-5 rounded border-[var(--color-border)] accent-[var(--color-primary)] shrink-0"
+                      />
+                      {group.name}
+                    </label>
+                  ))}
+                </div>
+                <Link
+                  href="/pengaturan/modifier"
+                  className="mt-1 text-xs font-semibold text-[var(--color-primary)]"
+                >
+                  Kelola grup modifier →
+                </Link>
               </div>
             )}
 

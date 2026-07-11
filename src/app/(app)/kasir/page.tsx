@@ -3,6 +3,7 @@ import { getOpenShift } from "@/server/services/shift-service";
 import { listOutletsForUser } from "@/server/services/outlet-service";
 import { listProductsWithStock, listCategories } from "@/server/services/product-service";
 import { getActivePromosNow } from "@/server/services/promo-service";
+import { loadEffectiveGroupsByProduct } from "@/server/services/product-variant-service";
 import { prisma } from "@/lib/prisma";
 import { OpenShiftForm } from "@/components/kasir/open-shift-form";
 import { PosScreen } from "@/components/kasir/pos-screen";
@@ -28,6 +29,11 @@ export default async function KasirPage() {
   ]);
 
   const activeProducts = products.filter((product) => product.isActive);
+  const effectiveGroupsByProduct = await loadEffectiveGroupsByProduct(
+    prisma,
+    user.tenantId,
+    activeProducts.map((product) => product.id)
+  );
 
   return (
     <PosScreen
@@ -45,17 +51,7 @@ export default async function KasirPage() {
         trackStock: product.trackStock,
         trackSerial: product.trackSerial,
         stockQty: product.stockQty,
-        variantGroups: product.variantGroups.map((group) => ({
-          id: group.id,
-          name: group.name,
-          type: group.type,
-          required: group.required,
-          options: group.options.map((option) => ({
-            id: option.id,
-            name: option.name,
-            priceDelta: option.priceDelta,
-          })),
-        })),
+        variantGroups: effectiveGroupsByProduct.get(product.id) ?? [],
       }))}
       categories={categories.map((category) => ({ id: category.id, name: category.name }))}
       promos={activePromos.map((promo) => ({

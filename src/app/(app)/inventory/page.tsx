@@ -1,8 +1,9 @@
 import Link from "next/link";
 import { requireSessionWithTenant } from "@/server/require-session";
-import { listCategories, listProductsFull } from "@/server/services/product-service";
+import { listProductsFull } from "@/server/services/product-service";
 import { listOutletsForUser } from "@/server/services/outlet-service";
 import { getExpiringBatches, getLowStockProducts } from "@/server/services/inventory-service";
+import { listCategoriesWithModifierGroups, listAllProductModifierExclusions } from "@/server/services/modifier-service";
 import { ProdukManager } from "@/components/produk/produk-manager";
 import { LowStockAlert } from "@/components/inventory/low-stock-alert";
 import { ExpiredBatchActions } from "@/components/inventory/expired-batch-actions";
@@ -15,10 +16,11 @@ export default async function ProdukPage() {
   if (user.role === "STAFF") redirect("/pilih-aplikasi");
   const businessMode = normalizeBusinessMode(tenant?.businessType);
 
-  const [categories, products, outlets] = await Promise.all([
-    listCategories(user.tenantId),
+  const [categories, products, outlets, exclusionsByProduct] = await Promise.all([
+    listCategoriesWithModifierGroups(user.tenantId),
     listProductsFull(user.tenantId),
     listOutletsForUser(user.tenantId, user.id, user.role),
+    listAllProductModifierExclusions(user.tenantId),
   ]);
 
   const firstOutletId = outlets[0]?.id;
@@ -67,7 +69,11 @@ export default async function ProdukPage() {
         </div>
       )}
       <ProdukManager
-        categories={categories.map((category) => ({ id: category.id, name: category.name }))}
+        categories={categories.map((category) => ({
+          id: category.id,
+          name: category.name,
+          modifierGroups: category.modifierGroups.map((group) => ({ id: group.id, name: group.name })),
+        }))}
         outlets={outlets.map((outlet) => ({ id: outlet.id, name: outlet.name }))}
         products={products.map((product) => ({
           id: product.id,
@@ -102,6 +108,7 @@ export default async function ProdukPage() {
               priceDelta: option.priceDelta,
             })),
           })),
+          excludedModifierGroupIds: exclusionsByProduct.get(product.id) ?? [],
         }))}
       />
     </div>

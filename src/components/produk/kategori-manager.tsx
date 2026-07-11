@@ -9,7 +9,12 @@ import {
 } from "@/app/(app)/produk/actions";
 import { XIcon, EditIcon } from "@/components/ui/icons";
 
-export type CategoryOption = { id: string; name: string };
+export type CategoryOption = {
+  id: string;
+  name: string;
+  /** Modifier menu kategori ini (mis. "Level Gula") — dipakai form produk buat checklist pengecualian. */
+  modifierGroups?: { id: string; name: string }[];
+};
 
 export function KategoriManager({
   categories,

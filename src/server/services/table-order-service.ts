@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { createSale, type CartItemInput } from "@/server/services/sale-service";
-import { computeVariantSelection, loadVariantGroupsByProduct } from "@/server/services/product-variant-service";
+import { computeVariantSelection, loadEffectiveGroupsByProduct } from "@/server/services/product-variant-service";
 import type { TableOrderStatus, PaymentMethod } from "@prisma/client";
 
 /**
@@ -45,7 +45,7 @@ export async function createOrder(
       // tambahan menambah risiko transaksi kena timeout.
       const [products, variantGroupsByProduct] = await Promise.all([
         tx.product.findMany({ where: { tenantId: table.tenantId, id: { in: productIds } } }),
-        loadVariantGroupsByProduct(tx, table.tenantId, productIds),
+        loadEffectiveGroupsByProduct(tx, table.tenantId, productIds),
       ]);
       const productMap = new Map(products.map((p) => [p.id, p]));
 

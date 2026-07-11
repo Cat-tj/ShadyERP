@@ -34,6 +34,7 @@ export type ProductRow = {
   stockByOutlet: Record<string, number>;
   reorderPointByOutlet: Record<string, number>;
   variantGroups: VariantGroupRow[];
+  excludedModifierGroupIds: string[];
 };
 
 const PRODUCT_KIND_LABEL: Record<ProductRow["kind"], string> = {
@@ -82,6 +83,7 @@ export function ProdukManager({
         stockByOutlet: editingProduct.stockByOutlet,
         reorderPointByOutlet: editingProduct.reorderPointByOutlet,
         variantGroups: editingProduct.variantGroups,
+        excludedModifierGroupIds: editingProduct.excludedModifierGroupIds,
       }
     : null;
 

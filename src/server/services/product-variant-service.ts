@@ -94,6 +94,20 @@ export async function deleteVariantOption(tenantId: string, id: string) {
 type VariantGroupWithOptions = Awaited<ReturnType<typeof listVariantGroupsForProducts>>[number];
 
 /**
+ * Bentuk minimal yang dibutuhkan computeVariantSelection — dipenuhi baik oleh
+ * ProductVariantGroup+options (Prisma) maupun ModifierGroup+options yang
+ * digabung lewat loadEffectiveGroupsByProduct, jadi satu mekanisme
+ * validasi+harga dipakai buat varian per-produk maupun modifier per-kategori.
+ */
+export type EffectiveVariantGroup = {
+  id: string;
+  name: string;
+  type: VariantGroupType;
+  required: boolean;
+  options: { id: string; name: string; priceDelta: number }[];
+};
+
+/**
  * Bagian murni (tanpa query) dari resolveVariantSelection — dipisah supaya
  * checkout dengan banyak item bisa fetch semua grup varian dalam SATU query
  * lewat listVariantGroupsForProducts, lalu panggil fungsi ini per item dari
@@ -102,7 +116,7 @@ type VariantGroupWithOptions = Awaited<ReturnType<typeof listVariantGroupsForPro
  * transaksi kena timeout kalau keranjang isinya banyak item.
  */
 export function computeVariantSelection(
-  groups: VariantGroupWithOptions[],
+  groups: EffectiveVariantGroup[],
   selectedOptionIds: string[]
 ): { priceDelta: number; label: string | null } {
   if (groups.length === 0) {
@@ -164,6 +178,85 @@ export async function loadVariantGroupsByProduct(
     }
   }
   return map;
+}
+
+/**
+ * Gabungan varian per-produk (ProductVariantGroup) + modifier menu per-kategori
+ * (ModifierGroup — mis. "Level Gula", "Tambahan Espresso" — otomatis berlaku ke
+ * semua produk di kategori itu, dikurangi ProductModifierExclusion kalau ada
+ * produk yang dikecualikan). Dipakai gantinya loadVariantGroupsByProduct di
+ * checkout (createSale, createOrder) supaya satu mekanisme validasi+harga
+ * (computeVariantSelection) menangani keduanya sekaligus.
+ */
+export async function loadEffectiveGroupsByProduct(
+  db: Prisma.TransactionClient | typeof prisma,
+  tenantId: string,
+  productIds: string[]
+): Promise<Map<string, EffectiveVariantGroup[]>> {
+  if (productIds.length === 0) return new Map();
+
+  const [products, variantGroups] = await Promise.all([
+    db.product.findMany({ where: { tenantId, id: { in: productIds } }, select: { id: true, categoryId: true } }),
+    db.productVariantGroup.findMany({
+      where: { tenantId, productId: { in: productIds } },
+      include: { options: { orderBy: { sortOrder: "asc" } } },
+      orderBy: { sortOrder: "asc" },
+    }),
+  ]);
+
+  const categoryIds = Array.from(
+    new Set(products.map((p) => p.categoryId).filter((id): id is string => Boolean(id)))
+  );
+
+  const [modifierGroups, exclusions] = await Promise.all([
+    db.modifierGroup.findMany({
+      where: { tenantId, categoryId: { in: categoryIds } },
+      include: { options: { orderBy: { sortOrder: "asc" } } },
+      orderBy: { sortOrder: "asc" },
+    }),
+    db.productModifierExclusion.findMany({ where: { tenantId, productId: { in: productIds } } }),
+  ]);
+
+  const modifierGroupsByCategory = new Map<string, typeof modifierGroups>();
+  for (const group of modifierGroups) {
+    const existing = modifierGroupsByCategory.get(group.categoryId);
+    if (existing) existing.push(group);
+    else modifierGroupsByCategory.set(group.categoryId, [group]);
+  }
+
+  const excludedByProduct = new Map<string, Set<string>>();
+  for (const exclusion of exclusions) {
+    const existing = excludedByProduct.get(exclusion.productId);
+    if (existing) existing.add(exclusion.modifierGroupId);
+    else excludedByProduct.set(exclusion.productId, new Set([exclusion.modifierGroupId]));
+  }
+
+  const variantGroupsByProduct = new Map<string, typeof variantGroups>();
+  for (const group of variantGroups) {
+    const existing = variantGroupsByProduct.get(group.productId);
+    if (existing) existing.push(group);
+    else variantGroupsByProduct.set(group.productId, [group]);
+  }
+
+  const toEffective = (g: { id: string; name: string; type: VariantGroupType; required: boolean; options: { id: string; name: string; priceDelta: number }[] }): EffectiveVariantGroup => ({
+    id: g.id,
+    name: g.name,
+    type: g.type,
+    required: g.required,
+    options: g.options.map((o) => ({ id: o.id, name: o.name, priceDelta: o.priceDelta })),
+  });
+
+  const result = new Map<string, EffectiveVariantGroup[]>();
+  for (const product of products) {
+    const ownGroups = variantGroupsByProduct.get(product.id) ?? [];
+    const categoryGroups = product.categoryId ? modifierGroupsByCategory.get(product.categoryId) ?? [] : [];
+    const excluded = excludedByProduct.get(product.id) ?? new Set<string>();
+    const effectiveModifierGroups = categoryGroups.filter((g) => !excluded.has(g.id));
+
+    result.set(product.id, [...ownGroups.map(toEffective), ...effectiveModifierGroups.map(toEffective)]);
+  }
+
+  return result;
 }
 
 /**

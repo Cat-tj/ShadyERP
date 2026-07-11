@@ -1,6 +1,8 @@
 import { getTableByQrToken } from "@/server/services/table-service";
 import { listProductsWithStock, listCategories } from "@/server/services/product-service";
 import { getOpenOrderForTable } from "@/server/services/table-order-service";
+import { loadEffectiveGroupsByProduct } from "@/server/services/product-variant-service";
+import { prisma } from "@/lib/prisma";
 import { OrderMenu } from "@/components/table-order/order-menu";
 import { GlassPanel } from "@/components/ui/glass-panel";
 import { AlertTriangleIcon } from "@/components/ui/icons";
@@ -58,6 +60,11 @@ export default async function OrderPage({
     getOpenOrderForTable(qrToken),
   ]);
   const activeProducts = products.filter((product) => product.isActive);
+  const effectiveGroupsByProduct = await loadEffectiveGroupsByProduct(
+    prisma,
+    table.tenantId,
+    activeProducts.map((product) => product.id)
+  );
 
   return (
     <OrderMenu
@@ -85,17 +92,7 @@ export default async function OrderPage({
         categoryName: product.category?.name ?? null,
         trackStock: product.trackStock,
         stockQty: product.stockQty,
-        variantGroups: product.variantGroups.map((group) => ({
-          id: group.id,
-          name: group.name,
-          type: group.type,
-          required: group.required,
-          options: group.options.map((option) => ({
-            id: option.id,
-            name: option.name,
-            priceDelta: option.priceDelta,
-          })),
-        })),
+        variantGroups: effectiveGroupsByProduct.get(product.id) ?? [],
       }))}
       categories={categories.map((category) => ({ id: category.id, name: category.name }))}
     />

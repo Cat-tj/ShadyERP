@@ -104,6 +104,9 @@ model Tenant {
   subscriptionRequests     SubscriptionRequest[]
   productVariantGroups     ProductVariantGroup[]
   productVariantOptions    ProductVariantOption[]
+  modifierGroups           ModifierGroup[]
+  modifierOptions          ModifierOption[]
+  productModifierExclusions ProductModifierExclusion[]
   auditLogs                AuditLog[]
   promos                   Promo[]
   bookings                 Booking[]
@@ -359,6 +362,7 @@ model Category {
   tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   products Product[]
   promos   Promo[]
+  modifierGroups ModifierGroup[]
 
   @@index([tenantId])
 }
@@ -402,6 +406,7 @@ model Product {
   stockTransfers     StockTransfer[]
   tableOrderItems    TableOrderItem[]
   variantGroups      ProductVariantGroup[]
+  modifierExclusions ProductModifierExclusion[]
   reorderPoints      StockReorderPoint[]
   stockBatches       StockBatch[]
   supplierContracts  SupplierPricingContract[]
@@ -457,6 +462,62 @@ model ProductVariantOption {
 
   @@index([tenantId])
   @@index([variantGroupId])
+}
+
+/// Grup modifier menu, mis. "Level Gula" atau "Tambahan Espresso" — beda dari
+/// ProductVariantGroup (per-produk satu-satu), ModifierGroup didaftar SEKALI
+/// per kategori dan otomatis berlaku ke semua produk di kategori itu (dipakai
+/// bareng di kasir & pemesanan QR meja). ProductModifierExclusion dipakai
+/// kalau ada produk tertentu yang perlu dikecualikan dari modifier ini.
+model ModifierGroup {
+  id         String           @id @default(cuid())
+  tenantId   String
+  categoryId String
+  name       String
+  type       VariantGroupType @default(SINGLE)
+  required   Boolean          @default(false)
+  sortOrder  Int              @default(0)
+  createdAt  DateTime         @default(now())
+
+  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category Category         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  options  ModifierOption[]
+  excludedFromProducts ProductModifierExclusion[]
+
+  @@index([tenantId])
+  @@index([categoryId])
+}
+
+/// Opsi dalam satu grup modifier, mis. "Less Sugar" (+0) atau "Double Shot" (+5000).
+model ModifierOption {
+  id              String @id @default(cuid())
+  tenantId        String
+  modifierGroupId String
+  name            String
+  priceDelta      Int    @default(0)
+  sortOrder       Int    @default(0)
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  modifierGroup ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([modifierGroupId])
+}
+
+/// Pengecualian: produk ini TIDAK ikut pakai ModifierGroup tertentu walau
+/// satu kategori dengannya (mis. "Tambahan Espresso" dikecualikan dari "Es Teh Manis").
+model ProductModifierExclusion {
+  id              String @id @default(cuid())
+  tenantId        String
+  productId       String
+  modifierGroupId String
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id], onDelete: Cascade)
+  modifierGroup ModifierGroup @relation(fields: [modifierGroupId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, modifierGroupId])
+  @@index([tenantId])
 }
 
 model ProductStock {

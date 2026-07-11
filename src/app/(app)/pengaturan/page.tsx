@@ -11,6 +11,7 @@ const TABS = [
   { href: "/pengaturan/kartu", label: "Kartu Member", desc: "Pengaturan loyalty poin member", module: "member" },
   { href: "/pengaturan/meja", label: "Nomor Meja", desc: "Atur kode QR pesanan meja", module: "pesanan-digital" },
   { href: "/pengaturan/laundry", label: "Laundry", desc: "Kategori layanan laundry", module: "laundry" },
+  { href: "/pengaturan/modifier", label: "Modifier Menu", desc: "Level gula, tambahan espresso, dll per kategori", module: "kasir" },
   { href: "/pengaturan/promo", label: "Promo", desc: "Diskon otomatis dan voucher", module: "promo" },
   { href: "/pengaturan/langganan", label: "Langganan", desc: "Detail paket aktif Altora" },
   { href: "/pengaturan/audit-log", label: "Log Audit", desc: "Riwayat aktivitas staf penting" },

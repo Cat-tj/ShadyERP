@@ -18,6 +18,7 @@ import {
   type ProductInput,
 } from "@/server/services/product-service";
 import { setReorderPoint } from "@/server/services/inventory-service";
+import { setProductModifierExclusions } from "@/server/services/modifier-service";
 import {
   createVariantGroup,
   updateVariantGroup,
@@ -231,6 +232,22 @@ export async function deleteVariantOptionAction(id: string): Promise<ActionResul
   }
   revalidatePath("/produk");
   revalidatePath("/kasir");
+  return { success: true };
+}
+
+export async function setProductModifierExclusionsAction(
+  productId: string,
+  excludedModifierGroupIds: string[]
+): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  try {
+    await setProductModifierExclusions(user.tenantId, productId, excludedModifierGroupIds);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal menyimpan pengecualian modifier." };
+  }
+  revalidatePath("/produk");
+  revalidatePath("/kasir");
+  revalidatePath("/pesan/[qrToken]", "page");
   return { success: true };
 }
 

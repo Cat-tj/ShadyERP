@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { buildInvoiceNumber, buildInvoicePrefix } from "@/lib/invoice";
-import { computeVariantSelection, loadVariantGroupsByProduct } from "@/server/services/product-variant-service";
+import { computeVariantSelection, loadEffectiveGroupsByProduct } from "@/server/services/product-variant-service";
 import { recordAuditLog } from "@/server/services/audit-log-service";
 import { formatRupiah } from "@/lib/format";
 import { logSaleToJournal, assertPeriodNotLocked } from "@/server/services/accounting-service";
@@ -74,7 +74,7 @@ export async function createSale(input: CreateSaleInput) {
         where: { tenantId: input.tenantId, productId: { in: ingredientIds }, outletId: input.outletId },
         include: { product: true },
       }),
-      loadVariantGroupsByProduct(tx, input.tenantId, productIds),
+      loadEffectiveGroupsByProduct(tx, input.tenantId, productIds),
     ]);
 
     const productMap = new Map(products.map((p) => [p.id, p]));
@@ -141,10 +141,13 @@ export async function createSale(input: CreateSaleInput) {
       if (item.unitPriceOverride !== undefined) {
         unitPrice = item.unitPriceOverride;
         variantLabel = item.variantLabel ?? null;
-      } else if (item.variantOptionIds && item.variantOptionIds.length > 0) {
+      } else if ((variantGroupsByProduct.get(product.id) ?? []).length > 0) {
+        // Selalu divalidasi kalau produk PUNYA grup varian/modifier — bukan cuma
+        // saat variantOptionIds diisi. Kalau tidak, grup yang wajib (required)
+        // bisa kelewat tervalidasi ketika keranjang kirim array kosong.
         const resolved = computeVariantSelection(
           variantGroupsByProduct.get(product.id) ?? [],
-          item.variantOptionIds
+          item.variantOptionIds ?? []
         );
         unitPrice = product.price + resolved.priceDelta;
         variantLabel = resolved.label;
