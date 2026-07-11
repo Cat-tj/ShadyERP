@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma } from "@prisma/client";
+import { daysAgoRangeJakarta } from "@/lib/date-range";
 
 /**
  * Inventory management service dengan fitur:
@@ -56,6 +57,37 @@ export async function getLowStockProducts(tenantId: string, outletId: string) {
       reorderPoint: item.minQty,
       deficit: item.minQty - (item.product.stocks[0]?.qty ?? 0),
     }));
+}
+
+/**
+ * Saranin reorder point dari rata-rata penjualan harian (net retur) selama
+ * `days` hari terakhir, ditambah buffer 3 hari biar tidak pas-pasan.
+ * `suggestedMinQty` null kalau belum ada histori penjualan sama sekali.
+ */
+export async function suggestReorderPoint(
+  tenantId: string,
+  productId: string,
+  outletId: string,
+  days = 30
+) {
+  const { start, end } = daysAgoRangeJakarta(days);
+  const items = await prisma.saleItem.findMany({
+    where: {
+      tenantId,
+      productId,
+      sale: { outletId, status: "COMPLETED", createdAt: { gte: start, lt: end } },
+    },
+    select: { qty: true, returnedQty: true },
+  });
+
+  const totalQty = items.reduce((sum, item) => sum + Math.max(0, item.qty - item.returnedQty), 0);
+  if (totalQty <= 0) {
+    return { avgDailyQty: 0, suggestedMinQty: null as number | null, days };
+  }
+
+  const avgDailyQty = totalQty / days;
+  const suggestedMinQty = Math.max(1, Math.ceil(avgDailyQty * 3));
+  return { avgDailyQty: Math.round(avgDailyQty * 10) / 10, suggestedMinQty, days };
 }
 
 // ============ STOCK BATCH / LOT TRACKING ============

@@ -9,6 +9,7 @@ import {
   updateStockAction,
   updateReorderPointAction,
   setProductModifierExclusionsAction,
+  getReorderSuggestionAction,
 } from "@/app/(app)/produk/actions";
 import { BarcodeScannerModal } from "@/components/shared/barcode-scanner-modal";
 import type { CategoryOption } from "@/components/produk/kategori-manager";
@@ -91,6 +92,31 @@ export function ProductFormModal({
   const [info, setInfo] = useState<string | null>(null);
   const [scannerOpen, setScannerOpen] = useState(false);
   const [isPending, startTransition] = useTransition();
+  const [reorderSuggestionByOutlet, setReorderSuggestionByOutlet] = useState<
+    Record<string, { avgDailyQty: number; suggestedMinQty: number | null } | undefined>
+  >({});
+  const [loadingSuggestionOutletId, setLoadingSuggestionOutletId] = useState<string | null>(null);
+  const [, startSuggestionTransition] = useTransition();
+
+  function fetchReorderSuggestion(outletId: string) {
+    if (!product) return;
+    setLoadingSuggestionOutletId(outletId);
+    startSuggestionTransition(async () => {
+      const result = await getReorderSuggestionAction(product.id, outletId);
+      setLoadingSuggestionOutletId(null);
+      if (result.error) {
+        setInfo(result.error);
+        return;
+      }
+      setReorderSuggestionByOutlet((prev) => ({ ...prev, [outletId]: result }));
+    });
+  }
+
+  function applyReorderSuggestion(outletId: string) {
+    const suggestion = reorderSuggestionByOutlet[outletId];
+    if (!suggestion?.suggestedMinQty) return;
+    setReorderPointByOutlet((prev) => ({ ...prev, [outletId]: String(suggestion.suggestedMinQty) }));
+  }
 
   const categoryModifierGroups = categories.find((c) => c.id === categoryId)?.modifierGroups ?? [];
 
@@ -480,35 +506,71 @@ export function ProductFormModal({
                     <span className="w-20 text-center">Batas Min</span>
                   </div>
                 </div>
-                {outlets.map((outlet) => (
-                  <div key={outlet.id} className="flex items-center justify-between gap-3">
-                    <span className="text-xs text-[var(--color-text-secondary)] truncate max-w-[140px]">{outlet.name}</span>
-                    <div className="flex gap-2">
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min={0}
-                        value={stockByOutlet[outlet.id] ?? "0"}
-                        onChange={(event) =>
-                          setStockByOutlet((prev) => ({ ...prev, [outlet.id]: event.target.value }))
-                        }
-                        placeholder="Stok"
-                        className="h-9 w-20 rounded-md border border-[var(--color-border)] px-2 text-center text-xs tabular-nums outline-none focus:border-[var(--color-primary)] bg-[var(--color-bg)]"
-                      />
-                      <input
-                        type="number"
-                        inputMode="numeric"
-                        min={0}
-                        value={reorderPointByOutlet[outlet.id] ?? "5"}
-                        onChange={(event) =>
-                          setReorderPointByOutlet((prev) => ({ ...prev, [outlet.id]: event.target.value }))
-                        }
-                        placeholder="Min"
-                        className="h-9 w-20 rounded-md border border-[var(--color-border)] px-2 text-center text-xs tabular-nums outline-none focus:border-[var(--color-primary)] bg-[var(--color-bg)]"
-                      />
+                {outlets.map((outlet) => {
+                  const suggestion = reorderSuggestionByOutlet[outlet.id];
+                  return (
+                    <div key={outlet.id} className="flex flex-col gap-1">
+                      <div className="flex items-center justify-between gap-3">
+                        <span className="text-xs text-[var(--color-text-secondary)] truncate max-w-[140px]">{outlet.name}</span>
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            value={stockByOutlet[outlet.id] ?? "0"}
+                            onChange={(event) =>
+                              setStockByOutlet((prev) => ({ ...prev, [outlet.id]: event.target.value }))
+                            }
+                            placeholder="Stok"
+                            className="h-9 w-20 rounded-md border border-[var(--color-border)] px-2 text-center text-xs tabular-nums outline-none focus:border-[var(--color-primary)] bg-[var(--color-bg)]"
+                          />
+                          <input
+                            type="number"
+                            inputMode="numeric"
+                            min={0}
+                            value={reorderPointByOutlet[outlet.id] ?? "5"}
+                            onChange={(event) =>
+                              setReorderPointByOutlet((prev) => ({ ...prev, [outlet.id]: event.target.value }))
+                            }
+                            placeholder="Min"
+                            className="h-9 w-20 rounded-md border border-[var(--color-border)] px-2 text-center text-xs tabular-nums outline-none focus:border-[var(--color-primary)] bg-[var(--color-bg)]"
+                          />
+                        </div>
+                      </div>
+                      <div className="flex items-center justify-end gap-2 text-[11px]">
+                        {suggestion ? (
+                          suggestion.suggestedMinQty ? (
+                            <>
+                              <span className="text-[var(--color-text-secondary)]">
+                                Saran: {suggestion.suggestedMinQty} (rata-rata {suggestion.avgDailyQty}/hari)
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => applyReorderSuggestion(outlet.id)}
+                                className="font-semibold text-[var(--color-primary)]"
+                              >
+                                Pakai saran
+                              </button>
+                            </>
+                          ) : (
+                            <span className="text-[var(--color-text-secondary)]">
+                              Belum ada histori penjualan 30 hari terakhir.
+                            </span>
+                          )
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => fetchReorderSuggestion(outlet.id)}
+                            disabled={loadingSuggestionOutletId === outlet.id}
+                            className="font-semibold text-[var(--color-primary)] disabled:opacity-40"
+                          >
+                            {loadingSuggestionOutletId === outlet.id ? "Menghitung..." : "Hitung saran batas min"}
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
                 <input
                   value={stockNote}
                   onChange={(event) => setStockNote(event.target.value)}

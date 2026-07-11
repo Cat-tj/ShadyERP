@@ -20,7 +20,7 @@ import {
   removeRecipeItem,
   type ProductInput,
 } from "@/server/services/product-service";
-import { setReorderPoint } from "@/server/services/inventory-service";
+import { setReorderPoint, suggestReorderPoint } from "@/server/services/inventory-service";
 import { setProductModifierExclusions } from "@/server/services/modifier-service";
 import {
   createVariantGroup,
@@ -421,4 +421,23 @@ export async function updateReorderPointAction(
   revalidatePath("/inventory");
   revalidatePath("/kpi");
   return { success: true };
+}
+
+export type ReorderSuggestion = { avgDailyQty: number; suggestedMinQty: number | null; error?: string };
+
+export async function getReorderSuggestionAction(
+  productId: string,
+  outletId: string
+): Promise<ReorderSuggestion> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  try {
+    const result = await suggestReorderPoint(user.tenantId, productId, outletId, 30);
+    return result;
+  } catch (error) {
+    return {
+      avgDailyQty: 0,
+      suggestedMinQty: null,
+      error: error instanceof Error ? error.message : "Gagal menghitung saran.",
+    };
+  }
 }
