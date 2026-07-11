@@ -236,3 +236,51 @@ export async function getGeneralLedger(
     };
   });
 }
+
+export type TrialBalanceRow = {
+  code: string;
+  name: string;
+  type: AccountType;
+  /** > 0 kalau saldo akun ini natural-nya ada di sisi debit (mis. Asset yang belum overdrawn). */
+  debit: number;
+  /** > 0 kalau saldo akun ini natural-nya ada di sisi kredit. */
+  credit: number;
+};
+
+/**
+ * Neraca Saldo (Trial Balance): snapshot saldo SEMUA akun per satu titik
+ * waktu ("as of"), bukan rentang periode — beda dari Buku Besar yang
+ * nunjukin pergerakan dalam rentang. Total kolom debit HARUS sama dengan
+ * total kolom kredit; kalau tidak, itu tanda ada bug di sistem posting
+ * jurnal (bukan cuma soal tampilan).
+ */
+export async function getTrialBalance(
+  tenantId: string,
+  asOf: Date
+): Promise<{ rows: TrialBalanceRow[]; totalDebit: number; totalCredit: number; isBalanced: boolean }> {
+  const [accounts, entries] = await Promise.all([
+    prisma.account.findMany({ where: { tenantId }, orderBy: { code: "asc" } }),
+    prisma.journalEntry.findMany({ where: { tenantId, date: { lt: asOf } } }),
+  ]);
+
+  const rows: TrialBalanceRow[] = accounts.map((account) => {
+    const debitNormal = isDebitNormal(account.type);
+    let balance = 0;
+    for (const entry of entries) {
+      if (entry.debitCode === account.code) balance += debitNormal ? entry.amount : -entry.amount;
+      if (entry.creditCode === account.code) balance += debitNormal ? -entry.amount : entry.amount;
+    }
+    return {
+      code: account.code,
+      name: account.name,
+      type: account.type,
+      debit: debitNormal ? Math.max(balance, 0) : Math.max(-balance, 0),
+      credit: debitNormal ? Math.max(-balance, 0) : Math.max(balance, 0),
+    };
+  });
+
+  const totalDebit = rows.reduce((sum, r) => sum + r.debit, 0);
+  const totalCredit = rows.reduce((sum, r) => sum + r.credit, 0);
+
+  return { rows, totalDebit, totalCredit, isBalanced: totalDebit === totalCredit };
+}

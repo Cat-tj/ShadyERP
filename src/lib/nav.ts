@@ -16,6 +16,7 @@ import {
   BuildingIcon,
   GridIcon,
   FileIcon,
+  CheckCircleIcon,
 } from "@/components/ui/icons";
 import type { ModuleKey } from "@/lib/modules";
 import type { HubKey } from "@/lib/hubs";
@@ -70,6 +71,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/crm", label: "Sales CRM", icon: BriefcaseIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
   { href: "/finance/jurnal", label: "Jurnal Umum", icon: WalletIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
   { href: "/finance/buku-besar", label: "Buku Besar", icon: FileIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
+  { href: "/finance/neraca-saldo", label: "Neraca Saldo", icon: CheckCircleIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
   { href: "/finance/laba-rugi", label: "Laba Rugi", icon: TrendingUpIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
   { href: "/finance/metode-bayar", label: "Metode Bayar", icon: BuildingIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
 
