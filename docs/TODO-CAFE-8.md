@@ -13,7 +13,7 @@
 - [x] **C5** — Catat waste/kerugian bahan: kategori alasan di `StockAdjustment` (Waste/Expired/Rusak/dll), halaman catat cepat, laporan total kerugian per periode — `a2b028c`
 - [x] **C6** — Auto-suggest reorder point: hitung rata-rata penjualan harian dari histori, saranin `minQty` di halaman reorder point dengan tombol "pakai saran" — `2c5a147`
 - [x] **C7** — Voucher/gift card jual: model baru `GiftCard` + transaksi, generate kode unik, jual di muka, redeem sebagai metode bayar saat checkout — `a517f0e`
-- [ ] **C8** — Sambungkan `WholesalePrice` (bug: model ada di schema, tidak pernah dipakai di checkout) + harga beda per channel (dine-in/takeaway/dll pakai `OrderType` yang sudah ada)
+- [x] **C8** — Sambungkan `WholesalePrice` (bug: model ada di schema, tidak pernah dipakai di checkout) + harga beda per channel (dine-in/takeaway/dll pakai `OrderType` yang sudah ada) — `0bc2fbb`
 
 ---
 
