@@ -128,6 +128,7 @@ model Tenant {
   setting                  TenantSetting?
   productUoms              ProductUom[]
   wholesalePrices          WholesalePrice[]
+  channelPricingRules      ChannelPricingRule[]
   productRecipeItems       ProductRecipeItem[]
   laundryOrders            LaundryOrder[]
   laundryServices          LaundryService[]
@@ -779,6 +780,8 @@ model Sale {
   subtotal       Int
   discountAmount Int           @default(0)
   taxAmount      Int           @default(0)
+  /// Markup harga per channel (mis. GoFood/GrabFood buat nutup potongan platform) — dari ChannelPricingRule.
+  channelMarkupAmount Int      @default(0)
   total          Int
   paymentMethod  PaymentMethod
   amountPaid     Int
@@ -1875,6 +1878,22 @@ model WholesalePrice {
 
   @@index([tenantId])
   @@index([productId])
+}
+
+/// Markup harga per channel/order type (mis. GoFood/GrabFood ditambah 20% buat
+/// nutup potongan platform). markupPercent bisa negatif buat diskon channel.
+model ChannelPricingRule {
+  id            String    @id @default(cuid())
+  tenantId      String
+  orderType     OrderType
+  markupPercent Int       @default(0)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, orderType])
+  @@index([tenantId])
 }
 
 model ProductRecipeItem {

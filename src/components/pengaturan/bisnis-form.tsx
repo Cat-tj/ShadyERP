@@ -5,6 +5,17 @@ import { updateTenantSettingAction, exportTenantBackupAction } from "@/app/(app)
 import { useToast, Toast } from "@/components/toast";
 import { XIcon } from "@/components/ui/icons";
 import { BUSINESS_MODES, type BusinessModeKey } from "@/lib/business-modes";
+import type { OrderType } from "@prisma/client";
+
+const CHANNEL_OPTIONS: { value: OrderType; label: string }[] = [
+  { value: "TAKEAWAY", label: "Takeaway" },
+  { value: "COURIER", label: "Kurir Toko" },
+  { value: "GOFOOD", label: "GoFood" },
+  { value: "GRABFOOD", label: "GrabFood" },
+  { value: "SHOPEEFOOD", label: "ShopeeFood" },
+  { value: "MAXIM", label: "Maxim" },
+  { value: "DELIVERY_OTHER", label: "Delivery lainnya" },
+];
 
 export function BisnisForm({
   businessType,
@@ -17,6 +28,7 @@ export function BisnisForm({
   stampTarget = 10,
   stampRewardName = null,
   stampRewardValue = 0,
+  channelMarkupByOrderType = {},
 }: {
   businessType: BusinessModeKey;
   taxPercent: number;
@@ -28,6 +40,7 @@ export function BisnisForm({
   stampTarget?: number;
   stampRewardName?: string | null;
   stampRewardValue?: number;
+  channelMarkupByOrderType?: Partial<Record<OrderType, number>>;
 }) {
   const { toastMessage, showToast } = useToast();
   const [mode, setMode] = useState<BusinessModeKey>(businessType);
@@ -40,6 +53,9 @@ export function BisnisForm({
   const [stampTargetInput, setStampTargetInput] = useState(String(stampTarget));
   const [stampReward, setStampReward] = useState(stampRewardName ?? "");
   const [stampRewardValueInput, setStampRewardValueInput] = useState(String(stampRewardValue));
+  const [channelMarkups, setChannelMarkups] = useState<Record<string, string>>(
+    Object.fromEntries(CHANNEL_OPTIONS.map((c) => [c.value, String(channelMarkupByOrderType[c.value] ?? 0)]))
+  );
   const [scannerOpen, setScannerOpen] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -87,6 +103,9 @@ export function BisnisForm({
         stampTarget: Number(stampTargetInput) || 10,
         stampRewardName: stampReward.trim() || null,
         stampRewardValue: Number(stampRewardValueInput) || 0,
+        channelMarkups: Object.fromEntries(
+          CHANNEL_OPTIONS.map((c) => [c.value, Number(channelMarkups[c.value]) || 0])
+        ) as Partial<Record<OrderType, number>>,
       });
       if (result.error) {
         setError(result.error);
@@ -315,6 +334,35 @@ export function BisnisForm({
               </p>
             </div>
           )}
+        </div>
+
+        {/* Harga per Channel */}
+        <div className="rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-4">
+          <p className="text-sm font-bold text-[var(--color-text)]">Harga per Channel</p>
+          <p className="mt-1 text-xs leading-relaxed text-[var(--color-text-secondary)]">
+            Tambah markup harga buat channel tertentu (mis. GoFood/GrabFood biar nutup potongan platform). Isi 0
+            kalau harganya sama dengan dine-in. Berlaku otomatis saat kasir pilih jenis pesanan/channel ini di
+            layar pembayaran.
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {CHANNEL_OPTIONS.map((channel) => (
+              <div key={channel.value} className="flex items-center justify-between gap-2">
+                <label className="text-xs font-medium text-[var(--color-text-secondary)]">{channel.label}</label>
+                <div className="flex items-center gap-1.5">
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    value={channelMarkups[channel.value] ?? "0"}
+                    onChange={(e) =>
+                      setChannelMarkups((prev) => ({ ...prev, [channel.value]: e.target.value }))
+                    }
+                    className="min-h-[40px] w-20 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-center text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+                  />
+                  <span className="text-xs text-[var(--color-text-secondary)]">%</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 

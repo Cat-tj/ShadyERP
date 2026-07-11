@@ -70,6 +70,7 @@ export function PaymentSheet({
   discountAmount,
   staticQrisPayload,
   stampProgram,
+  channelMarkupByOrderType,
   onClose,
   onSuccess,
 }: {
@@ -80,6 +81,7 @@ export function PaymentSheet({
   items: { productId: string; qty: number; discountAmount: number; variantOptionIds?: string[] }[];
   staticQrisPayload: string | null;
   stampProgram: StampProgramSettings;
+  channelMarkupByOrderType: Partial<Record<OrderType, number>>;
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -107,8 +109,14 @@ export function PaymentSheet({
   const canRedeemStamp = Boolean(
     stampProgram.enabled && member && member.stampCount >= stampProgram.target
   );
-  const effectiveTotal =
+  const selectedOrderType: OrderType = orderMode === "DELIVERY" ? deliveryChannel : orderMode;
+  const channelMarkupPercent = channelMarkupByOrderType[selectedOrderType] ?? 0;
+
+  const stampAdjustedTotal =
     canRedeemStamp && redeemStamp ? Math.max(0, total - stampProgram.rewardValue) : total;
+  const channelMarkupAmount = Math.round((stampAdjustedTotal * channelMarkupPercent) / 100);
+  const effectiveTotal = stampAdjustedTotal + channelMarkupAmount;
+  const hasTotalAdjustment = effectiveTotal !== total;
 
   const amountPaid = method === "CASH" ? Number(amountInput) || 0 : effectiveTotal;
   const change = method === "CASH" ? Math.max(0, amountPaid - effectiveTotal) : 0;
@@ -189,12 +197,11 @@ export function PaymentSheet({
   function handleSubmit() {
     setError(null);
     startTransition(async () => {
-      const orderType: OrderType = orderMode === "DELIVERY" ? deliveryChannel : orderMode;
       const payload: CreateSalePayload = {
         items,
         discountAmount,
         paymentMethod: method,
-        orderType,
+        orderType: selectedOrderType,
         amountPaid,
         memberId: member?.id ?? null,
         redeemStamp: canRedeemStamp && redeemStamp,
@@ -255,14 +262,23 @@ export function PaymentSheet({
     <>
       <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-center">
         <p className="text-xs text-[var(--color-text-secondary)]">Total belanja</p>
-        {canRedeemStamp && redeemStamp ? (
+        {hasTotalAdjustment ? (
           <>
             <p className="truncate tabular-nums text-sm font-medium text-[var(--color-text-secondary)] line-through">
               {formatRupiah(total)}
             </p>
-            <p className="truncate tabular-nums text-2xl font-bold text-[var(--color-success)]">
+            <p
+              className={`truncate tabular-nums text-2xl font-bold ${
+                effectiveTotal < total ? "text-[var(--color-success)]" : "text-[var(--color-text)]"
+              }`}
+            >
               {formatRupiah(effectiveTotal)}
             </p>
+            {channelMarkupAmount > 0 && (
+              <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
+                Termasuk markup {selectedOrderType} {channelMarkupPercent}%
+              </p>
+            )}
           </>
         ) : (
           <p className="truncate tabular-nums text-2xl font-bold text-[var(--color-text)]">

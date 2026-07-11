@@ -60,9 +60,33 @@ export async function listProductsFull(tenantId: string) {
       reorderPoints: true,
       variantGroups: { include: { options: { orderBy: { sortOrder: "asc" } } }, orderBy: { sortOrder: "asc" } },
       recipes: { include: { ingredient: { select: { id: true, name: true } } } },
+      wholesalePrices: { orderBy: { minQty: "asc" } },
     },
     orderBy: { name: "asc" },
   });
+}
+
+/**
+ * Harga grosir bertingkat: makin banyak dibeli (>= minQty), makin murah per
+ * unit. Cuma berlaku buat produk tanpa varian — dipilih otomatis saat checkout
+ * berdasarkan qty di keranjang (lihat resolveWholesalePrice di sale-service.ts).
+ */
+export async function addWholesalePriceTier(tenantId: string, productId: string, minQty: number, price: number) {
+  const product = await prisma.product.findFirst({ where: { id: productId, tenantId } });
+  if (!product) throw new Error("Produk tidak ditemukan.");
+  return prisma.wholesalePrice.create({ data: { tenantId, productId, minQty, price } });
+}
+
+export async function updateWholesalePriceTier(tenantId: string, id: string, minQty: number, price: number) {
+  const tier = await prisma.wholesalePrice.findFirst({ where: { id, tenantId } });
+  if (!tier) throw new Error("Tingkatan harga grosir tidak ditemukan.");
+  return prisma.wholesalePrice.update({ where: { id }, data: { minQty, price } });
+}
+
+export async function removeWholesalePriceTier(tenantId: string, id: string) {
+  const tier = await prisma.wholesalePrice.findFirst({ where: { id, tenantId } });
+  if (!tier) throw new Error("Tingkatan harga grosir tidak ditemukan.");
+  return prisma.wholesalePrice.delete({ where: { id } });
 }
 
 /**

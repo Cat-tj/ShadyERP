@@ -8,12 +8,17 @@ import {
   updateTenantSetting,
   type TenantSettingInput,
 } from "@/server/services/tenant-service";
+import { setChannelPricingRule } from "@/server/services/channel-pricing-service";
 import { BUSINESS_MODE_MAP, type BusinessModeKey } from "@/lib/business-modes";
+import type { OrderType } from "@prisma/client";
 
 export type ActionResult = { error?: string; success?: boolean };
 
 export async function updateTenantSettingAction(
-  input: TenantSettingInput & { businessType?: BusinessModeKey }
+  input: TenantSettingInput & {
+    businessType?: BusinessModeKey;
+    channelMarkups?: Partial<Record<OrderType, number>>;
+  }
 ): Promise<ActionResult> {
   const user = await requireRole(["OWNER"]);
   let staticQrisPayload = input.staticQrisPayload?.trim() || null;
@@ -25,6 +30,13 @@ export async function updateTenantSettingAction(
   }
   if (!Number.isFinite(input.pointsPerAmount) || input.pointsPerAmount <= 0) {
     return { error: "Rasio poin harus lebih dari 0." };
+  }
+  if (input.channelMarkups) {
+    for (const markupPercent of Object.values(input.channelMarkups)) {
+      if (!Number.isFinite(markupPercent) || (markupPercent as number) < -100 || (markupPercent as number) > 500) {
+        return { error: "Markup harga channel harus antara -100% sampai 500%." };
+      }
+    }
   }
   if (input.stampProgramEnabled) {
     if (!Number.isFinite(input.stampTarget) || (input.stampTarget ?? 0) <= 0) {
@@ -59,6 +71,12 @@ export async function updateTenantSettingAction(
       stampRewardName: input.stampRewardName?.trim() || null,
       stampRewardValue: input.stampRewardValue ?? 0,
     });
+    if (input.channelMarkups) {
+      for (const [orderType, markupPercent] of Object.entries(input.channelMarkups)) {
+        if (!Number.isFinite(markupPercent)) continue;
+        await setChannelPricingRule(user.tenantId, orderType as OrderType, markupPercent as number);
+      }
+    }
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal menyimpan pengaturan." };
   }

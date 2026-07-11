@@ -15,9 +15,10 @@ import { BarcodeScannerModal } from "@/components/shared/barcode-scanner-modal";
 import type { CategoryOption } from "@/components/produk/kategori-manager";
 import { VariantGroupsEditor, type VariantGroupRow } from "@/components/produk/variant-groups-editor";
 import { RecipeEditor, type RecipeItemRow, type IngredientOption } from "@/components/produk/recipe-editor";
+import { WholesaleTierEditor, type WholesaleTierRow } from "@/components/produk/wholesale-tier-editor";
 import { CameraIcon, XIcon } from "@/components/ui/icons";
 
-export type { VariantGroupRow, RecipeItemRow, IngredientOption };
+export type { VariantGroupRow, RecipeItemRow, IngredientOption, WholesaleTierRow };
 
 export type OutletOption = { id: string; name: string };
 type ProductKindOption = "GOODS" | "SERVICE" | "ASSEMBLY" | "NON_INVENTORY" | "COST";
@@ -42,6 +43,7 @@ export type EditingProduct = {
   variantGroups: VariantGroupRow[];
   excludedModifierGroupIds: string[];
   recipeItems: RecipeItemRow[];
+  wholesaleTiers: WholesaleTierRow[];
 };
 
 export function ProductFormModal({
@@ -609,6 +611,14 @@ export function ProductFormModal({
             ) : (
               <p className="text-xs text-[var(--color-text-secondary)]">
                 Simpan produk dulu untuk menambahkan resep/komponen (buat menu racikan atau paket/kombo).
+              </p>
+            )}
+
+            {product ? (
+              <WholesaleTierEditor productId={product.id} tiers={product.wholesaleTiers} onNotify={setInfo} />
+            ) : (
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                Simpan produk dulu untuk menambahkan harga grosir bertingkat.
               </p>
             )}
           </div>

@@ -4,6 +4,7 @@ import { listOutletsForUser } from "@/server/services/outlet-service";
 import { listProductsWithStock, listCategories } from "@/server/services/product-service";
 import { getActivePromosNow } from "@/server/services/promo-service";
 import { loadEffectiveGroupsByProduct } from "@/server/services/product-variant-service";
+import { listChannelPricingRules } from "@/server/services/channel-pricing-service";
 import { prisma } from "@/lib/prisma";
 import { OpenShiftForm } from "@/components/kasir/open-shift-form";
 import { PosScreen } from "@/components/kasir/pos-screen";
@@ -21,11 +22,12 @@ export default async function KasirPage() {
     );
   }
 
-  const [products, categories, setting, activePromos] = await Promise.all([
+  const [products, categories, setting, activePromos, channelPricingRules] = await Promise.all([
     listProductsWithStock(user.tenantId, shift.outletId),
     listCategories(user.tenantId),
     prisma.tenantSetting.findUnique({ where: { tenantId: user.tenantId } }),
     getActivePromosNow(user.tenantId),
+    listChannelPricingRules(user.tenantId),
   ]);
 
   const activeProducts = products.filter((product) => product.isActive);
@@ -46,6 +48,9 @@ export default async function KasirPage() {
         rewardName: setting?.stampRewardName ?? null,
         rewardValue: setting?.stampRewardValue ?? 0,
       }}
+      channelMarkupByOrderType={Object.fromEntries(
+        channelPricingRules.map((rule) => [rule.orderType, rule.markupPercent])
+      )}
       products={activeProducts.map((product) => ({
         id: product.id,
         name: product.name,

@@ -12,6 +12,7 @@ import {
   type OutletOption,
   type VariantGroupRow,
   type RecipeItemRow,
+  type WholesaleTierRow,
 } from "@/components/produk/product-form-modal";
 import { ScanBarcodeModal } from "@/components/produk/scan-barcode-modal";
 import { useToast, Toast } from "@/components/toast";
@@ -37,6 +38,7 @@ export type ProductRow = {
   variantGroups: VariantGroupRow[];
   excludedModifierGroupIds: string[];
   recipeItems: RecipeItemRow[];
+  wholesaleTiers: WholesaleTierRow[];
 };
 
 const PRODUCT_KIND_LABEL: Record<ProductRow["kind"], string> = {
@@ -87,6 +89,7 @@ export function ProdukManager({
         variantGroups: editingProduct.variantGroups,
         excludedModifierGroupIds: editingProduct.excludedModifierGroupIds,
         recipeItems: editingProduct.recipeItems,
+        wholesaleTiers: editingProduct.wholesaleTiers,
       }
     : null;
 

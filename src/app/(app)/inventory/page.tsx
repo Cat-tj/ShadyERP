@@ -115,6 +115,11 @@ export default async function ProdukPage() {
             ingredientName: recipe.ingredient.name,
             qty: recipe.qty,
           })),
+          wholesaleTiers: product.wholesalePrices.map((tier) => ({
+            id: tier.id,
+            minQty: tier.minQty,
+            price: tier.price,
+          })),
         }))}
       />
     </div>

@@ -13,6 +13,7 @@ import { BarcodeScannerModal } from "@/components/shared/barcode-scanner-modal";
 import { CameraIcon, XIcon } from "@/components/ui/icons";
 import { useToast, Toast } from "@/components/toast";
 import { getAvailableSerialsAction } from "@/app/(app)/kasir/actions";
+import type { OrderType } from "@prisma/client";
 
 export type PosProduct = {
   id: string;
@@ -54,6 +55,7 @@ export function PosScreen({
   staticQrisPayload,
   promos,
   stampProgram,
+  channelMarkupByOrderType,
 }: {
   outletName: string;
   products: PosProduct[];
@@ -62,6 +64,7 @@ export function PosScreen({
   staticQrisPayload: string | null;
   promos: PosPromo[];
   stampProgram: StampProgramSettings;
+  channelMarkupByOrderType: Partial<Record<OrderType, number>>;
 }) {
   const [search, setSearch] = useState("");
   const [activeCategory, setActiveCategory] = useState<string>("ALL");
@@ -584,6 +587,7 @@ export function PosScreen({
           items={saleItems}
           staticQrisPayload={staticQrisPayload}
           stampProgram={stampProgram}
+          channelMarkupByOrderType={channelMarkupByOrderType}
           onClose={() => setShowPayment(false)}
           onSuccess={() => {
             resetCart();

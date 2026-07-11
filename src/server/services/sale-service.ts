@@ -131,8 +131,8 @@ export async function createSale(input: CreateSaleInput) {
       .flat()
       .map((r) => r.ingredientId);
 
-    // Fetch produk + stok produk dan stok bahan baku sekaligus
-    const [products, ingredientStocks, variantGroupsByProduct] = await Promise.all([
+    // Fetch produk + stok produk, stok bahan baku, harga grosir, sekaligus
+    const [products, ingredientStocks, variantGroupsByProduct, wholesalePrices] = await Promise.all([
       tx.product.findMany({
         where: { tenantId: input.tenantId, id: { in: productIds } },
         include: { stocks: { where: { outletId: input.outletId } } },
@@ -142,10 +142,27 @@ export async function createSale(input: CreateSaleInput) {
         include: { product: true },
       }),
       loadEffectiveGroupsByProduct(tx, input.tenantId, productIds),
+      tx.wholesalePrice.findMany({
+        where: { tenantId: input.tenantId, productId: { in: productIds } },
+        orderBy: { minQty: "desc" },
+      }),
     ]);
 
     const productMap = new Map(products.map((p) => [p.id, p]));
     const ingredientStockMap = new Map(ingredientStocks.map((s) => [s.productId, s]));
+    const wholesaleTiersByProduct = new Map<string, { minQty: number; price: number }[]>();
+    for (const tier of wholesalePrices) {
+      const list = wholesaleTiersByProduct.get(tier.productId) ?? [];
+      list.push({ minQty: tier.minQty, price: tier.price });
+      wholesaleTiersByProduct.set(tier.productId, list);
+    }
+    // Cari harga grosir dengan minQty tertinggi yang masih <= qty pembelian.
+    function resolveWholesalePrice(productId: string, qty: number): number | null {
+      const tiers = wholesaleTiersByProduct.get(productId);
+      if (!tiers) return null;
+      const match = tiers.find((tier) => qty >= tier.minQty);
+      return match?.price ?? null;
+    }
 
     let subtotal = 0;
     const itemsData: {
@@ -213,6 +230,11 @@ export async function createSale(input: CreateSaleInput) {
         );
         unitPrice = product.price + resolved.priceDelta;
         variantLabel = resolved.label;
+      } else {
+        // Produk tanpa varian: pakai harga grosir kalau qty pembelian memenuhi
+        // salah satu tingkatan (mis. beli >=12 dapat harga lebih murah per unit).
+        const wholesalePrice = resolveWholesalePrice(product.id, item.qty);
+        if (wholesalePrice !== null) unitPrice = wholesalePrice;
       }
 
       const itemSubtotal = unitPrice * item.qty - item.discountAmount;
@@ -251,7 +273,16 @@ export async function createSale(input: CreateSaleInput) {
     const totalDiscountAmount = input.discountAmount + stampRewardDiscount;
     const afterDiscount = subtotal - totalDiscountAmount;
     const taxAmount = Math.round((afterDiscount * taxPercent) / 100);
-    const total = afterDiscount + taxAmount;
+
+    // Markup harga per channel (mis. GoFood/GrabFood) — nutup potongan platform,
+    // dihitung dari subtotal setelah diskon, sama seperti pajak.
+    const channelRule = await tx.channelPricingRule.findUnique({
+      where: { tenantId_orderType: { tenantId: input.tenantId, orderType: input.orderType ?? "DINE_IN" } },
+    });
+    const channelMarkupPercent = channelRule?.markupPercent ?? 0;
+    const channelMarkupAmount = Math.round((afterDiscount * channelMarkupPercent) / 100);
+
+    const total = afterDiscount + taxAmount + channelMarkupAmount;
 
     if (input.paymentMethod === "CASH" && input.amountPaid < total) {
       throw new Error("Uang diterima kurang dari total belanja.");
@@ -307,6 +338,7 @@ export async function createSale(input: CreateSaleInput) {
         subtotal,
         discountAmount: totalDiscountAmount,
         taxAmount,
+        channelMarkupAmount,
         total,
         paymentMethod: input.paymentMethod,
         amountPaid,

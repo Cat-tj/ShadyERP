@@ -18,6 +18,9 @@ import {
   addRecipeItem,
   updateRecipeItemQty,
   removeRecipeItem,
+  addWholesalePriceTier,
+  updateWholesalePriceTier,
+  removeWholesalePriceTier,
   type ProductInput,
 } from "@/server/services/product-service";
 import { setReorderPoint, suggestReorderPoint } from "@/server/services/inventory-service";
@@ -285,6 +288,64 @@ export async function removeRecipeItemAction(id: string): Promise<ActionResult> 
   revalidatePath("/inventory");
   revalidatePath("/kasir");
   revalidatePath("/finance/profitabilitas-menu");
+  return { success: true };
+}
+
+function validateWholesaleTierInput(minQty: number, price: number): string | null {
+  if (!Number.isFinite(minQty) || minQty <= 1) return "Jumlah minimum harus lebih dari 1.";
+  if (!Number.isFinite(price) || price <= 0) return "Harga grosir harus lebih dari 0.";
+  return null;
+}
+
+export async function addWholesalePriceTierAction(
+  productId: string,
+  minQty: number,
+  price: number
+): Promise<CreateResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  const validationError = validateWholesaleTierInput(minQty, price);
+  if (validationError) return { error: validationError };
+  let tier;
+  try {
+    tier = await addWholesalePriceTier(user.tenantId, productId, minQty, price);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal menambah harga grosir." };
+  }
+  revalidatePath("/produk");
+  revalidatePath("/inventory");
+  revalidatePath("/kasir");
+  return { success: true, id: tier.id };
+}
+
+export async function updateWholesalePriceTierAction(
+  id: string,
+  minQty: number,
+  price: number
+): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  const validationError = validateWholesaleTierInput(minQty, price);
+  if (validationError) return { error: validationError };
+  try {
+    await updateWholesalePriceTier(user.tenantId, id, minQty, price);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal mengubah harga grosir." };
+  }
+  revalidatePath("/produk");
+  revalidatePath("/inventory");
+  revalidatePath("/kasir");
+  return { success: true };
+}
+
+export async function removeWholesalePriceTierAction(id: string): Promise<ActionResult> {
+  const user = await requireRole([...MANAGE_ROLES]);
+  try {
+    await removeWholesalePriceTier(user.tenantId, id);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal menghapus harga grosir." };
+  }
+  revalidatePath("/produk");
+  revalidatePath("/inventory");
+  revalidatePath("/kasir");
   return { success: true };
 }
 
