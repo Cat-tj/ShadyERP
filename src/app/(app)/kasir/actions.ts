@@ -6,6 +6,7 @@ import { requireSession } from "@/server/require-session";
 import { openShift, closeShift, getOpenShift } from "@/server/services/shift-service";
 import { createSale, type CartItemInput } from "@/server/services/sale-service";
 import { createCashOutTransaction } from "@/server/services/cash-out-service";
+import { getAvailableSerials } from "@/server/services/product-serial-service";
 import type { CashOutMethod, OrderType, PaymentMethod } from "@prisma/client";
 
 export type ActionResult = { error?: string; success?: boolean };
@@ -94,6 +95,15 @@ export async function createSaleAction(payload: CreateSalePayload): Promise<Crea
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal menyimpan transaksi." };
   }
+}
+
+export async function getAvailableSerialsAction(productId: string): Promise<{ serialNumber: string }[]> {
+  const user = await requireSession();
+  const openShiftRecord = await getOpenShift(user.tenantId, user.id);
+  if (!openShiftRecord) return [];
+
+  const serials = await getAvailableSerials(user.tenantId, productId, openShiftRecord.outletId);
+  return serials.map((s) => ({ serialNumber: s.serialNumber }));
 }
 
 export type CreateCashOutPayload = {

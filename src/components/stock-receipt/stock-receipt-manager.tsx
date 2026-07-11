@@ -54,6 +54,8 @@ type DirectReceiptItem = {
   unitPrice: string;
   batchNumber: string;
   expirationDate: string;
+  /** Satu nomor seri/IMEI per baris teks — dipakai kalau produknya trackSerial. */
+  serialNumbersText: string;
 };
 
 type ReceiptFormItem = {
@@ -348,7 +350,7 @@ function DirectStockReceiptModal({
   const [skuInput, setSkuInput] = useState("");
   const [scannerOpen, setScannerOpen] = useState(false);
   const [items, setItems] = useState<DirectReceiptItem[]>([
-    { productId: products[0]?.id ?? "", qtyReceived: "1", unitPrice: String(products[0]?.cost ?? 0), batchNumber: "", expirationDate: "" },
+    { productId: products[0]?.id ?? "", qtyReceived: "1", unitPrice: String(products[0]?.cost ?? 0), batchNumber: "", expirationDate: "", serialNumbersText: "" },
   ]);
   const [shippingCost, setShippingCost] = useState("");
   const [otherCost, setOtherCost] = useState("");
@@ -362,7 +364,7 @@ function DirectStockReceiptModal({
   function addItem() {
     setItems((prev) => [
       ...prev,
-      { productId: products[0]?.id ?? "", qtyReceived: "1", unitPrice: String(products[0]?.cost ?? 0), batchNumber: "", expirationDate: "" },
+      { productId: products[0]?.id ?? "", qtyReceived: "1", unitPrice: String(products[0]?.cost ?? 0), batchNumber: "", expirationDate: "", serialNumbersText: "" },
     ]);
   }
 
@@ -379,7 +381,7 @@ function DirectStockReceiptModal({
     setError(null);
     setItems((prev) => [
       ...prev,
-      { productId: product.id, qtyReceived: "1", unitPrice: String(product.cost ?? 0), batchNumber: "", expirationDate: "" },
+      { productId: product.id, qtyReceived: "1", unitPrice: String(product.cost ?? 0), batchNumber: "", expirationDate: "", serialNumbersText: "" },
     ]);
     setSkuInput("");
   }
@@ -394,8 +396,23 @@ function DirectStockReceiptModal({
         unitPrice: Math.max(0, Math.round(Number(item.unitPrice) || 0)),
         batchNumber: item.batchNumber.trim() || null,
         expirationDate: item.expirationDate ? new Date(item.expirationDate) : null,
+        serialNumbers: item.serialNumbersText
+          .split(/\r?\n|,/)
+          .map((s) => s.trim())
+          .filter(Boolean),
       }))
       .filter((item) => item.productId && item.qtyReceived > 0);
+
+    const serialMismatch = parsed.find((item) => {
+      const product = products.find((p) => p.id === item.productId);
+      return product?.trackSerial && item.serialNumbers.length !== item.qtyReceived;
+    });
+    if (serialMismatch) {
+      const product = products.find((p) => p.id === serialMismatch.productId);
+      return setError(
+        `${product?.name}: jumlah serial/IMEI yang diisi (${serialMismatch.serialNumbers.length}) harus sama dengan qty (${serialMismatch.qtyReceived}).`
+      );
+    }
     if (parsed.length === 0) return setError("Isi minimal satu produk dengan jumlah valid.");
 
     startTransition(async () => {
@@ -543,6 +560,20 @@ function DirectStockReceiptModal({
                   className="min-h-[42px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
                 />
               </div>
+              {products.find((p) => p.id === item.productId)?.trackSerial && (
+                <div className="mt-2">
+                  <label className="text-xs font-semibold text-[var(--color-text-secondary)]">
+                    Serial/IMEI (satu per baris, jumlahnya harus sama dengan qty)
+                  </label>
+                  <textarea
+                    value={item.serialNumbersText}
+                    onChange={(event) => updateItem(index, { serialNumbersText: event.target.value })}
+                    placeholder={`IMEI1\nIMEI2\n...`}
+                    rows={2}
+                    className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-2 text-sm outline-none focus:border-[var(--color-primary)]"
+                  />
+                </div>
+              )}
               {items.length > 1 && (
                 <button
                   type="button"

@@ -5,6 +5,7 @@ import { recordAuditLog } from "@/server/services/audit-log-service";
 import { formatRupiah } from "@/lib/format";
 import { logSaleToJournal, assertPeriodNotLocked } from "@/server/services/accounting-service";
 import { consumeBatchFIFO } from "@/server/services/inventory-service";
+import { assignSerialToSaleItem, releaseSerialsForSaleItem } from "@/server/services/product-serial-service";
 import type { PaymentMethod, OrderType } from "@prisma/client";
 
 /**
@@ -23,6 +24,8 @@ export type CartItemInput = {
    */
   unitPriceOverride?: number;
   variantLabel?: string | null;
+  /** Wajib diisi kalau produk trackSerial — satu unit fisik per baris keranjang (qty harus 1). */
+  serialNumber?: string;
 };
 
 export type CreateSaleInput = {
@@ -124,6 +127,15 @@ export async function createSale(input: CreateSaleInput) {
         }
       }
 
+      if (product.trackSerial) {
+        if (item.qty !== 1) {
+          throw new Error(`${product.name} dijual per unit (pakai serial/IMEI) — jumlah harus 1 per baris.`);
+        }
+        if (!item.serialNumber?.trim()) {
+          throw new Error(`Pilih serial/IMEI unit untuk ${product.name}.`);
+        }
+      }
+
       let unitPrice = product.price;
       let variantLabel: string | null = null;
       if (item.unitPriceOverride !== undefined) {
@@ -186,7 +198,7 @@ export async function createSale(input: CreateSaleInput) {
     });
     const invoiceNumber = buildInvoiceNumber(input.outletId, now, countToday + 1);
 
-    const sale = await tx.sale.create({
+    const saleRow = await tx.sale.create({
       data: {
         tenantId: input.tenantId,
         outletId: input.outletId,
@@ -205,10 +217,25 @@ export async function createSale(input: CreateSaleInput) {
         cashbackAmount: input.cashbackAmount ?? 0,
         parkingFee: input.parkingFee ?? 0,
         status: "COMPLETED",
-        items: { create: itemsData },
       },
-      include: { items: true },
     });
+
+    // Dibuat satu-satu (bukan nested create) supaya urutan createdItems[i]
+    // selalu berkorelasi 1:1 dengan input.items[i] — dibutuhkan untuk
+    // mengaitkan serial/IMEI ke SaleItem yang benar (urutan hasil nested
+    // create tidak dijamin sama dengan urutan input).
+    const createdItems: Awaited<ReturnType<typeof tx.saleItem.create>>[] = [];
+    for (const itemData of itemsData) {
+      const created = await tx.saleItem.create({ data: { ...itemData, saleId: saleRow.id } });
+      createdItems.push(created);
+    }
+    for (let i = 0; i < input.items.length; i++) {
+      const serialNumber = input.items[i].serialNumber;
+      if (serialNumber?.trim()) {
+        await assignSerialToSaleItem(input.tenantId, serialNumber, createdItems[i].id, tx);
+      }
+    }
+    const sale = { ...saleRow, items: createdItems };
 
     if (deductStock) {
       for (const item of input.items) {
@@ -424,6 +451,9 @@ export async function voidSale(tenantId: string, saleId: string, reason: string,
           data: { qty: { increment: item.qty } },
         });
       }
+      if (product?.trackSerial) {
+        await releaseSerialsForSaleItem(tenantId, item.id, tx);
+      }
     }
 
     if (sale.memberId) {
@@ -591,6 +621,10 @@ export async function processReturn(
           where: { productId: saleItem.productId, outletId: sale.outletId },
           data: { qty: { increment: returnItem.qty } },
         });
+      }
+      // trackSerial selalu qty=1 per baris — retur baris ini berarti unitnya utuh dikembalikan.
+      if (product?.trackSerial) {
+        await releaseSerialsForSaleItem(tenantId, saleItem.id, tx);
       }
     }
 

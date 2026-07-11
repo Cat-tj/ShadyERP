@@ -15,6 +15,7 @@ export interface ReceiptItemInput {
   unitPrice?: number;
   batchNumber?: string | null;
   expirationDate?: Date | null;
+  serialNumbers?: string[];
 }
 
 export interface QCInput {

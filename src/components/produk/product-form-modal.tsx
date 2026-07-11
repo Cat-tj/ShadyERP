@@ -30,6 +30,7 @@ export type EditingProduct = {
   kind: ProductKindOption;
   trackStock: boolean;
   trackExpiry: boolean;
+  trackSerial: boolean;
   shelfLifeDays: number | null;
   warrantyDays: number | null;
   serviceDurationMin: number | null;
@@ -63,6 +64,7 @@ export function ProductFormModal({
   const [kind, setKind] = useState<ProductKindOption>(product?.kind ?? "GOODS");
   const [trackStock, setTrackStock] = useState(product?.trackStock ?? true);
   const [trackExpiry, setTrackExpiry] = useState(product?.trackExpiry ?? false);
+  const [trackSerial, setTrackSerial] = useState(product?.trackSerial ?? false);
   const [shelfLifeDays, setShelfLifeDays] = useState(product?.shelfLifeDays ? String(product.shelfLifeDays) : "");
   const [warrantyDays, setWarrantyDays] = useState(product?.warrantyDays ? String(product.warrantyDays) : "");
   const [serviceDurationMin, setServiceDurationMin] = useState(
@@ -107,6 +109,7 @@ export function ProductFormModal({
         kind,
         trackStock: STOCKABLE_KINDS.has(kind) ? trackStock : false,
         trackExpiry: STOCKABLE_KINDS.has(kind) && trackStock ? trackExpiry : false,
+        trackSerial: STOCKABLE_KINDS.has(kind) && trackStock ? trackSerial : false,
         shelfLifeDays: shelfLifeDays ? Number(shelfLifeDays) : null,
         warrantyDays: warrantyDays ? Number(warrantyDays) : null,
         serviceDurationMin: kind === "SERVICE" ? Number(serviceDurationMin) || null : null,
@@ -320,7 +323,10 @@ export function ProductFormModal({
                     checked={trackStock}
                     onChange={(event) => {
                       setTrackStock(event.target.checked);
-                      if (!event.target.checked) setTrackExpiry(false);
+                      if (!event.target.checked) {
+                        setTrackExpiry(false);
+                        setTrackSerial(false);
+                      }
                     }}
                     className="h-5 w-5 rounded border-[var(--color-border)] accent-[var(--color-primary)] shrink-0"
                   />
@@ -336,7 +342,17 @@ export function ProductFormModal({
                   />
                   Lacak masa expired atau batch
                 </label>
-                
+                <label className="flex items-center gap-3 text-sm font-medium text-[var(--color-text)] cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={trackSerial}
+                    disabled={!trackStock}
+                    onChange={(event) => setTrackSerial(event.target.checked)}
+                    className="h-5 w-5 rounded border-[var(--color-border)] accent-[var(--color-primary)] shrink-0 disabled:opacity-40"
+                  />
+                  Lacak nomor seri/IMEI per unit (HP, elektronik, dll)
+                </label>
+
                 <div className="grid grid-cols-2 gap-3 mt-1.5">
                   <div className="flex flex-col gap-1.5">
                     <label className="text-xs font-semibold text-[var(--color-text-secondary)]">

@@ -26,6 +26,7 @@ export type ProductRow = {
   kind: "GOODS" | "SERVICE" | "ASSEMBLY" | "NON_INVENTORY" | "COST";
   trackStock: boolean;
   trackExpiry: boolean;
+  trackSerial: boolean;
   shelfLifeDays: number | null;
   warrantyDays: number | null;
   serviceDurationMin: number | null;
@@ -74,6 +75,7 @@ export function ProdukManager({
         kind: editingProduct.kind,
         trackStock: editingProduct.trackStock,
         trackExpiry: editingProduct.trackExpiry,
+        trackSerial: editingProduct.trackSerial,
         shelfLifeDays: editingProduct.shelfLifeDays,
         warrantyDays: editingProduct.warrantyDays,
         serviceDurationMin: editingProduct.serviceDurationMin,
@@ -153,6 +155,12 @@ export function ProdukManager({
             className="flex min-h-[44px] items-center justify-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
           >
             Cetak label
+          </Link>
+          <Link
+            href="/produk/serial"
+            className="flex min-h-[44px] items-center justify-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+          >
+            Cari serial/IMEI
           </Link>
           <button
             onClick={() => setScanModalOpen(true)}

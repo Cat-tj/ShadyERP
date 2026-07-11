@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import type { Prisma, StockReceipt, StockReceiptStatus, QCStatus } from "@prisma/client";
 import { receiveBatch } from "@/server/services/inventory-service";
+import { addProductSerials } from "@/server/services/product-serial-service";
 
 export interface ReceiptItemInput {
   productId: string;
@@ -8,6 +9,8 @@ export interface ReceiptItemInput {
   unitPrice?: number;
   batchNumber?: string | null;
   expirationDate?: Date | null;
+  /** Nomor seri/IMEI per unit (produk trackSerial) — jumlah entri harus sama dengan qtyReceived. */
+  serialNumbers?: string[];
 }
 
 export async function generateReceiptNumber(tenantId: string): Promise<string> {
@@ -115,6 +118,7 @@ export async function createDirectStockReceipt(
             qtyAccepted: item.qtyReceived,
             batchNumber: item.batchNumber?.trim() || null,
             expirationDate: item.expirationDate ?? null,
+            serialNumbers: (item.serialNumbers ?? []).map((s) => s.trim()).filter(Boolean),
             qcStatus: "PENDING",
           })),
         },
@@ -286,7 +290,7 @@ export async function completeReceipt(
         // Fetch current product cost
         const product = await tx.product.findUnique({
           where: { id: item.productId },
-          select: { cost: true, trackExpiry: true },
+          select: { cost: true, trackExpiry: true, trackSerial: true },
         });
         const previousCost = product?.cost ?? 0;
 
@@ -341,6 +345,19 @@ export async function completeReceipt(
             item.qtyAccepted,
             item.expirationDate ?? undefined,
             `Dari penerimaan ${receipt.receiptNumber}`,
+            tx
+          );
+        }
+
+        // Ambil sejumlah qtyAccepted serial pertama — kalau QC menolak sebagian
+        // unit, serial yang dimasukkan saat penerimaan bisa lebih banyak dari
+        // qtyAccepted; sisanya tidak dicatat sebagai stok (memang tidak lolos QC).
+        if (product?.trackSerial && item.serialNumbers.length > 0) {
+          await addProductSerials(
+            tenantId,
+            item.productId,
+            receipt.outletId,
+            item.serialNumbers.slice(0, item.qtyAccepted),
             tx
           );
         }

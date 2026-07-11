@@ -12,6 +12,7 @@ import { VariantPickerModal, type VariantGroupOption } from "@/components/kasir/
 import { BarcodeScannerModal } from "@/components/shared/barcode-scanner-modal";
 import { CameraIcon, XIcon } from "@/components/ui/icons";
 import { useToast, Toast } from "@/components/toast";
+import { getAvailableSerialsAction } from "@/app/(app)/kasir/actions";
 
 export type PosProduct = {
   id: string;
@@ -22,6 +23,7 @@ export type PosProduct = {
   categoryId: string | null;
   categoryName: string | null;
   trackStock: boolean;
+  trackSerial: boolean;
   stockQty: number;
   variantGroups: VariantGroupOption[];
 };
@@ -40,6 +42,8 @@ export type CartLine = {
   stockQty: number;
   variantOptionIds: string[];
   variantLabel: string | null;
+  /** Serial/IMEI unit yang dipilih — kalau ada, baris ini selalu qty 1 dan tidak bisa ditambah. */
+  serialNumber: string | null;
 };
 
 export function PosScreen({
@@ -68,6 +72,7 @@ export function PosScreen({
   const [scannerAlwaysOn, setScannerAlwaysOn] = useState(false);
   const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null);
   const [variantPickerProduct, setVariantPickerProduct] = useState<PosProduct | null>(null);
+  const [serialPickerProduct, setSerialPickerProduct] = useState<PosProduct | null>(null);
   const { toastMessage, showToast } = useToast();
   useEffect(() => {
     const handleGlobalKeyDown = (e: globalThis.KeyboardEvent) => {
@@ -158,12 +163,42 @@ export function PosScreen({
           stockQty: product.stockQty,
           variantOptionIds,
           variantLabel,
+          serialNumber: null,
+        },
+      ];
+    });
+  }
+
+  /** Satu baris keranjang = satu unit fisik dengan serial/IMEI tertentu, tidak bisa digabung/qty>1. */
+  function addSerialLineToCart(product: PosProduct, serialNumber: string) {
+    setLastAddedProductId(product.id);
+    const cartKey = `${product.id}::serial::${serialNumber}`;
+    setCart((prev) => {
+      if (prev.some((line) => line.cartKey === cartKey)) return prev;
+      return [
+        ...prev,
+        {
+          cartKey,
+          productId: product.id,
+          name: product.name,
+          price: product.price,
+          qty: 1,
+          discountAmount: 0,
+          trackStock: product.trackStock,
+          stockQty: product.stockQty,
+          variantOptionIds: [],
+          variantLabel: null,
+          serialNumber,
         },
       ];
     });
   }
 
   function addToCart(product: PosProduct) {
+    if (product.trackSerial) {
+      setSerialPickerProduct(product);
+      return;
+    }
     if (product.variantGroups.length > 0) {
       setVariantPickerProduct(product);
       return;
@@ -213,6 +248,7 @@ export function PosScreen({
       if (qty <= 0) return prev.filter((line) => line.cartKey !== cartKey);
       return prev.map((line) => {
         if (line.cartKey !== cartKey) return line;
+        if (line.serialNumber) return line; // unit serial selalu qty 1, hapus & pilih ulang kalau mau ganti
         const clamped = line.trackStock ? Math.min(qty, line.stockQty) : qty;
         return { ...line, qty: clamped };
       });
@@ -241,6 +277,7 @@ export function PosScreen({
     qty: line.qty,
     discountAmount: line.discountAmount,
     variantOptionIds: line.variantOptionIds,
+    serialNumber: line.serialNumber ?? undefined,
   }));
 
   const cartPanel = (
@@ -587,7 +624,93 @@ export function PosScreen({
         />
       )}
 
+      {serialPickerProduct && (
+        <SerialPickerModal
+          product={serialPickerProduct}
+          excludeSerials={cart
+            .filter((line) => line.productId === serialPickerProduct.id && line.serialNumber)
+            .map((line) => line.serialNumber as string)}
+          onClose={() => setSerialPickerProduct(null)}
+          onSelect={(serialNumber) => {
+            addSerialLineToCart(serialPickerProduct, serialNumber);
+            setSerialPickerProduct(null);
+          }}
+        />
+      )}
+
       <Toast message={toastMessage} />
+    </div>
+  );
+}
+
+function SerialPickerModal({
+  product,
+  excludeSerials,
+  onClose,
+  onSelect,
+}: {
+  product: PosProduct;
+  excludeSerials: string[];
+  onClose: () => void;
+  onSelect: (serialNumber: string) => void;
+}) {
+  const [serials, setSerials] = useState<string[] | null>(null);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    getAvailableSerialsAction(product.id).then((result) => {
+      if (!cancelled) setSerials(result.map((r) => r.serialNumber));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [product.id]);
+
+  const available = (serials ?? []).filter(
+    (s) => !excludeSerials.includes(s) && s.toLowerCase().includes(search.trim().toLowerCase())
+  );
+
+  return (
+    <div className="fixed inset-0 z-50 flex flex-col justify-end bg-black/40 sm:items-center sm:justify-center">
+      <div className="max-h-[80vh] w-full overflow-y-auto glass-surface-strong rounded-t-2xl p-5 sm:max-w-md sm:rounded-2xl">
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-bold text-[var(--color-text)]">Pilih unit — {product.name}</h2>
+          <button
+            onClick={onClose}
+            aria-label="Tutup"
+            className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
+          >
+            <XIcon aria-hidden className="h-5 w-5" />
+          </button>
+        </div>
+        <input
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          placeholder="Cari serial/IMEI..."
+          className="mb-3 min-h-[42px] w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+        />
+        {serials === null ? (
+          <p className="py-6 text-center text-sm text-[var(--color-text-secondary)]">Memuat...</p>
+        ) : available.length === 0 ? (
+          <p className="py-6 text-center text-sm text-[var(--color-text-secondary)]">
+            Tidak ada unit tersedia. Cek stok/terima barang dulu.
+          </p>
+        ) : (
+          <div className="flex flex-col gap-2">
+            {available.map((serialNumber) => (
+              <button
+                key={serialNumber}
+                type="button"
+                onClick={() => onSelect(serialNumber)}
+                className="min-h-[44px] rounded-lg border border-[var(--color-border)] px-3 text-left text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+              >
+                {serialNumber}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
@@ -690,6 +813,11 @@ function CartPanel({
                     {line.variantLabel && (
                       <p className="truncate text-xs text-[var(--color-text-secondary)]">{line.variantLabel}</p>
                     )}
+                    {line.serialNumber && (
+                      <p className="truncate text-xs text-[var(--color-text-secondary)]">
+                        Serial/IMEI: {line.serialNumber}
+                      </p>
+                    )}
                     <p className="tabular-nums text-xs text-[var(--color-text-muted)]">
                       {formatRupiah(line.price)} / item
                     </p>
@@ -704,29 +832,33 @@ function CartPanel({
                   </button>
                 </div>
                 <div className="mt-2 flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <button
-                      onClick={() => onUpdateQty(line.cartKey, line.qty - 1)}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-border)] text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-bg)]"
-                      aria-label="Kurangi jumlah"
-                    >
-                      −
-                    </button>
-                     <CartQtyInput
-                      qty={line.qty}
-                      stockQty={line.stockQty}
-                      trackStock={line.trackStock}
-                      onChange={(val) => onUpdateQty(line.cartKey, val)}
-                    />
-                    <button
-                      onClick={() => onUpdateQty(line.cartKey, line.qty + 1)}
-                      disabled={line.trackStock && line.qty >= line.stockQty}
-                      className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-border)] text-sm font-semibold text-[var(--color-text)] disabled:opacity-40 hover:bg-[var(--color-bg)]"
-                      aria-label="Tambah jumlah"
-                    >
-                      +
-                    </button>
-                  </div>
+                  {line.serialNumber ? (
+                    <span className="text-xs font-medium text-[var(--color-text-secondary)]">1 unit</span>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => onUpdateQty(line.cartKey, line.qty - 1)}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-border)] text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+                        aria-label="Kurangi jumlah"
+                      >
+                        −
+                      </button>
+                       <CartQtyInput
+                        qty={line.qty}
+                        stockQty={line.stockQty}
+                        trackStock={line.trackStock}
+                        onChange={(val) => onUpdateQty(line.cartKey, val)}
+                      />
+                      <button
+                        onClick={() => onUpdateQty(line.cartKey, line.qty + 1)}
+                        disabled={line.trackStock && line.qty >= line.stockQty}
+                        className="flex h-8 w-8 items-center justify-center rounded-lg border border-[var(--color-border)] text-sm font-semibold text-[var(--color-text)] disabled:opacity-40 hover:bg-[var(--color-bg)]"
+                        aria-label="Tambah jumlah"
+                      >
+                        +
+                      </button>
+                    </div>
+                  )}
                   <span className="tabular-nums text-sm font-bold text-[var(--color-text)]">
                     {formatRupiah(line.price * line.qty - line.discountAmount)}
                   </span>

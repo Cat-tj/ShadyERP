@@ -111,6 +111,7 @@ model Tenant {
   equipmentMaintenanceLogs EquipmentMaintenanceLog[]
   reorderPoints            StockReorderPoint[]
   stockBatches             StockBatch[]
+  productSerials           ProductSerial[]
   suppliers                Supplier[]
   supplierContracts        SupplierPricingContract[]
   purchaseOrders           PurchaseOrder[]
@@ -163,6 +164,7 @@ model Outlet {
   equipmentMaintenanceLogs EquipmentMaintenanceLog[]
   reorderPoints            StockReorderPoint[]
   stockBatches             StockBatch[]
+  productSerials           ProductSerial[]
   stockReceipts            StockReceipt[]
   stockCounts              StockCount[]
   laundryOrders            LaundryOrder[]
@@ -381,6 +383,9 @@ model Product {
   kind               ProductKind @default(GOODS)
   trackStock         Boolean     @default(true)
   trackExpiry        Boolean     @default(false)
+  /// Lacak nomor seri/IMEI per unit (retail elektronik/HP) — tiap unit
+  /// dijual satu-satu lewat ProductSerial, bukan cuma qty agregat.
+  trackSerial        Boolean     @default(false)
   shelfLifeDays      Int?
   warrantyDays       Int?
   serviceDurationMin Int?
@@ -408,6 +413,7 @@ model Product {
   wholesalePrices    WholesalePrice[]
   recipes            ProductRecipeItem[]       @relation("ProductRecipe")
   ingredients        ProductRecipeItem[]       @relation("ProductIngredient")
+  serials            ProductSerial[]
 
   @@index([tenantId])
   @@index([categoryId])
@@ -694,6 +700,7 @@ model SaleItem {
   product Product @relation(fields: [productId], references: [id])
 
   saleReturnItems SaleReturnItem[]
+  serials         ProductSerial[]
 
   @@index([tenantId])
   @@index([saleId])
@@ -1258,8 +1265,34 @@ model StockBatch {
   @@index([expirationDate])
 }
 
-/// Warehouse/toko location tracking — rak mana barang disimpan.
-/// Gunakan format sederhana: "Rak A1", "Freezer B", "Display 1", dll.
+enum ProductSerialStatus {
+  IN_STOCK
+  SOLD
+}
+
+/// Nomor seri/IMEI per unit fisik (retail elektronik/HP) — beda dengan
+/// StockBatch yang lacak sekelompok stok, ini satu baris = satu unit barang.
+model ProductSerial {
+  id           String              @id @default(cuid())
+  tenantId     String
+  productId    String
+  outletId     String
+  serialNumber String
+  status       ProductSerialStatus @default(IN_STOCK)
+  saleItemId   String?
+  createdAt    DateTime            @default(now())
+  soldAt       DateTime?
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product  Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+  outlet   Outlet    @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  saleItem SaleItem? @relation(fields: [saleItemId], references: [id])
+
+  @@unique([tenantId, serialNumber])
+  @@index([tenantId, productId, outletId, status])
+  @@index([saleItemId])
+}
+
 // ================== SUPPLIER & PURCHASE MANAGEMENT ==================
 
 enum SupplierStatus {
@@ -1422,6 +1455,8 @@ model StockReceiptItem {
   qtyDefect   Int      @default(0) // Rusak/bermasalah
   batchNumber String?
   expirationDate DateTime?
+  /// Nomor seri/IMEI per unit (kalau produknya trackSerial) — satu entri per unit qtyAccepted.
+  serialNumbers String[] @default([])
   qcStatus    QCStatus @default(PENDING)
   qcNotes     String?
   createdAt   DateTime @default(now())

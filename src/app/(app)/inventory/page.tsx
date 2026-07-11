@@ -80,6 +80,7 @@ export default async function ProdukPage() {
           kind: product.kind,
           trackStock: product.trackStock,
           trackExpiry: product.trackExpiry,
+          trackSerial: product.trackSerial,
           shelfLifeDays: product.shelfLifeDays,
           warrantyDays: product.warrantyDays,
           serviceDurationMin: product.serviceDurationMin,

@@ -73,6 +73,7 @@ export type ProductInput = {
   kind: "GOODS" | "SERVICE" | "ASSEMBLY" | "NON_INVENTORY" | "COST";
   trackStock: boolean;
   trackExpiry: boolean;
+  trackSerial: boolean;
   shelfLifeDays: number | null;
   warrantyDays: number | null;
   serviceDurationMin: number | null;
@@ -91,6 +92,7 @@ export async function createProduct(tenantId: string, input: ProductInput) {
       kind: input.kind,
       trackStock: input.trackStock,
       trackExpiry: input.trackExpiry,
+      trackSerial: input.trackSerial,
       shelfLifeDays: input.shelfLifeDays,
       warrantyDays: input.warrantyDays,
       serviceDurationMin: input.serviceDurationMin,
@@ -128,6 +130,7 @@ export async function updateProduct(
       kind: input.kind,
       trackStock: input.trackStock,
       trackExpiry: input.trackExpiry,
+      trackSerial: input.trackSerial,
       shelfLifeDays: input.shelfLifeDays,
       warrantyDays: input.warrantyDays,
       serviceDurationMin: input.serviceDurationMin,

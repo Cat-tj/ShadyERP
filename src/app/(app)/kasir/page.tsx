@@ -43,6 +43,7 @@ export default async function KasirPage() {
         categoryId: product.categoryId,
         categoryName: product.category?.name ?? null,
         trackStock: product.trackStock,
+        trackSerial: product.trackSerial,
         stockQty: product.stockQty,
         variantGroups: product.variantGroups.map((group) => ({
           id: group.id,

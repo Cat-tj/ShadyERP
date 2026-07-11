@@ -113,6 +113,7 @@ function validateProductInput(input: ProductInput) {
     return "Durasi layanan wajib diisi untuk produk jasa.";
   }
   if (input.trackExpiry && !input.trackStock) return "Expired hanya bisa dilacak untuk produk yang memakai stok.";
+  if (input.trackSerial && !input.trackStock) return "Serial/IMEI hanya bisa dilacak untuk produk yang memakai stok.";
   if (input.shelfLifeDays != null && input.shelfLifeDays < 0) return "Masa simpan tidak valid.";
   if (input.warrantyDays != null && input.warrantyDays < 0) return "Masa garansi tidak valid.";
   return null;
