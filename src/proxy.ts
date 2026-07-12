@@ -1,6 +1,7 @@
 import NextAuth from "next-auth";
 import { NextResponse } from "next/server";
 import { authConfig } from "@/lib/auth.config";
+import { getVerticalForHostname } from "@/lib/verticals";
 
 const { auth } = NextAuth(authConfig);
 
@@ -20,7 +21,12 @@ export default auth((req) => {
     return NextResponse.redirect(new URL("/pilih-aplikasi", req.nextUrl.origin));
   }
 
-  return NextResponse.next();
+  const response = NextResponse.next();
+  // Subdomain -> vertikal (mis. cafe.altora.my.id) cuma buat nge-tag landing
+  // page dengan copy yang relevan — TIDAK memblokir modul lain (gating soft).
+  const vertical = getVerticalForHostname(req.headers.get("host") ?? "");
+  if (vertical) response.headers.set("x-altora-vertical", vertical.key);
+  return response;
 });
 
 export const config = {

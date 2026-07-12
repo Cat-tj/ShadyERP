@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { VERTICALS, type VerticalDef } from "@/lib/verticals";
 
 type SpotlightSlide = {
   label: string;
@@ -166,7 +167,7 @@ function SpotlightPhone({ screen }: { screen: SpotlightSlide["screen"] }) {
   );
 }
 
-export function LandingContent({ city }: { city?: string }) {
+export function LandingContent({ city, vertical }: { city?: string; vertical?: VerticalDef }) {
   const displayCity = city ? decodeURIComponent(city).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "";
 
   return (
@@ -221,8 +222,15 @@ export function LandingContent({ city }: { city?: string }) {
     <div className="hero-glow" aria-hidden="true"></div>
     <div className="wrap hero-grid">
       <div className="hero-copy">
-        <span className="eyebrow">POS &amp; Manajemen Toko untuk UMKM {displayCity ? `di ${displayCity}` : "Indonesia"}</span>
-        {displayCity ? (
+        <span className="eyebrow">
+          {vertical ? vertical.eyebrow : `POS & Manajemen Toko untuk UMKM ${displayCity ? `di ${displayCity}` : "Indonesia"}`}
+        </span>
+        {vertical ? (
+          <h1>
+            <span className="sr-only">{vertical.headline}</span>
+            <span aria-hidden="true">{vertical.headline}</span>
+          </h1>
+        ) : displayCity ? (
           <h1>
             <span className="sr-only">Aplikasi Kasir POS &amp; ERP Terbaik di {displayCity} — Altora</span>
             <span aria-hidden="true">
@@ -250,9 +258,9 @@ export function LandingContent({ city }: { city?: string }) {
           </h1>
         )}
         <p className="lede">
-          Altora rapikan kasir, stok, karyawan, dan laporan tokomu jadi satu layar —
-          buat coffee shop, barbershop, atau toko retail. Tetap jalan walau internet
-          sempat mati, tetap tercatat sampai struk terakhir.
+          {vertical
+            ? vertical.lede
+            : "Altora rapikan kasir, stok, karyawan, dan laporan tokomu jadi satu layar — buat coffee shop, barbershop, atau toko retail. Tetap jalan walau internet sempat mati, tetap tercatat sampai struk terakhir."}
         </p>
         <div className="hero-actions">
           <a className="btn btn-primary" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20tanya%20soal%20aplikasi%20kasirnya" target="_blank" rel="noopener">
@@ -772,21 +780,13 @@ export function LandingContent({ city }: { city?: string }) {
         <h2>Satu aplikasi, banyak cara pakai.</h2>
       </div>
       <div className="cases reveal">
-        <div className="case-card">
-          <span className="case-kicker">Coffee shop &amp; F&amp;B</span>
-          <h3>Meja penuh, dapur tetap tenang.</h3>
-          <p>Pelanggan pesan lewat QR di meja, dapur lihat antrian di layar kitchen display, kasir tinggal proses pembayaran.</p>
-        </div>
-        <div className="case-card">
-          <span className="case-kicker">Barbershop &amp; salon</span>
-          <h3>Jadwal potong rambut, rapi tanpa buku catatan.</h3>
-          <p>Booking pelanggan yang telepon, tentukan kapster/barbernya, dan tetap jualan produk perawatan lewat kasir yang sama.</p>
-        </div>
-        <div className="case-card">
-          <span className="case-kicker">Retail &amp; toko kecil</span>
-          <h3>Stok kelihatan, laporan langsung ada.</h3>
-          <p>Varian ukuran/warna, transfer stok antar cabang, dan laporan produk terlaris tanpa hitung manual.</p>
-        </div>
+        {(vertical ? [vertical, ...VERTICALS.filter((v) => v.key !== vertical.key)] : VERTICALS).map((v) => (
+          <div className="case-card" key={v.key}>
+            <span className="case-kicker">{v.caseKicker}</span>
+            <h3>{v.caseTitle}</h3>
+            <p>{v.caseDescription}</p>
+          </div>
+        ))}
       </div>
     </div>
   </section>
