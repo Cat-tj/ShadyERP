@@ -1,7 +1,8 @@
 import { ulid } from "ulid";
 import { prisma } from "@/lib/prisma";
 import { findMemberByPhone } from "@/server/services/member-service";
-import type { LaundryOrderStatus, LaundryServiceType } from "@prisma/client";
+import { formatRupiah } from "@/lib/format";
+import type { LaundryOrderStatus, LaundryServiceType, PaymentMethod } from "@prisma/client";
 
 export type LaundryOrderInput = {
   outletId: string;
@@ -156,31 +157,92 @@ export async function createLaundryOrder(
     ? await findMemberByPhone(tenantId, input.customerPhone)
     : null;
 
-  return prisma.laundryOrder.create({
-    data: {
-      tenantId,
-      outletId: input.outletId,
-      laundryServiceId: service?.id ?? null,
-      memberId: matchedMember?.id ?? null,
-      orderNumber: `LDY-${ulid()}`,
-      customerName: input.customerName.trim(),
-      customerPhone: input.customerPhone?.trim() || null,
-      serviceType,
-      serviceName: service?.name ?? null,
-      weightGram: input.weightGram,
-      itemQty: input.itemQty,
-      pricePerKg: input.pricePerKg,
-      servicePrice: input.servicePrice,
-      extraFee: input.extraFee,
-      discountAmount: input.discountAmount,
-      total: calculateTotal(orderInput),
-      paidAmount: input.paidAmount,
-      dueAt: input.dueAt,
-      pickupDelivery: input.pickupDelivery,
-      deliveryAddress: input.deliveryAddress?.trim() || null,
-      note: input.note?.trim() || null,
-      createdById,
-    },
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.laundryOrder.create({
+      data: {
+        tenantId,
+        outletId: input.outletId,
+        laundryServiceId: service?.id ?? null,
+        memberId: matchedMember?.id ?? null,
+        orderNumber: `LDY-${ulid()}`,
+        customerName: input.customerName.trim(),
+        customerPhone: input.customerPhone?.trim() || null,
+        serviceType,
+        serviceName: service?.name ?? null,
+        weightGram: input.weightGram,
+        itemQty: input.itemQty,
+        pricePerKg: input.pricePerKg,
+        servicePrice: input.servicePrice,
+        extraFee: input.extraFee,
+        discountAmount: input.discountAmount,
+        total: calculateTotal(orderInput),
+        paidAmount: input.paidAmount,
+        dueAt: input.dueAt,
+        pickupDelivery: input.pickupDelivery,
+        deliveryAddress: input.deliveryAddress?.trim() || null,
+        note: input.note?.trim() || null,
+        createdById,
+      },
+    });
+
+    // Dibayar di muka (DP) saat order dibuat — tetap dicatat sebagai baris
+    // pembayaran pertama, biar histori cicilannya lengkap dari awal.
+    if (input.paidAmount > 0) {
+      await tx.laundryPayment.create({
+        data: {
+          tenantId,
+          laundryOrderId: order.id,
+          amount: input.paidAmount,
+          method: "CASH",
+          note: "DP saat order dibuat",
+        },
+      });
+    }
+
+    return order;
+  });
+}
+
+/** Rincian cicilan/DP/pelunasan satu order laundry, terbaru duluan. */
+export async function listLaundryPayments(tenantId: string, laundryOrderId: string) {
+  return prisma.laundryPayment.findMany({
+    where: { tenantId, laundryOrderId },
+    orderBy: { createdAt: "desc" },
+  });
+}
+
+/**
+ * Catat satu cicilan/pelunasan laundry — nambah baris LaundryPayment sekaligus
+ * naikkan LaundryOrder.paidAmount (dipakai sebagai cache biar gak perlu SUM
+ * tiap render daftar order). Gak boleh sampai lebih dari total tagihan.
+ */
+export async function addLaundryPayment(
+  tenantId: string,
+  laundryOrderId: string,
+  amount: number,
+  method: PaymentMethod,
+  note?: string | null
+) {
+  if (!Number.isFinite(amount) || amount <= 0) {
+    throw new Error("Jumlah pembayaran harus lebih dari 0.");
+  }
+
+  return prisma.$transaction(async (tx) => {
+    const order = await tx.laundryOrder.findFirst({ where: { id: laundryOrderId, tenantId } });
+    if (!order) throw new Error("Order laundry tidak ditemukan.");
+    const remaining = order.total - order.paidAmount;
+    if (amount > remaining) {
+      throw new Error(`Sisa tagihan cuma ${formatRupiah(remaining)} — jumlah bayar kelebihan.`);
+    }
+
+    await tx.laundryPayment.create({
+      data: { tenantId, laundryOrderId, amount, method, note: note?.trim() || null },
+    });
+
+    return tx.laundryOrder.update({
+      where: { id: laundryOrderId },
+      data: { paidAmount: { increment: amount } },
+    });
   });
 }
 

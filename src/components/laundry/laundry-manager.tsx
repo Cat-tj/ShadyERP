@@ -2,10 +2,17 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { LaundryOrderStatus, LaundryServiceType } from "@prisma/client";
-import { createLaundryOrderAction, updateLaundryStatusAction } from "@/app/(app)/laundry/actions";
+import type { LaundryOrderStatus, LaundryServiceType, PaymentMethod } from "@prisma/client";
+import { createLaundryOrderAction, updateLaundryStatusAction, addLaundryPaymentAction } from "@/app/(app)/laundry/actions";
 import { formatRupiah, formatTanggalPendek } from "@/lib/format";
 import { useToast, Toast } from "@/components/toast";
+
+const PAYMENT_METHOD_OPTIONS: { value: PaymentMethod; label: string }[] = [
+  { value: "CASH", label: "Tunai" },
+  { value: "QRIS", label: "QRIS" },
+  { value: "TRANSFER", label: "Transfer" },
+  { value: "EWALLET", label: "E-Wallet" },
+];
 
 export type LaundryOrderRow = {
   id: string;
@@ -94,6 +101,9 @@ export function LaundryManager({
   const [deliveryAddress, setDeliveryAddress] = useState("");
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [payingOrderId, setPayingOrderId] = useState<string | null>(null);
+  const [payAmount, setPayAmount] = useState("");
+  const [payMethod, setPayMethod] = useState<PaymentMethod>("CASH");
 
   function selectService(nextServiceId: string) {
     setServiceId(nextServiceId);
@@ -159,6 +169,25 @@ export function LaundryManager({
     });
   }
 
+  function recordPayment(id: string) {
+    const amount = Number(payAmount) || 0;
+    if (amount <= 0) {
+      showToast("Jumlah bayar harus lebih dari 0.");
+      return;
+    }
+    startTransition(async () => {
+      const result = await addLaundryPaymentAction(id, amount, payMethod);
+      if (result.error) {
+        showToast(result.error);
+        return;
+      }
+      showToast("Pembayaran dicatat");
+      setPayingOrderId(null);
+      setPayAmount("");
+      router.refresh();
+    });
+  }
+
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6">
       <div>
@@ -215,7 +244,7 @@ export function LaundryManager({
               Pickup / delivery
             </label>
             {pickupDelivery && <textarea value={deliveryAddress} onChange={(e) => setDeliveryAddress(e.target.value)} placeholder="Alamat pickup/delivery" rows={2} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" />}
-            <input type="number" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} placeholder="Dibayar" className="min-h-[44px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm" />
+            <input type="number" value={paidAmount} onChange={(e) => setPaidAmount(e.target.value)} placeholder="DP (opsional, bisa 0 dulu)" className="min-h-[44px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm" />
             <textarea value={note} onChange={(e) => setNote(e.target.value)} placeholder="Catatan, mis. noda, parfum, urgent" rows={2} className="rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2 text-sm" />
             <div className="rounded-lg bg-[var(--color-bg)] px-3 py-2 text-sm">
               Total estimasi: <span className="font-bold text-[var(--color-primary)]">{formatRupiah(total)}</span>
@@ -251,10 +280,49 @@ export function LaundryManager({
                       </p>
                       <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
                         Bayar {formatRupiah(order.paidAmount)} / {formatRupiah(order.total)}
+                        {order.paidAmount < order.total && order.status !== "CANCELLED" ? (
+                          <span className="ml-1 font-semibold text-[var(--color-warning-text)]">
+                            · Sisa {formatRupiah(order.total - order.paidAmount)}
+                          </span>
+                        ) : null}
                         {order.pickupDelivery ? " · Pickup/delivery" : ""}
                       </p>
+                      {payingOrderId === order.id && (
+                        <div className="mt-2 flex flex-wrap items-center gap-2 rounded-lg bg-[var(--color-bg)] p-2">
+                          <input
+                            type="number"
+                            value={payAmount}
+                            onChange={(e) => setPayAmount(e.target.value)}
+                            placeholder={`Maks ${order.total - order.paidAmount}`}
+                            className="min-h-[36px] w-32 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-xs"
+                          />
+                          <select
+                            value={payMethod}
+                            onChange={(e) => setPayMethod(e.target.value as PaymentMethod)}
+                            className="min-h-[36px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-xs"
+                          >
+                            {PAYMENT_METHOD_OPTIONS.map((m) => (
+                              <option key={m.value} value={m.value}>{m.label}</option>
+                            ))}
+                          </select>
+                          <button onClick={() => recordPayment(order.id)} disabled={isPending} className="min-h-[36px] rounded-lg bg-[var(--color-primary)] px-3 text-xs font-bold text-[var(--color-on-primary)] disabled:opacity-50">
+                            Simpan
+                          </button>
+                          <button onClick={() => { setPayingOrderId(null); setPayAmount(""); }} className="min-h-[36px] rounded-lg border border-[var(--color-border)] px-3 text-xs font-bold text-[var(--color-text)]">
+                            Batal
+                          </button>
+                        </div>
+                      )}
                     </div>
                     <div className="flex flex-wrap gap-2">
+                      {order.paidAmount < order.total && order.status !== "CANCELLED" && payingOrderId !== order.id && (
+                        <button
+                          onClick={() => { setPayingOrderId(order.id); setPayAmount(String(order.total - order.paidAmount)); }}
+                          className="min-h-[36px] rounded-lg border border-[var(--color-primary)] px-3 text-xs font-bold text-[var(--color-primary)]"
+                        >
+                          + Bayar cicilan
+                        </button>
+                      )}
                       {next && (
                         <button onClick={() => advance(order.id, next)} disabled={isPending} className="min-h-[36px] rounded-lg bg-[var(--color-primary)] px-3 text-xs font-bold text-[var(--color-on-primary)] disabled:opacity-50">
                           {STATUS_LABEL[next]}

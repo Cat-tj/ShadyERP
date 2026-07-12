@@ -134,6 +134,7 @@ model Tenant {
   productRecipeItems       ProductRecipeItem[]
   laundryOrders            LaundryOrder[]
   laundryServices          LaundryService[]
+  laundryPayments          LaundryPayment[]
   supplierInvoices         SupplierInvoice[]
   supplierPayments         SupplierPayment[]
   accounts                 Account[]
@@ -1352,6 +1353,7 @@ model LaundryOrder {
   laundryService LaundryService? @relation(fields: [laundryServiceId], references: [id], onDelete: SetNull)
   member         Member?         @relation(fields: [memberId], references: [id], onDelete: SetNull)
   createdBy      User            @relation("LaundryOrderCreatedBy", fields: [createdById], references: [id])
+  payments       LaundryPayment[]
 
   @@index([tenantId])
   @@index([outletId])
@@ -1359,6 +1361,24 @@ model LaundryOrder {
   @@index([memberId])
   @@index([status])
   @@index([dueAt])
+}
+
+/// Rincian tiap cicilan/DP/pelunasan laundry — LaundryOrder.paidAmount tetap
+/// jadi total terbayar (cache), dihitung ulang dari sini tiap ada pembayaran baru.
+model LaundryPayment {
+  id             String        @id @default(cuid())
+  tenantId       String
+  laundryOrderId String
+  amount         Int
+  method         PaymentMethod @default(CASH)
+  note           String?
+  createdAt      DateTime      @default(now())
+
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  laundryOrder LaundryOrder @relation(fields: [laundryOrderId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([laundryOrderId])
 }
 
 model LaundryService {

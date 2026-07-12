@@ -7,10 +7,11 @@ import {
   toggleLaundryService,
   updateLaundryStatus,
   upsertLaundryService,
+  addLaundryPayment,
   type LaundryOrderInput,
   type LaundryServiceInput,
 } from "@/server/services/laundry-service";
-import type { LaundryOrderStatus } from "@prisma/client";
+import type { LaundryOrderStatus, PaymentMethod } from "@prisma/client";
 
 export type ActionResult = { error?: string; success?: boolean };
 
@@ -34,6 +35,21 @@ export async function updateLaundryStatusAction(
     await updateLaundryStatus(user.tenantId, id, status);
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal mengubah status laundry." };
+  }
+  revalidatePath("/laundry");
+  return { success: true };
+}
+
+export async function addLaundryPaymentAction(
+  laundryOrderId: string,
+  amount: number,
+  method: PaymentMethod
+): Promise<ActionResult> {
+  const user = await requireModule("laundry");
+  try {
+    await addLaundryPayment(user.tenantId, laundryOrderId, amount, method);
+  } catch (error) {
+    return { error: error instanceof Error ? error.message : "Gagal mencatat pembayaran laundry." };
   }
   revalidatePath("/laundry");
   return { success: true };
