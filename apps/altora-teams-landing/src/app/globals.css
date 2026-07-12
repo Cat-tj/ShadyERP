@@ -1,12 +1,17 @@
 @import "tailwindcss";
 
 :root {
-  --paper: #f7f9fd;
-  --ink: #14213a;
-  --muted: #5e6d83;
-  --line: #dbe3ef;
+  --paper: #f6f8fd;
+  --ink: #0e1a33;
+  --ink-2: #14213a;
+  --muted: #55647e;
+  --line: #dde4f0;
   --blue: #1e64ff;
-  --blue-soft: #dce9ff;
+  --blue-deep: #0c46d8;
+  --blue-soft: #e3edff;
+  --blue-softer: #eef4ff;
+  --mint: #12b981;
+  --amber: #f59e0b;
 }
 
 * { box-sizing: border-box; }
@@ -18,34 +23,174 @@ body {
   background: var(--paper);
   color: var(--ink);
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
+
+h1, h2, h3 { text-wrap: balance; }
+p { text-wrap: pretty; }
 
 ::selection { background: #b9d1ff; color: var(--ink); }
 
-.hero-grid::before {
+.mono { font-family: var(--font-geist-mono), ui-monospace, monospace; }
+
+/* ---------- Sticky header ---------- */
+.site-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  transition: background-color .3s ease, box-shadow .3s ease, border-color .3s ease;
+  border-bottom: 1px solid transparent;
+}
+.site-header.is-scrolled {
+  background: rgba(246, 248, 253, .82);
+  backdrop-filter: blur(14px) saturate(1.4);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  border-bottom-color: var(--line);
+  box-shadow: 0 8px 30px rgba(14, 26, 51, .06);
+}
+
+/* ---------- Hero backdrop ---------- */
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.hero-bg::before {
   content: "";
   position: absolute;
-  left: -12rem;
-  top: 8rem;
-  width: 24rem;
-  height: 24rem;
+  inset: 0;
+  background-image: radial-gradient(rgba(30, 100, 255, .13) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 30%, transparent 75%);
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, #000 30%, transparent 75%);
+}
+.hero-bg::after {
+  content: "";
+  position: absolute;
+  top: -14rem;
+  right: -10rem;
+  width: 42rem;
+  height: 42rem;
   border-radius: 999px;
-  background: radial-gradient(circle, rgba(30, 100, 255, 0.12), transparent 68%);
-  pointer-events: none;
+  background: radial-gradient(circle, rgba(30, 100, 255, .16), transparent 65%);
+}
+.hero-glow-left {
+  position: absolute;
+  left: -14rem;
+  bottom: -8rem;
+  width: 32rem;
+  height: 32rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(18, 185, 129, .1), transparent 65%);
 }
 
+.text-gradient {
+  background-image: linear-gradient(120deg, var(--blue) 15%, #6ea1ff 50%, var(--blue-deep) 85%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
+/* ---------- Entry + scroll-reveal ---------- */
 @keyframes rise {
-  from { opacity: 0; transform: translateY(18px); }
+  from { opacity: 0; transform: translateY(22px); }
   to { opacity: 1; transform: translateY(0); }
 }
-
 .animate-rise { animation: rise .7s cubic-bezier(.16, 1, .3, 1) both; }
-.animate-rise-delayed { animation: rise .8s .12s cubic-bezier(.16, 1, .3, 1) both; }
+.animate-rise-1 { animation: rise .7s .1s cubic-bezier(.16, 1, .3, 1) both; }
+.animate-rise-2 { animation: rise .8s .18s cubic-bezier(.16, 1, .3, 1) both; }
 
-@media (prefers-reduced-motion: reduce) {
-  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+/* Elemen [data-reveal] baru disembunyikan SETELAH JS aktif (html.fx-ready),
+   jadi tanpa JS semua konten tetap kelihatan normal. */
+html.fx-ready [data-reveal] {
+  opacity: 0;
+  transform: translateY(26px);
+  transition: opacity .7s cubic-bezier(.16, 1, .3, 1), transform .7s cubic-bezier(.16, 1, .3, 1);
+  transition-delay: var(--reveal-delay, 0s);
+}
+html.fx-ready [data-reveal].is-visible { opacity: 1; transform: translateY(0); }
+
+/* ---------- Marquee band ---------- */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee { overflow: hidden; }
+.marquee-track {
+  display: flex;
+  width: max-content;
+  gap: 0;
+  animation: marquee 30s linear infinite;
+}
+.marquee:hover .marquee-track { animation-play-state: paused; }
+
+/* ---------- Mock UI bits ---------- */
+@keyframes ping-soft {
+  0% { transform: scale(1); opacity: .7; }
+  70%, 100% { transform: scale(2.2); opacity: 0; }
+}
+.dot-live { position: relative; }
+.dot-live::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 999px;
+  background: currentColor;
+  animation: ping-soft 1.8s cubic-bezier(0, 0, .2, 1) infinite;
 }
 
-@media (max-width: 767px) {
-  .hero-grid::before { left: -14rem; top: 18rem; }
+@keyframes fill-bar {
+  from { width: 6%; }
+  to { width: var(--bar-w, 70%); }
+}
+.bar-anim {
+  width: var(--bar-w, 70%);
+}
+.is-visible .bar-anim, .animate-rise-2 .bar-anim {
+  animation: fill-bar 1.4s .35s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-9px); }
+}
+.float-slow { animation: float-y 5.5s ease-in-out infinite; }
+.float-slower { animation: float-y 7s .8s ease-in-out infinite; }
+
+/* Garis penghubung langkah (desktop) */
+.step-line::before {
+  content: "";
+  position: absolute;
+  top: 1.45rem;
+  left: 3.2rem;
+  right: -1.2rem;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, rgba(148, 184, 255, .5) 0 8px, transparent 8px 16px);
+}
+.step-last::before { display: none; }
+@media (max-width: 1023px) {
+  .step-line::before { display: none; }
+}
+
+/* Kartu fitur: aksen saat hover */
+.feature-card {
+  transition: transform .35s cubic-bezier(.16, 1, .3, 1), box-shadow .35s ease, border-color .35s ease;
+}
+.feature-card:hover {
+  transform: translateY(-5px);
+  border-color: rgba(30, 100, 255, .45);
+  box-shadow: 0 20px 50px rgba(14, 26, 51, .1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important;
+  }
+  [data-reveal] { opacity: 1; transform: none; }
+  .marquee-track { animation: none; }
 }
