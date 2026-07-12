@@ -907,6 +907,7 @@ model SaleItem {
   discountAmount Int     @default(0)
   subtotal       Int
   returnedQty    Int     @default(0) // akumulasi qty yang sudah diretur, tidak boleh melebihi qty
+  isFavoritePick Boolean @default(false) // true kalau ditambahkan lewat chip "menu favorit member" (D6) di kasir
 
   tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   sale    Sale    @relation(fields: [saleId], references: [id], onDelete: Cascade)

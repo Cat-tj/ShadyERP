@@ -288,3 +288,47 @@ export async function getSplitPaymentUsage(tenantId: string, period = 30) {
       .sort((a, b) => b.amount - a.amount),
   };
 }
+
+// ============ ATRIBUSI MENU FAVORIT MEMBER (E11) ============
+
+/** Kontribusi omzet dari baris keranjang yang ditambahkan lewat chip "menu favorit member" (D6) di kasir. */
+export async function getFavoriteAttributionStats(tenantId: string, period = 30) {
+  const startDate = subDays(new Date(), period);
+
+  const [favoriteItems, totalRevenueResult] = await Promise.all([
+    prisma.saleItem.findMany({
+      where: {
+        tenantId,
+        isFavoritePick: true,
+        sale: { status: "COMPLETED", createdAt: { gte: startDate } },
+      },
+      select: { productId: true, productName: true, subtotal: true, qty: true },
+    }),
+    prisma.saleItem.aggregate({
+      where: { tenantId, sale: { status: "COMPLETED", createdAt: { gte: startDate } } },
+      _sum: { subtotal: true },
+    }),
+  ]);
+
+  const favoriteRevenue = favoriteItems.reduce((sum, item) => sum + item.subtotal, 0);
+  const totalRevenue = totalRevenueResult._sum.subtotal ?? 0;
+
+  const byProduct = new Map<string, { productName: string; revenue: number; qty: number }>();
+  for (const item of favoriteItems) {
+    const existing = byProduct.get(item.productId) ?? { productName: item.productName, revenue: 0, qty: 0 };
+    existing.revenue += item.subtotal;
+    existing.qty += item.qty;
+    byProduct.set(item.productId, existing);
+  }
+
+  return {
+    favoriteRevenue,
+    totalRevenue,
+    contributionPercent: totalRevenue > 0 ? Math.round((favoriteRevenue / totalRevenue) * 100) : 0,
+    itemCount: favoriteItems.length,
+    topProducts: Array.from(byProduct.entries())
+      .map(([productId, v]) => ({ productId, ...v }))
+      .sort((a, b) => b.revenue - a.revenue)
+      .slice(0, 5),
+  };
+}

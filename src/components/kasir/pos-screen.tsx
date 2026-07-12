@@ -48,6 +48,8 @@ export type CartLine = {
   variantLabel: string | null;
   /** Serial/IMEI unit yang dipilih — kalau ada, baris ini selalu qty 1 dan tidak bisa ditambah. */
   serialNumber: string | null;
+  /** true kalau baris ini ditambahkan lewat chip "menu favorit member" (D6). */
+  fromFavorite: boolean;
 };
 
 export function PosScreen({
@@ -84,6 +86,8 @@ export function PosScreen({
   const [posMember, setPosMember] = useState<MemberOption | null>(null);
   const [showMemberPicker, setShowMemberPicker] = useState(false);
   const [favoriteProducts, setFavoriteProducts] = useState<MemberFavoriteProduct[]>([]);
+  /** productId favorit yang sedang menunggu pilih varian/serial — dipakai buat menandai baris keranjangnya sebagai favorit setelah dikonfirmasi. */
+  const [pendingFavoriteProductId, setPendingFavoriteProductId] = useState<string | null>(null);
   const { toastMessage, showToast } = useToast();
 
   useEffect(() => {
@@ -164,7 +168,8 @@ export function PosScreen({
     variantOptionIds: string[],
     priceDelta: number,
     variantLabel: string | null,
-    initialQty: number = 1
+    initialQty: number = 1,
+    fromFavorite: boolean = false
   ) {
     setLastAddedProductId(product.id);
     const cartKey = `${product.id}::${[...variantOptionIds].sort().join(",")}`;
@@ -173,7 +178,11 @@ export function PosScreen({
       const targetQty = existing ? existing.qty + initialQty : initialQty;
       const clampedQty = product.trackStock ? Math.min(targetQty, product.stockQty) : targetQty;
       if (existing) {
-        return prev.map((line) => (line.cartKey === cartKey ? { ...line, qty: clampedQty } : line));
+        return prev.map((line) =>
+          line.cartKey === cartKey
+            ? { ...line, qty: clampedQty, fromFavorite: line.fromFavorite || fromFavorite }
+            : line
+        );
       }
       return [
         ...prev,
@@ -189,13 +198,14 @@ export function PosScreen({
           variantOptionIds,
           variantLabel,
           serialNumber: null,
+          fromFavorite,
         },
       ];
     });
   }
 
   /** Satu baris keranjang = satu unit fisik dengan serial/IMEI tertentu, tidak bisa digabung/qty>1. */
-  function addSerialLineToCart(product: PosProduct, serialNumber: string) {
+  function addSerialLineToCart(product: PosProduct, serialNumber: string, fromFavorite: boolean = false) {
     setLastAddedProductId(product.id);
     const cartKey = `${product.id}::serial::${serialNumber}`;
     setCart((prev) => {
@@ -214,21 +224,24 @@ export function PosScreen({
           variantOptionIds: [],
           variantLabel: null,
           serialNumber,
+          fromFavorite,
         },
       ];
     });
   }
 
-  function addToCart(product: PosProduct) {
+  function addToCart(product: PosProduct, fromFavorite: boolean = false) {
     if (product.trackSerial) {
       setSerialPickerProduct(product);
+      setPendingFavoriteProductId(fromFavorite ? product.id : null);
       return;
     }
     if (product.variantGroups.length > 0) {
       setVariantPickerProduct(product);
+      setPendingFavoriteProductId(fromFavorite ? product.id : null);
       return;
     }
-    addLineToCart(product, [], 0, null);
+    addLineToCart(product, [], 0, null, 1, fromFavorite);
   }
 
   function handleSearchKeyDown(event: KeyboardEvent<HTMLInputElement>) {
@@ -303,6 +316,7 @@ export function PosScreen({
     discountAmount: line.discountAmount,
     variantOptionIds: line.variantOptionIds,
     serialNumber: line.serialNumber ?? undefined,
+    isFavoritePick: line.fromFavorite,
   }));
 
   const cartPanel = (
@@ -461,7 +475,7 @@ export function PosScreen({
                     <button
                       key={favorite.id}
                       type="button"
-                      onClick={() => addToCart(product)}
+                      onClick={() => addToCart(product, true)}
                       className="flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/10 px-3 text-xs font-semibold text-[var(--color-primary)] active:scale-[0.98]"
                     >
                       ⭐ {favorite.name} · {formatRupiah(favorite.price)}
@@ -699,10 +713,21 @@ export function PosScreen({
           productName={variantPickerProduct.name}
           basePrice={variantPickerProduct.price}
           groups={variantPickerProduct.variantGroups}
-          onClose={() => setVariantPickerProduct(null)}
-          onConfirm={({ optionIds, priceDelta, label }) => {
-            addLineToCart(variantPickerProduct, optionIds, priceDelta, label);
+          onClose={() => {
             setVariantPickerProduct(null);
+            setPendingFavoriteProductId(null);
+          }}
+          onConfirm={({ optionIds, priceDelta, label }) => {
+            addLineToCart(
+              variantPickerProduct,
+              optionIds,
+              priceDelta,
+              label,
+              1,
+              pendingFavoriteProductId === variantPickerProduct.id
+            );
+            setVariantPickerProduct(null);
+            setPendingFavoriteProductId(null);
           }}
         />
       )}
@@ -713,10 +738,18 @@ export function PosScreen({
           excludeSerials={cart
             .filter((line) => line.productId === serialPickerProduct.id && line.serialNumber)
             .map((line) => line.serialNumber as string)}
-          onClose={() => setSerialPickerProduct(null)}
-          onSelect={(serialNumber) => {
-            addSerialLineToCart(serialPickerProduct, serialNumber);
+          onClose={() => {
             setSerialPickerProduct(null);
+            setPendingFavoriteProductId(null);
+          }}
+          onSelect={(serialNumber) => {
+            addSerialLineToCart(
+              serialPickerProduct,
+              serialNumber,
+              pendingFavoriteProductId === serialPickerProduct.id
+            );
+            setSerialPickerProduct(null);
+            setPendingFavoriteProductId(null);
           }}
         />
       )}

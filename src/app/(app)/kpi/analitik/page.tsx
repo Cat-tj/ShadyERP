@@ -8,6 +8,7 @@ import {
   getTopProductsByRevenue,
   getOutletComparison,
   getSplitPaymentUsage,
+  getFavoriteAttributionStats,
 } from "@/server/services/kpi-service";
 import { getFrequentlyUnavailableProducts } from "@/server/services/product-service";
 import { StatTile } from "@/components/laporan/stat-tile";
@@ -30,7 +31,7 @@ export default async function KpiAnalitikPage() {
   const outlets = await listOutletsForUser(user.tenantId, user.id, user.role);
   const primaryOutletId = outlets[0]?.id;
 
-  const [velocity, retention, revenueByCategory, topProducts, outletComparison, stockTurnover, splitPaymentUsage, frequentlyUnavailable] = await Promise.all([
+  const [velocity, retention, revenueByCategory, topProducts, outletComparison, stockTurnover, splitPaymentUsage, frequentlyUnavailable, favoriteAttribution] = await Promise.all([
     getSalesVelocityByHour(user.tenantId),
     getMemberRetentionRate(user.tenantId, 30),
     getRevenueByCategory(user.tenantId, undefined, 30),
@@ -39,6 +40,7 @@ export default async function KpiAnalitikPage() {
     primaryOutletId ? getStockTurnoverByProduct(user.tenantId, primaryOutletId, 30) : Promise.resolve([]),
     getSplitPaymentUsage(user.tenantId, 30),
     getFrequentlyUnavailableProducts(user.tenantId, outlets.map((o) => o.id), 30),
+    getFavoriteAttributionStats(user.tenantId, 30),
   ]);
 
   const peakHour = velocity.reduce((best, h) => (h.sales > best.sales ? h : best), velocity[0]);
@@ -183,6 +185,27 @@ export default async function KpiAnalitikPage() {
               label: METHOD_LABEL[m.method] ?? m.method,
               value: m.amount,
               sublabel: `${m.count} baris pembayaran`,
+            }))}
+          />
+        </div>
+      )}
+
+      {favoriteAttribution.itemCount > 0 && (
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-bold text-[var(--color-text)]">Kontribusi menu favorit member (30 hari)</h2>
+            <span className="rounded-full bg-[var(--color-primary)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--color-primary)]">
+              {favoriteAttribution.contributionPercent}% dari omzet
+            </span>
+          </div>
+          <p className="mb-3 text-xs text-[var(--color-text-secondary)]">
+            Omzet dari item yang ditambahkan lewat chip ⭐ menu favorit member di kasir: {formatRupiah(favoriteAttribution.favoriteRevenue)} dari total {formatRupiah(favoriteAttribution.totalRevenue)}.
+          </p>
+          <RankingBarChart
+            items={favoriteAttribution.topProducts.map((p) => ({
+              label: p.productName,
+              value: p.revenue,
+              sublabel: `${p.qty} terjual`,
             }))}
           />
         </div>

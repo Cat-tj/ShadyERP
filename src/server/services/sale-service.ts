@@ -88,6 +88,8 @@ export type CartItemInput = {
   variantLabel?: string | null;
   /** Wajib diisi kalau produk trackSerial — satu unit fisik per baris keranjang (qty harus 1). */
   serialNumber?: string;
+  /** true kalau baris ini ditambahkan lewat chip "menu favorit member" (D6) di kasir — dipakai buat laporan atribusi omzet (E11). */
+  isFavoritePick?: boolean;
 };
 
 export type CreateSaleInput = {
@@ -183,6 +185,7 @@ export async function createSale(input: CreateSaleInput) {
       qty: number;
       discountAmount: number;
       subtotal: number;
+      isFavoritePick: boolean;
     }[] = [];
 
     for (const item of input.items) {
@@ -257,6 +260,7 @@ export async function createSale(input: CreateSaleInput) {
         qty: item.qty,
         discountAmount: item.discountAmount,
         subtotal: itemSubtotal,
+        isFavoritePick: item.isFavoritePick ?? false,
       });
     }
 
