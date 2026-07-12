@@ -11,7 +11,8 @@
     "seed": "tsx prisma/seed.ts",
     "knowledge": "node scripts/generate-knowledge.mjs",
     "db:clear-demo": "tsx prisma/scripts/clear-demo-data.ts",
-    "db:create-super-admin": "tsx prisma/scripts/create-super-admin.ts"
+    "db:create-super-admin": "tsx prisma/scripts/create-super-admin.ts",
+    "test:e2e": "playwright test"
   },
   "dependencies": {
     "@prisma/adapter-pg": "^7.8.0",
@@ -30,6 +31,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "@tailwindcss/postcss": "^4",
     "@types/jsbarcode": "^3.11.4",
     "@types/node": "^20",
