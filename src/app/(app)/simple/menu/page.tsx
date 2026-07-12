@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireSessionWithTenant } from "@/server/require-session";
 import { resolveEnabledModules, type ModuleKey } from "@/lib/modules";
-import { AlertTriangleIcon, BarChartIcon, PackageIcon, SettingsIcon, UsersIcon, MapPinIcon, ReceiptIcon } from "@/components/ui/icons";
+import { AlertTriangleIcon, BarChartIcon, PackageIcon, SettingsIcon, UsersIcon, MapPinIcon, ReceiptIcon, TrendingUpIcon } from "@/components/ui/icons";
 
 const menuItems: {
   href: string;
@@ -20,6 +20,7 @@ const menuItems: {
   { href: "/member", label: "Member", description: "Pelanggan, poin, dan loyalitas.", module: "member", roles: ["OWNER", "MANAGER", "STAFF"], icon: UsersIcon },
   { href: "/absensi", label: "Absensi", description: "Clock-in dan kehadiran tim.", module: "hr", roles: ["OWNER", "MANAGER", "STAFF"], icon: MapPinIcon },
   { href: "/laundry", label: "Laundry", description: "Order cucian dan status proses.", module: "laundry", roles: ["OWNER", "MANAGER", "STAFF"], icon: ReceiptIcon },
+  { href: "/simple/promo", label: "Harga Beda Per Jam", description: "Nyalakan diskon otomatis di jam tertentu, mis. jam sepi.", roles: ["OWNER", "MANAGER"], icon: TrendingUpIcon },
   { href: "/finance", label: "Finance", description: "Ringkasan uang yang lebih lengkap.", module: "keuangan", roles: ["OWNER", "MANAGER"], icon: BarChartIcon },
   { href: "/pengaturan", label: "Pengaturan", description: "Outlet, bisnis, meja, promo, dan langganan.", roles: ["OWNER"], icon: SettingsIcon },
 ];
