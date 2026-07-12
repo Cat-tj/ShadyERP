@@ -22,7 +22,7 @@
 - [x] **E11** — Atribusi penjualan dari menu favorit member: tandai item yang asalnya dari klik favorit (D6), laporkan kontribusi omzetnya (Area 4) — `74f8a8f`
 - [x] **E12** — Bayar laundry cicil/DP: ganti `paidAmount` tunggal jadi rincian pembayaran mirip `SalePayment[]` cafe (Area 1) — `f196a7d`
 - [x] **E13** — Setup Playwright smoke-test minimal: config + 3-5 test jalur kritis (login, transaksi kasir, tutup shift) — `playwright` sudah ada di devDependency tapi belum dipakai (Area 3) — `c9b595b`
-- [ ] **E14** — Guardrail navigasi Simple → Advanced: label/banner halus pas link Simple mode (mis. `/simple/data` → `/kpi/analitik`) mendarat di layar mode Advanced (Area 2)
+- [x] **E14** — Guardrail navigasi Simple → Advanced: label/banner halus pas link Simple mode (mis. `/simple/data` → `/kpi/analitik`) mendarat di layar mode Advanced (Area 2) — `c2923e9`
 
 ---
 
