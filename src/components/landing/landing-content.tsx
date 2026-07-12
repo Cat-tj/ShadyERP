@@ -1,5 +1,6 @@
 import Image from "next/image";
 import { VERTICALS, DEFAULT_THEME, type VerticalDef } from "@/lib/verticals";
+import { HERO_MOCKS, DEFAULT_HERO_MOCK } from "@/lib/hero-mocks";
 import { VerticalRotator } from "./vertical-rotator";
 
 type SpotlightSlide = {
@@ -171,6 +172,7 @@ function SpotlightPhone({ screen }: { screen: SpotlightSlide["screen"] }) {
 export function LandingContent({ city, vertical }: { city?: string; vertical?: VerticalDef }) {
   const displayCity = city ? decodeURIComponent(city).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "";
   const theme = vertical ? vertical.theme : DEFAULT_THEME;
+  const heroMock = vertical ? HERO_MOCKS[vertical.key] : DEFAULT_HERO_MOCK;
   const themeVars = {
     "--primary": theme.primary,
     "--primary-dark": theme.deep,
@@ -294,67 +296,55 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
         <div className="hero-visual-inner">
           <span className="badge-float"><span className="badge-dot" aria-hidden="true"></span>Langsung</span>
 
-          <div className="receipt-back" role="img" aria-label="Contoh struk digital Altora untuk transaksi dua item dengan promo happy hour">
+          <div className="receipt-back" role="img" aria-label={`Contoh struk digital Altora untuk ${vertical ? vertical.label : "usaha kamu"}`}>
             <div className="r-brand">ALTORA POS</div>
-            <div className="r-sub">Kopi Nusantara — BSD</div>
+            <div className="r-sub">{heroMock.receiptBrandSub}</div>
             <hr className="r-rule" />
-            <div className="r-row"><span>2x Kopi Susu</span><span>36.000</span></div>
-            <div className="r-row"><span>1x Croissant</span><span>28.000</span></div>
+            {heroMock.receiptItems.map(([label, price]) => (
+              <div className="r-row" key={label}><span>{label}</span><span>{price}</span></div>
+            ))}
             <hr className="r-rule" />
-            <div className="r-row r-promo"><span>Promo -10%</span><span>-6.400</span></div>
-            <div className="r-row r-total-row"><span>TOTAL</span><span>57.600</span></div>
+            <div className="r-row r-promo"><span>{heroMock.receiptHighlight[0]}</span><span>{heroMock.receiptHighlight[1]}</span></div>
+            <div className="r-row r-total-row"><span>TOTAL</span><span>{heroMock.receiptTotal}</span></div>
           </div>
 
-          <div className="dash-card" role="img" aria-label="Contoh dashboard Kasir Altora menampilkan omzet hari ini, jumlah transaksi, stok menipis, dan pesanan meja aktif">
+          <div className="dash-card" role="img" aria-label={`Contoh dashboard Altora untuk ${vertical ? vertical.label : "usaha kamu"} menampilkan ringkasan hari ini`}>
             <div className="dash-chrome">
               <span className="dash-dot"></span><span className="dash-dot"></span><span className="dash-dot"></span>
               <span className="dash-url mono">kasir.altora.id / dashboard</span>
             </div>
             <div className="dash-body">
               <div className="dash-title-row">
-                <span className="dash-title">Kasir · Hari ini</span>
+                <span className="dash-title">{vertical ? vertical.label.replace("Altora ", "") : "Kasir"} · Hari ini</span>
                 <span className="dash-live"><span className="badge-dot" aria-hidden="true"></span>Tersinkron</span>
               </div>
               <div className="dash-app-tabs" aria-hidden="true">
-                <span className="dash-app-tab dash-app-active">POS</span>
-                <span className="dash-app-tab">Dapur</span>
-                <span className="dash-app-tab">Finance</span>
+                {heroMock.dashTabs.map((tab, i) => (
+                  <span key={tab} className={`dash-app-tab ${i === 0 ? "dash-app-active" : ""}`}>{tab}</span>
+                ))}
               </div>
               <div className="dash-grid">
-                <div className="dash-tile">
-                  <span className="dash-tile-label">Omzet hari ini</span>
-                  <span className="dash-tile-value mono">Rp3,4jt</span>
-                  <span className="dash-tile-delta">+8% vs kemarin</span>
-                </div>
-                <div className="dash-tile">
-                  <span className="dash-tile-label">Transaksi</span>
-                  <span className="dash-tile-value mono">142</span>
-                  <span className="dash-tile-delta">+12 dari kemarin</span>
-                </div>
-                <div className="dash-tile">
-                  <span className="dash-tile-label">Stok menipis</span>
-                  <span className="dash-tile-value mono">3 produk</span>
-                  <span className="dash-tile-delta warn">Perlu restock</span>
-                </div>
-                <div className="dash-tile">
-                  <span className="dash-tile-label">Pesanan meja</span>
-                  <span className="dash-tile-value mono">5 aktif</span>
-                  <span className="dash-tile-delta">2 siap disajikan</span>
-                </div>
+                {heroMock.dashTiles.map((tile) => (
+                  <div className="dash-tile" key={tile.label}>
+                    <span className="dash-tile-label">{tile.label}</span>
+                    <span className="dash-tile-value mono">{tile.value}</span>
+                    <span className={`dash-tile-delta ${tile.warn ? "warn" : ""}`}>{tile.delta}</span>
+                  </div>
+                ))}
               </div>
               <div className="live-order">
                 <div className="live-order-head">
-                  <span>Meja 04</span>
-                  <span className="live-order-status">Baru masuk</span>
+                  <span>{heroMock.liveTitle}</span>
+                  <span className="live-order-status">{heroMock.liveStatus}</span>
                 </div>
                 <div className="live-order-row">
-                  <span>2× Kopi Susu · 1× Croissant</span>
-                  <span className="mono">57.600</span>
+                  <span>{heroMock.liveDetail}</span>
+                  <span className="mono">{heroMock.liveValue}</span>
                 </div>
                 <div className="live-progress" aria-hidden="true"><span></span></div>
               </div>
               <div>
-                <span className="dash-chart-label">Omzet · 14 hari</span>
+                <span className="dash-chart-label">{heroMock.chartLabel}</span>
                 <svg viewBox="0 0 300 64" width="100%" height="56" preserveAspectRatio="none" aria-hidden="true">
                   <polyline className="dash-chart-path" points="0,48 22,44 44,46 66,36 88,38 110,30 132,32 154,24 176,26 198,18 220,20 242,12 264,14 300,6" fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
                 </svg>
