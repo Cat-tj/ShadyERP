@@ -19,6 +19,27 @@ const tabs = [
   { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
 ];
 
+// Halaman yang sengaja ditautkan dari hub "Lainnya" (simple/menu) — tetap bagian
+// dari alur normal mode Simpel, jadi TIDAK perlu banner "mode lengkap".
+const SIMPLE_FRIENDLY_PREFIXES = [
+  "/akun",
+  "/alerts",
+  "/onboarding",
+  "/produk",
+  "/inventory",
+  "/member",
+  "/absensi",
+  "/laundry",
+  "/finance",
+  "/pengaturan",
+];
+
+/** true kalau halaman ini cuma bisa dijangkau lewat link "Detail" dsb, bukan dari nav/hub Simpel biasa. */
+function isAdvancedEscapePage(pathname: string) {
+  if (pathname === "/kasir" || pathname.startsWith("/simple/")) return false;
+  return !SIMPLE_FRIENDLY_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`));
+}
+
 export function SimpleShell({
   userName,
   role,
@@ -37,6 +58,7 @@ export function SimpleShell({
   // that already budgets space for the bottom nav — the shell's own bottom padding on top
   // of that double-books the same space, leaving an empty draggable gap below the fold.
   const isFullBleedPage = pathname === "/kasir";
+  const showAdvancedBanner = isAdvancedEscapePage(pathname);
   const shellBackgroundStyle: React.CSSProperties = {
     backgroundImage:
       "radial-gradient(900px 520px at 0% -10%, rgba(167, 48, 168, 0.06) 0%, transparent 58%), radial-gradient(760px 480px at 100% 0%, rgba(22, 163, 74, 0.05) 0%, transparent 52%), linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-secondary) 100%)",
@@ -108,6 +130,14 @@ export function SimpleShell({
           isFullBleedPage ? "md:py-0" : ""
         }`}
       >
+        {showAdvancedBanner && (
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[var(--color-border)] bg-[var(--color-primary)]/5 px-4 py-2.5 text-sm">
+            <span className="text-[var(--color-text-secondary)]">Ini bagian mode lengkap — datanya lebih detail dari biasanya.</span>
+            <Link href="/simple/hari-ini" className="shrink-0 font-semibold text-[var(--color-primary)] hover:underline">
+              ← Balik ke ringkasan
+            </Link>
+          </div>
+        )}
         {children}
       </main>
 
