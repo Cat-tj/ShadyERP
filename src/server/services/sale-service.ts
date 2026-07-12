@@ -95,7 +95,8 @@ export type CartItemInput = {
 export type CreateSaleInput = {
   tenantId: string;
   outletId: string;
-  shiftId: string;
+  /** Opsional — kosongkan kalau Sale dibuat di luar shift kasir (mis. pesanan katering diselesaikan tanpa shift lagi jalan). */
+  shiftId?: string;
   cashierId: string;
   memberId?: string | null;
   items: CartItemInput[];
@@ -124,6 +125,8 @@ export type CreateSaleInput = {
    * biasanya caller isi dengan metode porsi terbesar & total tagihan.
    */
   splitPayments?: { method: PaymentMethod; amount: number }[];
+  /** Isi kalau Sale ini dibuat dari penyelesaian pesanan katering/borongan. */
+  cateringOrderId?: string;
 };
 
 export async function createSale(input: CreateSaleInput) {
@@ -363,6 +366,7 @@ export async function createSale(input: CreateSaleInput) {
         tenantId: input.tenantId,
         outletId: input.outletId,
         shiftId: input.shiftId,
+        cateringOrderId: input.cateringOrderId,
         cashierId: input.cashierId,
         memberId: input.memberId ?? null,
         invoiceNumber,

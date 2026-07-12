@@ -158,6 +158,7 @@ const ROUTE_MODULE_MAP: { prefix: string; module: ModuleKey }[] = [
   { prefix: "/maintenance", module: "inventory" },
   { prefix: "/kpi", module: "kasir" },
   { prefix: "/kasir", module: "kasir" },
+  { prefix: "/pesanan-katering", module: "kasir" },
   { prefix: "/inventory", module: "inventory" },
   { prefix: "/pesanan-meja", module: "pesanan-digital" },
   { prefix: "/command-center", module: "pesanan-digital" },

@@ -53,6 +53,15 @@ export async function listProductsWithStock(tenantId: string, outletId: string) 
   }));
 }
 
+/** Daftar ringkas produk aktif buat picker (mis. form pesanan katering) — gak perlu stok/varian/resep. */
+export async function listActiveProductsForPicker(tenantId: string) {
+  return prisma.product.findMany({
+    where: { tenantId, isActive: true, kind: { not: "COST" } },
+    select: { id: true, name: true, price: true },
+    orderBy: { name: "asc" },
+  });
+}
+
 export async function listProductsFull(tenantId: string) {
   return prisma.product.findMany({
     where: { tenantId },

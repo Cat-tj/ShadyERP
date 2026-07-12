@@ -115,6 +115,9 @@ model Tenant {
   auditLogs                AuditLog[]
   promos                   Promo[]
   bookings                 Booking[]
+  cateringOrders           CateringOrder[]
+  cateringOrderItems       CateringOrderItem[]
+  cateringPayments         CateringPayment[]
   equipments               Equipment[]
   equipmentMaintenanceLogs EquipmentMaintenanceLog[]
   reorderPoints            StockReorderPoint[]
@@ -190,6 +193,7 @@ model Outlet {
   tables                   Table[]
   tableOrders              TableOrder[]
   bookings                 Booking[]
+  cateringOrders           CateringOrder[]
   equipments               Equipment[]
   equipmentMaintenanceLogs EquipmentMaintenanceLog[]
   reorderPoints            StockReorderPoint[]
@@ -257,6 +261,7 @@ model User {
   documentSignings         DocumentSigner[]
   documentAccess           DocumentAccess[]
   laundryOrdersCreated     LaundryOrder[]            @relation("LaundryOrderCreatedBy")
+  cateringOrdersCreated    CateringOrder[]           @relation("CateringOrderCreatedBy")
   cashFlowsCreated         CashFlow[]                @relation("UserCashFlows")
 
   @@index([tenantId])
@@ -354,6 +359,7 @@ model Member {
   sales             Sale[]
   laundryOrders     LaundryOrder[]
   bookings          Booking[]
+  cateringOrders    CateringOrder[]
 
   @@unique([tenantId, phone])
   @@index([tenantId])
@@ -530,6 +536,7 @@ model Product {
   ingredients        ProductRecipeItem[]       @relation("ProductIngredient")
   serials            ProductSerial[]
   unavailabilityLogs ProductUnavailabilityLog[]
+  cateringOrderItems CateringOrderItem[]
 
   @@index([tenantId])
   @@index([categoryId])
@@ -860,6 +867,8 @@ model Sale {
   tableOrder        TableOrder?
   bookingId         String?
   booking           Booking?      @relation(fields: [bookingId], references: [id])
+  cateringOrderId   String?
+  cateringOrder     CateringOrder? @relation(fields: [cateringOrderId], references: [id])
 
   @@index([tenantId])
   @@index([outletId])
@@ -1311,6 +1320,97 @@ model Booking {
   @@index([outletId])
   @@index([staffUserId])
   @@index([memberId])
+}
+
+enum CateringOrderStatus {
+  PENDING
+  CONFIRMED
+  DONE
+  CANCELLED
+}
+
+// ================== PESANAN KATERING/BORONGAN ==================
+
+/// Pesanan besar buat acara PIHAK LAIN (mis. suplai 1000 gelas kopi ke acara orang) —
+/// beda dari Booking (janji temu/jadwal) dan beda dari Outlet tipe EVENT (buka cabang
+/// sendiri di lokasi acara). Harga per item custom (unitPrice), boleh beda dari harga
+/// normal kasir. Waktu status jadi DONE, otomatis bikin Sale asli lewat createSale()
+/// (potong stok/resep beneran, masuk jurnal akuntansi) — lihat catering-order-service.ts.
+model CateringOrder {
+  id            String              @id @default(cuid())
+  tenantId      String
+  outletId      String
+  orderNumber   String              @unique
+  /// Auto-matched dari customerPhone kalau nomornya kedaftar sebagai member — biar dapat poin & histori.
+  memberId      String?
+  customerName  String
+  customerPhone String?
+  eventName     String?
+  eventAddress  String?
+  eventDate     DateTime?
+  total         Int
+  paidAmount    Int                 @default(0)
+  /// Biaya operasional (transport, tenaga tambahan, sewa alat) — kalau diisi saat order
+  /// BARU dibuat, otomatis dicatat sebagai satu baris Pengeluaran outlet ini.
+  operationalCost Int?
+  status        CateringOrderStatus @default(PENDING)
+  /// Jaga dari poin dobel kalau status ditoggle maju-mundur.
+  pointsAwarded Boolean             @default(false)
+  note          String?
+  createdById   String
+  createdAt     DateTime            @default(now())
+  updatedAt     DateTime            @updatedAt
+
+  tenant    Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet    Outlet              @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  member    Member?             @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  createdBy User                @relation("CateringOrderCreatedBy", fields: [createdById], references: [id])
+  items     CateringOrderItem[]
+  payments  CateringPayment[]
+  sales     Sale[]
+
+  @@index([tenantId])
+  @@index([outletId])
+  @@index([memberId])
+  @@index([status])
+}
+
+/// Satu baris produk dalam pesanan katering — harga per unit custom (bisa beda dari
+/// harga normal/harga grosir produk, sesuai negosiasi buat acara itu).
+model CateringOrderItem {
+  id              String @id @default(cuid())
+  tenantId        String
+  cateringOrderId String
+  productId       String
+  productName     String // snapshot nama produk saat order dibuat
+  qty             Int
+  unitPrice       Int
+  subtotal        Int
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cateringOrder CateringOrder @relation(fields: [cateringOrderId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id])
+
+  @@index([tenantId])
+  @@index([cateringOrderId])
+}
+
+/// Rincian tiap DP/cicilan/pelunasan pesanan katering — CateringOrder.paidAmount tetap
+/// jadi total terbayar (cache), dihitung ulang dari sini tiap ada pembayaran baru.
+model CateringPayment {
+  id              String        @id @default(cuid())
+  tenantId        String
+  cateringOrderId String
+  amount          Int
+  method          PaymentMethod @default(CASH)
+  note            String?
+  createdAt       DateTime      @default(now())
+
+  tenant        Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  cateringOrder CateringOrder @relation(fields: [cateringOrderId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([cateringOrderId])
 }
 
 // ================== LAUNDRY ==================
@@ -1943,6 +2043,7 @@ enum OrderType {
   SHOPEEFOOD
   MAXIM
   DELIVERY_OTHER
+  CATERING
 }
 
 model ProductUom {

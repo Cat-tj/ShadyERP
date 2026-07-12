@@ -20,6 +20,7 @@ import {
   FileIcon,
   CheckCircleIcon,
   LockIcon,
+  ShoppingCart,
 } from "@/components/ui/icons";
 import type { ModuleKey } from "@/lib/modules";
 import type { HubKey } from "@/lib/hubs";
@@ -48,6 +49,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/member", label: "Member", icon: UsersIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "member", hub: "kasir" },
   { href: "/voucher", label: "Voucher", icon: CurrencyIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "kasir", hub: "kasir" },
   { href: "/kpi/analitik", label: "Analitik", icon: BarChartIcon, roles: ["OWNER", "MANAGER"], module: "kasir", hub: "kasir" },
+  { href: "/pesanan-katering", label: "Pesanan Katering", icon: ShoppingCart, roles: ["OWNER", "MANAGER", "STAFF"], module: "kasir", hub: "kasir" },
 
   // ===== Inventory =====
   { href: "/inventory", label: "Stok", icon: PackageIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "inventory", hub: "inventory" },
