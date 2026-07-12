@@ -13,8 +13,14 @@
     --primary-dark: #6a3cc0;
     --primary-bright: #d94a86;
     --on-primary: #ffffff;
-    --primary-soft: rgba(167, 48, 168, 0.08);
-    --primary-soft-strong: rgba(167, 48, 168, 0.14);
+    /* Diturunkan dari --primary, otomatis ikut tiap kali --primary di-override
+       per vertikal (lihat inline style di landing-content.tsx) */
+    --primary-soft: color-mix(in srgb, var(--primary) 8%, transparent);
+    --primary-soft-strong: color-mix(in srgb, var(--primary) 14%, transparent);
+    /* Token guideline sub-brand — solid (bukan alpha), dipakai showcase & wash */
+    --v-soft: #f3e8ff;
+    --v-bg: #f8f6ff;
+    --v-ribbon: linear-gradient(135deg, #d94a86 0%, #a730a8 50%, #6a3cc0 100%);
     --good-bg: #dcfce7;
     --good-text: #15803d;
     --danger-bg: #fee2e2;
@@ -920,6 +926,137 @@ html { scroll-behavior: auto; }
 .altora-landing .feature-float-bars i:nth-child(1) { height: 54%; opacity: 0.58; }
 .altora-landing .feature-float-bars i:nth-child(2) { height: 86%; }
 .altora-landing .feature-float-bars i:nth-child(3) { height: 68%; opacity: 0.72; }
+
+
+/* ---------- VERTICAL SHOWCASE (rotating phone, satu Altora banyak warna) ---------- */
+.altora-landing .vshow {
+    position: relative; padding: clamp(56px, 8vw, 96px) 0; overflow: hidden;
+    background: var(--v-bg); transition: background-color 0.7s ease;
+  }
+
+
+.altora-landing .vshow-wash {
+    position: absolute; inset: -10% -10% auto -10%; height: 70%; pointer-events: none;
+    background: radial-gradient(60% 100% at 50% 0%, var(--v-soft) 0%, transparent 72%);
+    transition: background-color 0.7s ease; opacity: 0.9;
+  }
+
+
+.altora-landing .vshow-body {
+    position: relative; display: grid; grid-template-columns: 1fr 1fr; gap: clamp(28px, 5vw, 64px);
+    align-items: center; margin-top: 8px;
+  }
+
+
+.altora-landing .vshow-pill {
+    display: inline-flex; align-items: center; gap: 7px; width: fit-content;
+    font-family: var(--font-jetbrains-mono), monospace; font-size: 11px; font-weight: 700;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--on-primary);
+    background: var(--primary); border-radius: 999px; padding: 6px 13px;
+    transition: background-color 0.6s ease;
+  }
+
+
+.altora-landing .vshow-pill img { width: 15px; height: 15px; display: block; }
+
+
+.altora-landing .vshow-copy h3 {
+    margin: 16px 0 0; font-size: clamp(26px, 3.4vw, 38px); font-weight: 700;
+    letter-spacing: -0.03em; line-height: 1.14; color: var(--text);
+  }
+
+
+.altora-landing .vshow-copy p {
+    margin: 14px 0 0; font-size: 15.5px; line-height: 1.6; color: var(--text-secondary); max-width: 46ch;
+  }
+
+
+.altora-landing .vshow-dots {
+    display: flex; flex-wrap: wrap; gap: 7px; margin-top: 26px;
+  }
+
+
+.altora-landing .vshow-dot {
+    border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary);
+    border-radius: 999px; min-height: 32px; padding: 0 12px; cursor: pointer;
+    font-family: var(--font-jetbrains-mono), monospace; font-size: 10px; font-weight: 700;
+    transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+  }
+
+
+.altora-landing .vshow-dot.is-active {
+    background: var(--primary); border-color: var(--primary); color: var(--on-primary);
+  }
+
+
+.altora-landing .vshow-visual { display: flex; justify-content: center; position: relative; }
+
+
+.altora-landing .vshow-glow {
+    position: absolute; inset: 6% 8% auto; height: 78%; border-radius: 50%;
+    background: radial-gradient(circle, var(--v-soft) 0%, transparent 72%);
+    transition: background-color 0.7s ease; filter: blur(2px);
+  }
+
+
+.altora-landing .vshow-phone {
+    position: relative; width: min(230px, 62vw); aspect-ratio: 9 / 19.5;
+    background: linear-gradient(145deg, #38405f 0%, #171b28 44%, #05070d 100%);
+    border-radius: 44px; padding: 11px;
+    box-shadow: 0 30px 70px -34px rgba(10, 31, 68, 0.55), inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
+
+.altora-landing .vshow-screen {
+    position: relative; height: 100%; border-radius: 33px; padding: 34px 13px 14px;
+    display: flex; flex-direction: column; gap: 10px; overflow: hidden;
+    background: var(--v-bg); transition: background-color 0.6s ease;
+  }
+
+
+.altora-landing .vshow-screen-head { display: flex; align-items: center; gap: 8px; }
+
+
+.altora-landing .vshow-screen-head img { width: 20px; height: 20px; display: block; }
+
+
+.altora-landing .vshow-screen-head b {
+    font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: -0.01em;
+  }
+
+
+.altora-landing .vshow-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 2px; }
+
+
+.altora-landing .vshow-tile {
+    background: var(--surface); border-radius: 12px; padding: 9px 10px;
+    border: 1px solid var(--v-soft); transition: border-color 0.6s ease;
+  }
+
+
+.altora-landing .vshow-tile span { display: block; font-size: 9px; color: var(--text-faint); }
+
+
+.altora-landing .vshow-tile b {
+    display: block; margin-top: 3px; font-family: var(--font-jetbrains-mono), monospace;
+    font-size: 13px; color: var(--primary); font-weight: 700; transition: color 0.6s ease;
+  }
+
+
+.altora-landing .vshow-ribbon {
+    margin-top: auto; height: 30px; border-radius: 10px;
+    animation: vshow-ribbon-in 0.5s ease both;
+  }
+
+
+@keyframes vshow-ribbon-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+
+@media (max-width: 860px) {
+  .altora-landing .vshow-body { grid-template-columns: 1fr; }
+  .altora-landing .vshow-visual { order: -1; }
+}
 
   
 .altora-landing .order-float-card {

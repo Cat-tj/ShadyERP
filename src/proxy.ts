@@ -31,6 +31,6 @@ export default auth((req) => {
 
 export const config = {
   matcher: [
-    "/((?!api/auth|api/health|_next/static|_next/image|favicon\\.ico|manifest\\.webmanifest|sitemap\\.xml|robots\\.txt|\\.well-known/|sw\\.js|icon\\.svg|icon-192\\.png|icon-512\\.png|icon-maskable-512\\.png|apple-icon\\.png|auth/|landing-previews/|q/|pesan/|cucian|superadmin/|superadmin$|akun-nonaktif|kasir/[^/]+$).*)",
+    "/((?!api/auth|api/health|_next/static|_next/image|favicon\\.ico|manifest\\.webmanifest|sitemap\\.xml|robots\\.txt|\\.well-known/|sw\\.js|icon\\.svg|icon-192\\.png|icon-512\\.png|icon-maskable-512\\.png|apple-icon\\.png|auth/|landing-previews/|brand/|q/|pesan/|cucian|superadmin/|superadmin$|akun-nonaktif|kasir/[^/]+$).*)",
   ],
 };

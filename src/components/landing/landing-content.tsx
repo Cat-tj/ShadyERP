@@ -1,5 +1,6 @@
 import Image from "next/image";
-import { VERTICALS, type VerticalDef } from "@/lib/verticals";
+import { VERTICALS, DEFAULT_THEME, type VerticalDef } from "@/lib/verticals";
+import { VerticalRotator } from "./vertical-rotator";
 
 type SpotlightSlide = {
   label: string;
@@ -169,32 +170,44 @@ function SpotlightPhone({ screen }: { screen: SpotlightSlide["screen"] }) {
 
 export function LandingContent({ city, vertical }: { city?: string; vertical?: VerticalDef }) {
   const displayCity = city ? decodeURIComponent(city).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "";
+  const theme = vertical ? vertical.theme : DEFAULT_THEME;
+  const themeVars = {
+    "--primary": theme.primary,
+    "--primary-dark": theme.deep,
+    "--primary-bright": theme.accent,
+    "--v-soft": theme.soft,
+    "--v-bg": theme.background,
+  } as React.CSSProperties;
 
   return (
-    <div className="altora-landing">
+    <div className="altora-landing" style={themeVars}>
 <header className="site">
   <div className="wrap nav">
     <a className="brand" href="#top">
       <span className="brand-mark">
-        <svg viewBox="0 0 400 460" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-          <defs>
-            <linearGradient id="altoraLogoGradient" x1="10%" y1="0%" x2="90%" y2="100%">
-              <stop offset="0%" stopColor="var(--logo-c1)" />
-              <stop offset="22%" stopColor="var(--logo-c2)" />
-              <stop offset="42%" stopColor="var(--logo-c3)" />
-              <stop offset="60%" stopColor="var(--logo-c4)" />
-              <stop offset="78%" stopColor="var(--logo-c5)" />
-              <stop offset="100%" stopColor="var(--logo-c6)" />
-            </linearGradient>
-            <linearGradient id="altoraLogoShade" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" stopColor="#000000" stopOpacity="0.25" />
-              <stop offset="100%" stopColor="#000000" stopOpacity="0" />
-            </linearGradient>
-          </defs>
-          <path d="M 210 40 C 150 40 100 75 70 130 L 130 175 C 150 140 175 118 210 118 C 245 118 268 138 268 168 L 268 195 L 175 195 C 105 195 55 235 55 300 C 55 365 110 405 175 405 C 215 405 245 388 268 360 L 268 395 L 335 395 L 335 168 C 335 90 290 40 210 40 Z M 268 250 L 268 300 C 268 335 235 350 195 350 C 160 350 130 335 130 305 C 130 270 165 250 205 250 Z" fill="url(#altoraLogoGradient)" fillRule="evenodd" />
-          <path d="M 268 195 L 175 195 C 105 195 55 235 55 300 C 55 320 60 337 70 352 C 75 300 120 262 180 262 L 268 262 Z" fill="url(#altoraLogoShade)" />
-          <path d="M 335 300 C 335 350 315 390 275 408 C 305 400 335 375 335 335 Z" fill="url(#altoraLogoGradient)" />
-        </svg>
+        {vertical ? (
+          <img src={`/brand/${vertical.key}-symbol-onlight.svg`} alt="" width={40} height={40} style={{ display: "block" }} />
+        ) : (
+          <svg viewBox="0 0 400 460" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <defs>
+              <linearGradient id="altoraLogoGradient" x1="10%" y1="0%" x2="90%" y2="100%">
+                <stop offset="0%" stopColor="var(--logo-c1)" />
+                <stop offset="22%" stopColor="var(--logo-c2)" />
+                <stop offset="42%" stopColor="var(--logo-c3)" />
+                <stop offset="60%" stopColor="var(--logo-c4)" />
+                <stop offset="78%" stopColor="var(--logo-c5)" />
+                <stop offset="100%" stopColor="var(--logo-c6)" />
+              </linearGradient>
+              <linearGradient id="altoraLogoShade" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#000000" stopOpacity="0.25" />
+                <stop offset="100%" stopColor="#000000" stopOpacity="0" />
+              </linearGradient>
+            </defs>
+            <path d="M 210 40 C 150 40 100 75 70 130 L 130 175 C 150 140 175 118 210 118 C 245 118 268 138 268 168 L 268 195 L 175 195 C 105 195 55 235 55 300 C 55 365 110 405 175 405 C 215 405 245 388 268 360 L 268 395 L 335 395 L 335 168 C 335 90 290 40 210 40 Z M 268 250 L 268 300 C 268 335 235 350 195 350 C 160 350 130 335 130 305 C 130 270 165 250 205 250 Z" fill="url(#altoraLogoGradient)" fillRule="evenodd" />
+            <path d="M 268 195 L 175 195 C 105 195 55 235 55 300 C 55 320 60 337 70 352 C 75 300 120 262 180 262 L 268 262 Z" fill="url(#altoraLogoShade)" />
+            <path d="M 335 300 C 335 350 315 390 275 408 C 305 400 335 375 335 335 Z" fill="url(#altoraLogoGradient)" />
+          </svg>
+        )}
       </span>
       <span className="brand-word">ALTORA</span>
     </a>
@@ -383,6 +396,8 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
       </div>
     </div>
   </div>
+
+  {!vertical && <VerticalRotator />}
 
   {/* FEATURE SPOTLIGHT */}
   <section id="qr-meja" className="spotlight">
