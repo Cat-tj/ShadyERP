@@ -15,6 +15,7 @@ export type OutletRow = {
   name: string;
   address: string | null;
   phone: string | null;
+  receiptPaperWidth: number;
   isActive: boolean;
 };
 
@@ -31,6 +32,7 @@ function OutletFormModal({
   const [name, setName] = useState(outlet?.name ?? "");
   const [address, setAddress] = useState(outlet?.address ?? "");
   const [phone, setPhone] = useState(outlet?.phone ?? "");
+  const [paperWidth, setPaperWidth] = useState<58 | 80>(outlet?.receiptPaperWidth === 80 ? 80 : 58);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -39,7 +41,12 @@ function OutletFormModal({
     if (!name.trim()) return setError("Nama outlet wajib diisi.");
 
     startTransition(async () => {
-      const input = { name: name.trim(), address: address.trim() || null, phone: phone.trim() || null };
+      const input = {
+        name: name.trim(),
+        address: address.trim() || null,
+        phone: phone.trim() || null,
+        receiptPaperWidth: paperWidth,
+      };
       const result = outlet
         ? await updateOutletAction(outlet.id, input)
         : await createOutletAction(input);
@@ -103,6 +110,17 @@ function OutletFormModal({
               placeholder="081234567890"
               className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
             />
+          </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-[var(--color-text)]">Lebar kertas printer struk</label>
+            <select
+              value={paperWidth}
+              onChange={(e) => setPaperWidth(Number(e.target.value) === 80 ? 80 : 58)}
+              className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+            >
+              <option value={58}>58mm (umum, kasir portable)</option>
+              <option value={80}>80mm (printer meja/counter)</option>
+            </select>
           </div>
         </div>
 
@@ -177,6 +195,7 @@ export function OutletManager({ outlets }: { outlets: OutletRow[] }) {
                   <p className="truncate text-xs text-[var(--color-text-secondary)]">
                     {outlet.address ?? "Alamat belum diisi"}
                     {outlet.phone ? ` · ${outlet.phone}` : ""}
+                    {` · Kertas ${outlet.receiptPaperWidth}mm`}
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-2">

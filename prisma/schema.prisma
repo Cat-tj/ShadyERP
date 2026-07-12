@@ -148,6 +148,8 @@ model Outlet {
   name      String
   address   String?
   phone     String?
+  /// Lebar kertas printer thermal outlet ini dalam mm — cuma 58 atau 80, dipakai buat format struk ESC/POS.
+  receiptPaperWidth Int @default(58)
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

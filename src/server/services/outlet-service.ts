@@ -37,12 +37,19 @@ export type OutletInput = {
   name: string;
   address: string | null;
   phone: string | null;
+  receiptPaperWidth?: 58 | 80;
 };
 
 export async function createOutlet(tenantId: string, input: OutletInput) {
   await assertCanAddOutlet(tenantId);
   return prisma.outlet.create({
-    data: { tenantId, name: input.name, address: input.address, phone: input.phone },
+    data: {
+      tenantId,
+      name: input.name,
+      address: input.address,
+      phone: input.phone,
+      receiptPaperWidth: input.receiptPaperWidth ?? 58,
+    },
   });
 }
 
@@ -51,7 +58,12 @@ export async function updateOutlet(tenantId: string, id: string, input: OutletIn
   if (!outlet) throw new Error("Outlet tidak ditemukan.");
   return prisma.outlet.update({
     where: { id },
-    data: { name: input.name, address: input.address, phone: input.phone },
+    data: {
+      name: input.name,
+      address: input.address,
+      phone: input.phone,
+      receiptPaperWidth: input.receiptPaperWidth ?? outlet.receiptPaperWidth,
+    },
   });
 }
 

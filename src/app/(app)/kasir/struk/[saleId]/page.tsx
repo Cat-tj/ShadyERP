@@ -70,6 +70,7 @@ export default async function StrukPage({
         ? sale.payments.map((p) => ({ label: PAYMENT_LABEL[p.method] ?? p.method, amount: p.amount }))
         : undefined,
       footerNote: setting?.receiptFooter ?? null,
+      paperWidth: sale.outlet.receiptPaperWidth,
     })
   );
 

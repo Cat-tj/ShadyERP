@@ -75,20 +75,45 @@ export type ReceiptData = {
   /** Isi kalau transaksi split payment — dicetak sebagai baris per metode, gantiin paymentMethod/amountPaid. */
   payments?: { label: string; amount: number }[];
   footerNote: string | null;
+  /** Lebar kertas printer dalam mm (58 atau 80) — pengaruh ke jumlah kolom karakter. Default 58. */
+  paperWidth?: number;
 };
 
+/** Byte UTF-8, bukan JS string length (`.length` = UTF-16 code unit) — nama produk berkarakter non-ASCII bisa lebih dari 1 byte per karakter, jadi kolom bisa geser kalau dihitung pakai `.length`. */
+function byteLength(text: string): number {
+  return Buffer.byteLength(text, "utf8");
+}
+
+/** Potong per-karakter (bukan per-byte) supaya gak motong di tengah karakter multi-byte. */
+function truncateToByteWidth(text: string, width: number): string {
+  let result = "";
+  let currentBytes = 0;
+  for (const char of text) {
+    const charBytes = byteLength(char);
+    if (currentBytes + charBytes > width) break;
+    result += char;
+    currentBytes += charBytes;
+  }
+  return result;
+}
+
 function padRight(text: string, width: number): string {
-  return text.length >= width ? text.slice(0, width) : text + " ".repeat(width - text.length);
+  const len = byteLength(text);
+  if (len >= width) return truncateToByteWidth(text, width);
+  return text + " ".repeat(width - len);
 }
 
 function formatMoney(amount: number): string {
   return amount.toLocaleString("id-ID");
 }
 
-/** Kertas 58mm biasanya 32 kolom karakter dalam font default. */
-const LINE_WIDTH = 32;
+/** 58mm ~32 kolom, 80mm ~42 kolom di font default (font A) printer thermal umum. */
+function resolveLineWidth(paperWidth?: number): number {
+  return paperWidth === 80 ? 42 : 32;
+}
 
 export function buildReceiptEscPos(data: ReceiptData): Uint8Array {
+  const LINE_WIDTH = resolveLineWidth(data.paperWidth);
   const r = new ReceiptBuilder();
   r.init();
 

@@ -13,6 +13,7 @@ export default async function OutletSettingsPage() {
         name: outlet.name,
         address: outlet.address,
         phone: outlet.phone,
+        receiptPaperWidth: outlet.receiptPaperWidth,
         isActive: outlet.isActive,
       }))}
     />
