@@ -147,3 +147,27 @@ export async function redeemPoints(memberId: string, points: number) {
     });
   });
 }
+
+/**
+ * Produk yang paling sering dibeli member ini (dari riwayat transaksi COMPLETED),
+ * diurutkan dari qty terbanyak — dipakai buat quick-add di kasir pas member dipilih.
+ */
+export async function getMemberFavoriteProducts(tenantId: string, memberId: string, limit = 6) {
+  const grouped = await prisma.saleItem.groupBy({
+    by: ["productId"],
+    where: { tenantId, sale: { memberId, status: "COMPLETED" } },
+    _sum: { qty: true },
+    orderBy: { _sum: { qty: "desc" } },
+    take: limit,
+  });
+  if (grouped.length === 0) return [];
+
+  const products = await prisma.product.findMany({
+    where: { tenantId, id: { in: grouped.map((g) => g.productId) }, isActive: true },
+  });
+  const productMap = new Map(products.map((p) => [p.id, p]));
+
+  return grouped
+    .map((g) => productMap.get(g.productId))
+    .filter((p): p is NonNullable<typeof p> => Boolean(p));
+}

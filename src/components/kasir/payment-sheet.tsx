@@ -76,6 +76,7 @@ export function PaymentSheet({
   staticQrisPayload,
   stampProgram,
   channelMarkupByOrderType,
+  initialMember,
   onClose,
   onSuccess,
 }: {
@@ -87,6 +88,8 @@ export function PaymentSheet({
   staticQrisPayload: string | null;
   stampProgram: StampProgramSettings;
   channelMarkupByOrderType: Partial<Record<OrderType, number>>;
+  /** Member yang udah dipilih sebelumnya di layar kasir (mis. buat lihat menu favorit) — biar gak perlu cari ulang di sini. */
+  initialMember?: MemberOption | null;
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -99,7 +102,7 @@ export function PaymentSheet({
   const [orderMode, setOrderMode] = useState<"DINE_IN" | "TAKEAWAY" | "DELIVERY">("DINE_IN");
   const [deliveryChannel, setDeliveryChannel] = useState<OrderType>("GOFOOD");
   const [amountInput, setAmountInput] = useState("");
-  const [member, setMember] = useState<MemberOption | null>(null);
+  const [member, setMember] = useState<MemberOption | null>(initialMember ?? null);
   const [redeemStamp, setRedeemStamp] = useState(false);
   const [giftCardCode, setGiftCardCode] = useState("");
   const [giftCardLookup, setGiftCardLookup] = useState<LookupGiftCardResult | null>(null);

@@ -7,6 +7,7 @@ import { openShift, closeShift, getOpenShift } from "@/server/services/shift-ser
 import { createSale, type CartItemInput } from "@/server/services/sale-service";
 import { createCashOutTransaction } from "@/server/services/cash-out-service";
 import { getAvailableSerials } from "@/server/services/product-serial-service";
+import { getMemberFavoriteProducts } from "@/server/services/member-service";
 import type { CashOutMethod, OrderType, PaymentMethod } from "@prisma/client";
 
 export type ActionResult = { error?: string; success?: boolean };
@@ -123,6 +124,14 @@ export async function getAvailableSerialsAction(productId: string): Promise<{ se
 
   const serials = await getAvailableSerials(user.tenantId, productId, openShiftRecord.outletId);
   return serials.map((s) => ({ serialNumber: s.serialNumber }));
+}
+
+export type MemberFavoriteProduct = { id: string; name: string; price: number };
+
+export async function getMemberFavoriteProductsAction(memberId: string): Promise<MemberFavoriteProduct[]> {
+  const user = await requireSession();
+  const favorites = await getMemberFavoriteProducts(user.tenantId, memberId);
+  return favorites.map((p) => ({ id: p.id, name: p.name, price: p.price }));
 }
 
 export type CreateCashOutPayload = {

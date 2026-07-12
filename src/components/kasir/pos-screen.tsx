@@ -12,7 +12,8 @@ import { VariantPickerModal, type VariantGroupOption } from "@/components/kasir/
 import { BarcodeScannerModal } from "@/components/shared/barcode-scanner-modal";
 import { CameraIcon, XIcon } from "@/components/ui/icons";
 import { useToast, Toast } from "@/components/toast";
-import { getAvailableSerialsAction } from "@/app/(app)/kasir/actions";
+import { getAvailableSerialsAction, getMemberFavoriteProductsAction, type MemberFavoriteProduct } from "@/app/(app)/kasir/actions";
+import { MemberPicker, type MemberOption } from "@/components/kasir/member-picker";
 import type { OrderType } from "@prisma/client";
 
 export type PosProduct = {
@@ -80,7 +81,24 @@ export function PosScreen({
   const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null);
   const [variantPickerProduct, setVariantPickerProduct] = useState<PosProduct | null>(null);
   const [serialPickerProduct, setSerialPickerProduct] = useState<PosProduct | null>(null);
+  const [posMember, setPosMember] = useState<MemberOption | null>(null);
+  const [showMemberPicker, setShowMemberPicker] = useState(false);
+  const [favoriteProducts, setFavoriteProducts] = useState<MemberFavoriteProduct[]>([]);
   const { toastMessage, showToast } = useToast();
+
+  useEffect(() => {
+    if (!posMember) {
+      setFavoriteProducts([]);
+      return;
+    }
+    let cancelled = false;
+    getMemberFavoriteProductsAction(posMember.id).then((favorites) => {
+      if (!cancelled) setFavoriteProducts(favorites);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [posMember]);
   useEffect(() => {
     const handleGlobalKeyDown = (e: globalThis.KeyboardEvent) => {
       const target = e.target as HTMLElement;
@@ -404,6 +422,56 @@ export function PosScreen({
             </button>
           </div>
 
+          <div className="mb-3 shrink-0">
+            {posMember ? (
+              <div className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
+                <span className="text-sm font-medium text-[var(--color-text)]">👤 {posMember.name}</span>
+                <button
+                  type="button"
+                  onClick={() => setPosMember(null)}
+                  className="text-xs font-semibold text-[var(--color-primary)]"
+                >
+                  Ganti
+                </button>
+              </div>
+            ) : showMemberPicker ? (
+              <MemberPicker
+                value={posMember}
+                onChange={(selected) => {
+                  setPosMember(selected);
+                  setShowMemberPicker(false);
+                }}
+              />
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowMemberPicker(true)}
+                className="text-xs font-semibold text-[var(--color-primary)]"
+              >
+                + Pilih member (biar kelihatan menu favoritnya)
+              </button>
+            )}
+
+            {posMember && favoriteProducts.length > 0 && (
+              <div className="mt-2 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+                {favoriteProducts.map((favorite) => {
+                  const product = products.find((p) => p.id === favorite.id);
+                  if (!product) return null;
+                  return (
+                    <button
+                      key={favorite.id}
+                      type="button"
+                      onClick={() => addToCart(product)}
+                      className="flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/10 px-3 text-xs font-semibold text-[var(--color-primary)] active:scale-[0.98]"
+                    >
+                      ⭐ {favorite.name} · {formatRupiah(favorite.price)}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+
           <div className="mb-4 flex gap-2 overflow-x-auto pb-1 shrink-0 scrollbar-none">
             <button
               onClick={() => setActiveCategory("ALL")}
@@ -594,9 +662,11 @@ export function PosScreen({
           staticQrisPayload={staticQrisPayload}
           stampProgram={stampProgram}
           channelMarkupByOrderType={channelMarkupByOrderType}
+          initialMember={posMember}
           onClose={() => setShowPayment(false)}
           onSuccess={() => {
             resetCart();
+            setPosMember(null);
             setShowPayment(false);
             setShowCartSheet(false);
           }}
