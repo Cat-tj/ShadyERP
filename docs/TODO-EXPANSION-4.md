@@ -10,7 +10,7 @@
 ## 🚀 Ekspansi
 
 - [x] **E1** — Global error boundary: `src/app/error.tsx` + `global-error.tsx` dengan pesan bahasa Indonesia + tombol "Coba lagi"/"Kembali" (Area 3: kesiapan produksi) — `44c0f37`
-- [ ] **E2** — Harden `api/health`: bungkus ping DB dengan try/catch, balikin `{ok:false}` + 503 kalau gagal, bukan 500 mentah (Area 3)
+- [x] **E2** — Harden `api/health`: bungkus ping DB dengan try/catch, balikin `{ok:false}` + 503 kalau gagal, bukan 500 mentah (Area 3) — `ead43d3`
 - [ ] **E3** — Halaman publik cek status laundry (nomor order/HP, tanpa login) — reuse `LaundryOrderStatus` (Area 1: vertikal lain)
 - [ ] **E4** — Sambungkan `LaundryOrder`/`Booking` ke Member: `memberId` opsional, auto-match nomor HP, dapat poin pas selesai (Area 1)
 - [ ] **E5** — Laporan pemakaian split payment di Analitik: agregat `SalePayment` per metode/frekuensi 30 hari terakhir (Area 4: polish cafe)
