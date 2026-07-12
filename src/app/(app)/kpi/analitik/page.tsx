@@ -9,6 +9,7 @@ import {
   getOutletComparison,
   getSplitPaymentUsage,
   getFavoriteAttributionStats,
+  getRevenueByOutletType,
 } from "@/server/services/kpi-service";
 import { getFrequentlyUnavailableProducts } from "@/server/services/product-service";
 import { StatTile } from "@/components/laporan/stat-tile";
@@ -25,13 +26,19 @@ const METHOD_LABEL: Record<string, string> = {
   GIFT_CARD: "Voucher",
 };
 
+const OUTLET_TYPE_LABEL: Record<string, string> = {
+  PERMANENT: "Cabang tetap",
+  POPUP: "Pop-up",
+  EVENT: "Event",
+};
+
 export default async function KpiAnalitikPage() {
   const user = await requireRole(["OWNER", "MANAGER"]);
 
   const outlets = await listOutletsForUser(user.tenantId, user.id, user.role);
   const primaryOutletId = outlets[0]?.id;
 
-  const [velocity, retention, revenueByCategory, topProducts, outletComparison, stockTurnover, splitPaymentUsage, frequentlyUnavailable, favoriteAttribution] = await Promise.all([
+  const [velocity, retention, revenueByCategory, topProducts, outletComparison, stockTurnover, splitPaymentUsage, frequentlyUnavailable, favoriteAttribution, revenueByOutletType] = await Promise.all([
     getSalesVelocityByHour(user.tenantId),
     getMemberRetentionRate(user.tenantId, 30),
     getRevenueByCategory(user.tenantId, undefined, 30),
@@ -41,6 +48,7 @@ export default async function KpiAnalitikPage() {
     getSplitPaymentUsage(user.tenantId, 30),
     getFrequentlyUnavailableProducts(user.tenantId, outlets.map((o) => o.id), 30),
     getFavoriteAttributionStats(user.tenantId, 30),
+    getRevenueByOutletType(user.tenantId, 30),
   ]);
 
   const peakHour = velocity.reduce((best, h) => (h.sales > best.sales ? h : best), velocity[0]);
@@ -144,7 +152,23 @@ export default async function KpiAnalitikPage() {
             items={outletComparison.map((o) => ({
               label: o.outletName,
               value: o.revenue,
-              sublabel: `${o.transactionCount} transaksi · rata-rata ${formatRupiah(o.avgTransaction)}`,
+              sublabel: `${o.outletType !== "PERMANENT" ? `${OUTLET_TYPE_LABEL[o.outletType]} · ` : ""}${o.transactionCount} transaksi · rata-rata ${formatRupiah(o.avgTransaction)}`,
+            }))}
+          />
+        </div>
+      )}
+
+      {revenueByOutletType.length > 1 && (
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+          <h2 className="mb-3 text-base font-bold text-[var(--color-text)]">Omzet per jenis outlet (30 hari)</h2>
+          <p className="mb-3 text-xs text-[var(--color-text-secondary)]">
+            Bandingin kontribusi cabang tetap vs pop-up vs event.
+          </p>
+          <RankingBarChart
+            items={revenueByOutletType.map((item) => ({
+              label: OUTLET_TYPE_LABEL[item.outletType] ?? item.outletType,
+              value: item.revenue,
+              sublabel: `${item.outletCount} outlet · ${item.transactionCount} transaksi`,
             }))}
           />
         </div>

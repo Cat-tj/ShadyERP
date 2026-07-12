@@ -249,6 +249,7 @@ export async function getOutletComparison(tenantId: string, period = 30) {
       return {
         outletId: outlet.id,
         outletName: outlet.name,
+        outletType: outlet.outletType,
         revenue: totalSales._sum.total ?? 0,
         transactionCount: saleCount,
         itemsSold: totalItems._sum.qty ?? 0,
@@ -256,6 +257,39 @@ export async function getOutletComparison(tenantId: string, period = 30) {
       };
     })
   );
+}
+
+/** Omzet digabung per jenis outlet (Cabang tetap / Pop-up / Event) — buat bandingin kontribusi tiap jenis cabang. */
+export async function getRevenueByOutletType(tenantId: string, period = 30) {
+  const startDate = subDays(new Date(), period);
+
+  const [outlets, salesByOutlet] = await Promise.all([
+    prisma.outlet.findMany({ where: { tenantId, isActive: true } }),
+    prisma.sale.groupBy({
+      by: ["outletId"],
+      where: { tenantId, status: "COMPLETED", createdAt: { gte: startDate } },
+      _sum: { total: true },
+      _count: true,
+    }),
+  ]);
+
+  const statsByOutletId = new Map(
+    salesByOutlet.map((s) => [s.outletId, { revenue: s._sum.total ?? 0, transactionCount: s._count }])
+  );
+
+  const byType = new Map<string, { revenue: number; transactionCount: number; outletCount: number }>();
+  for (const outlet of outlets) {
+    const stats = statsByOutletId.get(outlet.id) ?? { revenue: 0, transactionCount: 0 };
+    const existing = byType.get(outlet.outletType) ?? { revenue: 0, transactionCount: 0, outletCount: 0 };
+    existing.revenue += stats.revenue;
+    existing.transactionCount += stats.transactionCount;
+    existing.outletCount += 1;
+    byType.set(outlet.outletType, existing);
+  }
+
+  return Array.from(byType.entries())
+    .map(([outletType, v]) => ({ outletType: outletType as "PERMANENT" | "POPUP" | "EVENT", ...v }))
+    .sort((a, b) => b.revenue - a.revenue);
 }
 
 // ============ SPLIT PAYMENT USAGE ============
