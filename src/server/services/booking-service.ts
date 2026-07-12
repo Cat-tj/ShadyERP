@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import type { BookingType, BookingStatus, PaymentMethod, OrderType } from "@prisma/client";
 import { buildInvoiceNumber, buildInvoicePrefix } from "@/lib/invoice";
 import { logSaleToJournal } from "@/server/services/accounting-service";
+import { findMemberByPhone } from "@/server/services/member-service";
 
 /**
  * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
@@ -50,7 +51,7 @@ export async function listBookings(
       outletId: { in: outletIds },
       scheduledAt: { gte: range.from, lt: range.to },
     },
-    include: { outlet: true, staff: true },
+    include: { outlet: true, staff: true, member: { select: { name: true } } },
     orderBy: { scheduledAt: "asc" },
   });
 }
@@ -59,11 +60,15 @@ export async function createBooking(tenantId: string, input: BookingInput) {
   if (!input.customerName.trim()) throw new Error("Nama pelanggan wajib diisi.");
   if (!input.serviceName.trim()) throw new Error("Nama layanan/pesanan wajib diisi.");
   validateBookingMoney(input);
+  const matchedMember = input.customerPhone?.trim()
+    ? await findMemberByPhone(tenantId, input.customerPhone)
+    : null;
   return prisma.booking.create({
     data: {
       tenantId,
       outletId: input.outletId,
       type: input.type,
+      memberId: matchedMember?.id ?? null,
       customerName: input.customerName.trim(),
       customerPhone: input.customerPhone?.trim() || null,
       serviceName: input.serviceName.trim(),
@@ -87,11 +92,15 @@ export async function updateBooking(tenantId: string, id: string, input: Booking
   if (!input.customerName.trim()) throw new Error("Nama pelanggan wajib diisi.");
   if (!input.serviceName.trim()) throw new Error("Nama layanan/pesanan wajib diisi.");
   validateBookingMoney(input);
+  const matchedMember = input.customerPhone?.trim()
+    ? await findMemberByPhone(tenantId, input.customerPhone)
+    : null;
   return prisma.booking.update({
     where: { id },
     data: {
       outletId: input.outletId,
       type: input.type,
+      memberId: matchedMember?.id ?? null,
       customerName: input.customerName.trim(),
       customerPhone: input.customerPhone?.trim() || null,
       serviceName: input.serviceName.trim(),
@@ -157,6 +166,7 @@ export async function updateBookingStatus(
             tenantId,
             outletId: booking.outletId,
             cashierId: activeCashierId,
+            memberId: booking.memberId,
             invoiceNumber,
             subtotal: booking.quotedAmount || 0,
             discountAmount: 0,
@@ -165,7 +175,7 @@ export async function updateBookingStatus(
             paymentMethod: "CASH" as PaymentMethod,
             amountPaid: booking.quotedAmount || 0,
             changeAmount: 0,
-            orderType: "TAKE_AWAY" as OrderType,
+            orderType: "TAKEAWAY" as OrderType,
             status: "COMPLETED",
             bookingId: id,
             items: {
@@ -186,6 +196,27 @@ export async function updateBookingStatus(
         });
 
         await logSaleToJournal(tenantId, sale.id, tx);
+
+        if (booking.memberId) {
+          const setting = await tx.tenantSetting.findUnique({ where: { tenantId } });
+          const points = Math.floor((booking.quotedAmount || 0) / (setting?.pointsPerAmount ?? 10000));
+          if (points > 0) {
+            await tx.pointTransaction.create({
+              data: {
+                tenantId,
+                memberId: booking.memberId,
+                type: "EARN",
+                points,
+                saleId: sale.id,
+                note: `Poin dari booking ${booking.serviceName}`,
+              },
+            });
+            await tx.member.update({
+              where: { id: booking.memberId },
+              data: { points: { increment: points } },
+            });
+          }
+        }
       });
     }
   }

@@ -32,6 +32,7 @@ export default async function LaundryPage() {
         outletName: order.outlet.name,
         customerName: order.customerName,
         customerPhone: order.customerPhone,
+        memberName: order.member?.name ?? null,
         serviceName: order.serviceName,
         serviceType: order.serviceType,
         weightGram: order.weightGram,

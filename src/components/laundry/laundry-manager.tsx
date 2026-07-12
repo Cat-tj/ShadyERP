@@ -13,6 +13,7 @@ export type LaundryOrderRow = {
   outletName: string;
   customerName: string;
   customerPhone: string | null;
+  memberName: string | null;
   serviceName: string | null;
   serviceType: LaundryServiceType;
   weightGram: number | null;
@@ -235,7 +236,16 @@ export function LaundryManager({
                 return (
                   <div key={order.id} className="flex flex-col gap-3 p-4 md:flex-row md:items-center md:justify-between">
                     <div className="min-w-0">
-                      <p className="truncate text-sm font-bold text-[var(--color-text)]">{order.orderNumber} · {order.customerName}</p>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <p className="truncate text-sm font-bold text-[var(--color-text)]">
+                          {order.orderNumber} · {order.customerName}
+                        </p>
+                        {order.memberName && (
+                          <span className="shrink-0 rounded-full bg-[var(--color-primary)]/10 px-2 py-0.5 text-[10px] font-semibold text-[var(--color-primary)]">
+                            Member: {order.memberName}
+                          </span>
+                        )}
+                      </div>
                       <p className="mt-0.5 text-xs text-[var(--color-text-secondary)]">
                         {STATUS_LABEL[order.status]} · {order.serviceName ?? SERVICE_TYPE_LABEL[order.serviceType] ?? order.serviceType} · {order.outletName} · {order.weightGram ? `${order.weightGram / 1000} kg` : `${order.itemQty ?? 1} item`} · {order.dueAt ? `Due ${formatTanggalPendek(order.dueAt)}` : "Tanpa due date"}
                       </p>

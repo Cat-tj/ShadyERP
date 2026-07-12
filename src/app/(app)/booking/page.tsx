@@ -33,6 +33,7 @@ export default async function BookingPage() {
         type: booking.type,
         customerName: booking.customerName,
         customerPhone: booking.customerPhone,
+        memberName: booking.member?.name ?? null,
         serviceName: booking.serviceName,
         scheduledAt: booking.scheduledAt.toISOString(),
         durationMinutes: booking.durationMinutes,

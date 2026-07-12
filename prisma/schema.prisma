@@ -330,6 +330,8 @@ model Member {
   pointTransactions PointTransaction[]
   stampTransactions StampTransaction[]
   sales             Sale[]
+  laundryOrders     LaundryOrder[]
+  bookings          Booking[]
 
   @@unique([tenantId, phone])
   @@index([tenantId])
@@ -1235,6 +1237,8 @@ model Booking {
   tenantId        String
   outletId        String
   type            BookingType   @default(APPOINTMENT)
+  /// Auto-matched dari customerPhone kalau nomornya kedaftar sebagai member — biar dapat poin & histori.
+  memberId        String?
   customerName    String
   customerPhone   String?
   serviceName     String
@@ -1252,14 +1256,16 @@ model Booking {
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  staff  User?  @relation(fields: [staffUserId], references: [id])
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet Outlet  @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  staff  User?   @relation(fields: [staffUserId], references: [id])
+  member Member? @relation(fields: [memberId], references: [id], onDelete: SetNull)
   sales  Sale[]
 
   @@index([tenantId])
   @@index([outletId])
   @@index([staffUserId])
+  @@index([memberId])
 }
 
 // ================== LAUNDRY ==================
@@ -1289,6 +1295,8 @@ model LaundryOrder {
   tenantId         String
   outletId         String
   laundryServiceId String?
+  /// Auto-matched dari customerPhone kalau nomornya kedaftar sebagai member — biar dapat poin & histori.
+  memberId         String?
   orderNumber      String             @unique
   customerName     String
   customerPhone    String?
@@ -1306,6 +1314,8 @@ model LaundryOrder {
   pickupDelivery   Boolean            @default(false)
   deliveryAddress  String?
   status           LaundryOrderStatus @default(RECEIVED)
+  /// Jaga dari poin dobel kalau staff toggle status maju-mundur (bisa PICKED_UP lebih dari sekali).
+  pointsAwarded    Boolean            @default(false)
   note             String?
   createdById      String
   createdAt        DateTime           @default(now())
@@ -1314,11 +1324,13 @@ model LaundryOrder {
   tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   outlet         Outlet          @relation(fields: [outletId], references: [id], onDelete: Cascade)
   laundryService LaundryService? @relation(fields: [laundryServiceId], references: [id], onDelete: SetNull)
+  member         Member?         @relation(fields: [memberId], references: [id], onDelete: SetNull)
   createdBy      User            @relation("LaundryOrderCreatedBy", fields: [createdById], references: [id])
 
   @@index([tenantId])
   @@index([outletId])
   @@index([laundryServiceId])
+  @@index([memberId])
   @@index([status])
   @@index([dueAt])
 }

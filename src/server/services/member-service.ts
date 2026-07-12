@@ -21,6 +21,13 @@ export async function searchMembers(tenantId: string, query: string) {
   });
 }
 
+/** Cari member berdasarkan nomor HP persis — dipakai buat auto-link laundry/booking ke member yang sudah kedaftar. */
+export async function findMemberByPhone(tenantId: string, phone: string) {
+  const trimmed = phone.trim();
+  if (!trimmed) return null;
+  return prisma.member.findFirst({ where: { tenantId, phone: trimmed } });
+}
+
 export async function listMembers(tenantId: string, query?: string) {
   const trimmed = query?.trim();
   return prisma.member.findMany({

@@ -1,5 +1,6 @@
 import { ulid } from "ulid";
 import { prisma } from "@/lib/prisma";
+import { findMemberByPhone } from "@/server/services/member-service";
 import type { LaundryOrderStatus, LaundryServiceType } from "@prisma/client";
 
 export type LaundryOrderInput = {
@@ -58,7 +59,7 @@ function validateLaundryInput(input: LaundryOrderInput) {
 export async function listLaundryOrders(tenantId: string, outletIds: string[], take = 80) {
   return prisma.laundryOrder.findMany({
     where: { tenantId, outletId: { in: outletIds } },
-    include: { outlet: true, createdBy: { select: { name: true } } },
+    include: { outlet: true, createdBy: { select: { name: true } }, member: { select: { name: true } } },
     orderBy: [{ status: "asc" }, { createdAt: "desc" }],
     take,
   });
@@ -151,12 +152,16 @@ export async function createLaundryOrder(
   if (input.laundryServiceId && !service) throw new Error("Jenis layanan laundry tidak ditemukan.");
   const serviceType = service?.serviceType ?? input.serviceType;
   const orderInput = { ...input, serviceType };
+  const matchedMember = input.customerPhone?.trim()
+    ? await findMemberByPhone(tenantId, input.customerPhone)
+    : null;
 
   return prisma.laundryOrder.create({
     data: {
       tenantId,
       outletId: input.outletId,
       laundryServiceId: service?.id ?? null,
+      memberId: matchedMember?.id ?? null,
       orderNumber: `LDY-${ulid()}`,
       customerName: input.customerName.trim(),
       customerPhone: input.customerPhone?.trim() || null,
@@ -186,6 +191,32 @@ export async function updateLaundryStatus(
 ) {
   const order = await prisma.laundryOrder.findFirst({ where: { id, tenantId } });
   if (!order) throw new Error("Order laundry tidak ditemukan.");
+
+  // Poin dikasih sekali aja seumur order (ditandai `pointsAwarded`) — kalau cuma dijaga dari
+  // status sebelumnya, staff toggle PICKED_UP -> READY -> PICKED_UP bisa dapat poin dobel.
+  if (status === "PICKED_UP" && !order.pointsAwarded && order.memberId) {
+    const setting = await prisma.tenantSetting.findUnique({ where: { tenantId } });
+    const points = Math.floor(order.total / (setting?.pointsPerAmount ?? 10000));
+    if (points > 0) {
+      await prisma.$transaction([
+        prisma.pointTransaction.create({
+          data: {
+            tenantId,
+            memberId: order.memberId,
+            type: "EARN",
+            points,
+            note: `Poin dari laundry ${order.orderNumber}`,
+          },
+        }),
+        prisma.member.update({
+          where: { id: order.memberId },
+          data: { points: { increment: points } },
+        }),
+      ]);
+    }
+    return prisma.laundryOrder.update({ where: { id }, data: { status, pointsAwarded: true } });
+  }
+
   return prisma.laundryOrder.update({ where: { id }, data: { status } });
 }
 

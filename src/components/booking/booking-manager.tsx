@@ -24,6 +24,7 @@ export type BookingRow = {
   type: BookingType;
   customerName: string;
   customerPhone: string | null;
+  memberName: string | null;
   serviceName: string;
   scheduledAt: string;
   durationMinutes: number;
@@ -157,6 +158,11 @@ export function BookingManager({
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-[var(--color-text)]">
                       {formatJam(booking.scheduledAt)} · {booking.customerName}
+                      {booking.memberName && (
+                        <span className="ml-1.5 rounded-full bg-[var(--color-primary)]/10 px-2 py-0.5 text-[10px] font-semibold text-[var(--color-primary)]">
+                          Member: {booking.memberName}
+                        </span>
+                      )}
                     </p>
                     <p className="text-xs text-[var(--color-text-secondary)]">
                       {booking.serviceName} · {TYPE_LABEL[booking.type]} · {booking.durationMinutes} menit
