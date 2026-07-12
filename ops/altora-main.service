@@ -1,0 +1,26 @@
+# Systemd service buat app utama Altora (semua vertikal kecuali Teams).
+#
+# Install:
+#   sudo cp ops/altora-main.service /etc/systemd/system/altora-main.service
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now altora-main
+#
+# Ganti WorkingDirectory & User sesuai lokasi clone repo di VPS kamu.
+# File .env (DATABASE_URL, AUTH_SECRET, dkk — lihat .env.example) harus
+# sudah ada di WorkingDirectory sebelum service ini dijalankan.
+
+[Unit]
+Description=Altora - app utama (semua vertikal kecuali Teams)
+After=network.target postgresql.service
+
+[Service]
+Type=simple
+User=altora
+WorkingDirectory=/home/altora/ShadyERP
+EnvironmentFile=/home/altora/ShadyERP/.env
+ExecStart=/usr/bin/npm run start
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target

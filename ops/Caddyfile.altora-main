@@ -1,0 +1,63 @@
+# Caddy config untuk app utama Altora (semua vertikal KECUALI Teams —
+# Teams punya app + Caddyfile terpisah sendiri di
+# apps/altora-teams-landing/ops/Caddyfile.altora-teams).
+#
+# Satu app Next.js yang sama melayani semua domain di bawah ini — dia
+# baca header Host lewat src/proxy.ts buat nentuin tema/copy/logo per
+# vertikal (lihat src/lib/verticals.ts). Makanya tiap subdomain butuh
+# blok Caddy sendiri (bukan satu blok "*.altora.my.id") supaya Caddy
+# bisa terbitkan sertifikat TLS terpisah buat masing-masing lewat
+# tantangan HTTP-01 standar — wildcard cert butuh plugin DNS-01 yang
+# belum tentu ada di instalasi Caddy kamu.
+#
+# Ganti 127.0.0.1:3000 kalau app utama jalan di port lain.
+
+altora.my.id {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:3000
+}
+
+cafe.altora.my.id {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:3000
+}
+
+toko.altora.my.id {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:3000
+}
+
+supermarket.altora.my.id {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:3000
+}
+
+laundry.altora.my.id {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:3000
+}
+
+counter.altora.my.id {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:3000
+}
+
+jasa.altora.my.id {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:3000
+}
+
+pabrik.altora.my.id {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:3000
+}
+
+company.altora.my.id {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:3000
+}
+
+accounting.altora.my.id {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:3000
+}
