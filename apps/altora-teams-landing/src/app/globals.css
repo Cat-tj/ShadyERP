@@ -1,0 +1,51 @@
+@import "tailwindcss";
+
+:root {
+  --paper: #f7f9fd;
+  --ink: #14213a;
+  --muted: #5e6d83;
+  --line: #dbe3ef;
+  --blue: #1e64ff;
+  --blue-soft: #dce9ff;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+}
+
+::selection { background: #b9d1ff; color: var(--ink); }
+
+.hero-grid::before {
+  content: "";
+  position: absolute;
+  left: -12rem;
+  top: 8rem;
+  width: 24rem;
+  height: 24rem;
+  border-radius: 999px;
+  background: radial-gradient(circle, rgba(30, 100, 255, 0.12), transparent 68%);
+  pointer-events: none;
+}
+
+@keyframes rise {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-rise { animation: rise .7s cubic-bezier(.16, 1, .3, 1) both; }
+.animate-rise-delayed { animation: rise .8s .12s cubic-bezier(.16, 1, .3, 1) both; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+}
+
+@media (max-width: 767px) {
+  .hero-grid::before { left: -14rem; top: 18rem; }
+}
