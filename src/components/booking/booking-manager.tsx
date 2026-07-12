@@ -349,7 +349,7 @@ function BookingFormModal({
         setError(result.error);
         return;
       }
-      onSaved(booking ? "Booking disimpan" : "Booking ditambahkan");
+      onSaved(result.warning ?? (booking ? "Booking disimpan" : "Booking ditambahkan"));
       router.refresh();
       onClose();
     });

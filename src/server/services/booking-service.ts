@@ -8,8 +8,9 @@ import { findMemberByPhone } from "@/server/services/member-service";
  * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
  *
  * Booking dicatat staff (mis. lewat telepon) — belum ada halaman publik untuk
- * pelanggan booking sendiri. Tidak ada deteksi bentrok jadwal otomatis; staff
- * cek manual dari daftar yang tampil.
+ * pelanggan booking sendiri. Ada deteksi bentrok jadwal per staff (lihat
+ * findConflictingBooking) tapi sifatnya cuma peringatan, bukan blokir — staff
+ * yang putuskan mau tetap lanjut atau ganti jadwal.
  */
 
 export type BookingInput = {
@@ -228,4 +229,44 @@ export async function deleteBooking(tenantId: string, id: string) {
   const booking = await prisma.booking.findFirst({ where: { id, tenantId } });
   if (!booking) throw new Error("Booking tidak ditemukan.");
   return prisma.booking.delete({ where: { id } });
+}
+
+/**
+ * Cek apakah ada booking lain di staff yang sama dengan jadwal yang tumpang tindih —
+ * cuma dipakai buat kasih peringatan (bukan blokir), staff yang putuskan mau tetap lanjut.
+ */
+export async function findConflictingBooking(
+  tenantId: string,
+  staffUserId: string | null,
+  scheduledAt: Date,
+  durationMinutes: number,
+  excludeBookingId?: string
+) {
+  if (!staffUserId) return null;
+
+  const newStart = scheduledAt;
+  const newEnd = new Date(scheduledAt.getTime() + durationMinutes * 60_000);
+
+  const candidates = await prisma.booking.findMany({
+    where: {
+      tenantId,
+      staffUserId,
+      status: { in: ["PENDING", "CONFIRMED"] },
+      ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
+      // Pre-filter kasar biar gak scan semua booking — jadwal yang mungkin overlap
+      // pasti mulai dalam rentang durasi terpanjang yang masuk akal (1 hari).
+      scheduledAt: {
+        gte: new Date(newStart.getTime() - 24 * 60 * 60_000),
+        lte: newEnd,
+      },
+    },
+  });
+
+  return (
+    candidates.find((b) => {
+      const bStart = b.scheduledAt;
+      const bEnd = new Date(b.scheduledAt.getTime() + b.durationMinutes * 60_000);
+      return newStart < bEnd && bStart < newEnd;
+    }) ?? null
+  );
 }
