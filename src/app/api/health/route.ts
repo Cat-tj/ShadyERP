@@ -7,6 +7,13 @@ import { prisma } from "@/lib/prisma";
  * (cold start) pas idle lama. Sengaja dikecualikan dari auth di proxy.ts.
  */
 export async function GET() {
-  await prisma.$queryRaw`SELECT 1`;
-  return NextResponse.json({ ok: true, timestamp: new Date().toISOString() });
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    return NextResponse.json({ ok: true, timestamp: new Date().toISOString() });
+  } catch {
+    return NextResponse.json(
+      { ok: false, timestamp: new Date().toISOString() },
+      { status: 503 }
+    );
+  }
 }
