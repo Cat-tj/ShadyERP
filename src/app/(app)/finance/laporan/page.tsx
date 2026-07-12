@@ -6,11 +6,12 @@ import {
   getTopProducts,
   getOutletComparison,
 } from "@/server/services/report-service";
+import { listClosedShiftsWithVariance, CASH_VARIANCE_THRESHOLD } from "@/server/services/shift-service";
 import { StatTile } from "@/components/laporan/stat-tile";
 import { TrendBarChart } from "@/components/laporan/trend-bar-chart";
 import { RankingBarChart } from "@/components/laporan/ranking-bar-chart";
 import { PeriodFilter } from "@/components/laporan/period-filter";
-import { formatRupiah } from "@/lib/format";
+import { formatRupiah, formatTanggal, formatJam } from "@/lib/format";
 import {
   WalletIcon,
   ReceiptIcon,
@@ -33,11 +34,12 @@ export default async function LaporanPage({
   const outlets = await listOutletsForUser(user.tenantId, user.id, user.role);
   const outletIds = outlets.map((o) => o.id);
 
-  const [summary, trend, topProducts, outletComparison] = await Promise.all([
+  const [summary, trend, topProducts, outletComparison, closedShifts] = await Promise.all([
     getSalesSummary(user.tenantId, outletIds, days),
     getDailyTrend(user.tenantId, outletIds, days),
     getTopProducts(user.tenantId, outletIds, days),
     getOutletComparison(user.tenantId, outletIds, days),
+    listClosedShiftsWithVariance(user.tenantId, outletIds, 20),
   ]);
 
   return (
@@ -90,6 +92,42 @@ export default async function LaporanPage({
               sublabel: `${o.transaksi} transaksi`,
             }))}
           />
+        </div>
+      )}
+
+      {closedShifts.length > 0 && (
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+          <h2 className="mb-3 text-base font-bold text-[var(--color-text)]">Riwayat selisih kas shift</h2>
+          <div className="divide-y divide-[var(--color-border)]">
+            {closedShifts.map((shift) => {
+              const isOver = Math.abs(shift.variance) > CASH_VARIANCE_THRESHOLD;
+              return (
+                <div key={shift.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                  <div className="min-w-0">
+                    <p className="truncate font-medium text-[var(--color-text)]">
+                      {shift.outletName} · {shift.cashierName}
+                    </p>
+                    <p className="text-xs text-[var(--color-text-secondary)]">
+                      {shift.closedAt ? `${formatTanggal(shift.closedAt)}, ${formatJam(shift.closedAt)}` : "-"}
+                      {shift.varianceNote ? ` · ${shift.varianceNote}` : ""}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 tabular-nums font-semibold ${
+                      shift.variance === 0
+                        ? "text-[var(--color-text-secondary)]"
+                        : isOver
+                          ? "text-[var(--color-danger)]"
+                          : "text-[var(--color-text)]"
+                    }`}
+                  >
+                    {shift.variance > 0 ? "+" : ""}
+                    {formatRupiah(shift.variance)}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

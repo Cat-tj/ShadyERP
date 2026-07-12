@@ -213,3 +213,27 @@ export async function getShiftSummary(tenantId: string, shiftId: string) {
     jumlahRetur,
   };
 }
+
+/**
+ * Riwayat shift yang sudah ditutup beserta selisih kasnya (closingCash vs expectedCash) —
+ * dipakai buat lihat tren selisih kas antar shift, bukan cuma pas satu shift ditutup.
+ */
+export async function listClosedShiftsWithVariance(tenantId: string, outletIds: string[], take = 30) {
+  const shifts = await prisma.cashierShift.findMany({
+    where: { tenantId, outletId: { in: outletIds }, status: "CLOSED" },
+    include: { outlet: true, user: true },
+    orderBy: { closedAt: "desc" },
+    take,
+  });
+
+  return shifts.map((shift) => ({
+    id: shift.id,
+    outletName: shift.outlet.name,
+    cashierName: shift.user.name,
+    closedAt: shift.closedAt,
+    expectedCash: shift.expectedCash ?? 0,
+    closingCash: shift.closingCash ?? 0,
+    variance: (shift.closingCash ?? 0) - (shift.expectedCash ?? 0),
+    varianceNote: shift.varianceNote,
+  }));
+}
