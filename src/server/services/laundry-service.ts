@@ -188,3 +188,24 @@ export async function updateLaundryStatus(
   if (!order) throw new Error("Order laundry tidak ditemukan.");
   return prisma.laundryOrder.update({ where: { id }, data: { status } });
 }
+
+/**
+ * Lookup publik (tanpa login) buat pelanggan cek status cucian sendiri —
+ * `orderNumber` pakai ULID jadi sudah unik & tidak bisa ditebak sendirian,
+ * tapi tetap dicocokkan ke `customerPhone` (kalau ada) supaya orang lain
+ * yang kebetulan tahu nomor order gak bisa intip data pelanggan lain.
+ */
+export async function getPublicLaundryOrderStatus(orderNumber: string, phone: string) {
+  const trimmedOrderNumber = orderNumber.trim();
+  const trimmedPhone = phone.trim();
+  if (!trimmedOrderNumber || !trimmedPhone) return null;
+
+  const order = await prisma.laundryOrder.findUnique({
+    where: { orderNumber: trimmedOrderNumber },
+    include: { outlet: true },
+  });
+  if (!order) return null;
+  if (order.customerPhone && order.customerPhone !== trimmedPhone) return null;
+
+  return order;
+}
