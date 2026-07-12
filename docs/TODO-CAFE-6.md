@@ -12,7 +12,7 @@
 - [x] **D3** — Peringatan selisih kas pas tutup shift: kalau `closingCash` vs `expectedCash` beda lebih dari Rp10.000, wajib isi catatan alasan sebelum submit — `f381d37`
 - [x] **D4** — Split payment: bayar 1 transaksi pakai lebih dari 1 metode (mis. sebagian cash sebagian QRIS) — `27b1306`
 - [x] **D5** — Harga beda per jam (happy hour): sudah tercakup fitur **Promo terjadwal** yang ada (`5f670ee`) — Owner set jadwal (hari + jam mulai/selesai) & diskon di Pengaturan > Promo, otomatis aktif di kasir tanpa input manual lewat `getActivePromosNow()`. Gak dibuat sistem baru biar gak dobel dengan yang sudah jalan.
-- [ ] **D6** — Rekomendasi menu favorit member: pas member dipilih di kasir, tampilkan menu yang paling sering dia beli buat checkout lebih cepat
+- [x] **D6** — Rekomendasi menu favorit member: pas member dipilih di kasir, tampilkan menu yang paling sering dia beli buat checkout lebih cepat — `7bdae81`
 
 ---
 
