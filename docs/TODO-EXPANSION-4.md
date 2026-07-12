@@ -17,7 +17,7 @@
 - [x] **E6** — Tren selisih kas shift: laporan riwayat `expectedCash` vs `closingCash` antar shift, bukan cuma di layar tutup shift (Area 4) — `c3b6322`
 - [x] **E7** — Peringatan bentrok jadwal booking: cek overlap `scheduledAt`+`durationMinutes` per staff, warning (bukan blokir) (Area 1) — `58bcb19`
 - [x] **E8** — Toggle happy hour di mode Simple: kontrol on/off + jam mulai/selesai ringkas (halaman baru `/simple/promo`, link dari `/simple/menu`), tanpa masuk Pengaturan penuh (Area 2: audit Simple) — `4f88bd5`
-- [ ] **E9** — Setting lebar kertas printer 58mm/80mm per outlet, `LINE_WIDTH` di `escpos.ts` gak lagi hardcode 32 (Area 3)
+- [x] **E9** — Setting lebar kertas printer 58mm/80mm per outlet, `LINE_WIDTH` di `escpos.ts` gak lagi hardcode 32 — sekalian perbaiki padding byte-safe buat nama non-ASCII (Area 3) — `cdeea73`
 - [ ] **E10** — Log & insight "produk sering habis": catat tiap kejadian auto-hide (D1), tampilkan sebagai insight Simple/Advanced (Area 4)
 - [ ] **E11** — Atribusi penjualan dari menu favorit member: tandai item yang asalnya dari klik favorit (D6), laporkan kontribusi omzetnya (Area 4)
 - [ ] **E12** — Bayar laundry cicil/DP: ganti `paidAmount` tunggal jadi rincian pembayaran mirip `SalePayment[]` cafe (Area 1)
