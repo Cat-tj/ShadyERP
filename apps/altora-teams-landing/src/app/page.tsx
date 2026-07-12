@@ -293,6 +293,36 @@ export default function Home() {
                 <div className={`flex h-11 w-11 items-center justify-center rounded-xl ${index === 0 ? "bg-[var(--blue)] text-white" : "bg-[var(--paper)] text-[var(--blue)]"}`}><Icon size={22} stroke={1.7} /></div>
                 <h3 className="mt-12 text-xl font-bold tracking-[-0.035em]">{item.title}</h3>
                 <p className="mt-3 leading-7 text-[var(--muted)]">{item.body}</p>
+
+                {index === 0 && (
+                  <div className="mt-8">
+                    <div className="flex flex-wrap gap-2">
+                      <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-[var(--blue-deep)]">2 cara absen beda-beda</span>
+                      <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-[#be123c]">0 bukti kehadiran</span>
+                      <span className="rounded-full bg-white px-3 py-1 text-[11px] font-bold text-[var(--muted)]">Sulit diaudit</span>
+                    </div>
+                    <div className="mt-4 rounded-2xl bg-white p-4 shadow-[0_10px_28px_rgba(14,38,82,.06)]">
+                      <div className="flex items-center justify-between gap-3">
+                        <div className="flex min-w-0 items-center gap-3">
+                          <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-[#fdf1dc] text-xs font-bold text-[#a16207]">DK</span>
+                          <div className="min-w-0">
+                            <p className="truncate text-sm font-bold">Dewi Kurnia</p>
+                            <p className="text-xs text-[var(--muted)]">Shift pagi · Cabang BSD</p>
+                          </div>
+                        </div>
+                        <span className="shrink-0 rounded-full bg-[#fdf1dc] px-2.5 py-1 text-[10px] font-bold text-[#a16207]">Perlu dicek</span>
+                      </div>
+                      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs text-[var(--muted)]">
+                        <span className="flex items-center gap-1"><IconClock size={13} stroke={2} /> 08:14 · telat 14 mnt</span>
+                        <span className="flex items-center gap-1"><IconMapPin size={13} stroke={2} /> Lokasi belum valid</span>
+                      </div>
+                    </div>
+                    <div className="mt-3 flex items-center justify-between text-xs text-[var(--muted)]">
+                      <span>Tanpa bukti, sulit ditindaklanjuti.</span>
+                      <span className="flex items-center gap-0.5 font-semibold text-[var(--blue-deep)]">Lihat detail <IconArrowRight size={13} stroke={2.2} /></span>
+                    </div>
+                  </div>
+                )}
               </article>
             );
           })}
