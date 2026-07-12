@@ -144,6 +144,15 @@ model Tenant {
   subscription             Subscription?
 }
 
+/// PERMANENT = cabang tetap biasa. POPUP = cabang kecil & portable (mis. lapak/booth
+/// yang gampang dipindah). EVENT = cabang kecil yang dibuka khusus buat satu acara,
+/// biasanya bayar biaya sewa tempat/booth (lihat field event* di bawah).
+enum OutletType {
+  PERMANENT
+  POPUP
+  EVENT
+}
+
 model Outlet {
   id        String   @id @default(cuid())
   tenantId  String
@@ -152,6 +161,14 @@ model Outlet {
   phone     String?
   /// Lebar kertas printer thermal outlet ini dalam mm — cuma 58 atau 80, dipakai buat format struk ESC/POS.
   receiptPaperWidth Int @default(58)
+  outletType OutletType @default(PERMANENT)
+  /// Field event* di bawah cuma relevan kalau outletType EVENT — diisi dari form Tambah/Ubah outlet.
+  eventName      String?
+  eventStartDate DateTime?
+  eventEndDate   DateTime?
+  /// Biaya sewa tempat/booth event — kalau diisi saat outlet EVENT baru dibuat, otomatis
+  /// dicatat sebagai satu baris Pengeluaran (kategori EVENT) biar tidak perlu input dobel.
+  eventFee       Int?
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -1037,6 +1054,7 @@ enum ExpenseCategory {
   BAHAN_BAKU
   MARKETING
   TRANSPORT
+  EVENT
   LAINNYA
 }
 

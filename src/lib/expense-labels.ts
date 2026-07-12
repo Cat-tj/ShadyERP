@@ -7,6 +7,7 @@ export const EXPENSE_CATEGORY_LABELS: Record<ExpenseCategory, string> = {
   BAHAN_BAKU: "Bahan baku",
   MARKETING: "Marketing",
   TRANSPORT: "Transport",
+  EVENT: "Biaya event",
   LAINNYA: "Lainnya",
 };
 

@@ -2,6 +2,7 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import type { OutletType } from "@prisma/client";
 import {
   createOutletAction,
   updateOutletAction,
@@ -9,6 +10,7 @@ import {
 } from "@/app/(app)/pengaturan/outlet/actions";
 import { useToast, Toast } from "@/components/toast";
 import { XIcon } from "@/components/ui/icons";
+import { formatRupiah, formatTanggalPendek } from "@/lib/format";
 
 export type OutletRow = {
   id: string;
@@ -17,6 +19,23 @@ export type OutletRow = {
   phone: string | null;
   receiptPaperWidth: number;
   isActive: boolean;
+  outletType: OutletType;
+  eventName: string | null;
+  eventStartDate: string | null;
+  eventEndDate: string | null;
+  eventFee: number | null;
+};
+
+const OUTLET_TYPE_OPTIONS: { value: OutletType; label: string; description: string }[] = [
+  { value: "PERMANENT", label: "Cabang tetap", description: "Cabang biasa, buka terus-menerus." },
+  { value: "POPUP", label: "Pop-up", description: "Cabang kecil & portable, gampang dipindah-pindah (mis. lapak/booth)." },
+  { value: "EVENT", label: "Event", description: "Cabang kecil khusus satu acara — biasanya bayar biaya sewa tempat/booth." },
+];
+
+const OUTLET_TYPE_BADGE_LABEL: Record<OutletType, string | null> = {
+  PERMANENT: null,
+  POPUP: "Pop-up",
+  EVENT: "Event",
 };
 
 function OutletFormModal({
@@ -33,8 +52,14 @@ function OutletFormModal({
   const [address, setAddress] = useState(outlet?.address ?? "");
   const [phone, setPhone] = useState(outlet?.phone ?? "");
   const [paperWidth, setPaperWidth] = useState<58 | 80>(outlet?.receiptPaperWidth === 80 ? 80 : 58);
+  const [outletType, setOutletType] = useState<OutletType>(outlet?.outletType ?? "PERMANENT");
+  const [eventName, setEventName] = useState(outlet?.eventName ?? "");
+  const [eventStartDate, setEventStartDate] = useState(outlet?.eventStartDate?.slice(0, 10) ?? "");
+  const [eventEndDate, setEventEndDate] = useState(outlet?.eventEndDate?.slice(0, 10) ?? "");
+  const [eventFee, setEventFee] = useState(outlet?.eventFee ? String(outlet.eventFee) : "");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const isNewEventOutlet = !outlet && outletType === "EVENT";
 
   function handleSubmit() {
     setError(null);
@@ -46,6 +71,11 @@ function OutletFormModal({
         address: address.trim() || null,
         phone: phone.trim() || null,
         receiptPaperWidth: paperWidth,
+        outletType,
+        eventName: eventName.trim() || null,
+        eventStartDate: eventStartDate ? new Date(eventStartDate) : null,
+        eventEndDate: eventEndDate ? new Date(eventEndDate) : null,
+        eventFee: eventFee ? Number(eventFee) : null,
       };
       const result = outlet
         ? await updateOutletAction(outlet.id, input)
@@ -122,6 +152,77 @@ function OutletFormModal({
               <option value={80}>80mm (printer meja/counter)</option>
             </select>
           </div>
+          <div className="flex flex-col gap-1.5">
+            <label className="text-sm font-medium text-[var(--color-text)]">Jenis outlet</label>
+            <div className="grid grid-cols-3 gap-2">
+              {OUTLET_TYPE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setOutletType(option.value)}
+                  className={`min-h-[44px] rounded-lg border px-2 text-xs font-semibold transition-colors ${
+                    outletType === option.value
+                      ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                      : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-[var(--color-text-secondary)]">
+              {OUTLET_TYPE_OPTIONS.find((option) => option.value === outletType)?.description}
+            </p>
+          </div>
+
+          {outletType === "EVENT" && (
+            <div className="flex flex-col gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-[var(--color-text)]">Nama event (opsional)</label>
+                <input
+                  value={eventName}
+                  onChange={(e) => setEventName(e.target.value)}
+                  placeholder="Bazar Ramadhan 2026"
+                  className="min-h-[44px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-[var(--color-text)]">Tanggal mulai</label>
+                  <input
+                    type="date"
+                    value={eventStartDate}
+                    onChange={(e) => setEventStartDate(e.target.value)}
+                    className="min-h-[44px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+                  />
+                </div>
+                <div className="flex flex-col gap-1.5">
+                  <label className="text-sm font-medium text-[var(--color-text)]">Tanggal selesai</label>
+                  <input
+                    type="date"
+                    value={eventEndDate}
+                    onChange={(e) => setEventEndDate(e.target.value)}
+                    className="min-h-[44px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-col gap-1.5">
+                <label className="text-sm font-medium text-[var(--color-text)]">Biaya event (opsional)</label>
+                <input
+                  type="number"
+                  value={eventFee}
+                  onChange={(e) => setEventFee(e.target.value)}
+                  placeholder="Sewa tempat/booth"
+                  className="min-h-[44px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
+                />
+                {isNewEventOutlet && (
+                  <p className="text-xs text-[var(--color-text-secondary)]">
+                    Otomatis dicatat sebagai pengeluaran outlet ini begitu disimpan.
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         <button
@@ -186,6 +287,11 @@ export function OutletManager({ outlets }: { outlets: OutletRow[] }) {
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-[var(--color-text)]">
                     {outlet.name}
+                    {OUTLET_TYPE_BADGE_LABEL[outlet.outletType] && (
+                      <span className="ml-2 rounded-full bg-[var(--color-primary)]/10 px-2 py-0.5 text-xs font-medium text-[var(--color-primary)]">
+                        {OUTLET_TYPE_BADGE_LABEL[outlet.outletType]}
+                      </span>
+                    )}
                     {!outlet.isActive && (
                       <span className="ml-2 rounded-full bg-[var(--color-warning-bg)] px-2 py-0.5 text-xs font-medium text-[var(--color-warning-text)]">
                         Nonaktif
@@ -197,6 +303,14 @@ export function OutletManager({ outlets }: { outlets: OutletRow[] }) {
                     {outlet.phone ? ` · ${outlet.phone}` : ""}
                     {` · Kertas ${outlet.receiptPaperWidth}mm`}
                   </p>
+                  {outlet.outletType === "EVENT" && (outlet.eventName || outlet.eventStartDate || outlet.eventFee) && (
+                    <p className="truncate text-xs text-[var(--color-text-secondary)]">
+                      {outlet.eventName ?? "Event"}
+                      {outlet.eventStartDate ? ` · ${formatTanggalPendek(outlet.eventStartDate)}` : ""}
+                      {outlet.eventEndDate ? ` – ${formatTanggalPendek(outlet.eventEndDate)}` : ""}
+                      {outlet.eventFee ? ` · Biaya ${formatRupiah(outlet.eventFee)}` : ""}
+                    </p>
+                  )}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   <button

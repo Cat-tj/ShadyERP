@@ -15,7 +15,7 @@ export async function createOutletAction(input: OutletInput): Promise<ActionResu
   const user = await requireRole(["OWNER"]);
   if (!input.name.trim()) return { error: "Nama outlet wajib diisi." };
   try {
-    await createOutlet(user.tenantId, input);
+    await createOutlet(user.tenantId, user.id, input);
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal menambah outlet." };
   }

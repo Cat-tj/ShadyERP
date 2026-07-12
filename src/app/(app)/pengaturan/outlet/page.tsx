@@ -15,6 +15,11 @@ export default async function OutletSettingsPage() {
         phone: outlet.phone,
         receiptPaperWidth: outlet.receiptPaperWidth,
         isActive: outlet.isActive,
+        outletType: outlet.outletType,
+        eventName: outlet.eventName,
+        eventStartDate: outlet.eventStartDate?.toISOString() ?? null,
+        eventEndDate: outlet.eventEndDate?.toISOString() ?? null,
+        eventFee: outlet.eventFee,
       }))}
     />
   );
