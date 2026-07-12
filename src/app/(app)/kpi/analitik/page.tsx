@@ -9,6 +9,7 @@ import {
   getOutletComparison,
   getSplitPaymentUsage,
 } from "@/server/services/kpi-service";
+import { getFrequentlyUnavailableProducts } from "@/server/services/product-service";
 import { StatTile } from "@/components/laporan/stat-tile";
 import { RankingBarChart } from "@/components/laporan/ranking-bar-chart";
 import { formatRupiah } from "@/lib/format";
@@ -29,7 +30,7 @@ export default async function KpiAnalitikPage() {
   const outlets = await listOutletsForUser(user.tenantId, user.id, user.role);
   const primaryOutletId = outlets[0]?.id;
 
-  const [velocity, retention, revenueByCategory, topProducts, outletComparison, stockTurnover, splitPaymentUsage] = await Promise.all([
+  const [velocity, retention, revenueByCategory, topProducts, outletComparison, stockTurnover, splitPaymentUsage, frequentlyUnavailable] = await Promise.all([
     getSalesVelocityByHour(user.tenantId),
     getMemberRetentionRate(user.tenantId, 30),
     getRevenueByCategory(user.tenantId, undefined, 30),
@@ -37,6 +38,7 @@ export default async function KpiAnalitikPage() {
     getOutletComparison(user.tenantId, 30),
     primaryOutletId ? getStockTurnoverByProduct(user.tenantId, primaryOutletId, 30) : Promise.resolve([]),
     getSplitPaymentUsage(user.tenantId, 30),
+    getFrequentlyUnavailableProducts(user.tenantId, outlets.map((o) => o.id), 30),
   ]);
 
   const peakHour = velocity.reduce((best, h) => (h.sales > best.sales ? h : best), velocity[0]);
@@ -143,6 +145,25 @@ export default async function KpiAnalitikPage() {
               sublabel: `${o.transactionCount} transaksi · rata-rata ${formatRupiah(o.avgTransaction)}`,
             }))}
           />
+        </div>
+      )}
+
+      {frequentlyUnavailable.length > 0 && (
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+          <h2 className="mb-3 text-base font-bold text-[var(--color-text)]">Produk sering habis (30 hari)</h2>
+          <p className="mb-3 text-xs text-[var(--color-text-secondary)]">
+            Produk yang otomatis disembunyikan dari kasir karena bahan resepnya habis, minimal 3 hari berbeda.
+          </p>
+          <div className="divide-y divide-[var(--color-border)]">
+            {frequentlyUnavailable.slice(0, 10).map((item) => (
+              <div key={item.productId} className="flex items-center justify-between py-2 text-sm">
+                <p className="truncate font-medium text-[var(--color-text)]">{item.productName}</p>
+                <span className="shrink-0 tabular-nums font-semibold text-[var(--color-danger)]">
+                  {item.daysUnavailable} hari
+                </span>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 

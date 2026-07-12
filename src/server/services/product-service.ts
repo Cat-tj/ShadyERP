@@ -3,6 +3,7 @@ import { assertCanAddProduct } from "@/server/services/billing-service";
 import { recordAuditLog } from "@/server/services/audit-log-service";
 import { formatRupiah } from "@/lib/format";
 import { computeSuggestedPrice } from "@/lib/pricing";
+import { todayRangeJakarta, subDays } from "@/lib/date-range";
 
 /**
  * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
@@ -170,6 +171,57 @@ export async function getUnsellableProductIds(tenantId: string, outletId: string
     if (maxSellable(productId, new Set()) <= 0) unsellable.add(productId);
   }
   return unsellable;
+}
+
+/**
+ * Catat produk yang lagi auto-hide (D1) hari ini — satu baris per produk per
+ * outlet per hari (upsert, gak numpuk tiap kali kasir dibuka). Dipakai buat
+ * insight "produk sering habis".
+ */
+export async function logProductUnavailability(tenantId: string, outletId: string, productIds: string[]) {
+  if (productIds.length === 0) return;
+  const { start } = todayRangeJakarta();
+  await Promise.all(
+    productIds.map((productId) =>
+      prisma.productUnavailabilityLog.upsert({
+        where: { tenantId_outletId_productId_date: { tenantId, outletId, productId, date: start } },
+        create: { tenantId, outletId, productId, date: start },
+        update: {},
+      })
+    )
+  );
+}
+
+/** Produk yang paling sering auto-hide (dalam N hari terakhir, minimal muncul `minDays` hari). */
+export async function getFrequentlyUnavailableProducts(
+  tenantId: string,
+  outletIds: string[],
+  days = 30,
+  minDays = 3
+) {
+  const since = subDays(new Date(), days);
+  const grouped = await prisma.productUnavailabilityLog.groupBy({
+    by: ["productId"],
+    where: { tenantId, outletId: { in: outletIds }, date: { gte: since } },
+    _count: { date: true },
+  });
+
+  const filtered = grouped.filter((g) => g._count.date >= minDays);
+  if (filtered.length === 0) return [];
+
+  const products = await prisma.product.findMany({
+    where: { id: { in: filtered.map((g) => g.productId) } },
+    select: { id: true, name: true },
+  });
+  const productMap = new Map(products.map((p) => [p.id, p.name]));
+
+  return filtered
+    .map((g) => ({
+      productId: g.productId,
+      productName: productMap.get(g.productId) ?? "Produk dihapus",
+      daysUnavailable: g._count.date,
+    }))
+    .sort((a, b) => b.daysUnavailable - a.daysUnavailable);
 }
 
 /**

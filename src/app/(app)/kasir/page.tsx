@@ -1,7 +1,12 @@
 import { requireSession } from "@/server/require-session";
 import { getOpenShift } from "@/server/services/shift-service";
 import { listOutletsForUser } from "@/server/services/outlet-service";
-import { listProductsWithStock, listCategories, getUnsellableProductIds } from "@/server/services/product-service";
+import {
+  listProductsWithStock,
+  listCategories,
+  getUnsellableProductIds,
+  logProductUnavailability,
+} from "@/server/services/product-service";
 import { getActivePromosNow } from "@/server/services/promo-service";
 import { loadEffectiveGroupsByProduct } from "@/server/services/product-variant-service";
 import { listChannelPricingRules } from "@/server/services/channel-pricing-service";
@@ -30,6 +35,8 @@ export default async function KasirPage() {
     listChannelPricingRules(user.tenantId),
     getUnsellableProductIds(user.tenantId, shift.outletId),
   ]);
+
+  await logProductUnavailability(user.tenantId, shift.outletId, Array.from(unsellableProductIds));
 
   const activeProducts = products.filter((product) => product.isActive);
   const effectiveGroupsByProduct = await loadEffectiveGroupsByProduct(

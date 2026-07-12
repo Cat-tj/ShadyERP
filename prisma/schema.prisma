@@ -90,6 +90,7 @@ model Tenant {
   categories               Category[]
   products                 Product[]
   productStocks            ProductStock[]
+  productUnavailabilityLogs ProductUnavailabilityLog[]
   cashierShifts            CashierShift[]
   sales                    Sale[]
   salePayments             SalePayment[]
@@ -158,6 +159,7 @@ model Outlet {
 
   userOutlets              UserOutlet[]
   productStocks            ProductStock[]
+  productUnavailabilityLogs ProductUnavailabilityLog[]
   cashierShifts            CashierShift[]
   sales                    Sale[]
   cashOutTransactions      CashOutTransaction[]
@@ -509,6 +511,7 @@ model Product {
   recipes            ProductRecipeItem[]       @relation("ProductRecipe")
   ingredients        ProductRecipeItem[]       @relation("ProductIngredient")
   serials            ProductSerial[]
+  unavailabilityLogs ProductUnavailabilityLog[]
 
   @@index([tenantId])
   @@index([categoryId])
@@ -625,6 +628,26 @@ model ProductStock {
   @@unique([productId, outletId])
   @@index([tenantId])
   @@index([outletId])
+}
+
+/// Jejak harian produk yang otomatis di-nonaktifkan di kasir karena bahan resepnya habis (D1) —
+/// satu baris per produk per outlet per hari (di-upsert, gak numpuk tiap kali halaman kasir dibuka).
+/// Dipakai buat insight "produk sering habis".
+model ProductUnavailabilityLog {
+  id        String   @id @default(cuid())
+  tenantId  String
+  outletId  String
+  productId String
+  date      DateTime // tengah malam hari itu (Asia/Jakarta), bukan timestamp presisi
+  createdAt DateTime @default(now())
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet  Outlet  @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([tenantId, outletId, productId, date])
+  @@index([tenantId])
+  @@index([productId])
 }
 
 /// Jejak audit perubahan stok manual (lewat halaman Produk > Ubah).

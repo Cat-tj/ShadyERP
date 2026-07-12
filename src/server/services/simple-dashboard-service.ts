@@ -3,6 +3,7 @@ import { todayRangeJakarta } from "@/lib/date-range";
 import { getCashOutletSummary } from "@/server/services/finance-operational-service";
 import { getExpiringBatches, getLowStockProducts } from "@/server/services/inventory-service";
 import { getTopProducts, getProductSalesPerformance } from "@/server/services/report-service";
+import { getFrequentlyUnavailableProducts } from "@/server/services/product-service";
 
 export type SimpleAlertSeverity = "CRITICAL" | "WARNING" | "INFO";
 
@@ -69,6 +70,7 @@ export async function getSimpleAlerts(tenantId: string, outletIds: string[]): Pr
     dueInvoices,
     pendingOrders,
     productPerformance,
+    frequentlyUnavailable,
   ] = await Promise.all([
     Promise.all(outletIds.map((outletId) => getLowStockProducts(tenantId, outletId))),
     Promise.all(outletIds.map((outletId) => getExpiringBatches(tenantId, outletId, 14))),
@@ -108,6 +110,7 @@ export async function getSimpleAlerts(tenantId: string, outletIds: string[]): Pr
       take: 8,
     }),
     getProductSalesPerformance(tenantId, outletIds, 30, 5),
+    getFrequentlyUnavailableProducts(tenantId, outletIds, 14, 3),
   ]);
 
   lowStockByOutlet.flat().slice(0, 8).forEach((item) => {
@@ -183,6 +186,17 @@ export async function getSimpleAlerts(tenantId: string, outletIds: string[]): Pr
         href: "/simple/data",
       });
     });
+
+  frequentlyUnavailable.slice(0, 5).forEach((item) => {
+    alerts.push({
+      id: `unavailable-${item.productId}`,
+      severity: "WARNING",
+      category: "STOCK",
+      title: `${item.productName} sering habis`,
+      body: `Otomatis gak bisa dijual di ${item.daysUnavailable} dari 14 hari terakhir — cek stok bahannya.`,
+      href: "/inventory",
+    });
+  });
 
   pendingOrders.forEach((order) => {
     alerts.push({
