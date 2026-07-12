@@ -17,6 +17,20 @@ const SCREEN_TILES: Record<VerticalKey, [{ label: string; value: string }, { lab
   accounting: [{ label: "Kas hari ini", value: "Rp8,1jt" }, { label: "Laba bulan ini", value: "+14%" }],
 };
 
+/** Baris aktivitas mockup layar HP — 3 baris per vertikal, cuma ilustrasi. */
+const SCREEN_FEED: Record<VerticalKey, string[]> = {
+  cafe: ["Meja 04 pesan 2× Kopi Susu", "Meja 07 minta bill", "Stok Croissant tinggal 3"],
+  toko: ["Scan barcode: Indomie Goreng", "Transfer stok ke Cabang 2", "Produk terlaris: Aqua 600ml"],
+  supermarket: ["PO #482 barang masuk", "Stock opname Gudang A selesai", "Supplier baru ditambahkan"],
+  laundry: ["Order #128 siap diambil", "DP Rp20.000 diterima", "Cucian #131 mulai diproses"],
+  counter: ["Servis HP #45 selesai", "Garansi aksesoris 30 hari aktif", "Stok casing tinggal 2"],
+  jasa: ["Booking baru 14:00 masuk", "Staf Andi pegang 3 jadwal", "DP booking diterima"],
+  pabrik: ["Bahan baku tepung terisi ulang", "Maintenance mesin #2 dijadwalkan", "Laporan pemakaian harian siap"],
+  company: ["E-sign dokumen disetujui", "Login baru dari Cabang Bali", "Laporan gabungan 5 outlet siap"],
+  teams: ["Dewi absen 08:14, telat 14 mnt", "Tukar shift disetujui", "Target tim naik ke 72%"],
+  accounting: ["Jurnal otomatis dari transaksi", "Laba rugi bulan ini siap", "Kas kecil direkonsiliasi"],
+};
+
 const ROTATE_MS = 4200;
 
 export function VerticalRotator() {
@@ -24,6 +38,7 @@ export function VerticalRotator() {
   const pausedRef = useRef(false);
   const active = VERTICALS[index];
   const tiles = SCREEN_TILES[active.key];
+  const feed = SCREEN_FEED[active.key];
 
   useEffect(() => {
     const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
@@ -106,7 +121,19 @@ export function VerticalRotator() {
                     </div>
                   ))}
                 </div>
-                <div key={active.key} className="vshow-ribbon" style={ribbonStyle} />
+                <div key={active.key} className="vshow-feed">
+                  {feed.map((line, i) => (
+                    <div className="vshow-feed-row" key={line} style={{ "--reveal-delay": `${i * 0.06}s` } as React.CSSProperties}>
+                      <span className="vshow-feed-dot" />
+                      <span>{line}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="vshow-sync">
+                  <span className="vshow-sync-dot" />
+                  Tersinkron otomatis
+                </div>
+                <div key={`${active.key}-ribbon`} className="vshow-ribbon" style={ribbonStyle} />
               </div>
             </div>
           </div>
