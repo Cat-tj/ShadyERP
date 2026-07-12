@@ -20,7 +20,7 @@
 - [x] **E9** — Setting lebar kertas printer 58mm/80mm per outlet, `LINE_WIDTH` di `escpos.ts` gak lagi hardcode 32 — sekalian perbaiki padding byte-safe buat nama non-ASCII (Area 3) — `cdeea73`
 - [x] **E10** — Log & insight "produk sering habis": catat tiap kejadian auto-hide (D1), tampilkan sebagai insight Simple/Advanced (Area 4) — `41fae5b`
 - [x] **E11** — Atribusi penjualan dari menu favorit member: tandai item yang asalnya dari klik favorit (D6), laporkan kontribusi omzetnya (Area 4) — `74f8a8f`
-- [ ] **E12** — Bayar laundry cicil/DP: ganti `paidAmount` tunggal jadi rincian pembayaran mirip `SalePayment[]` cafe (Area 1)
+- [x] **E12** — Bayar laundry cicil/DP: ganti `paidAmount` tunggal jadi rincian pembayaran mirip `SalePayment[]` cafe (Area 1) — `f196a7d`
 - [ ] **E13** — Setup Playwright smoke-test minimal: config + 3-5 test jalur kritis (login, transaksi kasir, tutup shift) — `playwright` sudah ada di devDependency tapi belum dipakai (Area 3)
 - [ ] **E14** — Guardrail navigasi Simple → Advanced: label/banner halus pas link Simple mode (mis. `/simple/data` → `/kpi/analitik`) mendarat di layar mode Advanced (Area 2)
 
