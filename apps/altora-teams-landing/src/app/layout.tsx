@@ -13,8 +13,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Altora Teams | People operations that move with your team",
-  description: "Altora Teams brings employee data, workflow, and performance into one operating rhythm.",
+  title: "Altora Teams | Absensi, Jadwal & Target Tim untuk Perusahaan",
+  description: "Absensi foto+lokasi, jadwal shift, dan target tim otomatis dari data transaksi — tanpa Excel.",
 };
 
 export default function RootLayout({

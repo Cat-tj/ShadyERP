@@ -16,18 +16,18 @@ import {
 
 const painPoints = [
   {
-    title: "Data karyawan tidak punya satu sumber",
-    body: "Profil, dokumen, dan status kerja berpindah antara spreadsheet, chat, dan folder pribadi.",
+    title: "Absensi masih manual, rawan tidak akurat",
+    body: "Karyawan absen di kertas atau grup chat — tidak ada foto, tidak ada titik lokasi, sulit dicek kalau ada yang janggal.",
     icon: IconUsersGroup,
   },
   {
-    title: "Approval bergantung pada follow-up",
-    body: "Cuti, onboarding, dan update KPI tersangkut karena tidak ada alur yang jelas untuk setiap penanggung jawab.",
+    title: "Jadwal shift bolak-balik di chat",
+    body: "Tukar shift dan pengajuan cuti keluar masuk di WhatsApp, manajer harus mengingat sendiri semua perubahan.",
     icon: IconMessages,
   },
   {
-    title: "Operasional sulit dibaca saat tumbuh",
-    body: "Saat tim bertambah, pimpinan kehilangan konteks tentang kapasitas, pekerjaan, dan isu yang perlu ditangani.",
+    title: "Target tim dihitung ulang manual",
+    body: "Rekap penjualan atau produksi disalin ulang ke Excel tiap akhir bulan cuma buat lihat progres target tim.",
     icon: IconChartHistogram,
   },
   {
@@ -38,10 +38,10 @@ const painPoints = [
 ];
 
 const modules = [
-  { title: "People directory", body: "Profil, status kerja, struktur tim, dan dokumen karyawan dalam satu tempat.", icon: IconUsersGroup },
-  { title: "Leave & attendance", body: "Pengajuan, approval, catatan kehadiran, dan kalender operasional yang mudah ditelusuri.", icon: IconCalendarCheck },
-  { title: "Performance", body: "KPI, check-in, dan review yang menghubungkan pekerjaan harian dengan tujuan tim.", icon: IconChartHistogram },
-  { title: "Workflow", body: "Alur onboarding, pengingat, dan tugas lintas tim yang bisa dikonfigurasi sesuai cara kerja Anda.", icon: IconLayoutKanban },
+  { title: "Absensi foto + lokasi", body: "Karyawan absen dari HP, terverifikasi otomatis pakai foto dan titik lokasi — tanpa alat fingerprint.", icon: IconUsersGroup },
+  { title: "Jadwal shift & approval", body: "Manajer atur jadwal shift, approval tukar shift dan cuti, semua kelihatan di satu kalender tim.", icon: IconCalendarCheck },
+  { title: "Target tim otomatis", body: "Target penjualan atau produksi otomatis terisi dari data transaksi harian — tanpa rekap manual.", icon: IconChartHistogram },
+  { title: "Laporan kehadiran & kinerja", body: "Rekap absensi, keterlambatan, dan progres target langsung jadi laporan yang siap dibaca.", icon: IconLayoutKanban },
 ];
 
 export default function Home() {
@@ -65,12 +65,12 @@ export default function Home() {
 
       <section id="top" className="hero-grid relative mx-auto grid min-h-[calc(100dvh-72px)] max-w-7xl items-center gap-10 px-5 pb-14 pt-12 sm:px-8 lg:grid-cols-[1.02fr_.98fr] lg:pt-16">
         <div className="relative z-10 max-w-2xl animate-rise">
-          <p className="mb-6 text-xs font-bold uppercase tracking-[0.18em] text-[var(--blue)]">HRIS untuk tim yang sedang bergerak</p>
-          <h1 className="max-w-[12ch] text-5xl font-bold tracking-[-0.07em] text-[var(--ink)] sm:text-6xl lg:text-7xl lg:leading-[0.94]">
-            Kerja tim lebih jelas. Keputusan lebih cepat.
+          <p className="mb-6 text-xs font-bold uppercase tracking-[0.18em] text-[var(--blue)]">Absensi, Jadwal & Target Tim untuk Perusahaan</p>
+          <h1 className="max-w-[14ch] text-5xl font-bold tracking-[-0.07em] text-[var(--ink)] sm:text-6xl lg:text-7xl lg:leading-[0.94]">
+            Absensi, jadwal, sampai target tim, beres.
           </h1>
           <p className="mt-7 max-w-xl text-lg leading-8 text-[var(--muted)]">
-            Altora Teams menyatukan data karyawan, workflow, dan performa agar operasi tumbuh tanpa kehilangan kendali.
+            Karyawan absen dari HP dengan foto+lokasi, jadwal shift diatur manajer, target tim otomatis terisi dari data transaksi — tanpa Excel.
           </p>
           <div className="mt-9 flex flex-wrap gap-3">
             <Link href="#implementation" className="inline-flex items-center gap-2 rounded-full bg-[var(--blue)] px-5 py-3 text-sm font-semibold text-white shadow-[0_12px_32px_rgba(30,100,255,.22)] transition-transform hover:-translate-y-0.5 active:translate-y-0">
@@ -98,23 +98,23 @@ export default function Home() {
             <div className="grid gap-3 sm:grid-cols-[1.2fr_.8fr]">
               <article className="rounded-2xl bg-[var(--ink)] p-5 text-white">
                 <p className="text-sm font-semibold">Lihat konteks sebelum meminta update.</p>
-                <p className="mt-7 text-3xl font-bold tracking-[-0.06em]">People, work, progress.</p>
+                <p className="mt-7 text-3xl font-bold tracking-[-0.06em]">Absensi, jadwal, target.</p>
                 <div className="mt-6 h-px bg-white/20" />
                 <p className="mt-4 text-sm leading-6 text-white/65">Semua orang tahu apa yang perlu dilakukan dan siapa yang memutuskan.</p>
               </article>
               <article className="rounded-2xl bg-[var(--blue)] p-5 text-white">
                 <IconShieldCheck size={25} stroke={1.7} />
-                <p className="mt-12 text-sm font-semibold leading-6">Workflow yang rapi membuat keputusan bisa ditelusuri.</p>
+                <p className="mt-12 text-sm font-semibold leading-6">Absensi foto+lokasi membuat kehadiran bisa ditelusuri.</p>
               </article>
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div className="rounded-2xl border border-[var(--line)] px-4 py-4">
                 <IconFileDescription size={20} className="text-[var(--blue)]" stroke={1.8} />
-                <p className="mt-4 text-sm font-bold">Employee record</p>
+                <p className="mt-4 text-sm font-bold">Data karyawan</p>
               </div>
               <div className="rounded-2xl border border-[var(--line)] px-4 py-4">
                 <IconRefresh size={20} className="text-[var(--blue)]" stroke={1.8} />
-                <p className="mt-4 text-sm font-bold">Clear handoffs</p>
+                <p className="mt-4 text-sm font-bold">Serah terima jelas</p>
               </div>
             </div>
           </div>
@@ -170,21 +170,21 @@ export default function Home() {
             <p className="text-sm font-semibold text-[var(--blue)]">Contoh implementasi</p>
             <h2 className="mt-4 text-3xl font-bold tracking-[-0.055em] sm:text-5xl">Satu masalah nyata, beberapa alur yang tersambung.</h2>
           </div>
-          <p className="max-w-xl text-lg leading-8 text-[var(--muted)]">Skenario untuk perusahaan jasa dengan beberapa fungsi kerja dan proses approval yang sebelumnya berjalan lewat spreadsheet serta chat.</p>
+          <p className="max-w-xl text-lg leading-8 text-[var(--muted)]">Skenario untuk perusahaan dengan beberapa cabang, yang sebelumnya rekap absensi dan target tim lewat WhatsApp dan Excel.</p>
         </div>
         <div className="mt-12 grid gap-4 lg:grid-cols-[1.15fr_.85fr]">
           <article className="rounded-[1.5rem] bg-[var(--blue-soft)] p-7 sm:p-10">
             <p className="text-sm font-semibold text-[var(--blue)]">Kondisi awal</p>
-            <h3 className="mt-5 max-w-xl text-3xl font-bold tracking-[-0.05em]">HR harus menanyakan status cuti, dokumen onboarding, dan pembaruan target ke banyak orang.</h3>
+            <h3 className="mt-5 max-w-xl text-3xl font-bold tracking-[-0.05em]">HR rekap absensi dari WhatsApp, lalu hitung target tim manual di Excel tiap akhir bulan.</h3>
             <div className="mt-12 grid gap-4 sm:grid-cols-2">
-              <div className="rounded-2xl bg-white p-5"><p className="text-sm font-bold">Yang ditata lebih dulu</p><p className="mt-2 text-sm leading-6 text-[var(--muted)]">Directory karyawan, manager hierarchy, dan checklist onboarding.</p></div>
-              <div className="rounded-2xl bg-white p-5"><p className="text-sm font-bold">Yang menyusul</p><p className="mt-2 text-sm leading-6 text-[var(--muted)]">Cuti, attendance, lalu KPI dan review berkala.</p></div>
+              <div className="rounded-2xl bg-white p-5"><p className="text-sm font-bold">Yang ditata lebih dulu</p><p className="mt-2 text-sm leading-6 text-[var(--muted)]">Data karyawan, jadwal shift per cabang, dan approval izin/cuti.</p></div>
+              <div className="rounded-2xl bg-white p-5"><p className="text-sm font-bold">Yang menyusul</p><p className="mt-2 text-sm leading-6 text-[var(--muted)]">Absensi foto+lokasi harian, lalu target tim otomatis dari data transaksi.</p></div>
             </div>
           </article>
           <article className="rounded-[1.5rem] bg-[var(--ink)] p-7 text-white sm:p-10">
             <p className="text-sm font-semibold text-[#94b8ff]">Cara Altora Teams membantu</p>
             <div className="mt-10 space-y-7">
-              {["Satu profil untuk setiap employee record dan dokumen penting.", "Setiap workflow menunjukkan owner, status, dan jejak keputusan.", "Manager melihat konteks tim tanpa mengejar update manual."].map((item) => (
+              {["Absensi difoto dan titik lokasi otomatis tercatat tiap karyawan clock-in/out.", "Jadwal shift diatur manajer, karyawan tinggal cek dari HP masing-masing.", "Target tim otomatis terisi dari data transaksi harian — tanpa input dobel."].map((item) => (
                 <div key={item} className="flex gap-4"><IconChevronRight size={21} className="mt-0.5 shrink-0 text-[#94b8ff]" /><p className="text-lg leading-7 text-white/80">{item}</p></div>
               ))}
             </div>
@@ -202,19 +202,19 @@ export default function Home() {
             <div className="p-7 sm:p-10">
               <p className="text-sm font-semibold text-[var(--muted)]">Sebelum Altora Teams</p>
               <div className="mt-8 space-y-6 text-lg leading-7 text-[var(--muted)]">
-                <p>Informasi dikumpulkan ulang setiap kali ada pertanyaan.</p>
-                <p>Approval bergantung pada chat dan ingatan orang yang terlibat.</p>
-                <p>Onboarding berbeda antara satu manager dan manager lain.</p>
-                <p>KPI dicatat, tetapi sulit dihubungkan ke pembicaraan tim.</p>
+                <p>Absensi dicatat manual, rawan tidak akurat.</p>
+                <p>Jadwal shift bolak-balik di grup chat.</p>
+                <p>Target tim dihitung ulang manual tiap akhir bulan.</p>
+                <p>Owner tidak tahu kondisi tim secara real-time.</p>
               </div>
             </div>
             <div className="bg-[var(--ink)] p-7 text-white sm:p-10">
               <p className="text-sm font-semibold text-[#94b8ff]">Dengan Altora Teams</p>
               <div className="mt-8 space-y-6 text-lg leading-7 text-white/80">
-                <p>Data dan dokumen karyawan tersedia dalam konteks yang sama.</p>
-                <p>Setiap approval memiliki owner, status, dan jejak yang jelas.</p>
-                <p>Checklist membantu pengalaman onboarding tetap konsisten.</p>
-                <p>Performa dibahas dari data kerja, bukan dari ingatan terakhir.</p>
+                <p>Absensi foto+lokasi otomatis tercatat dari HP karyawan.</p>
+                <p>Jadwal shift dan approval izin dalam satu kalender tim.</p>
+                <p>Target tim otomatis terisi dari data transaksi harian.</p>
+                <p>Owner pantau kehadiran dan progres tim kapan saja.</p>
               </div>
             </div>
           </div>
@@ -223,7 +223,7 @@ export default function Home() {
 
       <section className="mx-auto max-w-7xl px-5 py-20 sm:px-8 lg:py-28">
         <div className="grid gap-10 lg:grid-cols-[.8fr_1.2fr]">
-          <div><h2 className="text-3xl font-bold tracking-[-0.055em] sm:text-5xl">Mulai dari kebutuhan tim hari ini.</h2><p className="mt-5 text-lg leading-8 text-[var(--muted)]">Altora Teams dapat tumbuh dari fondasi people operations ke workflow dan performance management.</p></div>
+          <div><h2 className="text-3xl font-bold tracking-[-0.055em] sm:text-5xl">Mulai dari kebutuhan tim hari ini.</h2><p className="mt-5 text-lg leading-8 text-[var(--muted)]">Altora Teams bisa mulai dari absensi harian, lalu tumbuh ke jadwal shift dan target tim otomatis.</p></div>
           <div className="grid gap-4 sm:grid-cols-2">
             {modules.map((module, index) => { const Icon = module.icon; return <article key={module.title} className={`rounded-[1.25rem] p-6 ${index === 0 ? "bg-[var(--blue)] text-white" : "border border-[var(--line)] bg-white"}`}><Icon size={24} stroke={1.7} className={index === 0 ? "text-white" : "text-[var(--blue)]"} /><h3 className="mt-10 text-xl font-bold tracking-[-0.03em]">{module.title}</h3><p className={`mt-3 text-sm leading-6 ${index === 0 ? "text-white/75" : "text-[var(--muted)]"}`}>{module.body}</p></article>; })}
           </div>
@@ -234,7 +234,7 @@ export default function Home() {
         <div className="max-w-3xl"><p className="text-sm font-semibold text-white/70">Altora Teams</p><h2 className="mt-4 text-4xl font-bold tracking-[-0.06em] sm:text-6xl">Mari rapikan cara tim Anda bekerja.</h2><p className="mt-5 max-w-xl text-lg leading-8 text-white/80">Mulai dengan percakapan tentang workflow yang paling sering membuat pekerjaan berhenti.</p><Link href="mailto:hello@altora.my.id?subject=Altora%20Teams%20consultation" className="mt-9 inline-flex items-center gap-2 rounded-full bg-white px-5 py-3 text-sm font-semibold text-[var(--ink)] transition-transform hover:-translate-y-0.5 active:translate-y-0">Hubungi Altora Teams <IconArrowRight size={17} stroke={2} /></Link></div>
       </section>
 
-      <footer className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-8 text-sm text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between sm:px-8"><div className="flex items-center gap-2"><Image src="/altora-teams-logo.svg" alt="" width={22} height={22} className="h-5 w-5" /><span>Altora Teams</span></div><p>People operations and team performance, in one place.</p></footer>
+      <footer className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-8 text-sm text-[var(--muted)] sm:flex-row sm:items-center sm:justify-between sm:px-8"><div className="flex items-center gap-2"><Image src="/altora-teams-logo.svg" alt="" width={22} height={22} className="h-5 w-5" /><span>Altora Teams</span></div><p>Absensi, jadwal, dan target tim perusahaan, dalam satu aplikasi.</p></footer>
     </main>
   );
 }
