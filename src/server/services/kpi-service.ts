@@ -257,3 +257,34 @@ export async function getOutletComparison(tenantId: string, period = 30) {
     })
   );
 }
+
+// ============ SPLIT PAYMENT USAGE ============
+
+/** Seberapa sering split payment dipakai, dan rincian per metode (dari SalePayment). */
+export async function getSplitPaymentUsage(tenantId: string, period = 30) {
+  const startDate = subDays(new Date(), period);
+
+  const [splitSaleCount, totalSaleCount, methodBreakdown] = await Promise.all([
+    prisma.sale.count({
+      where: { tenantId, status: "COMPLETED", isSplitPayment: true, createdAt: { gte: startDate } },
+    }),
+    prisma.sale.count({
+      where: { tenantId, status: "COMPLETED", createdAt: { gte: startDate } },
+    }),
+    prisma.salePayment.groupBy({
+      by: ["method"],
+      where: { tenantId, sale: { status: "COMPLETED", createdAt: { gte: startDate } } },
+      _sum: { amount: true },
+      _count: true,
+    }),
+  ]);
+
+  return {
+    splitSaleCount,
+    totalSaleCount,
+    splitRatePercent: totalSaleCount > 0 ? Math.round((splitSaleCount / totalSaleCount) * 100) : 0,
+    methodBreakdown: methodBreakdown
+      .map((m) => ({ method: m.method, amount: m._sum.amount ?? 0, count: m._count }))
+      .sort((a, b) => b.amount - a.amount),
+  };
+}

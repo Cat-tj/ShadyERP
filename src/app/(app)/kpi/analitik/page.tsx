@@ -7,11 +7,21 @@ import {
   getRevenueByCategory,
   getTopProductsByRevenue,
   getOutletComparison,
+  getSplitPaymentUsage,
 } from "@/server/services/kpi-service";
 import { StatTile } from "@/components/laporan/stat-tile";
 import { RankingBarChart } from "@/components/laporan/ranking-bar-chart";
 import { formatRupiah } from "@/lib/format";
 import { UsersIcon, TrendingUpIcon, PackageIcon, BarChartIcon } from "@/components/ui/icons";
+
+const METHOD_LABEL: Record<string, string> = {
+  CASH: "Tunai",
+  QRIS: "QRIS",
+  TRANSFER: "Transfer",
+  EWALLET: "E-Wallet",
+  DEPOSIT: "Saldo",
+  GIFT_CARD: "Voucher",
+};
 
 export default async function KpiAnalitikPage() {
   const user = await requireRole(["OWNER", "MANAGER"]);
@@ -19,13 +29,14 @@ export default async function KpiAnalitikPage() {
   const outlets = await listOutletsForUser(user.tenantId, user.id, user.role);
   const primaryOutletId = outlets[0]?.id;
 
-  const [velocity, retention, revenueByCategory, topProducts, outletComparison, stockTurnover] = await Promise.all([
+  const [velocity, retention, revenueByCategory, topProducts, outletComparison, stockTurnover, splitPaymentUsage] = await Promise.all([
     getSalesVelocityByHour(user.tenantId),
     getMemberRetentionRate(user.tenantId, 30),
     getRevenueByCategory(user.tenantId, undefined, 30),
     getTopProductsByRevenue(user.tenantId, undefined, 10, 30),
     getOutletComparison(user.tenantId, 30),
     primaryOutletId ? getStockTurnoverByProduct(user.tenantId, primaryOutletId, 30) : Promise.resolve([]),
+    getSplitPaymentUsage(user.tenantId, 30),
   ]);
 
   const peakHour = velocity.reduce((best, h) => (h.sales > best.sales ? h : best), velocity[0]);
@@ -130,6 +141,27 @@ export default async function KpiAnalitikPage() {
               label: o.outletName,
               value: o.revenue,
               sublabel: `${o.transactionCount} transaksi · rata-rata ${formatRupiah(o.avgTransaction)}`,
+            }))}
+          />
+        </div>
+      )}
+
+      {splitPaymentUsage.splitSaleCount > 0 && (
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-base font-bold text-[var(--color-text)]">Pemakaian split payment (30 hari)</h2>
+            <span className="rounded-full bg-[var(--color-primary)]/10 px-2.5 py-1 text-xs font-semibold text-[var(--color-primary)]">
+              {splitPaymentUsage.splitRatePercent}% dari semua transaksi
+            </span>
+          </div>
+          <p className="mb-3 text-xs text-[var(--color-text-secondary)]">
+            {splitPaymentUsage.splitSaleCount} dari {splitPaymentUsage.totalSaleCount} transaksi dibayar pakai lebih dari 1 metode.
+          </p>
+          <RankingBarChart
+            items={splitPaymentUsage.methodBreakdown.map((m) => ({
+              label: METHOD_LABEL[m.method] ?? m.method,
+              value: m.amount,
+              sublabel: `${m.count} baris pembayaran`,
             }))}
           />
         </div>
