@@ -993,62 +993,267 @@ html { scroll-behavior: auto; }
 
 
 .altora-landing .vshow-glow {
-    position: absolute; inset: 6% 8% auto; height: 78%; border-radius: 50%;
+    position: absolute; inset: 4% 4% auto; height: 84%; border-radius: 50%;
     background: radial-gradient(circle, var(--v-soft) 0%, transparent 72%);
     transition: background-color 0.7s ease; filter: blur(2px);
   }
 
 
-.altora-landing .vshow-phone {
-    position: relative; width: min(230px, 62vw); aspect-ratio: 9 / 15;
-    background: linear-gradient(145deg, #38405f 0%, #171b28 44%, #05070d 100%);
-    border-radius: 44px; padding: 11px;
-    box-shadow: 0 30px 70px -34px rgba(10, 31, 68, 0.55), inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+/* Panggung 3 perangkat: laptop (belakang) + tablet (kiri) + iPhone (depan) */
+.altora-landing .vshow-stage {
+    position: relative; width: 100%; max-width: 640px; min-height: 590px;
+  }
+
+
+/* ---- Laptop ---- */
+.altora-landing .vshow-laptop {
+    position: absolute; top: 4px; right: 0; width: min(540px, 100%); z-index: 1;
+  }
+
+
+/* Barisan "live order" di laptop disembunyikan di area yang ketutup HP —
+   kontennya sudah diwakili di layar HP, jadi gak hilang informasi. */
+.altora-landing .vshow-lap-live { padding-right: 120px; }
+
+
+.altora-landing .vshow-laptop-screen {
+    background: linear-gradient(160deg, #2a3150 0%, #131828 55%, #05070d 100%);
     border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 18px 18px 4px 4px; padding: 12px 12px 16px;
+    box-shadow: 0 34px 80px -40px rgba(10, 31, 68, 0.6);
   }
 
 
-.altora-landing .vshow-screen {
-    position: relative; height: 100%; border-radius: 33px; padding: 34px 13px 14px;
-    display: flex; flex-direction: column; gap: 10px; overflow: hidden;
-    background: var(--v-bg); transition: background-color 0.6s ease;
+.altora-landing .vshow-laptop-base {
+    margin: 0 -5%; height: 15px;
+    background: linear-gradient(180deg, #e8edf6 0%, #c3ccdc 70%, #97a2b6 100%);
+    border-radius: 2px 2px 14px 14px; position: relative;
   }
 
 
-.altora-landing .vshow-screen-head { display: flex; align-items: center; gap: 8px; }
-
-
-.altora-landing .vshow-screen-head img { width: 20px; height: 20px; display: block; }
-
-
-.altora-landing .vshow-screen-head b {
-    font-size: 12px; font-weight: 700; color: var(--text); letter-spacing: -0.01em;
+.altora-landing .vshow-laptop-base::before {
+    content: ""; position: absolute; top: 0; left: 50%; transform: translateX(-50%);
+    width: 96px; height: 5px; border-radius: 0 0 8px 8px; background: #aab4c6;
   }
 
 
-.altora-landing .vshow-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-top: 2px; }
+.altora-landing .vshow-lap-inner {
+    background: var(--v-bg); border-radius: 8px; padding: 0 0 10px; overflow: hidden;
+    transition: background-color 0.6s ease;
+  }
 
 
-.altora-landing .vshow-tile {
-    background: var(--surface); border-radius: 12px; padding: 9px 10px;
+.altora-landing .vshow-chrome {
+    display: flex; align-items: center; gap: 5px; padding: 8px 10px;
+    border-bottom: 1px solid var(--v-soft); transition: border-color 0.6s ease;
+  }
+
+
+.altora-landing .vshow-cdot { width: 8px; height: 8px; border-radius: 999px; background: #e2e6ec; }
+.altora-landing .vshow-cdot:nth-child(1) { background: #f87171; }
+.altora-landing .vshow-cdot:nth-child(2) { background: #fbbf24; }
+.altora-landing .vshow-cdot:nth-child(3) { background: #34d399; }
+
+
+.altora-landing .vshow-curl {
+    margin-left: 8px; font-size: 9.5px; color: var(--text-faint);
+    background: var(--surface); border-radius: 6px; padding: 3px 9px;
+  }
+
+
+.altora-landing .vshow-lap-body { padding: 10px 12px 0; display: flex; flex-direction: column; gap: 9px; }
+
+
+.altora-landing .vshow-lap-title { display: flex; align-items: center; justify-content: space-between; }
+
+
+.altora-landing .vshow-lap-title b { font-size: 12.5px; color: var(--text); letter-spacing: -0.01em; }
+
+
+.altora-landing .vshow-live {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 9.5px; font-weight: 700;
+    color: var(--good-text); background: var(--good-bg); border-radius: 999px; padding: 3px 9px;
+  }
+
+
+.altora-landing .vshow-live i {
+    width: 5px; height: 5px; border-radius: 999px; background: currentColor; font-style: normal;
+  }
+
+
+.altora-landing .vshow-lap-tabs { display: flex; gap: 5px; }
+
+
+.altora-landing .vshow-lap-tab {
+    font-family: var(--font-jetbrains-mono), monospace; font-size: 9px; font-weight: 700;
+    color: var(--text-faint); border-radius: 999px; padding: 4px 11px; background: var(--surface);
     border: 1px solid var(--v-soft); transition: border-color 0.6s ease;
   }
 
 
+.altora-landing .vshow-lap-tab.is-on {
+    background: var(--primary); border-color: var(--primary); color: var(--on-primary);
+    transition: background-color 0.6s ease, border-color 0.6s ease;
+  }
+
+
+.altora-landing .vshow-lap-tiles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+
+
+.altora-landing .vshow-tile {
+    background: var(--surface); border-radius: 11px; padding: 8px 10px;
+    border: 1px solid var(--v-soft); transition: border-color 0.6s ease;
+  }
+
+
+.altora-landing .vshow-tile span { display: block; font-size: 8.5px; color: var(--text-faint); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+
+.altora-landing .vshow-tile b {
+    display: block; margin-top: 2px; font-family: var(--font-jetbrains-mono), monospace;
+    font-size: 12.5px; color: var(--primary); font-weight: 700; transition: color 0.6s ease;
+    white-space: nowrap;
+  }
+
+
+.altora-landing .vshow-tile small { display: block; margin-top: 2px; font-size: 8px; color: var(--good-text); }
+.altora-landing .vshow-tile small.warn { color: #b45309; }
+
+
+.altora-landing .vshow-lap-live {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    background: var(--surface); border: 1px solid var(--v-soft); border-radius: 11px;
+    padding: 8px 11px; transition: border-color 0.6s ease;
+  }
+
+
+.altora-landing .vshow-lap-live b { font-size: 10.5px; color: var(--text); display: block; }
+.altora-landing .vshow-lap-live span { font-size: 9px; color: var(--text-secondary); display: block; margin-top: 1px; }
+
+
+.altora-landing .vshow-lap-live-badge {
+    flex-shrink: 0; font-size: 8.5px; font-weight: 700; color: var(--primary);
+    background: var(--v-soft); border-radius: 999px; padding: 3px 9px;
+    transition: background-color 0.6s ease, color 0.6s ease; white-space: nowrap;
+  }
+
+
+.altora-landing .vshow-lap-chart span {
+    display: block; font-family: var(--font-jetbrains-mono), monospace;
+    font-size: 8.5px; color: var(--text-faint); margin-bottom: 3px;
+  }
+
+
+/* ---- Tablet ---- */
+.altora-landing .vshow-tablet {
+    position: absolute; left: -6px; bottom: 6px; width: 198px; z-index: 2;
+    background: linear-gradient(150deg, #323a5c 0%, #141a2c 60%, #070a12 100%);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    border-radius: 22px; padding: 10px;
+    box-shadow: 0 28px 60px -30px rgba(10, 31, 68, 0.6);
+    transform: rotate(-5deg);
+  }
+
+
+.altora-landing .vshow-tablet-screen {
+    background: var(--v-bg); border-radius: 14px; padding: 12px;
+    display: flex; flex-direction: column; gap: 8px;
+    transition: background-color 0.6s ease; min-height: 218px;
+  }
+
+
+.altora-landing .vshow-tab-kicker {
+    font-family: var(--font-jetbrains-mono), monospace; font-size: 8px; font-weight: 700;
+    letter-spacing: 0.08em; text-transform: uppercase; color: var(--primary);
+    transition: color 0.6s ease;
+  }
+
+
+.altora-landing .vshow-tab-title { font-size: 10.5px; font-weight: 700; color: var(--text); line-height: 1.35; }
+
+
+.altora-landing .vshow-tab-row {
+    display: flex; justify-content: space-between; gap: 8px; font-size: 9.5px; color: var(--text-secondary);
+    padding: 5px 0; border-bottom: 1px dashed var(--v-soft);
+  }
+
+
+.altora-landing .vshow-tab-row b { font-family: var(--font-jetbrains-mono), monospace; font-weight: 700; color: var(--text); white-space: nowrap; }
+
+
+.altora-landing .vshow-tab-total {
+    margin-top: auto; display: flex; justify-content: space-between; align-items: center;
+    background: var(--primary); color: var(--on-primary); border-radius: 9px; padding: 7px 10px;
+    font-size: 9.5px; font-weight: 700; transition: background-color 0.6s ease;
+  }
+
+
+.altora-landing .vshow-tab-total b { font-family: var(--font-jetbrains-mono), monospace; font-size: 11px; }
+
+
+/* ---- iPhone ---- */
+.altora-landing .vshow-phone {
+    position: absolute; right: 2px; bottom: -10px; width: 182px; aspect-ratio: 9 / 19.5; z-index: 3;
+    background: linear-gradient(145deg, #38405f 0%, #171b28 44%, #05070d 100%);
+    border-radius: 34px; padding: 8px;
+    box-shadow: 0 32px 70px -30px rgba(10, 31, 68, 0.65), inset 0 0 0 2px rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+  }
+
+
+.altora-landing .vshow-phone::after {
+    content: ""; position: absolute; left: -2.5px; top: 84px; width: 2.5px; height: 22px;
+    border-radius: 2px 0 0 2px; background: #0d1120; box-shadow: 0 34px 0 0 #0d1120;
+  }
+
+
+.altora-landing .vshow-island {
+    position: absolute; top: 15px; left: 50%; transform: translateX(-50%);
+    width: 56px; height: 16px; border-radius: 999px; background: #000; z-index: 2;
+  }
+
+
+.altora-landing .vshow-screen {
+    position: relative; height: 100%; border-radius: 27px; padding: 38px 11px 12px;
+    display: flex; flex-direction: column; gap: 8px; overflow: hidden;
+    background: var(--v-bg); transition: background-color 0.6s ease;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+  }
+
+
+.altora-landing .vshow-screen-head { display: flex; align-items: center; gap: 7px; }
+
+
+.altora-landing .vshow-screen-head img { width: 17px; height: 17px; display: block; }
+
+
+.altora-landing .vshow-screen-head b {
+    font-size: 10.5px; font-weight: 700; color: var(--text); letter-spacing: -0.01em;
+  }
+
+
+.altora-landing .vshow-ph-tiles { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+
+
+.altora-landing .vshow-ph-tiles .vshow-tile { padding: 7px 8px; min-width: 0; }
+.altora-landing .vshow-ph-tiles .vshow-tile b { font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.altora-landing .vshow-ph-tiles .vshow-tile span { font-size: 8px; }
+
+
 .altora-landing .vshow-feed {
-    display: flex; flex-direction: column; gap: 8px; margin-top: 4px;
+    display: flex; flex-direction: column; gap: 6px; margin-top: 1px;
     animation: vshow-feed-in 0.4s ease both;
   }
 
 
 .altora-landing .vshow-feed-row {
-    display: flex; align-items: flex-start; gap: 8px; font-size: 11px; line-height: 1.4; color: var(--text-secondary);
+    display: flex; align-items: flex-start; gap: 6px; font-size: 9px; line-height: 1.4; color: var(--text-secondary);
     animation: vshow-ribbon-in 0.45s ease both; animation-delay: var(--reveal-delay, 0s);
   }
 
 
 .altora-landing .vshow-feed-dot {
-    flex-shrink: 0; margin-top: 4px; width: 6px; height: 6px; border-radius: 999px;
+    flex-shrink: 0; margin-top: 3px; width: 5px; height: 5px; border-radius: 999px;
     background: var(--primary); transition: background-color 0.6s ease;
   }
 
@@ -1056,29 +1261,26 @@ html { scroll-behavior: auto; }
 @keyframes vshow-feed-in { from { opacity: 0; } to { opacity: 1; } }
 
 
-.altora-landing .vshow-tile span { display: block; font-size: 9px; color: var(--text-faint); }
-
-
-.altora-landing .vshow-tile b {
-    display: block; margin-top: 3px; font-family: var(--font-jetbrains-mono), monospace;
-    font-size: 13px; color: var(--primary); font-weight: 700; transition: color 0.6s ease;
+.altora-landing .vshow-spark span {
+    display: block; font-family: var(--font-jetbrains-mono), monospace;
+    font-size: 8px; color: var(--text-faint); margin-bottom: 2px;
   }
 
 
 .altora-landing .vshow-ribbon {
-    height: 30px; border-radius: 10px;
+    height: 26px; border-radius: 9px;
     animation: vshow-ribbon-in 0.5s ease both;
   }
 
 
 .altora-landing .vshow-sync {
-    margin-top: auto; display: flex; align-items: center; gap: 6px;
-    font-size: 10px; font-weight: 600; color: var(--text-faint);
+    margin-top: auto; display: flex; align-items: center; gap: 5px;
+    font-size: 8.5px; font-weight: 600; color: var(--text-faint);
   }
 
 
 .altora-landing .vshow-sync-dot {
-    width: 6px; height: 6px; border-radius: 999px; background: var(--primary);
+    width: 5px; height: 5px; border-radius: 999px; background: var(--primary);
     transition: background-color 0.6s ease;
   }
 
@@ -1089,6 +1291,26 @@ html { scroll-behavior: auto; }
 @media (max-width: 860px) {
   .altora-landing .vshow-body { grid-template-columns: 1fr; }
   .altora-landing .vshow-visual { order: -1; }
+  .altora-landing .vshow-stage {
+    min-height: 0; padding-bottom: 130px; max-width: 440px; margin: 0 auto;
+  }
+  /* Laptop lebih sempit dari lebar kolom, biar HP muat di bawahnya tanpa
+     nutupin isi laptop */
+  .altora-landing .vshow-laptop { position: relative; top: 0; width: 88%; }
+  /* HP turun ke bawah laptop (bukan numpuk di atas kontennya), ukuran kecil
+     dan proporsional */
+  .altora-landing .vshow-phone {
+    width: 120px; right: 4px; bottom: 0; border-radius: 24px; padding: 5px;
+  }
+  .altora-landing .vshow-screen { border-radius: 20px; padding: 28px 8px 9px; }
+  .altora-landing .vshow-island { top: 10px; width: 40px; height: 11px; }
+  .altora-landing .vshow-phone::after { top: 60px; height: 16px; box-shadow: 0 26px 0 0 #0d1120; }
+  .altora-landing .vshow-phone .vshow-spark { display: none; }
+}
+
+
+@media (max-width: 640px) {
+  .altora-landing .vshow-tablet { display: none; }
 }
 
   
