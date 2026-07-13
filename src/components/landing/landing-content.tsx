@@ -162,7 +162,9 @@ function SpotlightPhone({ screen }: { screen: SpotlightSlide["screen"] }) {
       <div className="phone">
         <div className="phone-island"></div>
         <div className="phone-screen phone-screen-preview">
-          <Image className="phone-preview-image" src={preview.src} alt={preview.alt} fill sizes="274px" />
+          <div className="phone-preview-clip">
+            <Image className="phone-preview-image" src={preview.src} alt={preview.alt} fill sizes="274px" />
+          </div>
         </div>
       </div>
     </div>

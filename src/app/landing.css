@@ -862,7 +862,15 @@ html { scroll-behavior: auto; }
     padding: 0; gap: 0; background: #f3f6fb;
   }
 
-  
+
+/* next/image "fill" pakai position:absolute + inset:0 lewat inline style,
+   jadi padding di parent nggak ngefek buat ngasih ruang di atas notch —
+   dibungkus div terpisah yang beneran ditarik ke bawah dari island. */
+.altora-landing .phone-preview-clip {
+    position: absolute; inset: 36px 0 0 0; overflow: hidden; border-radius: 0 0 32px 32px;
+  }
+
+
 .altora-landing .phone-preview-image {
     display: block; width: 100%; height: 100%; object-fit: cover; object-position: top center;
   }
@@ -1545,6 +1553,7 @@ html { scroll-behavior: auto; }
 .altora-landing .phone-stage::before { inset: 10% 2% 16%; }
 .altora-landing .phone { width: min(236px, 67vw); border-radius: 42px; padding: 10px; }
 .altora-landing .phone-screen { border-radius: 32px; padding: 38px 11px 12px; gap: 8px; }
+.altora-landing .phone-preview-clip { inset: 34px 0 0 0; border-radius: 0 0 28px 28px; }
 .altora-landing .phone-island { width: 74px; height: 22px; top: 12px; }
 .altora-landing .phone-side { inset: 18px -10px 18px auto; width: 18px; }
 .altora-landing .phone-shadow { width: 230px; bottom: 26px; }
