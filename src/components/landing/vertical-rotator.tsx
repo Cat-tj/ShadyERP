@@ -201,7 +201,6 @@ export function VerticalRotator() {
                     ))}
                     <div className="vshow-tab-row"><span>{mock.receiptHighlight[0]}</span><b>{mock.receiptHighlight[1]}</b></div>
                   </div>
-                  <p className="vshow-tab-note">Tersimpan otomatis ke laporan harian</p>
                   <div className="vshow-tab-total"><span>TOTAL</span><b>{mock.receiptTotal}</b></div>
                 </div>
               </div>
