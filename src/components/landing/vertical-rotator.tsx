@@ -8,7 +8,7 @@ import { HERO_MOCKS } from "@/lib/hero-mocks";
 const SCREEN_TILES: Record<VerticalKey, [{ label: string; value: string }, { label: string; value: string }]> = {
   cafe: [{ label: "Omzet hari ini", value: "Rp3,4jt" }, { label: "Meja aktif", value: "5" }],
   toko: [{ label: "Stok terjual", value: "142" }, { label: "Produk laris", value: "Indomie" }],
-  supermarket: [{ label: "SKU aktif", value: "1.240" }, { label: "Barang masuk", value: "18" }],
+  supermarket: [{ label: "SKU aktif", value: "1.240" }, { label: "Stok masuk", value: "18" }],
   laundry: [{ label: "Cucian proses", value: "9" }, { label: "Siap diambil", value: "3" }],
   counter: [{ label: "Servis masuk", value: "4" }, { label: "Garansi aktif", value: "27" }],
   jasa: [{ label: "Booking hari ini", value: "6" }, { label: "Staf pegang", value: "3" }],
@@ -186,15 +186,22 @@ export function VerticalRotator() {
                 <div className="vshow-laptop-base" />
               </div>
 
-              {/* Tablet — ringkasan laporan/nota */}
+              {/* Tablet — ringkasan laporan/nota, rasio 16:10 asli */}
               <div className="vshow-tablet" aria-hidden="true">
                 <div className="vshow-tablet-screen">
+                  <div className="vshow-tab-head">
+                    <img src={`/brand/${active.key}-symbol-onlight.svg`} alt="" />
+                    <b>{active.label}</b>
+                  </div>
                   <span className="vshow-tab-kicker">Ringkasan</span>
                   <p className="vshow-tab-title">{mock.receiptBrandSub}</p>
-                  {mock.receiptItems.map(([label, value]) => (
-                    <div className="vshow-tab-row" key={label}><span>{label}</span><b>{value}</b></div>
-                  ))}
-                  <div className="vshow-tab-row"><span>{mock.receiptHighlight[0]}</span><b>{mock.receiptHighlight[1]}</b></div>
+                  <div className="vshow-tab-rows">
+                    {mock.receiptItems.map(([label, value]) => (
+                      <div className="vshow-tab-row" key={label}><span>{label}</span><b>{value}</b></div>
+                    ))}
+                    <div className="vshow-tab-row"><span>{mock.receiptHighlight[0]}</span><b>{mock.receiptHighlight[1]}</b></div>
+                  </div>
+                  <p className="vshow-tab-note">Tersimpan otomatis ke laporan harian</p>
                   <div className="vshow-tab-total"><span>TOTAL</span><b>{mock.receiptTotal}</b></div>
                 </div>
               </div>
