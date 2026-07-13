@@ -1434,11 +1434,12 @@ html { scroll-behavior: auto; }
 
 
 .altora-landing .vshow-ribbon {
-    margin-top: auto; border-radius: 10px; padding: 9px 10px;
-    display: flex; align-items: center; justify-content: center; gap: 5px;
-    color: #fff; font-size: 10px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    margin: auto 3px 3px; border-radius: 10px; padding: 8px 10px;
+    display: flex; align-items: center; justify-content: center; gap: 4px;
+    color: #fff; font-size: 9px; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
     animation: vshow-ribbon-in 0.5s ease both;
   }
+  .altora-landing .vshow-ribbon svg { width: 10px; height: 10px; flex-shrink: 0; }
 
 
 @keyframes vshow-ribbon-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }

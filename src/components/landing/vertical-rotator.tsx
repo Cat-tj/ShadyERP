@@ -242,7 +242,7 @@ export function VerticalRotator() {
                     </svg>
                   </div>
                   <div key={`${active.key}-ribbon`} className="vshow-ribbon" style={ribbonStyle}>
-                    <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4" /></svg>
+                    <svg viewBox="0 0 16 16" width="10" height="10" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4" /></svg>
                     Tersinkron otomatis
                   </div>
                 </div>
