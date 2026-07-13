@@ -95,10 +95,10 @@ export function VerticalRotator() {
       <div className="vshow-wash" aria-hidden="true" />
       <div className="wrap">
         <div className="section-head">
-          <span className="eyebrow">Satu platform, banyak wajah</span>
-          <h2>Satu Altora, warna beda tiap usaha.</h2>
+          <span className="eyebrow">Cocok untuk usaha kamu</span>
+          <h2>Satu fondasi, disesuaikan dengan cara kerja usahamu.</h2>
           <p className="lede">
-            Cafe, toko, laundry, sampai tim internal perusahaan — tiap jenis usaha dapat tampilan dan sorotan fitur sendiri, tapi tetap satu aplikasi yang sama.
+            Setiap bisnis punya alur berbeda. Altora menyediakan modul dan tampilan yang sesuai jenis usahamu, tanpa membuatmu menghadapi seluruh kerumitan ERP.
           </p>
         </div>
 

@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { LandingContent } from "@/components/landing/landing-content";
 import { LandingScripts } from "@/components/landing/landing-scripts";
 import { VERTICAL_MAP, type VerticalKey } from "@/lib/verticals";
+import { FAQ_ITEMS } from "@/lib/landing-data";
 import "./landing.css";
 
 export default async function RootPage() {
@@ -20,6 +21,23 @@ export default async function RootPage() {
     <>
       <LandingContent vertical={vertical} />
       <LandingScripts />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "FAQPage",
+            mainEntity: FAQ_ITEMS.map((item) => ({
+              "@type": "Question",
+              name: item.question,
+              acceptedAnswer: {
+                "@type": "Answer",
+                text: item.answer,
+              },
+            })),
+          }),
+        }}
+      />
     </>
   );
 }

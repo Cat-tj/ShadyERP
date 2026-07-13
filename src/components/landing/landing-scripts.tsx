@@ -194,6 +194,32 @@ function initSpotlightCarousel() {
   };
 }
 
+function initTourTabs() {
+  const track = document.querySelector<HTMLElement>(".altora-landing .gallery-track");
+  const tabs = Array.from(document.querySelectorAll<HTMLButtonElement>(".altora-landing [data-tour-tab]"));
+  if (!track || tabs.length === 0) return () => {};
+
+  const cards = Array.from(track.querySelectorAll<HTMLElement>(".gallery-card"));
+
+  function setActive(index: number) {
+    tabs.forEach((tab, i) => {
+      const isActive = i === index;
+      tab.classList.toggle("is-active", isActive);
+      tab.setAttribute("aria-selected", String(isActive));
+    });
+    const card = cards[index];
+    if (card) track!.scrollTo({ left: card.offsetLeft - track!.offsetLeft, behavior: "smooth" });
+  }
+
+  const handlers = tabs.map((tab, index) => {
+    const handler = () => setActive(index);
+    tab.addEventListener("click", handler);
+    return { tab, handler };
+  });
+
+  return () => handlers.forEach(({ tab, handler }) => tab.removeEventListener("click", handler));
+}
+
 export function LandingScripts() {
   useEffect(() => {
     const cleanups = [
@@ -214,6 +240,7 @@ export function LandingScripts() {
       }),
       initSpotlightCarousel(),
       initGalleryNav(),
+      initTourTabs(),
     ];
     return () => cleanups.forEach((fn) => fn());
   }, []);

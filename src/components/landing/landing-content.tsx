@@ -1,7 +1,17 @@
+import { Fragment } from "react";
 import Image from "next/image";
 import { VERTICALS, DEFAULT_THEME, type VerticalDef } from "@/lib/verticals";
 import { HERO_MOCKS, DEFAULT_HERO_MOCK } from "@/lib/hero-mocks";
 import { VerticalRotator } from "./vertical-rotator";
+import { SiteNav } from "./site-nav";
+import { FaqAccordion } from "./faq-accordion";
+import {
+  AUTOMATION_OUTPUTS,
+  BENEFIT_BLOCKS,
+  COMPARISON_GROUPS,
+  PRODUCT_TOUR_TABS,
+  TESTIMONIALS,
+} from "@/lib/landing-data";
 
 type SpotlightSlide = {
   label: string;
@@ -12,15 +22,17 @@ type SpotlightSlide = {
     body: string;
   }>;
   screen: "qr" | "finance" | "absen" | "inventory";
+  flow?: string[];
 };
 
 const spotlightSlides: SpotlightSlide[] = [
   {
     label: "QR meja",
-    title: "Pelanggan pesan sendiri, tinggal scan meja.",
+    title: "Pelanggan pesan sendiri, tim tinggal menyiapkan.",
     body:
-      "Cetak satu kode QR per meja, tempel di meja fisik. Pelanggan buka menu di HP masing-masing, pilih produk, pesan langsung tanpa nunggu dipanggil pelayan.",
+      "Cetak satu kode QR per meja, tempel di meja fisik. Pelanggan buka menu di HP masing-masing, pilih produk, pesan langsung tanpa nunggu dipanggil pelayan — pesanan langsung masuk ke sistem tanpa dicatat ulang oleh kasir.",
     screen: "qr",
+    flow: ["Pelanggan pesan", "Pesanan masuk", "Stok diperiksa", "Tim memproses", "Laporan diperbarui"],
     points: [
       {
         title: "Pesan berkali-kali, bayar sekali.",
@@ -171,6 +183,41 @@ function SpotlightPhone({ screen }: { screen: SpotlightSlide["screen"] }) {
   );
 }
 
+const HERO_OUTPUT_CHIPS = [
+  { label: "Stok diperbarui", icon: "box" },
+  { label: "Laba tercatat", icon: "chart" },
+  { label: "Pelanggan tersimpan", icon: "user" },
+  { label: "Laporan siap", icon: "doc" },
+] as const;
+
+function OutputIcon({ name }: { name: "box" | "chart" | "user" | "doc" }) {
+  const paths: Record<typeof name, React.ReactNode> = {
+    box: <path d="M3 7.5 12 3l9 4.5-9 4.5-9-4.5Zm0 0v9L12 21l9-4.5v-9M12 12v9" />,
+    chart: <path d="M4 20V10m6 10V4m6 16v-7" />,
+    user: <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0" />,
+    doc: <path d="M6 3h9l4 4v14H6V3Zm9 0v4h4M9 12h6m-6 4h6" />,
+  } as Record<"box" | "chart" | "user" | "doc", React.ReactNode>;
+  return (
+    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {paths[name]}
+    </svg>
+  );
+}
+
+function ComparisonCell({ value }: { value: string | boolean }) {
+  if (value === true) {
+    return (
+      <span className="cmp-check" aria-label="Tersedia">
+        <svg viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4" /></svg>
+      </span>
+    );
+  }
+  if (value === false) {
+    return <span className="cmp-dash" aria-label="Tidak tersedia">—</span>;
+  }
+  return <span className="cmp-value mono">{value}</span>;
+}
+
 export function LandingContent({ city, vertical }: { city?: string; vertical?: VerticalDef }) {
   const displayCity = city ? decodeURIComponent(city).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "";
   const theme = vertical ? vertical.theme : DEFAULT_THEME;
@@ -185,52 +232,7 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
 
   return (
     <div className="altora-landing" style={themeVars}>
-<header className="site">
-  <div className="wrap nav">
-    <a className="brand" href="#top">
-      <span className="brand-mark">
-        {vertical ? (
-          <img src={`/brand/${vertical.key}-symbol-onlight.svg`} alt="" width={40} height={40} style={{ display: "block" }} />
-        ) : (
-          <svg viewBox="0 0 400 460" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-            <defs>
-              <linearGradient id="altoraLogoGradient" x1="10%" y1="0%" x2="90%" y2="100%">
-                <stop offset="0%" stopColor="var(--logo-c1)" />
-                <stop offset="22%" stopColor="var(--logo-c2)" />
-                <stop offset="42%" stopColor="var(--logo-c3)" />
-                <stop offset="60%" stopColor="var(--logo-c4)" />
-                <stop offset="78%" stopColor="var(--logo-c5)" />
-                <stop offset="100%" stopColor="var(--logo-c6)" />
-              </linearGradient>
-              <linearGradient id="altoraLogoShade" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%" stopColor="#000000" stopOpacity="0.25" />
-                <stop offset="100%" stopColor="#000000" stopOpacity="0" />
-              </linearGradient>
-            </defs>
-            <path d="M 210 40 C 150 40 100 75 70 130 L 130 175 C 150 140 175 118 210 118 C 245 118 268 138 268 168 L 268 195 L 175 195 C 105 195 55 235 55 300 C 55 365 110 405 175 405 C 215 405 245 388 268 360 L 268 395 L 335 395 L 335 168 C 335 90 290 40 210 40 Z M 268 250 L 268 300 C 268 335 235 350 195 350 C 160 350 130 335 130 305 C 130 270 165 250 205 250 Z" fill="url(#altoraLogoGradient)" fillRule="evenodd" />
-            <path d="M 268 195 L 175 195 C 105 195 55 235 55 300 C 55 320 60 337 70 352 C 75 300 120 262 180 262 L 268 262 Z" fill="url(#altoraLogoShade)" />
-            <path d="M 335 300 C 335 350 315 390 275 408 C 305 400 335 375 335 335 Z" fill="url(#altoraLogoGradient)" />
-          </svg>
-        )}
-      </span>
-      <span className="brand-word">ALTORA</span>
-    </a>
-    <nav className="nav-links">
-      <a className="navlink" href="#fitur">Fitur</a>
-      <a className="navlink" href="#cara-kerja">Cara kerja</a>
-      <a className="navlink" href="#harga">Harga</a>
-      <a className="navlink" href="#kontak">Kontak</a>
-    </nav>
-    <div className="nav-cta">
-      <a className="btn btn-ghost" href="/login">
-        Login
-      </a>
-      <a className="btn btn-primary" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20tanya%20soal%20aplikasi%20kasirnya" target="_blank" rel="noopener">
-        Chat WhatsApp
-      </a>
-    </div>
-  </div>
-</header>
+<SiteNav vertical={vertical} />
 
 <main id="top">
 
@@ -240,7 +242,7 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
     <div className="wrap hero-grid">
       <div className="hero-copy">
         <span className="eyebrow">
-          {vertical ? vertical.eyebrow : `POS & Manajemen Toko untuk UMKM ${displayCity ? `di ${displayCity}` : "Indonesia"}`}
+          {vertical ? vertical.eyebrow : `ERP ringan untuk bisnis modern ${displayCity ? `di ${displayCity}` : ""}`}
         </span>
         {vertical ? (
           <h1>
@@ -259,39 +261,24 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
           </h1>
         ) : (
           <h1>
-            <span className="sr-only">Usaha jalan terus, dari kasir sampai laporan.</span>
-            <span aria-hidden="true">
-              Usaha jalan terus,<br />
-              <span className="roll-window">
-                <span className="roll-track">
-                  <span className="roll-item">dari kasir sampai laporan.</span>
-                  <span className="roll-item">walau internet mati.</span>
-                  <span className="roll-item">tanpa hitung manual.</span>
-                  <span className="roll-item">tanpa training dulu.</span>
-                  <span className="roll-item">dari kasir sampai laporan.</span>
-                </span>
-              </span>
-            </span>
+            Satu transaksi.<br />
+            <span className="hero-headline-accent">Stok, laba, dan laporan langsung beres.</span>
           </h1>
         )}
         <p className="lede">
           {vertical
             ? vertical.lede
-            : "Altora rapikan kasir, stok, karyawan, dan laporan tokomu jadi satu layar — buat coffee shop, barbershop, atau toko retail. Tetap jalan walau internet sempat mati, tetap tercatat sampai struk terakhir."}
+            : "Altora menyatukan kasir, inventori, pelanggan, hutang-piutang, dan laporan bisnis tanpa input data berulang. Masukkan satu aktivitas, Altora yang mengurus dampaknya ke seluruh sistem."}
         </p>
         <div className="hero-actions">
-          <a className="btn btn-primary" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20tanya%20soal%20aplikasi%20kasirnya" target="_blank" rel="noopener">
-            <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2c-5.5 0-9.96 4.46-9.96 9.96 0 1.76.46 3.48 1.34 5L2 22l5.2-1.36a9.94 9.94 0 0 0 4.84 1.23h.01c5.5 0 9.96-4.46 9.96-9.96S17.55 2 12.04 2Zm5.87 14.24c-.25.7-1.45 1.34-2 1.43-.51.08-1.15.11-1.86-.12-.43-.13-.98-.32-1.69-.62-2.97-1.28-4.9-4.26-5.05-4.46-.15-.2-1.21-1.6-1.21-3.06 0-1.45.76-2.16 1.03-2.46.27-.3.6-.37.8-.37.2 0 .4 0 .58.01.18.01.44-.07.68.53.25.6.85 2.08.92 2.23.07.15.12.33.02.53-.1.2-.15.32-.3.5-.15.18-.31.4-.44.53-.15.15-.3.31-.13.6.17.3.76 1.28 1.64 2.08 1.13 1.03 2.08 1.35 2.38 1.5.3.15.47.13.65-.07.18-.2.75-.87.95-1.17.2-.3.4-.25.68-.15.28.1 1.76.85 2.06 1 .3.15.5.23.57.35.07.13.07.73-.18 1.43Z"/></svg>
-            Chat via WhatsApp
+          <a className="btn btn-primary btn-lg" href="/register">
+            Mulai Gratis
           </a>
-          <a className="btn btn-ghost" href="mailto:admin@altora.my.id?subject=Tanya%20Altora">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M3 6h18v12H3z"/><path d="m3 7 9 6 9-6"/></svg>
-            Kirim Email
-          </a>
-          <a className="btn btn-ghost" href="/login">
-            Login
+          <a className="btn btn-ghost btn-lg" href="#tur-produk">
+            Lihat Demo
           </a>
         </div>
+        <p className="hero-microcopy">Tanpa kartu kredit &middot; Bisa dari HP &amp; desktop &middot; Setup cepat</p>
       </div>
 
       <div className="hero-visual">
@@ -354,6 +341,15 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
             </div>
           </div>
         </div>
+
+        <ul className="hero-outputs" aria-label="Yang otomatis diperbarui tiap ada transaksi">
+          {HERO_OUTPUT_CHIPS.map((chip, i) => (
+            <li className="hero-output-chip" key={chip.label} style={{ "--chip-delay": `${0.9 + i * 0.1}s` } as React.CSSProperties}>
+              <OutputIcon name={chip.icon} />
+              {chip.label}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   </section>
@@ -389,9 +385,51 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
     </div>
   </div>
 
+  {/* SOCIAL PROOF */}
+  {/* TODO(altora): ganti dengan statistik nyata (jumlah bisnis aktif, transaksi/hari, dll)
+      begitu tersedia — sengaja tidak diisi angka karangan. */}
+  <section id="dipercaya" className="social-proof">
+    <div className="wrap reveal">
+      <p className="social-proof-lede">Dipercaya berbagai jenis bisnis untuk mengelola operasional dalam satu sistem.</p>
+      <div className="social-proof-badges">
+        {VERTICALS.filter((v) => v.key !== "teams" && v.key !== "accounting").map((v) => (
+          <span className="social-proof-badge" key={v.key}>
+            <img src={`/brand/${v.key}-symbol-onlight.svg`} alt="" width={16} height={16} />
+            {v.label.replace("Altora ", "")}
+          </span>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  {/* SATU INPUT, BANYAK OUTPUT */}
+  <section id="otomatis" className="automation">
+    <div className="wrap">
+      <div className="section-head reveal">
+        <span className="eyebrow">Bagaimana Altora bekerja</span>
+        <h2>Lebih sedikit input. Lebih banyak yang otomatis.</h2>
+        <p className="lede">Masukkan aktivitas bisnis sekali. Altora mengurus dampaknya di seluruh sistem secara otomatis.</p>
+      </div>
+      <div className="automation-flow reveal">
+        <div className="automation-center">
+          <span className="automation-center-dot" aria-hidden="true"></span>
+          Satu transaksi berhasil
+        </div>
+        <div className="automation-outputs">
+          {AUTOMATION_OUTPUTS.map((output, i) => (
+            <div className="automation-output" key={output.key} style={{ "--out-delay": `${i * 0.07}s` } as React.CSSProperties}>
+              <span className="automation-output-label">{output.label}</span>
+              <span className="automation-output-detail">{output.detail}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  </section>
+
   {!vertical && <VerticalRotator />}
 
-  {/* FEATURE SPOTLIGHT */}
+  {/* FEATURE SPOTLIGHT — Pelanggan pesan sendiri */}
   <section id="qr-meja" className="spotlight">
     <div className="wrap spotlight-wrap reveal">
       <div className="spotlight-control-row">
@@ -427,6 +465,16 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
                   </li>
                 ))}
               </ul>
+              {slide.flow && (
+                <div className="spotlight-flow" aria-label="Alur pesanan">
+                  {slide.flow.map((step, i) => (
+                    <span className="spotlight-flow-step" key={step}>
+                      {i > 0 && <span className="spotlight-flow-arrow" aria-hidden="true">→</span>}
+                      {step}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
 
             <div className="spotlight-visual">
@@ -453,13 +501,27 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
     </div>
   </section>
 
-  {/* FEATURE GALLERY */}
-  <section id="galeri">
+  {/* PRODUCT TOUR */}
+  <section id="tur-produk">
     <div className="wrap">
       <div className="section-head reveal">
         <span className="eyebrow">Lihat isi aplikasinya</span>
-        <h2 className="gradient-text">Satu aplikasi, semua sisi toko kamu.</h2>
-        <p className="lede">Bukan cuma pesan lewat QR — geser buat lihat layar yang tim kamu pakai tiap hari, dari kasir sampai laporan bulanan.</p>
+        <h2 className="gradient-text">Satu aplikasi, semua sisi usaha kamu.</h2>
+        <p className="lede">Geser buat lihat layar yang tim kamu pakai tiap hari, dari kasir sampai laporan bulanan.</p>
+      </div>
+      <div className="tour-tabs reveal" role="tablist" aria-label="Bagian aplikasi">
+        {PRODUCT_TOUR_TABS.map((tab, i) => (
+          <button
+            type="button"
+            key={tab.key}
+            className={`tour-tab ${i === 0 ? "is-active" : ""}`}
+            data-tour-tab
+            role="tab"
+            aria-selected={i === 0}
+          >
+            {tab.label}
+          </button>
+        ))}
       </div>
       <div className="gallery-track reveal">
         <div className="gallery-card">
@@ -638,115 +700,70 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
     </div>
   </section>
 
-  {/* PROBLEM / SOLUTION */}
+  {/* BEFORE / AFTER */}
   <section id="kenapa">
     <div className="wrap">
       <div className="section-head reveal">
         <span className="eyebrow">Kenapa Altora</span>
-        <h2>Data toko yang tadinya nyebar, sekarang ngumpul.</h2>
+        <h2>Dari data yang tercecer menjadi satu sumber informasi.</h2>
         <p className="lede">Nota kertas, WhatsApp grup karyawan, catatan stok di buku tulis — kerja, tapi capek. Altora gantikan itu semua tanpa harus belajar sistem yang rumit.</p>
       </div>
-      <div className="compare reveal">
-        <div className="compare-cell">
-          <h3>Pencatatan transaksi</h3>
-          <div className="compare-pair">
-            <span className="tag tag-before">Sebelum</span>
-            <p className="compare-text">Nota manual atau kalkulator, gampang hilang, susah direkap akhir bulan.</p>
-          </div>
-          <div className="compare-pair">
-            <span className="tag tag-after">Dengan Altora</span>
-            <p className="compare-text">Setiap transaksi tercatat otomatis, struk digital, bisa cetak ke printer thermal.</p>
-          </div>
+      <div className="transform reveal">
+        <div className="transform-col transform-before">
+          <span className="transform-label">Sebelum Altora</span>
+          <ul>
+            <li>Penjualan dicatat di aplikasi/nota terpisah-pisah</li>
+            <li>Stok dihitung manual, sering meleset</li>
+            <li>Laporan disusun ulang di Excel tiap bulan</li>
+            <li>Data pelanggan tersebar, gampang hilang</li>
+            <li>Sulit memantau cabang dari jauh</li>
+          </ul>
         </div>
-        <div className="compare-cell">
-          <h3>Stok barang</h3>
-          <div className="compare-pair">
-            <span className="tag tag-before">Sebelum</span>
-            <p className="compare-text">Stok ditebak-tebak, baru sadar habis pas pelanggan sudah pesan.</p>
-          </div>
-          <div className="compare-pair">
-            <span className="tag tag-after">Dengan Altora</span>
-            <p className="compare-text">Potongan stok otomatis tiap transaksi, plus riwayat lengkap tiap perubahan.</p>
-          </div>
+        <div className="transform-arrow" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M5 12h14M13 6l6 6-6 6" /></svg>
         </div>
-        <div className="compare-cell">
-          <h3>Untung &amp; rugi</h3>
-          <div className="compare-pair">
-            <span className="tag tag-before">Sebelum</span>
-            <p className="compare-text">Owner nggak tahu pasti untung berapa sampai tutup buku akhir bulan.</p>
-          </div>
-          <div className="compare-pair">
-            <span className="tag tag-after">Dengan Altora</span>
-            <p className="compare-text">Laporan omzet &amp; untung bersih (sudah dikurangi pengeluaran) real-time.</p>
-          </div>
+        <div className="transform-col transform-after">
+          <span className="transform-label">Dengan Altora</span>
+          <ul>
+            <li>Semua transaksi terhubung dalam satu sistem</li>
+            <li>Stok diperbarui otomatis tiap transaksi</li>
+            <li>Laporan tersedia real-time, kapan saja dibuka</li>
+            <li>Riwayat &amp; poin pelanggan tersimpan otomatis</li>
+            <li>Semua cabang dipantau dalam satu dashboard</li>
+          </ul>
         </div>
       </div>
     </div>
   </section>
 
-  {/* FEATURE LEDGER */}
+  {/* BENEFITS */}
   <section id="fitur">
     <div className="wrap">
       <div className="section-head reveal">
         <span className="eyebrow">Yang ada di dalam</span>
         <h2>Satu paket, isinya lengkap.</h2>
-        <p className="lede">Bukan cuma kasir — semua yang dibutuhkan toko harian sudah ada, tanpa beli modul tambahan.</p>
+        <p className="lede">Bukan cuma kasir — semua yang dibutuhkan usaha harian sudah ada, tanpa beli modul tambahan.</p>
       </div>
-      <div className="ledger reveal">
-        <div className="ledger-head">
-          <span>Fitur</span><span>Untuk apa</span><span style={{ textAlign: "right" }}>Status</span>
-        </div>
-
-        <div className="ledger-row">
-          <span className="ledger-feature">Kasir &amp; struk digital</span>
-          <span className="ledger-desc">Jual cepat, banyak metode bayar (tunai/QRIS/e-wallet/deposit), cetak ke printer thermal.</span>
-          <span className="ledger-status">✓ Aktif</span>
-        </div>
-        <div className="ledger-row">
-          <span className="ledger-feature">Meja QR &amp; dapur</span>
-          <span className="ledger-desc">Pelanggan pesan sendiri lewat scan QR, dapur pantau lewat layar kitchen display.</span>
-          <span className="ledger-status">✓ Aktif</span>
-        </div>
-        <div className="ledger-row">
-          <span className="ledger-feature">Produk, stok &amp; varian</span>
-          <span className="ledger-desc">Ukuran, level gula, topping — plus transfer stok antar outlet dan riwayat lengkap.</span>
-          <span className="ledger-status">✓ Aktif</span>
-        </div>
-        <div className="ledger-row">
-          <span className="ledger-feature">Member &amp; poin</span>
-          <span className="ledger-desc">Kartu QR, saldo deposit, poin otomatis dari tiap transaksi.</span>
-          <span className="ledger-status">✓ Aktif</span>
-        </div>
-        <div className="ledger-row">
-          <span className="ledger-feature">Promo terjadwal</span>
-          <span className="ledger-desc">Happy hour &amp; diskon kategori aktif sendiri sesuai jam, tanpa input manual.</span>
-          <span className="ledger-status">✓ Aktif</span>
-        </div>
-        <div className="ledger-row">
-          <span className="ledger-feature">Karyawan &amp; absensi</span>
-          <span className="ledger-desc">Jadwal kerja per outlet, absen dengan foto dan lokasi GPS.</span>
-          <span className="ledger-status">✓ Aktif</span>
-        </div>
-        <div className="ledger-row">
-          <span className="ledger-feature">Booking &amp; reservasi</span>
-          <span className="ledger-desc">Janji potong rambut, atau pesanan yang diantar/dibawa ke acara.</span>
-          <span className="ledger-status">✓ Aktif</span>
-        </div>
-        <div className="ledger-row">
-          <span className="ledger-feature">Laporan &amp; ekspor</span>
-          <span className="ledger-desc">Omzet, produk terlaris, untung bersih, siap diekspor ke Excel/CSV.</span>
-          <span className="ledger-status">✓ Aktif</span>
-        </div>
-        <div className="ledger-row">
-          <span className="ledger-feature">Mode offline</span>
-          <span className="ledger-desc">Kasir tetap bisa jualan walau internet mati, transaksi sinkron otomatis nanti.</span>
-          <span className="ledger-status">✓ Aktif</span>
-        </div>
-        <div className="ledger-row">
-          <span className="ledger-feature">Multi-outlet &amp; tim</span>
-          <span className="ledger-desc">Banyak cabang, banyak karyawan dengan peran berbeda, satu dashboard.</span>
-          <span className="ledger-status">✓ Aktif</span>
-        </div>
+      <div className="benefits reveal">
+        {BENEFIT_BLOCKS.map((block) => (
+          <div className="benefit-card" key={block.key}>
+            <span className="benefit-eyebrow mono">{block.eyebrow}</span>
+            <h3>{block.title}</h3>
+            <p>{block.description}</p>
+            <ul className="benefit-features">
+              {block.features.map((f) => (
+                <li key={f}>
+                  <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4" /></svg>
+                  {f}
+                </li>
+              ))}
+            </ul>
+            <a className="benefit-link" href={block.anchor}>
+              Pelajari lebih lanjut
+              <svg viewBox="0 0 16 16" width="13" height="13" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 3l5 5-5 5" /></svg>
+            </a>
+          </div>
+        ))}
       </div>
     </div>
   </section>
@@ -756,44 +773,65 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
     <div className="wrap">
       <div className="section-head reveal">
         <span className="eyebrow">Cara kerja</span>
-        <h2>Mulai jualan hari ini juga.</h2>
+        <h2>Mulai menjalankan bisnis dengan Altora dalam tiga langkah.</h2>
         <p className="lede">Tiga langkah, tanpa training berhari-hari.</p>
       </div>
       <div className="steps reveal">
         <div className="step">
           <span className="step-num">01</span>
-          <h3>Daftar toko</h3>
-          <p>Isi nama usaha, jenis usaha, dan outlet pertamamu.</p>
+          <h3>Pilih jenis usahamu</h3>
+          <p>Altora menyiapkan modul dan tampilan yang sesuai — cafe, toko, laundry, atau jenis usaha lainnya.</p>
         </div>
         <div className="step">
           <span className="step-num">02</span>
-          <h3>Atur produk &amp; tim</h3>
-          <p>Tambah menu atau produk, undang karyawan, cetak QR meja kalau perlu.</p>
+          <h3>Masukkan data awal</h3>
+          <p>Tambahkan produk secara manual, atau impor dari file. Undang karyawan, cetak QR meja kalau perlu.</p>
         </div>
         <div className="step">
           <span className="step-num">03</span>
-          <h3>Mulai jualan</h3>
-          <p>Kasir langsung bisa dipakai hari itu juga — laporan &amp; stok jalan otomatis di belakang layar.</p>
+          <h3>Mulai transaksi</h3>
+          <p>Kasir langsung bisa dipakai hari itu juga — stok, keuangan, pelanggan, dan laporan langsung ikut diperbarui.</p>
         </div>
       </div>
     </div>
   </section>
 
-  {/* USE CASES */}
-  <section id="usecase">
+  {/* FEATURE COMPARISON */}
+  <section id="perbandingan-fitur">
     <div className="wrap">
       <div className="section-head reveal">
-        <span className="eyebrow">Cocok untuk usaha kamu</span>
-        <h2>Satu aplikasi, banyak cara pakai.</h2>
+        <span className="eyebrow">Detail per paket</span>
+        <h2>Semua fitur, di semua paket.</h2>
+        <p className="lede">Yang membedakan paket cuma batas jumlah outlet, karyawan, dan produk — bukan fitur yang dikunci.</p>
       </div>
-      <div className="cases reveal">
-        {(vertical ? [vertical, ...VERTICALS.filter((v) => v.key !== vertical.key)] : VERTICALS).map((v) => (
-          <div className="case-card" key={v.key}>
-            <span className="case-kicker">{v.caseKicker}</span>
-            <h3>{v.caseTitle}</h3>
-            <p>{v.caseDescription}</p>
-          </div>
-        ))}
+      <div className="cmp-table-wrap reveal">
+        <table className="cmp-table">
+          <thead>
+            <tr>
+              <th scope="col" className="cmp-th-feature">Fitur</th>
+              <th scope="col">Free</th>
+              <th scope="col">Basic</th>
+              <th scope="col">Pro</th>
+            </tr>
+          </thead>
+          <tbody>
+            {COMPARISON_GROUPS.map((group) => (
+              <Fragment key={group.category}>
+                <tr className="cmp-group-row">
+                  <th scope="colgroup" colSpan={4}>{group.category}</th>
+                </tr>
+                {group.rows.map((row) => (
+                  <tr key={row.label}>
+                    <th scope="row" className="cmp-th-feature">{row.label}</th>
+                    <td><ComparisonCell value={row.free} /></td>
+                    <td><ComparisonCell value={row.basic} /></td>
+                    <td><ComparisonCell value={row.pro} /></td>
+                  </tr>
+                ))}
+              </Fragment>
+            ))}
+          </tbody>
+        </table>
       </div>
     </div>
   </section>
@@ -809,38 +847,80 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
       <div className="pricing reveal">
         <div className="plan">
           <span className="plan-name mono">Free</span>
+          <p className="plan-desc">Untuk usaha yang baru mulai jalan.</p>
           <div className="plan-price">Rp0<small> /bulan</small></div>
-          <p className="plan-desc">Buat coba-coba atau usaha yang baru mulai jalan.</p>
           <ul className="plan-specs">
             <li><b>1</b> outlet</li>
             <li><b>3</b> karyawan</li>
             <li><b>50</b> produk</li>
+            <li>Semua fitur aktif</li>
           </ul>
-          <a className="btn btn-ghost" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20mulai%20paket%20Free" target="_blank" rel="noopener">Mulai gratis</a>
+          <a className="btn btn-ghost" href="/register">Mulai Gratis</a>
+          <a className="plan-more" href="#perbandingan-fitur">Lihat semua fitur</a>
         </div>
         <div className="plan featured">
-          <span className="plan-badge">Paling laris</span>
+          <span className="plan-badge">Paling Populer</span>
           <span className="plan-name mono">Basic</span>
+          <p className="plan-desc">Untuk usaha yang sedang berkembang.</p>
           <div className="plan-price">Rp99.000<small> /bulan</small></div>
-          <p className="plan-desc">Buat usaha yang sudah mulai buka cabang kedua.</p>
           <ul className="plan-specs">
             <li><b>3</b> outlet</li>
             <li><b>10</b> karyawan</li>
             <li><b>500</b> produk</li>
+            <li>Semua fitur aktif</li>
           </ul>
-          <a className="btn btn-primary" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20tanya%20paket%20Basic" target="_blank" rel="noopener">Tanya paket ini</a>
+          <a className="btn btn-primary" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20pilih%20paket%20Basic" target="_blank" rel="noopener">Pilih Paket Bisnis</a>
+          <a className="plan-more" href="#perbandingan-fitur">Lihat semua fitur</a>
         </div>
         <div className="plan">
           <span className="plan-name mono">Pro</span>
+          <p className="plan-desc">Untuk usaha multi-cabang dan kebutuhan lebih kompleks.</p>
           <div className="plan-price">Rp249.000<small> /bulan</small></div>
-          <p className="plan-desc">Buat yang serius scale up ke banyak cabang.</p>
           <ul className="plan-specs">
             <li><b>Tanpa batas</b> outlet</li>
             <li><b>Tanpa batas</b> karyawan</li>
             <li><b>Tanpa batas</b> produk</li>
+            <li>Semua fitur aktif</li>
           </ul>
-          <a className="btn btn-ghost" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20tanya%20paket%20Pro" target="_blank" rel="noopener">Tanya paket ini</a>
+          <a className="btn btn-ghost" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20tanya%20paket%20Pro" target="_blank" rel="noopener">Hubungi Tim Altora</a>
+          <a className="plan-more" href="#perbandingan-fitur">Lihat semua fitur</a>
         </div>
+      </div>
+    </div>
+  </section>
+
+  {/* TESTIMONIALS */}
+  <section id="testimoni">
+    <div className="wrap">
+      <div className="section-head reveal">
+        <span className="eyebrow">Kata pengguna</span>
+        <h2>Belum banyak, tapi jujur.</h2>
+        <p className="lede">Testimoni pelanggan asli akan tampil di sini begitu tersedia dan disetujui pemiliknya.</p>
+      </div>
+      <div className="testimonials reveal">
+        {TESTIMONIALS.map((t) => (
+          <figure className={`testimonial-card ${t.isPlaceholder ? "is-placeholder" : ""}`} key={t.name}>
+            {t.isPlaceholder && <span className="testimonial-flag">Contoh tampilan</span>}
+            <blockquote>&ldquo;{t.quote}&rdquo;</blockquote>
+            <figcaption>
+              <b>{t.name}</b>
+              <span>{t.role}</span>
+            </figcaption>
+          </figure>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  {/* FAQ */}
+  <section id="faq">
+    <div className="wrap">
+      <div className="section-head reveal">
+        <span className="eyebrow">Pertanyaan umum</span>
+        <h2>Masih ada yang mau ditanya?</h2>
+      </div>
+      <div className="reveal">
+        <FaqAccordion />
       </div>
     </div>
   </section>
@@ -850,16 +930,15 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
     <div className="closing-glow" aria-hidden="true"></div>
     <div className="wrap">
       <span className="eyebrow">Siap mulai?</span>
-      <h2 style={{ marginTop: "14px" }}>Siap beresin toko kamu?</h2>
-      <p className="lede">Chat singkat aja dulu — ceritakan jenis usahamu, kami bantu tentuin paket yang pas.</p>
+      <h2 style={{ marginTop: "14px" }}>Siap menjalankan bisnis tanpa input berulang?</h2>
+      <p className="lede">Mulai dari transaksi pertama dan biarkan Altora mengurus stok, keuangan, pelanggan, dan laporan secara otomatis.</p>
       <div className="closing-actions">
-        <a className="btn btn-primary" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20tanya%20soal%20aplikasi%20kasirnya" target="_blank" rel="noopener">
-          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2c-5.5 0-9.96 4.46-9.96 9.96 0 1.76.46 3.48 1.34 5L2 22l5.2-1.36a9.94 9.94 0 0 0 4.84 1.23h.01c5.5 0 9.96-4.46 9.96-9.96S17.55 2 12.04 2Zm5.87 14.24c-.25.7-1.45 1.34-2 1.43-.51.08-1.15.11-1.86-.12-.43-.13-.98-.32-1.69-.62-2.97-1.28-4.9-4.26-5.05-4.46-.15-.2-1.21-1.6-1.21-3.06 0-1.45.76-2.16 1.03-2.46.27-.3.6-.37.8-.37.2 0 .4 0 .58.01.18.01.44-.07.68.53.25.6.85 2.08.92 2.23.07.15.12.33.02.53-.1.2-.15.32-.3.5-.15.18-.31.4-.44.53-.15.15-.3.31-.13.6.17.3.76 1.28 1.64 2.08 1.13 1.03 2.08 1.35 2.38 1.5.3.15.47.13.65-.07.18-.2.75-.87.95-1.17.2-.3.4-.25.68-.15.28.1 1.76.85 2.06 1 .3.15.5.23.57.35.07.13.07.73-.18 1.43Z"/></svg>
-          Chat via WhatsApp
+        <a className="btn btn-primary btn-lg" href="/register">
+          Mulai Gratis
         </a>
-        <a className="btn btn-ghost" href="mailto:admin@altora.my.id?subject=Tanya%20Altora">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><path d="M3 6h18v12H3z"/><path d="m3 7 9 6 9-6"/></svg>
-          admin@altora.my.id
+        <a className="btn btn-ghost btn-lg" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20jadwalkan%20demo" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2c-5.5 0-9.96 4.46-9.96 9.96 0 1.76.46 3.48 1.34 5L2 22l5.2-1.36a9.94 9.94 0 0 0 4.84 1.23h.01c5.5 0 9.96-4.46 9.96-9.96S17.55 2 12.04 2Zm5.87 14.24c-.25.7-1.45 1.34-2 1.43-.51.08-1.15.11-1.86-.12-.43-.13-.98-.32-1.69-.62-2.97-1.28-4.9-4.26-5.05-4.46-.15-.2-1.21-1.6-1.21-3.06 0-1.45.76-2.16 1.03-2.46.27-.3.6-.37.8-.37.2 0 .4 0 .58.01.18.01.44-.07.68.53.25.6.85 2.08.92 2.23.07.15.12.33.02.53-.1.2-.15.32-.3.5-.15.18-.31.4-.44.53-.15.15-.3.31-.13.6.17.3.76 1.28 1.64 2.08 1.13 1.03 2.08 1.35 2.38 1.5.3.15.47.13.65-.07.18-.2.75-.87.95-1.17.2-.3.4-.25.68-.15.28.1 1.76.85 2.06 1 .3.15.5.23.57.35.07.13.07.73-.18 1.43Z"/></svg>
+          Jadwalkan Demo
         </a>
       </div>
       <div className="closing-contact">
@@ -876,28 +955,32 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
       <div>
         <a className="brand" href="#top">
           <span className="brand-mark">
-            <svg viewBox="0 0 400 460" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-              <path d="M 210 40 C 150 40 100 75 70 130 L 130 175 C 150 140 175 118 210 118 C 245 118 268 138 268 168 L 268 195 L 175 195 C 105 195 55 235 55 300 C 55 365 110 405 175 405 C 215 405 245 388 268 360 L 268 395 L 335 395 L 335 168 C 335 90 290 40 210 40 Z M 268 250 L 268 300 C 268 335 235 350 195 350 C 160 350 130 335 130 305 C 130 270 165 250 205 250 Z" fill="url(#altoraLogoGradient)" fillRule="evenodd" />
-              <path d="M 268 195 L 175 195 C 105 195 55 235 55 300 C 55 320 60 337 70 352 C 75 300 120 262 180 262 L 268 262 Z" fill="url(#altoraLogoShade)" />
-              <path d="M 335 300 C 335 350 315 390 275 408 C 305 400 335 375 335 335 Z" fill="url(#altoraLogoGradient)" />
-            </svg>
+            <img src="/brand/altora-purple-symbol.svg" alt="" width={40} height={40} style={{ display: "block" }} />
           </span>
           <span className="brand-word">ALTORA</span>
         </a>
-        <p className="footer-desc">Aplikasi kasir dan manajemen toko untuk UMKM Indonesia — coffee shop, barbershop, retail, dan berbagai jenis usaha lainnya, dalam satu layar.</p>
+        <p className="footer-desc">ERP ringan untuk UMKM Indonesia — kasir, inventori, keuangan, dan laporan bisnis dalam satu layar, tanpa input data berulang.</p>
       </div>
       <div className="footer-col">
-        <div className="footer-heading">Halaman</div>
-        <a href="#fitur">Fitur</a>
-        <a href="#cara-kerja">Cara kerja</a>
-        <a href="#harga">Harga</a>
-        <a href="#kontak">Kontak</a>
+        <div className="footer-heading">Produk</div>
+        <a href="#fitur">Kasir</a>
+        <a href="#fitur">Inventori</a>
+        <a href="#fitur">Keuangan</a>
+        <a href="#fitur">Member &amp; CRM</a>
+        <a href="#perbandingan-fitur">Laporan</a>
+      </div>
+      <div className="footer-col">
+        <div className="footer-heading">Solusi</div>
+        {VERTICALS.filter((v) => v.key !== "teams" && v.key !== "accounting").slice(0, 6).map((v) => (
+          <a key={v.key} href={`https://${v.subdomain}.altora.my.id`}>{v.label.replace("Altora ", "")}</a>
+        ))}
       </div>
       <div className="footer-col">
         <div className="footer-heading">Kontak</div>
         <p style={{ marginBottom: "6px" }}>PT. ALTORA INTERNATIONAL TECHNOLOGY</p>
         <a href="mailto:admin@altora.my.id">admin@altora.my.id</a>
         <a href="tel:+6285190911170">+62 851-9091-1170</a>
+        <a href="#faq">Bantuan &amp; FAQ</a>
       </div>
     </div>
     <div className="footer-bottom">

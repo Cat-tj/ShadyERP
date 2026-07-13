@@ -15,9 +15,13 @@ const jetbrainsMono = JetBrains_Mono({
   weight: ["500", "600", "700"],
 });
 
+const metaTitle = "Altora — ERP Ringan untuk Kasir, Stok, Keuangan, dan Laporan Bisnis";
+const metaDescription =
+  "Kelola kasir, stok, pelanggan, hutang-piutang, dan laporan dalam satu aplikasi. Satu transaksi memperbarui seluruh operasional bisnis secara otomatis.";
+
 export const metadata: Metadata = {
-  title: "Altora POS & ERP — Kasir & Manajemen Toko UMKM",
-  description: "Altora adalah aplikasi POS & ERP toko terlengkap untuk UMKM Indonesia. Kelola kasir, stok, absensi karyawan, dan laporan keuangan secara real-time.",
+  title: metaTitle,
+  description: metaDescription,
   metadataBase: new URL("https://www.altora.my.id"),
   alternates: {
     canonical: "/",
@@ -26,6 +30,19 @@ export const metadata: Metadata = {
     capable: true,
     statusBarStyle: "default",
     title: "Altora POS & ERP",
+  },
+  openGraph: {
+    type: "website",
+    locale: "id_ID",
+    url: "https://www.altora.my.id",
+    siteName: "Altora",
+    title: metaTitle,
+    description: metaDescription,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: metaTitle,
+    description: metaDescription,
   },
 };
 
@@ -52,7 +69,7 @@ export default function RootLayout({
               "url": "https://www.altora.my.id",
               "applicationCategory": "BusinessApplication",
               "operatingSystem": "All",
-              "description": "Altora adalah aplikasi POS & ERP toko terlengkap untuk UMKM Indonesia. Kelola kasir, stok, absensi karyawan, dan laporan keuangan secara real-time.",
+              "description": metaDescription,
               "offers": {
                 "@type": "Offer",
                 "price": "0.00",
