@@ -47,7 +47,7 @@ export const HERO_MOCKS: Record<VerticalKey, HeroMock> = {
   toko: {
     receiptBrandSub: "Toko Berkah — Pasar Minggu",
     receiptItems: [["3x Indomie Goreng", "10.500"], ["1x Aqua 600ml", "4.000"]],
-    receiptHighlight: ["Diskon member -5%", "-725"],
+    receiptHighlight: ["Diskon member", "-725"],
     receiptTotal: "13.775",
     dashTabs: ["Kasir", "Stok", "Finance"],
     dashTiles: [
@@ -64,7 +64,7 @@ export const HERO_MOCKS: Record<VerticalKey, HeroMock> = {
   },
   supermarket: {
     receiptBrandSub: "Supermarket Sentosa — Cabang Barat",
-    receiptItems: [["5x Minyak Goreng 1L", "70.000"], ["2x Beras 5kg", "130.000"]],
+    receiptItems: [["5x Minyak Goreng", "70.000"], ["2x Beras 5kg", "130.000"]],
     receiptHighlight: ["Harga grosir -8%", "-16.000"],
     receiptTotal: "184.000",
     dashTabs: ["Kasir", "Purchase", "Finance"],
@@ -100,8 +100,8 @@ export const HERO_MOCKS: Record<VerticalKey, HeroMock> = {
   },
   counter: {
     receiptBrandSub: "Konter Jaya — ITC",
-    receiptItems: [["1x Tempered Glass", "25.000"], ["Servis ganti baterai", "150.000"]],
-    receiptHighlight: ["Diskon aksesoris -10%", "-2.500"],
+    receiptItems: [["Tempered Glass", "25.000"], ["Ganti baterai", "150.000"]],
+    receiptHighlight: ["Diskon aksesoris", "-2.500"],
     receiptTotal: "172.500",
     dashTabs: ["Kasir", "Servis", "Finance"],
     dashTiles: [
@@ -119,7 +119,7 @@ export const HERO_MOCKS: Record<VerticalKey, HeroMock> = {
   jasa: {
     receiptBrandSub: "Barbershop Utama — Kemang",
     receiptItems: [["Potong rambut", "45.000"], ["Cukur jenggot", "20.000"]],
-    receiptHighlight: ["Promo member -10%", "-6.500"],
+    receiptHighlight: ["Promo -10%", "-6.500"],
     receiptTotal: "58.500",
     dashTabs: ["Booking", "Kasir", "Finance"],
     dashTiles: [
@@ -136,8 +136,8 @@ export const HERO_MOCKS: Record<VerticalKey, HeroMock> = {
   },
   pabrik: {
     receiptBrandSub: "Pabrik Roti Makmur — Gudang 2",
-    receiptItems: [["Tepung terigu 50kg", "600.000"], ["Ragi instan 10kg", "180.000"]],
-    receiptHighlight: ["Diskon supplier -5%", "-39.000"],
+    receiptItems: [["Tepung terigu", "600.000"], ["Ragi instan 10kg", "180.000"]],
+    receiptHighlight: ["Diskon supplier", "-39.000"],
     receiptTotal: "741.000",
     dashTabs: ["Stok", "Maintenance", "Finance"],
     dashTiles: [
@@ -154,7 +154,7 @@ export const HERO_MOCKS: Record<VerticalKey, HeroMock> = {
   },
   company: {
     receiptBrandSub: "Cabang Bali — Laporan Harian",
-    receiptItems: [["Omzet gabungan", "Rp42jt"], ["Biaya operasional", "Rp6,1jt"]],
+    receiptItems: [["Omzet gabungan", "Rp42jt"], ["Biaya operasi", "Rp6,1jt"]],
     receiptHighlight: ["Approval e-sign", "2 dokumen"],
     receiptTotal: "35,9jt",
     dashTabs: ["Cabang", "Approval", "Finance"],
@@ -172,7 +172,7 @@ export const HERO_MOCKS: Record<VerticalKey, HeroMock> = {
   },
   teams: {
     receiptBrandSub: "Absensi Hari Ini — Cabang BSD",
-    receiptItems: [["Hadir tepat waktu", "18 org"], ["Telat", "2 org"]],
+    receiptItems: [["Tepat waktu", "18 org"], ["Telat", "2 org"]],
     receiptHighlight: ["Target tim", "72%"],
     receiptTotal: "20 karyawan",
     dashTabs: ["Absensi", "Jadwal", "Target"],
@@ -190,7 +190,7 @@ export const HERO_MOCKS: Record<VerticalKey, HeroMock> = {
   },
   accounting: {
     receiptBrandSub: "Jurnal Harian — Semua Cabang",
-    receiptItems: [["Pendapatan", "Rp8,1jt"], ["Beban operasional", "Rp2,3jt"]],
+    receiptItems: [["Pendapatan", "Rp8,1jt"], ["Beban operasi", "Rp2,3jt"]],
     receiptHighlight: ["Laba bersih +14%", "Rp5,8jt"],
     receiptTotal: "5,8jt",
     dashTabs: ["Jurnal", "Laba Rugi", "Kas"],

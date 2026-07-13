@@ -1337,7 +1337,10 @@ html { scroll-behavior: auto; }
   }
 
 
-.altora-landing .vshow-tab-row b { font-family: var(--font-jetbrains-mono), monospace; font-weight: 700; color: var(--text); white-space: nowrap; }
+.altora-landing .vshow-tab-row span { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+
+.altora-landing .vshow-tab-row b { flex-shrink: 0; font-family: var(--font-jetbrains-mono), monospace; font-weight: 700; color: var(--text); white-space: nowrap; }
 
 
 .altora-landing .vshow-tab-note { margin-top: auto; font-size: 9.5px; color: var(--text-faint); line-height: 1.4; }
@@ -1432,6 +1435,8 @@ html { scroll-behavior: auto; }
 
 .altora-landing .vshow-ribbon {
     margin-top: auto; height: 26px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center; gap: 5px;
+    color: #fff; font-size: 9px; font-weight: 700; white-space: nowrap; overflow: hidden;
     animation: vshow-ribbon-in 0.5s ease both;
   }
 
@@ -1449,6 +1454,24 @@ html { scroll-behavior: auto; }
 
 
 @keyframes vshow-ribbon-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+
+/* Transisi konten tiap kali vertikal aktif ganti (laptop/tablet/HP) —
+   di-retrigger otomatis lewat key={active.key} di vertical-rotator.tsx. */
+.altora-landing .vshow-panel-fade {
+  animation: vshow-panel-in 0.5s cubic-bezier(.16, 1, .3, 1) both;
+}
+
+
+@keyframes vshow-panel-in {
+  from { opacity: 0; filter: blur(6px); transform: translateY(6px); }
+  to { opacity: 1; filter: blur(0); transform: translateY(0); }
+}
+
+
+@media (prefers-reduced-motion: reduce) {
+  .altora-landing .vshow-panel-fade { animation: none; }
+}
 
 
 @media (max-width: 860px) {

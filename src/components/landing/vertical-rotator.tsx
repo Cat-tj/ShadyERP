@@ -6,14 +6,14 @@ import { HERO_MOCKS } from "@/lib/hero-mocks";
 
 /** Data mockup layar HP per vertikal — cuma buat ilustrasi visual, bukan data asli. */
 const SCREEN_TILES: Record<VerticalKey, [{ label: string; value: string }, { label: string; value: string }]> = {
-  cafe: [{ label: "Omzet hari ini", value: "Rp3,4jt" }, { label: "Meja aktif", value: "5" }],
+  cafe: [{ label: "Omzet", value: "Rp3,4jt" }, { label: "Meja aktif", value: "5" }],
   toko: [{ label: "Stok terjual", value: "142" }, { label: "Produk laris", value: "Indomie" }],
   supermarket: [{ label: "SKU aktif", value: "1.240" }, { label: "Stok masuk", value: "18" }],
-  laundry: [{ label: "Cucian proses", value: "9" }, { label: "Siap diambil", value: "3" }],
+  laundry: [{ label: "Proses cuci", value: "9" }, { label: "Siap diambil", value: "3" }],
   counter: [{ label: "Servis masuk", value: "4" }, { label: "Garansi aktif", value: "27" }],
-  jasa: [{ label: "Booking hari ini", value: "6" }, { label: "Staf pegang", value: "3" }],
-  pabrik: [{ label: "Bahan baku aman", value: "92%" }, { label: "Maintenance", value: "1" }],
-  company: [{ label: "Cabang aktif", value: "12" }, { label: "Approval jalan", value: "3" }],
+  jasa: [{ label: "Booking", value: "6" }, { label: "Staf pegang", value: "3" }],
+  pabrik: [{ label: "Bahan baku", value: "92%" }, { label: "Maintenance", value: "1" }],
+  company: [{ label: "Cabang aktif", value: "12" }, { label: "Approval", value: "3" }],
   teams: [{ label: "Hadir hari ini", value: "18/20" }, { label: "Target tim", value: "72%" }],
   accounting: [{ label: "Kas hari ini", value: "Rp8,1jt" }, { label: "Laba bulan", value: "+14%" }],
 };
@@ -138,7 +138,7 @@ export function VerticalRotator() {
               {/* Laptop — dashboard penuh */}
               <div className="vshow-laptop" aria-hidden="true">
                 <div className="vshow-laptop-screen">
-                  <div className="vshow-lap-inner">
+                  <div key={active.key} className="vshow-lap-inner vshow-panel-fade">
                     <div className="vshow-chrome">
                       <span className="vshow-cdot" /><span className="vshow-cdot" /><span className="vshow-cdot" />
                       <span className="vshow-curl mono">{active.subdomain}.altora.my.id / dashboard</span>
@@ -188,7 +188,7 @@ export function VerticalRotator() {
 
               {/* Tablet — ringkasan laporan/nota, rasio 16:10 asli */}
               <div className="vshow-tablet" aria-hidden="true">
-                <div className="vshow-tablet-screen">
+                <div key={active.key} className="vshow-tablet-screen vshow-panel-fade">
                   <div className="vshow-tab-head">
                     <img src={`/brand/${active.key}-symbol-onlight.svg`} alt="" />
                     <b>{active.label}</b>
@@ -209,7 +209,7 @@ export function VerticalRotator() {
               {/* iPhone — ringkas + feed aktivitas */}
               <div className="vshow-phone" aria-hidden="true">
                 <span className="vshow-island" />
-                <div className="vshow-screen">
+                <div key={active.key} className="vshow-screen vshow-panel-fade">
                   <div className="vshow-screen-head">
                     <img src={`/brand/${active.key}-symbol-onlight.svg`} alt="" />
                     <b>{active.label}</b>
@@ -245,7 +245,10 @@ export function VerticalRotator() {
                     <span className="vshow-sync-dot" />
                     Tersinkron otomatis
                   </div>
-                  <div key={`${active.key}-ribbon`} className="vshow-ribbon" style={ribbonStyle} />
+                  <div key={`${active.key}-ribbon`} className="vshow-ribbon" style={ribbonStyle}>
+                    <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4" /></svg>
+                    Sinkron ke semua perangkat
+                  </div>
                 </div>
               </div>
             </div>
