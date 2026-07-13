@@ -241,13 +241,9 @@ export function VerticalRotator() {
                       />
                     </svg>
                   </div>
-                  <div className="vshow-sync">
-                    <span className="vshow-sync-dot" />
-                    Tersinkron otomatis
-                  </div>
                   <div key={`${active.key}-ribbon`} className="vshow-ribbon" style={ribbonStyle}>
-                    <svg viewBox="0 0 16 16" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4" /></svg>
-                    Sinkron ke semua perangkat
+                    <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4" /></svg>
+                    Tersinkron otomatis
                   </div>
                 </div>
               </div>
