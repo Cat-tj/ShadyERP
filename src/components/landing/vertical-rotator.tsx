@@ -37,6 +37,8 @@ const ROTATE_MS = 4200;
 export function VerticalRotator() {
   const [index, setIndex] = useState(0);
   const pausedRef = useRef(false);
+  const dotsRef = useRef<HTMLDivElement>(null);
+  const [pillStyle, setPillStyle] = useState<React.CSSProperties>({ opacity: 0 });
   const active = VERTICALS[index];
   const tiles = SCREEN_TILES[active.key];
   const feed = SCREEN_FEED[active.key];
@@ -51,6 +53,24 @@ export function VerticalRotator() {
     }, ROTATE_MS);
     return () => clearInterval(timer);
   }, []);
+
+  // Pil geser (sliding tab indicator) di belakang tombol vertikal aktif —
+  // ngukur posisi tombol asli, jadi otomatis benar walau baris terbungkus (wrap).
+  useEffect(() => {
+    const container = dotsRef.current;
+    const activeBtn = container?.children[index] as HTMLElement | undefined;
+    if (!container || !activeBtn) return;
+    const update = () =>
+      setPillStyle({
+        width: activeBtn.offsetWidth,
+        height: activeBtn.offsetHeight,
+        transform: `translate(${activeBtn.offsetLeft}px, ${activeBtn.offsetTop}px)`,
+        opacity: 1,
+      });
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
+  }, [index]);
 
   const themeVars = {
     "--primary": active.theme.primary,
@@ -91,7 +111,7 @@ export function VerticalRotator() {
             <h3>{active.caseTitle}</h3>
             <p>{active.caseDescription}</p>
 
-            <div className="vshow-dots" role="tablist" aria-label="Pilih vertikal Altora">
+            <div className="vshow-dots" role="tablist" aria-label="Pilih vertikal Altora" ref={dotsRef}>
               {VERTICALS.map((v, i) => (
                 <button
                   key={v.key}
@@ -104,6 +124,7 @@ export function VerticalRotator() {
                   {v.label.replace("Altora ", "")}
                 </button>
               ))}
+              <span className="vshow-dot-pill" style={pillStyle} aria-hidden="true" />
             </div>
           </div>
 
