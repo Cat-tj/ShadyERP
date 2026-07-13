@@ -257,16 +257,16 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
           </h1>
         ) : (
           <h1>
-            <span className="sr-only">Tutup toko, tanpa tutup buku.</span>
+            <span className="sr-only">Usaha jalan terus, dari kasir sampai laporan.</span>
             <span aria-hidden="true">
-              Tutup toko,<br />
+              Usaha jalan terus,<br />
               <span className="roll-window">
                 <span className="roll-track">
-                  <span className="roll-item">tanpa tutup buku.</span>
-                  <span className="roll-item">kasir sampai laporan.</span>
+                  <span className="roll-item">dari kasir sampai laporan.</span>
                   <span className="roll-item">walau internet mati.</span>
-                  <span className="roll-item">mulai hari ini juga.</span>
-                  <span className="roll-item">tanpa tutup buku.</span>
+                  <span className="roll-item">tanpa hitung manual.</span>
+                  <span className="roll-item">tanpa training dulu.</span>
+                  <span className="roll-item">dari kasir sampai laporan.</span>
                 </span>
               </span>
             </span>
