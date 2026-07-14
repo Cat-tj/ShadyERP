@@ -18,7 +18,7 @@ const tablets = { cafe: CafeTablet, toko: TokoTablet, supermarket: SupermarketTa
 const densities: Record<VerticalKey, ShowcaseDefinition["density"]> = { cafe: "compact", toko: "compact", supermarket: "dense", laundry: "comfortable", counter: "compact", jasa: "comfortable", pabrik: "compact", company: "dense", teams: "compact", accounting: "dense" };
 const outcomes: Record<VerticalKey, string[]> = {
   cafe: ["Meja, kasir, dan dapur bergerak dalam satu alur.", "Antrean dan stok bahan terlihat sebelum layanan tersendat.", "Supervisor memantau shift tanpa mengganggu kasir."],
-  toko: ["Penjualan, barang masuk, dan stok minimum selalu terhubung.", "Produk yang perlu dipesan langsung muncul untuk ditindak.", "Kasir cukup fokus melayani pelanggan."],
+  toko: ["Stok menipis langsung terlihat.", "Barang masuk dan PO dalam kontrol.", "Penjualan harian seluruh cabang.", "Laporan siap dipakai setiap saat."],
   supermarket: ["Gudang, PO, QC, dan expiry dikendalikan dari satu tempat.", "Exception prioritas muncul lebih dulu daripada laporan panjang.", "Tim lapangan tetap punya tampilan kerja yang ringkas."],
   laundry: ["Setiap order bergerak jelas dari diterima sampai diambil.", "Order terlambat dan tagihan belum lunas tidak tercecer.", "Owner dapat melihat kapasitas tanpa mengatur ulang spreadsheet."],
   counter: ["Tiket servis, teknisi, dan spare part berada dalam satu alur.", "Pelanggan mendapat status perangkat yang transparan.", "Barang siap ambil dan part menunggu mudah diprioritaskan."],
