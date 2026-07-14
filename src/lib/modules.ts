@@ -19,7 +19,8 @@ export type ModuleKey =
   | "hr"
   | "keuangan"
   | "promo"
-  | "resep";
+  | "resep"
+  | "produksi";
 
 export type ModuleDef = {
   key: ModuleKey;
@@ -124,6 +125,16 @@ export const MODULES: ModuleDef[] = [
     colorDark: "#be185d",
     colorSoft: "rgba(219, 39, 119, 0.12)",
   },
+  {
+    key: "produksi",
+    label: "Produksi",
+    description: "Gudang bahan baku/WIP/barang jadi, BOM, work order, dan proses produksi (Altora Pabrik).",
+    core: false,
+    // Sama dengan warna vertikal "Altora Pabrik" (lihat src/lib/verticals.ts) biar konsisten.
+    color: "#334155",
+    colorDark: "#1e293b",
+    colorSoft: "rgba(51, 65, 85, 0.12)",
+  },
 ];
 
 export const MODULE_MAP: Record<ModuleKey, ModuleDef> = Object.fromEntries(
@@ -168,6 +179,7 @@ const ROUTE_MODULE_MAP: { prefix: string; module: ModuleKey }[] = [
   { prefix: "/hris", module: "hr" },
   { prefix: "/absensi", module: "hr" },
   { prefix: "/tim", module: "hr" },
+  { prefix: "/produksi", module: "produksi" },
   // Keep old paths for backwards compatibility (redirect via middleware if needed)
   { prefix: "/dashboard", module: "kasir" },
   { prefix: "/produk", module: "inventory" },

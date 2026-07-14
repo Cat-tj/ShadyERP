@@ -91,6 +91,9 @@ export const NAV_ITEMS: NavItem[] = [
 
   // ===== Dokumen =====
   { href: "/dokumen", label: "Dokumen & Arsip", icon: BriefcaseIcon, roles: ["OWNER", "MANAGER", "STAFF"], hub: "dokumen" },
+
+  // ===== Produksi (Altora Pabrik) =====
+  { href: "/produksi", label: "Work Order", icon: BuildingIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "produksi", hub: "produksi" },
 ];
 
 export function navItemsForRole(role: Role, enabledModules?: Set<ModuleKey>): NavItem[] {
