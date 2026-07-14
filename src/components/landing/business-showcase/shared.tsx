@@ -46,3 +46,27 @@ export function DesktopFrame({ title, children }: { title: string; children: Rea
 export function TabletFrame({ title, metrics }: { title: string; metrics: ShowcaseMetric[] }) {
   return <div className="bs-tablet" aria-hidden="true"><strong>{title}</strong><span>Ringkasan hari ini</span><MetricGrid metrics={metrics.slice(0, 2)} density="compact" /><StatusFooter /></div>;
 }
+
+export function DashboardFrame({ children, title, active = "Beranda" }: { children: ReactNode; title: string; active?: string }) {
+  return <DesktopFrame title={title}><div className="bs-app-shell"><aside className="bs-app-nav"><b>A</b>{["Beranda", "Operasional", "Persediaan", "Laporan"].map((item) => <span className={item === active ? "is-active" : ""} key={item}>{item}</span>)}</aside><main className="bs-app-main">{children}</main></div></DesktopFrame>;
+}
+
+export function DeviceHeading({ title, subtitle, action = "Hari ini" }: { title: string; subtitle: string; action?: string }) {
+  return <div className="bs-app-heading"><div><strong>{title}</strong><span>{subtitle}</span></div><b>{action}</b></div>;
+}
+
+export function DevicePanel({ title, children, className = "" }: { title: string; children: ReactNode; className?: string }) {
+  return <section className={`bs-app-panel ${className}`}><div className="bs-app-panel-title"><strong>{title}</strong><span>Lihat semua</span></div>{children}</section>;
+}
+
+export function DeviceRows({ rows }: { rows: Array<{ title: string; detail: string; value: string; tone?: "success" | "warning" | "danger" | "info" }> }) {
+  return <div className="bs-device-rows">{rows.map((row) => <div key={`${row.title}-${row.value}`}><i className={`is-${row.tone ?? "info"}`} /><span><b>{row.title}</b><small>{row.detail}</small></span><em className={`is-${row.tone ?? "info"}`}>{row.value}</em></div>)}</div>;
+}
+
+export function DeviceBars({ values, labels }: { values: number[]; labels?: string[] }) {
+  return <div className="bs-device-chart">{values.map((value, index) => <span key={`${value}-${index}`} style={{ height: `${value}%` }}><i>{labels?.[index] ?? ""}</i></span>)}</div>;
+}
+
+export function SupervisorFrame({ children, title, subtitle }: { children: ReactNode; title: string; subtitle: string }) {
+  return <div className="bs-tablet bs-supervisor-tablet" aria-hidden="true"><div className="bs-supervisor-heading"><strong>{title}</strong><span>{subtitle}</span></div>{children}</div>;
+}

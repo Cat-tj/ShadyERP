@@ -18,11 +18,18 @@ export type ShowcaseScreenProps = {
   density?: "comfortable" | "compact" | "dense";
 };
 
+export type ShowcaseDeviceProps = ShowcaseScreenProps & {
+  label: string;
+};
+
 export type ShowcaseDefinition = {
   key: VerticalKey;
   label: string;
   headline: string;
   description: string;
   density: ShowcaseScreenProps["density"];
-  Screen: ComponentType<ShowcaseScreenProps>;
+  Phone: ComponentType<ShowcaseScreenProps>;
+  Laptop: ComponentType<ShowcaseDeviceProps>;
+  Tablet: ComponentType<ShowcaseDeviceProps>;
+  outcomes: string[];
 };

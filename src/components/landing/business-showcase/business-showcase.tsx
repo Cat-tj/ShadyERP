@@ -16,9 +16,10 @@ export function BusinessShowcase() {
       <header className="business-showcase-head"><span className="eyebrow">Cocok untuk usaha kamu</span><h2>Satu fondasi, disesuaikan dengan cara kerja usahamu.</h2><p>Pengguna cukup mencatat fakta lapangan. Altora mengurus stok, uang, tugas, dan tindakan lanjutannya.</p></header>
       <BusinessTabs items={BUSINESS_SHOWCASES} activeKey={activeKey} onChange={setActiveKey} />
       <div className="business-showcase-body" id={`showcase-panel-${active.key}`} role="tabpanel" aria-labelledby={`showcase-tab-${active.key}`}>
-        <div className="business-showcase-copy"><span>{active.label}</span><h3>{active.headline}</h3><p>{active.description}</p><ul><li>Workflow yang relevan, bukan dashboard generik.</li><li>Data penting muncul sebelum menjadi masalah.</li><li>Tetap ringan untuk dipakai tim setiap hari.</li></ul></div>
+        <div className="business-showcase-copy"><span>{active.label}</span><h3>{active.headline}</h3><p>{active.description}</p><ul>{active.outcomes.map((outcome) => <li key={outcome}>{outcome}</li>)}</ul></div>
         <DeviceStage showcase={active} />
       </div>
+      <div className="business-showcase-assurances" aria-label="Keunggulan Altora"><span>Data selalu terbaru</span><span>Fokus pada tindakan penting</span><span>Terhubung di setiap perangkat</span><span>Akses berdasarkan peran</span></div>
     </div>
   </section>;
 }
