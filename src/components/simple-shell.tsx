@@ -70,12 +70,12 @@ export function SimpleShell({
       className={`min-h-dvh bg-[var(--color-bg)] pb-[var(--content-padding-bottom)] lg:pb-0`}
       style={shellBackgroundStyle}
     >
-      <header className="glass-nav sticky top-0 z-20 border-x-0 border-t-0 rounded-none">
+      <header className="glass-nav sticky top-0 z-20 border-x-0 border-t-0 rounded-none pt-[var(--safe-area-top)]">
         <div className="mx-auto flex h-[var(--topbar-height)] max-w-[1600px] items-center justify-between gap-4 px-[var(--content-padding-x)]">
           <div className="flex min-w-0 items-center gap-8">
-            <Link href="/simple/hari-ini" className="min-w-0 shrink-0">
-              <p className="font-display text-base font-bold text-[var(--color-text)]">ALTORA</p>
-              <p className="truncate text-xs text-[var(--color-text-secondary)]">{tenantName}</p>
+            <Link href="/simple/hari-ini" className="flex min-w-0 shrink-0 items-center gap-2">
+              <img src="/brand/altora-symbol.svg" alt="Altora" className="h-8 w-8 shrink-0" />
+              <p className="truncate text-xs font-medium text-[var(--color-text-secondary)]">{tenantName}</p>
             </Link>
             {/* Top nav — desktop only. Bottom tab bar (below) handles tablet/mobile. */}
             <nav className="hidden min-w-0 items-center gap-1 lg:flex">
@@ -143,8 +143,8 @@ export function SimpleShell({
 
       {/* Bottom tab bar — tablet & mobile only. Desktop (lg+) uses the top nav above. */}
       <nav
-        className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--color-border)] bg-[var(--color-surface)]/95 px-3 pb-[max(env(safe-area-inset-bottom),0.5rem)] pt-2 shadow-[0_-18px_40px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden"
-        style={{ height: "var(--bottom-nav-height)" }}
+        className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--color-border)] bg-[var(--color-surface)]/95 px-3 pb-[max(var(--safe-area-bottom),0.5rem)] pt-2 shadow-[0_-18px_40px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden"
+        style={{ height: "calc(var(--bottom-nav-height) + var(--safe-area-bottom))" }}
       >
         <div className="mx-auto grid max-w-5xl grid-cols-4 gap-1">
           {tabs.map((tab) => {

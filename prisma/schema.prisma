@@ -142,10 +142,12 @@ model Tenant {
   supplierPayments         SupplierPayment[]
   accounts                 Account[]
   journalEntries           JournalEntry[]
+  fiscalPeriods            FiscalPeriod[]
+  accountingJournals       AccountingJournal[]
+  accountingJournalLines   AccountingJournalLine[]
   leads                    Lead[]
   cashFlows                CashFlow[]
   subscription             Subscription?
-
   // ---- Altora Pabrik (manufaktur) ----
   warehouses             Warehouse[]
   storageLocations       StorageLocation[]
@@ -157,6 +159,7 @@ model Tenant {
   routingOperationSteps  RoutingOperationStep[]
   workOrders             WorkOrder[]
   workOrderOperations    WorkOrderOperation[]
+  workers                Worker[]
 }
 
 /// PERMANENT = cabang tetap biasa. POPUP = cabang kecil & portable (mis. lapak/booth
@@ -215,6 +218,9 @@ model Outlet {
   stockCounts              StockCount[]
   laundryOrders            LaundryOrder[]
   cashFlows                CashFlow[]
+  accountingJournals       AccountingJournal[]
+  accountingJournalLines   AccountingJournalLine[]
+  assignments              Assignment[]
 
   // ---- Altora Pabrik (manufaktur) ----
   warehouses   Warehouse[]
@@ -280,6 +286,7 @@ model User {
   laundryOrdersCreated     LaundryOrder[]            @relation("LaundryOrderCreatedBy")
   cateringOrdersCreated    CateringOrder[]           @relation("CateringOrderCreatedBy")
   cashFlowsCreated         CashFlow[]                @relation("UserCashFlows")
+  accountingJournalsCreated AccountingJournal[]      @relation("AccountingJournalCreatedBy")
 
   // ---- Altora Pabrik (manufaktur) ----
   stockMovementsActed  StockMovement[]
@@ -2198,15 +2205,50 @@ model SupplierPayment {
   @@index([supplierInvoiceId])
 }
 
+enum AccountClass {
+  ASSET
+  LIABILITY
+  EQUITY
+  INCOME
+  COGS
+  EXPENSE
+}
+
+enum NormalBalance {
+  DEBIT
+  CREDIT
+}
+
+enum AccountingJournalStatus {
+  DRAFT
+  POSTED
+  REVERSED
+}
+
+enum FiscalPeriodStatus {
+  OPEN
+  LOCKED
+  CLOSED
+}
+
 model Account {
   id        String      @id @default(cuid())
   tenantId  String
   code      String // e.g., "11100" for Cash Drawer
   name      String // e.g., "Cash Drawer"
   type      AccountType
+  accountClass AccountClass @default(ASSET)
+  normalBalance NormalBalance @default(DEBIT)
+  parentId  String?
+  isGroup   Boolean  @default(false)
+  isSystem  Boolean  @default(false)
+  isActive  Boolean  @default(true)
   createdAt DateTime    @default(now())
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent Account? @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children Account[] @relation("AccountHierarchy")
+  journalLines AccountingJournalLine[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -2234,6 +2276,80 @@ model JournalEntry {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+}
+
+model FiscalPeriod {
+  id        String             @id @default(cuid())
+  tenantId  String
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  status    FiscalPeriodStatus @default(OPEN)
+  closedAt  DateTime?
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+
+  tenant   Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  journals AccountingJournal[]
+
+  @@unique([tenantId, startDate, endDate])
+  @@index([tenantId, status])
+}
+
+model AccountingJournal {
+  id             String                  @id @default(cuid())
+  tenantId       String
+  journalNumber  String
+  postingDate    DateTime                @default(now())
+  status         AccountingJournalStatus @default(POSTED)
+  sourceType     String?
+  sourceId       String?
+  postingPurpose String?
+  description    String
+  fiscalPeriodId String?
+  outletId       String?
+  createdById    String?
+  reversalOfId   String?
+  postedAt       DateTime?
+  createdAt      DateTime                @default(now())
+  updatedAt      DateTime                @updatedAt
+
+  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  fiscalPeriod FiscalPeriod? @relation(fields: [fiscalPeriodId], references: [id])
+  outlet       Outlet?       @relation(fields: [outletId], references: [id])
+  createdBy    User?         @relation("AccountingJournalCreatedBy", fields: [createdById], references: [id])
+  lines        AccountingJournalLine[]
+
+  @@unique([tenantId, journalNumber])
+  @@unique([tenantId, sourceType, sourceId, postingPurpose])
+  @@index([tenantId, postingDate])
+  @@index([tenantId, status])
+  @@index([fiscalPeriodId])
+  @@index([outletId])
+}
+
+model AccountingJournalLine {
+  id          String            @id @default(cuid())
+  tenantId    String
+  journalId   String
+  accountId   String
+  outletId    String?
+  partyType   String?
+  partyId     String?
+  debit       Int               @default(0)
+  credit      Int               @default(0)
+  memo        String?
+  createdAt   DateTime          @default(now())
+
+  tenant  Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  journal AccountingJournal @relation(fields: [journalId], references: [id], onDelete: Cascade)
+  account Account           @relation(fields: [accountId], references: [id])
+  outlet  Outlet?           @relation(fields: [outletId], references: [id])
+
+  @@index([tenantId])
+  @@index([journalId])
+  @@index([accountId])
+  @@index([outletId])
 }
 
 enum LeadStatus {
@@ -2733,4 +2849,104 @@ model WorkOrderOperation {
   @@index([tenantId])
   @@index([workOrderId])
   @@index([status])
+}
+
+// ================== ALTORA HRIS MODELS ==================
+
+model Person {
+  id            String    @id @default(cuid())
+  name          String    // Nama legal
+  preferredName String?   // Nama panggilan
+  birthPlace    String?
+  birthDate     DateTime?
+  gender        String?
+  email         String?
+  phone         String?
+  address       String?
+  bankName      String?
+  bankAccount   String?
+  bankHolder    String?
+  nik           String?   // NIK KTP
+  npwp          String?   // Nomor NPWP
+  taxStatus     String?   // TK/0, K/1, dll.
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  workers       Worker[]
+}
+
+model Worker {
+  id             String          @id @default(cuid())
+  tenantId       String
+  personId       String
+  employeeNumber String          // NIK Karyawan unik per tenant
+  workerType     String          // EMPLOYEE, CONTRACTOR, INTERN, OUTSOURCED
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  person         Person          @relation(fields: [personId], references: [id], onDelete: Cascade)
+  employments    Employment[]
+  assignments    Assignment[]
+  compensations  CompensationProfile[]
+
+  @@unique([tenantId, employeeNumber])
+  @@index([tenantId])
+  @@index([personId])
+}
+
+model Employment {
+  id           String    @id @default(cuid())
+  workerId     String
+  startDate    DateTime
+  endDate      DateTime? // Null jika tidak terbatas / tetap
+  status       String    // ACTIVE, SUSPENDED, TERMINATED, LEAVE
+  probationEnd DateTime?
+  note         String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  worker      Worker    @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([workerId])
+}
+
+model Assignment {
+  id            String    @id @default(cuid())
+  workerId      String
+  startDate     DateTime  // Effective date start
+  endDate       DateTime? // Effective date end
+  position      String?   // Jabatan / Kursi Organisasi
+  department    String?
+  outletId      String?
+  managerId     String?   // ID Worker manajer langsung
+  costCenter    String?
+  shiftGroup    String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  worker        Worker    @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  outlet        Outlet?   @relation(fields: [outletId], references: [id], onDelete: SetNull)
+
+  @@index([workerId])
+  @@index([outletId])
+}
+
+model CompensationProfile {
+  id          String    @id @default(cuid())
+  workerId    String
+  startDate   DateTime  // Effective date start
+  endDate     DateTime? // Effective date end
+  grade       String?
+  salaryBasis String    // MONTHLY, DAILY, HOURLY, PIECE_RATE
+  baseRate    Int       // Nominal gaji pokok dalam rupiah
+  bpjsKesActive Boolean @default(false)
+  bpjsTkActive  Boolean @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  worker      Worker    @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([workerId])
 }

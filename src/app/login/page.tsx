@@ -17,7 +17,7 @@ export default function LoginPage() {
       >
         <GlassPanel strong className="w-full max-w-sm rounded-2xl p-6 shadow-xl sm:p-8">
           <div className="mb-6 flex flex-col items-center gap-3 text-center">
-            <AltoraLogomark className="h-14 w-14 drop-shadow-sm" />
+            <AltoraLogomark className="h-28 w-28 object-contain" />
             <div className="flex flex-col gap-1">
               <h1 className="font-display text-2xl font-semibold tracking-tight text-[var(--color-text)]">
                 Masuk ke Altora
