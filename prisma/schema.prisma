@@ -164,6 +164,13 @@ model Tenant {
   payrollPeriods         PayrollPeriod[]
   productionRateCards    ProductionRateCard[]
   workerProductionLogs   WorkerProductionLog[]
+  jobRequisitions        JobRequisition[]
+  candidates             Candidate[]
+  kpiGoals               KpiGoal[]
+  reviews                PerformanceReview[]
+  learningCourses        LearningCourse[]
+  hrisAuditLogs          HrisAuditLog[]
+  ssoSettings            SsoSetting[]
 }
 
 /// PERMANENT = cabang tetap biasa. POPUP = cabang kecil & portable (mis. lapak/booth
@@ -2912,6 +2919,10 @@ model Worker {
   timesheets     ProjectTimesheet[]
   payrollLines   PayrollLine[]
   productionLogs WorkerProductionLog[]
+  kpiGoals       KpiGoal[]
+  reviews        PerformanceReview[]
+  enrollments    CourseEnrollment[]
+  talentProfiles TalentProfile[]
 
   @@unique([tenantId, employeeNumber])
   @@index([tenantId])
@@ -3121,4 +3132,150 @@ model WorkerProductionLog {
   @@index([workerId])
   @@index([workOrderId])
   @@index([workCenterId])
+}
+
+model JobRequisition {
+  id           String      @id @default(cuid())
+  tenantId     String
+  title        String      // e.g. "Operator Mesin Bubut"
+  department   String?
+  budgetSalary Int
+  status       String      // DRAFT, OPEN, FILLED, CANCELLED
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  candidates Candidate[]
+
+  @@index([tenantId])
+}
+
+model Candidate {
+  id            String         @id @default(cuid())
+  tenantId      String
+  name          String
+  email         String
+  phone         String?
+  status        String         // APPLIED, INTERVIEW, OFFERED, HIRED, REJECTED
+  requisitionId String
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+
+  tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  requisition JobRequisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([requisitionId])
+}
+
+model KpiGoal {
+  id          String   @id @default(cuid())
+  tenantId    String
+  workerId    String
+  title       String   // e.g. "Efisiensi Produksi 98%"
+  weight      Float    // Bobot penilaian (0 - 1)
+  targetValue Float
+  actualValue Float    @default(0)
+  status      String   // ACTIVE, ACHIEVED, FAILED
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  worker Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([workerId])
+}
+
+model PerformanceReview {
+  id         String   @id @default(cuid())
+  tenantId   String
+  workerId   String
+  reviewerId String
+  rating     Float    // Skor penilaian (e.g. 1.0 - 5.0)
+  feedback   String?
+  reviewDate DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  worker Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([workerId])
+}
+
+model LearningCourse {
+  id            String             @id @default(cuid())
+  tenantId      String
+  title         String
+  description   String?
+  durationHours Float
+  createdAt     DateTime           @default(now())
+  updatedAt     DateTime           @updatedAt
+
+  tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  enrollments CourseEnrollment[]
+
+  @@index([tenantId])
+}
+
+model CourseEnrollment {
+  id          String         @id @default(cuid())
+  workerId    String
+  courseId    String
+  status      String         // ENROLLED, IN_PROGRESS, COMPLETED
+  completedAt DateTime?
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  worker Worker         @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  course LearningCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([workerId])
+  @@index([courseId])
+}
+
+model TalentProfile {
+  id               String   @id @default(cuid())
+  workerId         String
+  potential        String   // HIGH, MEDIUM, LOW
+  performance      String   // HIGH, MEDIUM, LOW
+  nineBoxGrid      String   // e.g. "Star", "High Performer", "Solid Citizen"
+  successionTarget String?  // Target jabatan untuk suksesi
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  worker Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([workerId])
+}
+
+model HrisAuditLog {
+  id        String   @id @default(cuid())
+  tenantId  String
+  actorId   String   // ID User/Worker pelaku
+  action    String   // e.g. "MUTATION", "PAYROLL_APPROVED"
+  details   String   // Catatan perubahan detail JSON
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+}
+
+model SsoSetting {
+  id           String   @id @default(cuid())
+  tenantId     String   @unique
+  enabled      Boolean  @default(false)
+  provider     String   // e.g. "GOOGLE", "AZURE"
+  clientId     String?
+  clientSecret String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
 }
