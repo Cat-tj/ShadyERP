@@ -70,5 +70,9 @@ Lint landing tidak memiliki error. Tersisa dua warning lama `@next/next/no-img-e
 
 - Branch GitHub: `codex/erp-audit-baseline`
 - Draft pull request: `https://github.com/Cat-tj/ShadyERP/pull/3`
-- Update ini belum di-merge ke branch deployment dan belum di-deploy ke VPS oleh commit ini.
+- Production VPS telah diperbarui pada 14 Juli 2026 ke commit `c5c6ef6` dari branch `codex/erp-audit-baseline`.
+- Sebelum deploy, backup PostgreSQL production dibuat di VPS: `/home/ubuntu/backups/shadyerp-pre-c5c6ef6-20260714-125352.dump`.
+- Riwayat Prisma lama yang skemanya sudah ada tetapi belum tercatat diselaraskan, lalu enam migrasi hardening baru berhasil diterapkan. Backfill PIN memproses 2 akun.
+- Build production, restart PM2 `shadyerp`, health check lokal, dan health check publik `https://altora.my.id/api/health` berhasil.
+- Landing publik juga sudah diverifikasi memuat `business-showcase` baru.
 - Folder `tmp/` sengaja tidak di-commit karena hanya artefak render sementara.
