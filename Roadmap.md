@@ -156,15 +156,30 @@ Dokumen ini adalah checklist kerja Altora. Setiap agent yang menyelesaikan item 
 ## Finance
 
 - [x] Finance simple untuk cashflow dan laporan dasar.
+- [x] Fondasi accounting mode ADVANCED.
+  - COA dasar, jurnal auto-posting POS/pengeluaran, dan audit jurnal sudah ada,
+    tetapi belum merupakan accounting formal yang lengkap.
 - [x] Top sale dan worst sale dasar.
 - [x] Hutang supplier dasar.
 - [ ] Payment reconciliation.
   - Progress: filter riwayat transaksi berdasarkan metode bayar dan status tersedia di `/kasir/riwayat`.
-- [ ] Piutang pelanggan.
+- [ ] Piutang pelanggan dan pembayaran.
+  - Invoice B2B, pembayaran parsial, aging, credit note, dan posting otomatis.
 - [ ] Kas masuk/keluar/transfer antar kas.
 - [ ] Laba rugi yang lebih jelas untuk SIMPLE.
-- [ ] Advanced accounting untuk COMPANY.
+  - Harus memakai posting finance dan nilai HPP Inventory Ledger, bukan modal
+    produk estimasi.
+- [ ] Accounting Core untuk ADVANCED/Company.
+  - Lihat `docs/ACCOUNTING-PLAN.md`: COA tree, journal header/lines immutable,
+    auto-posting idempotent, mapping kas-bank-QRIS, dan outlet dimension.
+  - Progress: schema jurnal multi-baris, engine posting POS/pengeluaran/hutang,
+    serta layar jurnal baru sudah tersedia. Reversal, bank, dan period close masih pending.
+- [ ] Rekonsiliasi bank dan settlement digital.
+  - CSV mutasi bank, QRIS/e-wallet/marketplace clearing, matching, dan fee.
+- [ ] Buku besar formal dan laporan keuangan.
+  - Trial balance, neraca, arus kas, laporan per outlet/cost center.
 - [ ] Tutup periode / tutup tahun untuk ADVANCED.
+  - Lock period, reversal adjustment, retained earnings, dan audit trail.
 
 ## HRIS
 

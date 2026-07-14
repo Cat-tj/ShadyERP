@@ -227,7 +227,7 @@ export function AppShell({
       <div className="flex min-h-dvh min-w-0 flex-1 flex-col">
         {/* Topbar mobile & tablet */}
         {!isCommandCenter && (
-          <header className="glass-nav topbar-mobile sticky top-0 z-10 flex h-14 items-center justify-between rounded-none border-x-0 border-t-0 px-4 lg:hidden">
+          <header className="glass-nav topbar-mobile sticky top-0 z-10 flex h-[calc(3.5rem+var(--safe-area-top))] items-end justify-between rounded-none border-x-0 border-t-0 px-4 pb-0 lg:hidden">
             <div className="relative flex items-center">
               <button
                 onClick={() => setShowMobileSwitcher(!showMobileSwitcher)}
@@ -324,7 +324,7 @@ export function AppShell({
             // Ensure content never hides under bottom nav on mobile. If a mobile
             // cart bar is present, add its height as well so content never
             // becomes hidden under stacked fixed elements.
-            paddingBottom: isCommandCenter ? undefined : "calc(var(--bottom-nav-height) + 24px + var(--mobile-cart-height))",
+            paddingBottom: isCommandCenter ? undefined : "calc(var(--bottom-nav-height) + var(--safe-area-bottom) + 24px + var(--mobile-cart-height))",
           }}
         >
           {children}
@@ -337,7 +337,7 @@ export function AppShell({
         {!isCommandCenter && bottomItems.length > 0 && (
           <nav
             className="glass-nav fixed inset-x-0 bottom-0 z-20 flex rounded-none border-x-0 border-b-0 lg:hidden"
-            style={{ height: "var(--bottom-nav-height)", paddingBottom: "env(safe-area-inset-bottom, 0px)" }}
+            style={{ height: "calc(var(--bottom-nav-height) + var(--safe-area-bottom))", paddingBottom: "var(--safe-area-bottom)" }}
           >
             {bottomItems.map((item) => {
               const active = item.href === activeHref;

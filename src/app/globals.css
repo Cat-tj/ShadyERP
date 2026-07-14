@@ -50,10 +50,12 @@
   --bottom-nav-height: 72px;
   --mobile-cart-height: 64px;
   --topbar-height: 56px;
+  --safe-area-top: env(safe-area-inset-top, 0px);
+  --safe-area-bottom: env(safe-area-inset-bottom, 0px);
   --content-max-width: 1280px;
   --content-padding-x: 16px;
   --content-padding-y: 16px;
-  --content-padding-bottom: calc(var(--bottom-nav-height) + 24px);
+  --content-padding-bottom: calc(var(--bottom-nav-height) + var(--safe-area-bottom) + 24px);
   --invoice-panel-width: 100%;
 }
 

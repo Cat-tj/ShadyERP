@@ -7,9 +7,10 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Aplikasi kasir, member, dan absensi untuk UMKM Indonesia.",
     start_url: "/pilih-aplikasi",
     display: "standalone",
-    background_color: "#f5f7fa",
-    theme_color: "#a730a8",
+    background_color: "#FFFFFF",
+    theme_color: "#082145",
     icons: [
+      { src: "/brand/altora-symbol.svg", sizes: "any", type: "image/svg+xml", purpose: "any" },
       { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
       { src: "/icon-maskable-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },

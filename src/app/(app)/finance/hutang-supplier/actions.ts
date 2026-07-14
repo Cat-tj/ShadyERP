@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/server/require-session";
+import { postJournalEntry } from "@/server/services/accounting-service";
 
 export async function recordSupplierPaymentAction(payload: {
   invoiceId: string;
@@ -28,7 +29,7 @@ export async function recordSupplierPaymentAction(payload: {
 
     await prisma.$transaction(async (tx) => {
       // 1. Create SupplierPayment
-      await tx.supplierPayment.create({
+      const supplierPayment = await tx.supplierPayment.create({
         data: {
           tenantId: user.tenantId,
           supplierInvoiceId: payload.invoiceId,
@@ -54,15 +55,14 @@ export async function recordSupplierPaymentAction(payload: {
       // 3. Post automatically to accounting journal
       // Debet Accounts Payable (Hutang), Kredit Cash Drawer / Bank
       const creditCode = payload.paymentMethod === "CASH" ? "11100" : "11200"; // Cash vs Bank
-      await tx.journalEntry.create({
-        data: {
-          tenantId: user.tenantId,
-          description: `Payment to Supplier on Invoice ${invoice.invoiceNumber}`,
-          debitCode: "21100", // AP/Hutang
-          creditCode,
-          amount: payload.amount,
-          reference: `SUP-PAY-${invoice.id}`,
-        },
+      await postJournalEntry({
+        tenantId: user.tenantId,
+        description: `Pembayaran supplier ${invoice.invoiceNumber}`,
+        debitCode: "21100",
+        creditCode,
+        amount: payload.amount,
+        reference: `SUP-PAY-${supplierPayment.id}`,
+        tx,
       });
     });
 
@@ -103,15 +103,13 @@ export async function createManualSupplierInvoiceAction(payload: {
     });
 
     // Post to accounting journal: Debet Expense/Inventory, Kredit Accounts Payable (Hutang)
-    await prisma.journalEntry.create({
-      data: {
-        tenantId: user.tenantId,
-        description: `Manual Supplier Invoice ${payload.invoiceNumber}`,
-        debitCode: "51200", // Operational Expenses as default
-        creditCode: "21100", // Accounts Payable (Hutang)
-        amount: payload.total,
-        reference: `SUP-INV-${invoice.id}`,
-      },
+    await postJournalEntry({
+      tenantId: user.tenantId,
+      description: `Tagihan supplier ${payload.invoiceNumber}`,
+      debitCode: "51200",
+      creditCode: "21100",
+      amount: payload.total,
+      reference: `SUP-INV-${invoice.id}`,
     });
 
     revalidatePath("/finance/hutang-supplier");
