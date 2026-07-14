@@ -178,6 +178,20 @@ CREATE TABLE/ALTER TABLE ADD COLUMN, diverifikasi `prisma migrate diff` nol drif
 diterapkan). Ini kerja HRIS/COA orang lain, bukan scope Pabrik — cuma migration-nya yang
 ditambal di sini karena kebetulan ditemukan waktu setup DB lokal untuk kerja Pabrik.
 
+**⚠️ SUSULAN, belum ditambal**: setelah commit P9 di atas, sebelum push, branch remote sudah
+maju lagi 1 commit dari kontributor sama: `fa01297 feat(hris): implement Milestone 2 Time &
+Service core models and service` — nambah ~70 baris model baru ke `schema.prisma` (kemungkinan
+besar model time-tracking, lihat `src/server/services/time-service.ts` yang baru dibuat di
+commit itu). Sudah di-merge (no conflict) dan `tsc` lolos setelah `prisma generate` ulang,
+TAPI **belum dicek apakah commit ini juga lupa bikin migration** (pola yang sama persis
+terjadi 2x berturut-turut sebelumnya). Kalau agent penerus mau kerja di area manapun yang
+butuh migrasi berjalan (termasuk lanjut modul Pabrik/P12), WAJIB cek dulu:
+`npx prisma migrate diff --from-config-datasource prisma.config.ts --to-schema prisma/schema.prisma`
+(kosong = aman) — kalau ada diff, generate migration pakai `npx prisma migrate dev --name <deskripsi> --create-only`,
+review SQL-nya (harus cuma CREATE/ALTER ADD, bukan DROP), baru apply. Pola commit HRIS ini
+sepertinya rutin lupa migration — mungkin pantas diangkat ke user sebagai masalah proses lintas
+sesi, bukan cuma ditambal diam-diam terus-menerus.
+
 **⚠️ Known gaps sengaja ditunda dari P1-P7 (JANGAN dianggap selesai, ini bukan bug
 tersembunyi — sudah dicatat di komentar kepala `work-order-service.ts` juga)**:
 1. `reserveMaterials()` cek saldo ledger dikurangi kebutuhan WO lain yang masih aktif,
