@@ -1030,6 +1030,7 @@ model ShiftSchedule {
   tenantId     String
   outletId     String
   userId       String
+  workerId     String?       // Opsional untuk integrasi HRIS
   startAt      DateTime
   endAt        DateTime
   workType     ShiftWorkType @default(REGULAR)
@@ -1041,13 +1042,15 @@ model ShiftSchedule {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet Outlet  @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  worker Worker? @relation(fields: [workerId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([outletId])
   @@index([userId])
+  @@index([workerId])
 }
 
 enum ShiftWorkType {
@@ -1072,6 +1075,7 @@ model Attendance {
   tenantId        String
   outletId        String
   userId          String
+  workerId        String?          // Opsional untuk integrasi HRIS
   clockInAt       DateTime?
   clockOutAt      DateTime?
   clockInPhotoUrl String?
@@ -1081,13 +1085,15 @@ model Attendance {
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet Outlet  @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  worker Worker? @relation(fields: [workerId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@index([outletId])
   @@index([userId])
+  @@index([workerId])
 }
 
 // ================== PENGELUARAN OPERASIONAL ==================
@@ -2890,6 +2896,11 @@ model Worker {
   employments    Employment[]
   assignments    Assignment[]
   compensations  CompensationProfile[]
+  shiftSchedules ShiftSchedule[]
+  attendances    Attendance[]
+  leaveLedgers   LeaveLedgerEntry[]
+  overtimeRequests OvertimeRequest[]
+  timesheets     ProjectTimesheet[]
 
   @@unique([tenantId, employeeNumber])
   @@index([tenantId])
@@ -2947,6 +2958,53 @@ model CompensationProfile {
   updatedAt   DateTime  @updatedAt
 
   worker      Worker    @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([workerId])
+}
+
+model LeaveLedgerEntry {
+  id              String   @id @default(cuid())
+  workerId        String
+  transactionType String   // ENTITLEMENT, ACCRUAL, USAGE, CANCEL, ADJUST
+  amount          Float    // Jumlah hari cuti (bisa pecahan misal 0.5 hari)
+  createdAt       DateTime @default(now())
+  note            String?
+
+  worker Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([workerId])
+}
+
+model OvertimeRequest {
+  id           String    @id @default(cuid())
+  workerId     String
+  date         DateTime
+  plannedHours Float
+  actualHours  Float?
+  status       String    // PENDING, APPROVED, REJECTED, WORKED, VALIDATED
+  note         String?
+  approvedById String?   // ID Worker manajer penyetuju
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  worker Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([workerId])
+}
+
+model ProjectTimesheet {
+  id         String   @id @default(cuid())
+  workerId   String
+  project    String
+  activity   String
+  hours      Float
+  billable   Boolean  @default(true)
+  costCenter String?
+  date       DateTime @default(now())
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  worker Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
 
   @@index([workerId])
 }
