@@ -160,6 +160,8 @@ model Tenant {
   workOrders             WorkOrder[]
   workOrderOperations    WorkOrderOperation[]
   workers                Worker[]
+  payGroups              PayGroup[]
+  payrollPeriods         PayrollPeriod[]
 }
 
 /// PERMANENT = cabang tetap biasa. POPUP = cabang kecil & portable (mis. lapak/booth
@@ -2887,12 +2889,14 @@ model Worker {
   personId       String
   employeeNumber String          // NIK Karyawan unik per tenant
   workerType     String          // EMPLOYEE, CONTRACTOR, INTERN, OUTSOURCED
+  payGroupId     String?
   isActive       Boolean         @default(true)
   createdAt      DateTime        @default(now())
   updatedAt      DateTime        @updatedAt
 
   tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   person         Person          @relation(fields: [personId], references: [id], onDelete: Cascade)
+  payGroup       PayGroup?       @relation(fields: [payGroupId], references: [id], onDelete: SetNull)
   employments    Employment[]
   assignments    Assignment[]
   compensations  CompensationProfile[]
@@ -2901,10 +2905,12 @@ model Worker {
   leaveLedgers   LeaveLedgerEntry[]
   overtimeRequests OvertimeRequest[]
   timesheets     ProjectTimesheet[]
+  payrollLines   PayrollLine[]
 
   @@unique([tenantId, employeeNumber])
   @@index([tenantId])
   @@index([personId])
+  @@index([payGroupId])
 }
 
 model Employment {
@@ -3006,5 +3012,64 @@ model ProjectTimesheet {
 
   worker Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
 
+  @@index([workerId])
+}
+
+model PayGroup {
+  id         String          @id @default(cuid())
+  tenantId   String
+  name       String          // e.g. "Gaji Bulanan Staff", "Gaji Harian Pabrik"
+  cutoffDay  Int             // Tanggal cut-off (misal 25)
+  paymentDay Int             // Tanggal pembayaran (misal 1)
+  createdAt  DateTime        @default(now())
+  updatedAt  DateTime        @updatedAt
+
+  tenant     Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workers    Worker[]
+  periods    PayrollPeriod[]
+
+  @@index([tenantId])
+}
+
+model PayrollPeriod {
+  id         String        @id @default(cuid())
+  tenantId   String
+  payGroupId String
+  name       String        // e.g. "Juli 2026"
+  startDate  DateTime
+  endDate    DateTime
+  status     String        // DRAFT, LOCKED, PAID
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+
+  tenant     Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  payGroup   PayGroup      @relation(fields: [payGroupId], references: [id], onDelete: Cascade)
+  lines      PayrollLine[]
+
+  @@index([tenantId])
+  @@index([payGroupId])
+}
+
+model PayrollLine {
+  id              String        @id @default(cuid())
+  payrollPeriodId String
+  workerId        String
+  baseSalary      Int
+  overtimePay     Int           @default(0)
+  lateDeductions  Int           @default(0)
+  leaveDeductions Int           @default(0)
+  bpjsKesCompany  Int           @default(0)
+  bpjsKesEmployee Int           @default(0)
+  bpjsTkCompany   Int           @default(0)
+  bpjsTkEmployee  Int           @default(0)
+  taxAmount       Int           @default(0) // PPh 21
+  allowances      Int           @default(0)
+  netPay          Int
+  status          String        // DRAFT, APPROVED
+
+  payrollPeriod   PayrollPeriod @relation(fields: [payrollPeriodId], references: [id], onDelete: Cascade)
+  worker          Worker        @relation(fields: [workerId], references: [id], onDelete: Cascade)
+
+  @@index([payrollPeriodId])
   @@index([workerId])
 }
