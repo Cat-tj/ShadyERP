@@ -1612,9 +1612,9 @@ html { scroll-behavior: auto; }
 .altora-landing .bs-tabs button:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--showcase-primary) 20%, transparent); }
 .altora-landing .bs-tabs button.is-active { border-color: var(--showcase-primary); background: var(--showcase-primary); color: #fff; }
 .altora-landing .business-showcase-body { display: grid; grid-template-columns: minmax(300px, .68fr) minmax(0, 1.32fr); align-items: start; gap: clamp(28px, 4vw, 64px); min-height: 650px; padding-top: 28px; }
-.altora-landing .business-showcase-copy { padding-top: 72px; }
+.altora-landing .business-showcase-copy { max-width: 355px; padding-top: 72px; }
 .altora-landing .business-showcase-copy > span { display: inline-flex; border-radius: 999px; background: var(--showcase-soft); color: var(--showcase-primary); padding: 6px 10px; font-size: 11px; font-weight: 800; }
-.altora-landing .business-showcase-copy h3 { margin: 16px 0 0; color: var(--text); font-size: clamp(27px, 3.5vw, 42px); line-height: 1.12; letter-spacing: -0.035em; }
+.altora-landing .business-showcase-copy h3 { margin: 16px 0 0; color: var(--text); font-size: clamp(27px, 2.45vw, 34px); line-height: 1.16; letter-spacing: -0.025em; }
 .altora-landing .business-showcase-copy p { margin: 15px 0 0; max-width: 46ch; color: var(--text-secondary); font-size: 15px; line-height: 1.65; }
 .altora-landing .business-showcase-copy ul { display: grid; gap: 10px; margin: 22px 0 0; padding: 0; list-style: none; }
 .altora-landing .business-showcase-copy li { display: flex; gap: 9px; color: var(--text); font-size: 13px; line-height: 1.45; }
@@ -1622,7 +1622,7 @@ html { scroll-behavior: auto; }
 
 .altora-landing .bs-stage { position: relative; isolation: isolate; min-height: 620px; width: min(100%, 875px); margin: 0 auto; }
 .altora-landing .bs-stage-glow { position: absolute; inset: 6% 1% 2%; border-radius: 42%; background: radial-gradient(circle, var(--showcase-soft) 0%, transparent 68%); z-index: -1; }
-.altora-landing .bs-laptop { position: absolute; top: 0; left: max(-140px, -10vw); width: min(100%, 760px); transform: none; }
+.altora-landing .bs-laptop { position: absolute; top: 0; left: max(-72px, -5vw); width: min(100%, 730px); transform: none; }
 .altora-landing .bs-desktop { overflow: hidden; border: 8px solid #111827; border-bottom-width: 13px; border-radius: 15px 15px 7px 7px; background: #111827; box-shadow: 0 30px 65px rgba(8,33,69,.22); }
 .altora-landing .bs-desktop::after { content: ""; display: block; height: 11px; margin: 0 -7%; border-radius: 0 0 16px 16px; background: linear-gradient(#e8edf5, #b8c3d3); }
 .altora-landing .bs-desktop-chrome { display: flex; align-items: center; gap: 5px; height: 27px; padding: 0 9px; background: #f5f7fa; }
@@ -1638,7 +1638,7 @@ html { scroll-behavior: auto; }
 .altora-landing .bs-tablet-wrap { position: absolute; right: 114px; bottom: 44px; z-index: 2; width: 235px; transform: none; }
 .altora-landing .bs-tablet { display: grid; gap: 9px; min-height: 295px; border: 7px solid #172033; border-radius: 22px; background: #fff; padding: 18px 12px 12px; box-shadow: 0 24px 48px rgba(8,33,69,.2); }
 .altora-landing .bs-tablet > strong { color: var(--text); font-size: 12px; }.altora-landing .bs-tablet > span { color: var(--text-secondary); font-size: 9px; }
-.altora-landing .bs-phone-wrap { position: absolute; right: -52px; bottom: 0; z-index: 3; }
+.altora-landing .bs-phone-wrap { position: absolute; right: -20px; bottom: 0; z-index: 3; }
 .altora-landing .bs-phone { position: relative; width: clamp(188px, 17vw, 218px); aspect-ratio: 9 / 19.3; border: 7px solid #111827; border-radius: 34px; background: #111827; padding: 5px; box-shadow: 0 32px 70px rgba(8,33,69,.3), inset 0 0 0 1px rgba(255,255,255,.12); }
 .altora-landing .bs-phone-island { position: absolute; z-index: 3; top: 12px; left: 50%; width: 62px; height: 18px; transform: translateX(-50%); border-radius: 999px; background: #020617; }
 .altora-landing .bs-phone-screen { display: grid; height: 100%; min-height: 0; grid-template-rows: auto auto minmax(0,1fr) auto; gap: 7px; overflow: hidden; border-radius: 25px; background: var(--showcase-bg); padding: 37px 10px 9px; }
