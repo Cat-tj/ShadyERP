@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { calculateVariableEarnings } from "./production-pay-service";
 
 /**
  * Membuat PayGroup baru untuk pengelompokan pekerja.
@@ -169,7 +170,10 @@ export async function calculatePayrollPeriod(payrollPeriodId: string) {
     // Potongan per hari cuti tidak berbayar: baseSalary / 25 hari kerja
     const leaveDeductions = Math.round(unpaidDays * (baseSalary / 25));
 
-    // 5. Hitung BPJS (Kes & TK)
+    // 5. Hitung Variable Pay (Komisi Produksi Borongan - Milestone 4)
+    const variablePay = await calculateVariableEarnings(worker.id, period.startDate, period.endDate);
+
+    // 6. Hitung BPJS (Kes & TK)
     // BPJS Kes: 1% pekerja, 4% perusahaan. Batas atas upah Rp 12.000.000.
     const bpjsKesBasis = Math.min(baseSalary, 12000000);
     const bpjsKesEmployee = activeComp.bpjsKesActive ? Math.round(bpjsKesBasis * 0.01) : 0;
@@ -180,13 +184,13 @@ export async function calculatePayrollPeriod(payrollPeriodId: string) {
     const bpjsTkEmployee = activeComp.bpjsTkActive ? Math.round(bpjsTkBasis * 0.03) : 0; // JHT + JP
     const bpjsTkCompany = activeComp.bpjsTkActive ? Math.round(bpjsTkBasis * 0.0624) : 0; // JKK + JKM + JHT + JP
 
-    // 6. Hitung PPh 21 TER
-    const grossIncome = baseSalary + overtimePay;
+    // 7. Hitung PPh 21 TER (Termasuk komisi borongan)
+    const grossIncome = baseSalary + overtimePay + variablePay;
     const taxRate = getTerRate(grossIncome, worker.person.taxStatus || "TK/0");
     const taxAmount = Math.round(grossIncome * taxRate);
 
-    // 7. Hitung Gaji Bersih (Net Pay)
-    const netPay = baseSalary + overtimePay - lateDeductions - leaveDeductions - bpjsKesEmployee - bpjsTkEmployee - taxAmount;
+    // 8. Hitung Gaji Bersih (Net Pay)
+    const netPay = baseSalary + overtimePay + variablePay - lateDeductions - leaveDeductions - bpjsKesEmployee - bpjsTkEmployee - taxAmount;
 
     lines.push({
       payrollPeriodId,
@@ -200,6 +204,7 @@ export async function calculatePayrollPeriod(payrollPeriodId: string) {
       bpjsTkCompany,
       bpjsTkEmployee,
       taxAmount,
+      variablePay,
       netPay,
       status: "DRAFT",
     });

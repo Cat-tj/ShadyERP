@@ -162,6 +162,8 @@ model Tenant {
   workers                Worker[]
   payGroups              PayGroup[]
   payrollPeriods         PayrollPeriod[]
+  productionRateCards    ProductionRateCard[]
+  workerProductionLogs   WorkerProductionLog[]
 }
 
 /// PERMANENT = cabang tetap biasa. POPUP = cabang kecil & portable (mis. lapak/booth
@@ -2705,6 +2707,8 @@ model WorkCenter {
 
   routingSteps        RoutingOperationStep[]
   workOrderOperations  WorkOrderOperation[]
+  rateCards           ProductionRateCard[]
+  productionLogs      WorkerProductionLog[]
 
   @@index([tenantId])
   @@index([outletId])
@@ -2812,6 +2816,7 @@ model WorkOrder {
   approvedBy     User?          @relation("WorkOrderApprovedBy", fields: [approvedById], references: [id])
 
   operations WorkOrderOperation[]
+  productionLogs WorkerProductionLog[]
 
   @@unique([tenantId, code])
   @@index([tenantId])
@@ -2906,6 +2911,7 @@ model Worker {
   overtimeRequests OvertimeRequest[]
   timesheets     ProjectTimesheet[]
   payrollLines   PayrollLine[]
+  productionLogs WorkerProductionLog[]
 
   @@unique([tenantId, employeeNumber])
   @@index([tenantId])
@@ -3064,6 +3070,7 @@ model PayrollLine {
   bpjsTkEmployee  Int           @default(0)
   taxAmount       Int           @default(0) // PPh 21
   allowances      Int           @default(0)
+  variablePay     Int           @default(0) // Komisi produksi / borongan (Milestone 4)
   netPay          Int
   status          String        // DRAFT, APPROVED
 
@@ -3072,4 +3079,46 @@ model PayrollLine {
 
   @@index([payrollPeriodId])
   @@index([workerId])
+}
+
+model ProductionRateCard {
+  id           String     @id @default(cuid())
+  tenantId     String
+  workCenterId String
+  productName  String     // e.g. "Kaos Polos Cotton 30s", "Jahit Kerah"
+  ratePerUnit  Int        // Tarif borongan per unit output yang lolos QC
+  startDate    DateTime
+  endDate      DateTime?
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workCenter WorkCenter @relation(fields: [workCenterId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([workCenterId])
+}
+
+model WorkerProductionLog {
+  id               String   @id @default(cuid())
+  tenantId         String
+  workerId         String
+  workOrderId      String
+  workCenterId     String
+  quantityProduced Int
+  quantityPassedQc Int
+  status           String   // PENDING, APPROVED
+  note             String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  worker     Worker     @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  workOrder  WorkOrder  @relation(fields: [workOrderId], references: [id], onDelete: Cascade)
+  workCenter WorkCenter @relation(fields: [workCenterId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([workerId])
+  @@index([workOrderId])
+  @@index([workCenterId])
 }
