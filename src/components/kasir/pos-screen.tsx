@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useEffect, type KeyboardEvent } from "react";
+import { useMemo, useState, useEffect, useRef, type KeyboardEvent } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { formatRupiah } from "@/lib/format";
@@ -50,6 +50,8 @@ export type CartLine = {
   serialNumber: string | null;
   /** true kalau baris ini ditambahkan lewat chip "menu favorit member" (D6). */
   fromFavorite: boolean;
+  /** Harga khusus untuk transaksi ini saja; harga master produk tidak ikut berubah. */
+  priceOverride: number | null;
 };
 
 export function PosScreen({
@@ -212,6 +214,7 @@ export function PosScreen({
           variantLabel,
           serialNumber: null,
           fromFavorite,
+          priceOverride: null,
         },
       ];
     });
@@ -238,6 +241,7 @@ export function PosScreen({
           variantLabel: null,
           serialNumber,
           fromFavorite,
+          priceOverride: null,
         },
       ];
     });
@@ -314,6 +318,16 @@ export function PosScreen({
     );
   }
 
+  function updateLinePrice(cartKey: string, price: number) {
+    setCart((prev) =>
+      prev.map((line) =>
+        line.cartKey === cartKey
+          ? { ...line, price: Math.max(0, price), priceOverride: Math.max(0, price) }
+          : line
+      )
+    );
+  }
+
   function removeLine(cartKey: string) {
     setCart((prev) => prev.filter((line) => line.cartKey !== cartKey));
   }
@@ -327,6 +341,8 @@ export function PosScreen({
     productId: line.productId,
     qty: line.qty,
     discountAmount: line.discountAmount,
+    unitPriceOverride: line.priceOverride ?? undefined,
+    variantLabel: line.variantLabel,
     variantOptionIds: line.variantOptionIds,
     serialNumber: line.serialNumber ?? undefined,
     isFavoritePick: line.fromFavorite,
@@ -343,6 +359,7 @@ export function PosScreen({
       total={total}
       taxPercent={taxPercent}
       onUpdateQty={updateQty}
+      onUpdateLinePrice={updateLinePrice}
       onUpdateLineDiscount={updateLineDiscount}
       onRemoveLine={removeLine}
       onCheckout={() => setShowPayment(true)}
@@ -423,6 +440,7 @@ export function PosScreen({
             >
               <CameraIcon aria-hidden className="h-5 w-5" />
             </button>
+            </div>
             <div className="mt-2 flex items-center justify-between gap-2">
               <button
                 type="button"
@@ -436,7 +454,6 @@ export function PosScreen({
               </button>
               <span className="hidden text-xs text-[var(--color-text-muted)] lg:inline">F2 cari · Esc bersihkan</span>
             </div>
-          </div>
           </div>
 
           <div className="mb-2 shrink-0">
@@ -874,6 +891,7 @@ function CartPanel({
   total,
   taxPercent,
   onUpdateQty,
+  onUpdateLinePrice,
   onUpdateLineDiscount,
   onRemoveLine,
   onCheckout,
@@ -887,6 +905,7 @@ function CartPanel({
   total: number;
   taxPercent: number;
   onUpdateQty: (cartKey: string, qty: number) => void;
+  onUpdateLinePrice: (cartKey: string, price: number) => void;
   onUpdateLineDiscount: (cartKey: string, discount: number) => void;
   onRemoveLine: (cartKey: string) => void;
   onCheckout: () => void;
@@ -916,9 +935,13 @@ function CartPanel({
                         Serial/IMEI: {line.serialNumber}
                       </p>
                     )}
-                    <p className="tabular-nums text-xs text-[var(--color-text-muted)]">
-                      {formatRupiah(line.price)} / item
-                    </p>
+                    <div className="mt-1 flex items-center gap-2">
+                      <span className="text-xs font-medium text-[var(--color-text-secondary)]">Harga</span>
+                      <CartPriceInput
+                        price={line.price}
+                        onChange={(value) => onUpdateLinePrice(line.cartKey, value)}
+                      />
+                    </div>
                   </div>
                   <button
                     onClick={() => onRemoveLine(line.cartKey)}
@@ -1048,9 +1071,7 @@ function CartQtyInput({ qty, ...props }: {
   trackStock: boolean;
   onChange: (val: number) => void;
 }) {
-  // Qty changes made outside this input intentionally remount its local draft,
-  // avoiding a synchronous state reset effect while preserving free typing.
-  return <CartQtyInputDraft key={qty} qty={qty} {...props} />;
+  return <CartQtyInputDraft qty={qty} {...props} />;
 }
 
 function CartQtyInputDraft({
@@ -1065,6 +1086,13 @@ function CartQtyInputDraft({
   onChange: (val: number) => void;
 }) {
   const [val, setVal] = useState(String(qty));
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) {
+      setVal(String(qty));
+    }
+  }, [qty]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, "");
@@ -1079,11 +1107,16 @@ function CartQtyInputDraft({
   const handleBlur = () => {
     if (val === "" || Number(val) <= 0) {
       onChange(0);
+      return;
     }
+    const clamped = trackStock ? Math.min(Number(val), stockQty) : Number(val);
+    setVal(String(clamped));
+    onChange(clamped);
   };
 
   return (
     <input
+      ref={inputRef}
       type="text"
       inputMode="numeric"
       value={val}
@@ -1091,5 +1124,44 @@ function CartQtyInputDraft({
       onBlur={handleBlur}
       className="w-11 h-8 rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] text-center tabular-nums text-sm font-semibold outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]/20"
     />
+  );
+}
+
+function CartPriceInput({ price, onChange }: { price: number; onChange: (value: number) => void }) {
+  const [draft, setDraft] = useState(String(price));
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (document.activeElement !== inputRef.current) {
+      setDraft(String(price));
+    }
+  }, [price]);
+
+  function handleChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const raw = event.target.value.replace(/\D/g, "");
+    setDraft(raw);
+    if (raw !== "") onChange(Number(raw));
+  }
+
+  function handleBlur() {
+    const next = Math.max(0, Number(draft) || 0);
+    setDraft(String(next));
+    onChange(next);
+  }
+
+  return (
+    <div className="relative min-w-0 flex-1">
+      <span className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[11px] font-medium text-[var(--color-text-muted)]">Rp</span>
+      <input
+        ref={inputRef}
+        type="text"
+        inputMode="numeric"
+        aria-label="Harga per item"
+        value={draft}
+        onChange={handleChange}
+        onBlur={handleBlur}
+        className="h-7 w-full rounded-md border border-[var(--color-border)] bg-[var(--color-bg)] pl-7 pr-2 text-xs font-semibold tabular-nums text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-1 focus:ring-[var(--color-primary)]/20"
+      />
+    </div>
   );
 }

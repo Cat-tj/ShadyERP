@@ -71,8 +71,11 @@ export async function closeShiftAction(
   redirect(`/kasir/tutup/selesai/${shiftId}`);
 }
 
-/** Browser POS cannot set trusted internal price snapshots. */
-export type PosCartItemInput = Omit<CartItemInput, "unitPriceOverride" | "variantLabel">;
+/**
+ * Kasir boleh memakai harga khusus untuk satu transaksi (mis. barang timbang atau
+ * negosiasi). Nilai ini hanya menjadi snapshot di struk, tidak mengubah harga master.
+ */
+export type PosCartItemInput = CartItemInput;
 
 export type CreateSalePayload = {
   items: PosCartItemInput[];
@@ -98,6 +101,15 @@ export async function createSaleAction(payload: CreateSalePayload): Promise<Crea
     return { error: "Shift belum dibuka. Buka shift dulu sebelum berjualan." };
   }
 
+  const invalidCustomPrice = payload.items.some(
+    (item) =>
+      item.unitPriceOverride !== undefined &&
+      (!Number.isFinite(item.unitPriceOverride) || item.unitPriceOverride < 0)
+  );
+  if (invalidCustomPrice) {
+    return { error: "Harga khusus tidak valid." };
+  }
+
   try {
     const sale = await createSale({
       tenantId: user.tenantId,
@@ -105,8 +117,6 @@ export async function createSaleAction(payload: CreateSalePayload): Promise<Crea
       shiftId: openShiftRecord.id,
       cashierId: user.id,
       memberId: payload.memberId,
-      // `unitPriceOverride` and `variantLabel` are trusted internal fields for
-      // table/catering settlement only. Never accept them from a POS browser.
       items: payload.items.map(({ ...item }) => item),
       discountAmount: payload.discountAmount,
       paymentMethod: payload.paymentMethod,
