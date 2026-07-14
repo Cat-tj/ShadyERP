@@ -145,16 +145,30 @@ export async function initiateSigning(
   const doc = await getDocumentById(tenantId, documentId);
   if (!doc) throw new Error("Document not found");
 
-  // Update status to PENDING_SIGNATURE
-  await prisma.document.update({
-    where: { id: documentId },
-    data: { status: "PENDING_SIGNATURE" },
-  });
+  const uniqueSignerIds = [...new Set(signerUserIds)];
+  if (uniqueSignerIds.length === 0) throw new Error("Pilih minimal satu penandatangan.");
+  if (uniqueSignerIds.length !== signerUserIds.length) throw new Error("Penandatangan tidak boleh duplikat.");
 
-  // Create signers in sequence
-  const signers = await Promise.all(
-    signerUserIds.map((userId, index) =>
-      prisma.documentSigner.create({
+  const validUsers = await prisma.user.findMany({
+    where: { tenantId, id: { in: uniqueSignerIds }, isActive: true },
+    select: { id: true },
+  });
+  if (validUsers.length !== uniqueSignerIds.length) {
+    throw new Error("Salah satu penandatangan tidak aktif atau bukan bagian dari tenant ini.");
+  }
+
+  const existingSigner = await prisma.documentSigner.findFirst({ where: { documentId, userId: { in: uniqueSignerIds } } });
+  if (existingSigner) throw new Error("Penandatangan sudah ada di dokumen ini.");
+
+  return prisma.$transaction(async (tx) => {
+    await tx.document.update({
+      where: { id: documentId },
+      data: { status: "PENDING_SIGNATURE" },
+    });
+
+    return Promise.all(
+      uniqueSignerIds.map((userId, index) =>
+        tx.documentSigner.create({
         data: {
           documentId,
           userId,
@@ -165,10 +179,9 @@ export async function initiateSigning(
           signer: { select: { id: true, name: true, email: true } },
         },
       })
-    )
-  );
-
-  return signers;
+      )
+    );
+  });
 }
 
 export async function getDocumentSigningHistory(tenantId: string, documentId: string) {

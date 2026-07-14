@@ -1,6 +1,19 @@
 import { prisma } from "@/lib/prisma";
 import type { Supplier, SupplierStatus } from "@prisma/client";
 
+type SupplierUpdateInput = {
+  name?: string;
+  address?: string | null;
+  city?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  contactPerson?: string | null;
+  paymentTerms?: string | null;
+  taxId?: string | null;
+  status?: SupplierStatus;
+  rating?: number | null;
+};
+
 export async function createSupplier(
   tenantId: string,
   data: {
@@ -25,14 +38,20 @@ export async function createSupplier(
 export async function updateSupplier(
   tenantId: string,
   supplierId: string,
-  data: Partial<Supplier>
+  data: SupplierUpdateInput
 ): Promise<Supplier> {
-  return prisma.supplier.update({
-    where: { id: supplierId },
-    data: {
-      ...data,
-      tenantId, // Ensure tenantId match (security)
-    },
+  // `id` adalah global. Jangan pernah meng-update berdasarkan id saja karena
+  // caller tenant A dapat menebak id supplier tenant B. `updateMany` memberi
+  // predicate atomik pada tenant tanpa membiarkan tenantId ikut diubah.
+  const result = await prisma.supplier.updateMany({
+    where: { id: supplierId, tenantId },
+    data,
+  });
+
+  if (result.count !== 1) throw new Error("Supplier tidak ditemukan");
+
+  return prisma.supplier.findFirstOrThrow({
+    where: { id: supplierId, tenantId },
   });
 }
 

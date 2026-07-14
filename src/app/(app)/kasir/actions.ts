@@ -71,8 +71,14 @@ export async function closeShiftAction(
   redirect(`/kasir/tutup/selesai/${shiftId}`);
 }
 
+/**
+ * Kasir boleh memakai harga khusus untuk satu transaksi (mis. barang timbang atau
+ * negosiasi). Nilai ini hanya menjadi snapshot di struk, tidak mengubah harga master.
+ */
+export type PosCartItemInput = CartItemInput;
+
 export type CreateSalePayload = {
-  items: CartItemInput[];
+  items: PosCartItemInput[];
   discountAmount: number;
   paymentMethod: PaymentMethod;
   orderType?: OrderType;
@@ -82,6 +88,7 @@ export type CreateSalePayload = {
   giftCardCode?: string;
   /** Isi kalau kasir bayar pakai lebih dari 1 metode — lihat CreateSaleInput di sale-service.ts. */
   splitPayments?: { method: PaymentMethod; amount: number }[];
+  idempotencyKey?: string;
 };
 
 export type CreateSaleResult = { error?: string; saleId?: string };
@@ -94,6 +101,15 @@ export async function createSaleAction(payload: CreateSalePayload): Promise<Crea
     return { error: "Shift belum dibuka. Buka shift dulu sebelum berjualan." };
   }
 
+  const invalidCustomPrice = payload.items.some(
+    (item) =>
+      item.unitPriceOverride !== undefined &&
+      (!Number.isFinite(item.unitPriceOverride) || item.unitPriceOverride < 0)
+  );
+  if (invalidCustomPrice) {
+    return { error: "Harga khusus tidak valid." };
+  }
+
   try {
     const sale = await createSale({
       tenantId: user.tenantId,
@@ -101,7 +117,7 @@ export async function createSaleAction(payload: CreateSalePayload): Promise<Crea
       shiftId: openShiftRecord.id,
       cashierId: user.id,
       memberId: payload.memberId,
-      items: payload.items,
+      items: payload.items.map(({ ...item }) => item),
       discountAmount: payload.discountAmount,
       paymentMethod: payload.paymentMethod,
       orderType: payload.orderType ?? "DINE_IN",
@@ -109,6 +125,7 @@ export async function createSaleAction(payload: CreateSalePayload): Promise<Crea
       redeemStamp: payload.redeemStamp,
       giftCardCode: payload.giftCardCode,
       splitPayments: payload.splitPayments,
+      idempotencyKey: payload.idempotencyKey,
     });
     revalidatePath("/kasir");
     return { saleId: sale.id };

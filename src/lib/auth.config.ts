@@ -21,11 +21,13 @@ export const authConfig: NextAuthConfig = {
           tenantId: string;
           role: "OWNER" | "MANAGER" | "STAFF";
           name?: string | null;
+          sessionVersion: number;
         };
         token.userId = typedUser.id;
         token.tenantId = typedUser.tenantId;
         token.role = typedUser.role;
         token.name = typedUser.name;
+        token.sessionVersion = typedUser.sessionVersion;
       }
       return token;
     },
@@ -38,6 +40,7 @@ export const authConfig: NextAuthConfig = {
           tenantId: token.tenantId,
           role: token.role,
           name: token.name,
+          sessionVersion: token.sessionVersion,
         },
       };
     },

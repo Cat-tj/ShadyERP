@@ -3,7 +3,7 @@ import { getSubscription } from './actions';
 import { PricingCards } from '@/components/billing/pricing-cards';
 
 export default async function BillingPage() {
-  const session = await requireSession();
+  await requireSession();
   const subscription = await getSubscription();
 
   return (
@@ -60,7 +60,7 @@ export default async function BillingPage() {
                 </tr>
               </thead>
               <tbody>
-                {subscription.invoices.map((invoice: any) => (
+                {subscription.invoices.map((invoice) => (
                   <tr key={invoice.id} className="border-b hover:bg-gray-50">
                     <td className="px-4 py-2 font-mono">{invoice.invoiceNumber}</td>
                     <td className="px-4 py-2">

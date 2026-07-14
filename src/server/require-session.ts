@@ -8,6 +8,7 @@ export type SessionUser = {
   id: string;
   tenantId: string;
   role: "OWNER" | "MANAGER" | "STAFF";
+  sessionVersion: number;
   name: string;
   email: string;
 };
@@ -15,6 +16,7 @@ export type SessionUser = {
 type TenantAuthState = {
   user: SessionUser;
   tenant: { isActive: boolean; name: string; businessType: string; disabledModules: string[] } | null;
+  userAuth: { isActive: boolean; sessionVersion: number } | null;
 };
 
 /**
@@ -32,12 +34,18 @@ const getAuthState = cache(async (): Promise<TenantAuthState> => {
     redirect("/login");
   }
 
-  const tenant = await prisma.tenant.findUnique({
-    where: { id: session.user.tenantId },
-    select: { isActive: true, name: true, businessType: true, disabledModules: true },
-  });
+  const [tenant, userAuth] = await Promise.all([
+    prisma.tenant.findUnique({
+      where: { id: session.user.tenantId },
+      select: { isActive: true, name: true, businessType: true, disabledModules: true },
+    }),
+    prisma.user.findFirst({
+      where: { id: session.user.id, tenantId: session.user.tenantId },
+      select: { isActive: true, sessionVersion: true },
+    }),
+  ]);
 
-  return { user: session.user as SessionUser, tenant };
+  return { user: session.user as SessionUser, tenant, userAuth };
 });
 
 /**
@@ -50,7 +58,10 @@ const getAuthState = cache(async (): Promise<TenantAuthState> => {
  * JWT-nya masih berlaku — bukan cuma memblokir login baru.
  */
 export async function requireSession(): Promise<SessionUser> {
-  const { user, tenant } = await getAuthState();
+  const { user, tenant, userAuth } = await getAuthState();
+  if (!userAuth?.isActive || userAuth.sessionVersion !== user.sessionVersion) {
+    redirect("/login");
+  }
   if (!tenant?.isActive) {
     // /akun-nonaktif sengaja dikecualikan dari proxy.ts (middleware) supaya
     // tidak terjadi redirect loop dengan aturan "sudah login tapi buka
@@ -77,7 +88,10 @@ export async function requireSessionWithTenant(): Promise<{
   user: SessionUser;
   tenant: { name: string; businessType: string; disabledModules: string[] } | null;
 }> {
-  const { user, tenant } = await getAuthState();
+  const { user, tenant, userAuth } = await getAuthState();
+  if (!userAuth?.isActive || userAuth.sessionVersion !== user.sessionVersion) {
+    redirect("/login");
+  }
   if (!tenant?.isActive) {
     redirect("/akun-nonaktif");
   }
@@ -91,7 +105,10 @@ export async function requireSessionWithTenant(): Promise<{
  * ikut ke-lempar balik — dia yang harus nyalain lagi dari Pengaturan.
  */
 export async function requireModule(moduleKey: ModuleKey): Promise<SessionUser> {
-  const { user, tenant } = await getAuthState();
+  const { user, tenant, userAuth } = await getAuthState();
+  if (!userAuth?.isActive || userAuth.sessionVersion !== user.sessionVersion) {
+    redirect("/login");
+  }
   if (!tenant?.isActive) {
     redirect("/akun-nonaktif");
   }

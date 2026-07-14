@@ -11,7 +11,6 @@ export type UserRow = {
   name: string;
   email: string;
   role: "OWNER" | "MANAGER" | "STAFF";
-  pin: string | null;
   isActive: boolean;
   outletNames: string[];
   outletIds: string[];
@@ -48,7 +47,6 @@ export function KaryawanManager({
       name: user.name,
       email: user.email,
       role: user.role,
-      pin: user.pin,
       outletIds: user.outletIds,
       jobTitle: user.jobTitle,
     });

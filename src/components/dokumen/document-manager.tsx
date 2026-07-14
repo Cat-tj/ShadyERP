@@ -2,7 +2,6 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import type { User } from "@prisma/client";
 import {
   uploadDocumentAction,
   deleteDocumentAction,
@@ -23,6 +22,13 @@ export type DocumentRow = {
   fileUrl: string;
   createdAt: Date;
   signers: Array<{ userId: string; status: string }>;
+};
+
+/** Minimal signer DTO. Never pass authentication or credential fields to client components. */
+type DocumentSigner = {
+  id: string;
+  name: string;
+  email: string;
 };
 
 const statusLabels: Record<DocumentStatus, string> = {
@@ -66,7 +72,7 @@ function DocumentUploadModal({
   onClose,
   onSaved,
 }: {
-  users: User[];
+  users: DocumentSigner[];
   onClose: () => void;
   onSaved: (message: string) => void;
 }) {
@@ -211,7 +217,7 @@ export function DocumentManager({
   currentUserName,
 }: {
   documents: DocumentRow[];
-  users: User[];
+  users: DocumentSigner[];
   currentUserName: string;
 }) {
   const router = useRouter();

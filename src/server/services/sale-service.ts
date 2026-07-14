@@ -1,12 +1,13 @@
 import { prisma } from "@/lib/prisma";
-import { buildInvoiceNumber, buildInvoicePrefix } from "@/lib/invoice";
+import { buildInvoiceNumber, buildInvoiceDayKey } from "@/lib/invoice";
 import { computeVariantSelection, loadEffectiveGroupsByProduct } from "@/server/services/product-variant-service";
 import { recordAuditLog } from "@/server/services/audit-log-service";
 import { formatRupiah } from "@/lib/format";
 import { logSaleToJournal, assertPeriodNotLocked } from "@/server/services/accounting-service";
 import { consumeBatchFIFO } from "@/server/services/inventory-service";
 import { assignSerialToSaleItem, releaseSerialsForSaleItem } from "@/server/services/product-serial-service";
-import type { PaymentMethod, OrderType, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import type { PaymentMethod, OrderType } from "@prisma/client";
 
 /**
  * PERINGATAN MULTI-TENANT: setiap query WAJIB menyertakan `where: { tenantId }`.
@@ -127,6 +128,8 @@ export type CreateSaleInput = {
   splitPayments?: { method: PaymentMethod; amount: number }[];
   /** Isi kalau Sale ini dibuat dari penyelesaian pesanan katering/borongan. */
   cateringOrderId?: string;
+  /** Generated client-side and retained across retries. */
+  idempotencyKey?: string;
 };
 
 export async function createSale(input: CreateSaleInput) {
@@ -135,7 +138,15 @@ export async function createSale(input: CreateSaleInput) {
   }
   const deductStock = input.deductStock ?? true;
 
-  return prisma.$transaction(async (tx) => {
+  try {
+    return await prisma.$transaction(async (tx) => {
+    if (input.idempotencyKey) {
+      const existing = await tx.sale.findFirst({
+        where: { tenantId: input.tenantId, idempotencyKey: input.idempotencyKey },
+        include: { items: true },
+      });
+      if (existing) return existing;
+    }
     const productIds = input.items.map((item) => item.productId);
 
     // Resep produk-produk di keranjang, diturunkan sampai ke bahan/produk paling
@@ -355,11 +366,23 @@ export async function createSale(input: CreateSaleInput) {
     const changeAmount = input.paymentMethod === "CASH" ? input.amountPaid - total : 0;
 
     const now = new Date();
-    const ymdPrefix = buildInvoicePrefix(input.outletId, now);
-    const countToday = await tx.sale.count({
-      where: { tenantId: input.tenantId, outletId: input.outletId, invoiceNumber: { startsWith: ymdPrefix } },
+    const invoiceSequence = await tx.invoiceSequence.upsert({
+      where: {
+        tenantId_outletId_dayKey: {
+          tenantId: input.tenantId,
+          outletId: input.outletId,
+          dayKey: buildInvoiceDayKey(now),
+        },
+      },
+      create: {
+        tenantId: input.tenantId,
+        outletId: input.outletId,
+        dayKey: buildInvoiceDayKey(now),
+        sequence: 1,
+      },
+      update: { sequence: { increment: 1 } },
     });
-    const invoiceNumber = buildInvoiceNumber(input.outletId, now, countToday + 1);
+    const invoiceNumber = buildInvoiceNumber(input.outletId, now, invoiceSequence.sequence);
 
     const saleRow = await tx.sale.create({
       data: {
@@ -370,6 +393,7 @@ export async function createSale(input: CreateSaleInput) {
         cashierId: input.cashierId,
         memberId: input.memberId ?? null,
         invoiceNumber,
+        idempotencyKey: input.idempotencyKey,
         subtotal,
         discountAmount: totalDiscountAmount,
         taxAmount,
@@ -422,16 +446,35 @@ export async function createSale(input: CreateSaleInput) {
         if (productRecipes && productRecipes.length > 0) {
           for (const recipe of productRecipes) {
             const ingQty = recipe.qty * item.qty;
-            await tx.productStock.update({
-              where: { productId_outletId: { productId: recipe.ingredientId, outletId: input.outletId } },
+            // Conditional decrement is the real stock guard. The earlier read is
+            // only for a friendly message; two simultaneous checkouts can both
+            // pass that read, so this update must refuse a negative balance.
+            const result = await tx.productStock.updateMany({
+              where: {
+                tenantId: input.tenantId,
+                productId: recipe.ingredientId,
+                outletId: input.outletId,
+                qty: { gte: ingQty },
+              },
               data: { qty: { decrement: ingQty } },
             });
+            if (result.count !== 1) {
+              throw new Error(`Stok bahan baku berubah saat transaksi diproses. Muat ulang kasir lalu coba lagi.`);
+            }
           }
         } else if (product.trackStock) {
-          await tx.productStock.update({
-            where: { productId_outletId: { productId: item.productId, outletId: input.outletId } },
+          const result = await tx.productStock.updateMany({
+            where: {
+              tenantId: input.tenantId,
+              productId: item.productId,
+              outletId: input.outletId,
+              qty: { gte: item.qty },
+            },
             data: { qty: { decrement: item.qty } },
           });
+          if (result.count !== 1) {
+            throw new Error(`Stok ${product.name} berubah saat transaksi diproses. Muat ulang kasir lalu coba lagi.`);
+          }
           // Produk yang lacak kedaluwarsa (mis. makanan/farmasi) juga potong
           // batch tertua dulu (FIFO), supaya sisa & tanggal exp per batch akurat.
           if (product.trackExpiry) {
@@ -621,7 +664,20 @@ export async function createSale(input: CreateSaleInput) {
     await logSaleToJournal(input.tenantId, sale.id, tx);
 
     return sale;
-  }, { timeout: 15000 });
+    }, { timeout: 15000 });
+  } catch (error) {
+    // Both requests may pass the initial lookup at the exact same moment. The
+    // database unique index remains authoritative; after its conflict rolls
+    // back the losing transaction, return the winning sale as a safe retry.
+    if (input.idempotencyKey && error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      const existing = await prisma.sale.findFirst({
+        where: { tenantId: input.tenantId, idempotencyKey: input.idempotencyKey },
+        include: { items: true },
+      });
+      if (existing) return existing;
+    }
+    throw error;
+  }
 }
 
 export async function getSaleById(tenantId: string, saleId: string) {

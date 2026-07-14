@@ -26,13 +26,14 @@ export function OfflineQueuePanel() {
   }
 
   useEffect(() => {
-    refresh();
+    const initialRefresh = window.setTimeout(() => void refresh(), 0);
     window.addEventListener("online", refresh);
     window.addEventListener("offline", refresh);
     const interval = window.setInterval(refresh, 3000);
     return () => {
       window.removeEventListener("online", refresh);
       window.removeEventListener("offline", refresh);
+      window.clearTimeout(initialRefresh);
       window.clearInterval(interval);
     };
   }, []);

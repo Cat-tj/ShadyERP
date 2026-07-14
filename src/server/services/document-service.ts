@@ -98,6 +98,32 @@ export async function getDocumentsAccessibleByUser(tenantId: string, userId: str
   });
 }
 
+/** Resolve document access for a single user without ever trusting a client document id alone. */
+export async function getAccessibleDocumentById(
+  tenantId: string,
+  documentId: string,
+  userId: string,
+  userRole: string
+) {
+  return prisma.document.findFirst({
+    where: {
+      id: documentId,
+      tenantId,
+      OR: [
+        { uploadedBy: userId },
+        { signers: { some: { userId } } },
+        { accessControl: { some: { OR: [{ userId }, { role: userRole }] } } },
+      ],
+    },
+    include: {
+      uploader: { select: { id: true, name: true, email: true } },
+      versions: { include: { creator: { select: { id: true, name: true } } }, orderBy: { version: "desc" } },
+      signers: { include: { signer: { select: { id: true, name: true, email: true } } }, orderBy: { sequence: "asc" } },
+      accessControl: { include: { user: { select: { id: true, name: true, email: true } } } },
+    },
+  });
+}
+
 export async function updateDocumentStatus(
   tenantId: string,
   documentId: string,

@@ -14,6 +14,19 @@ import type { OrderType } from "@prisma/client";
 
 export type ActionResult = { error?: string; success?: boolean };
 
+export type TenantBackupPayload = {
+  exportVersion: "1.0.0";
+  timestamp: string;
+  tenant: { slug: string } | null;
+  setting: unknown;
+  outlets: unknown[];
+  categories: unknown[];
+  products: unknown[];
+  sales: unknown[];
+  suppliers: unknown[];
+  members: unknown[];
+};
+
 export async function updateTenantSettingAction(
   input: TenantSettingInput & {
     businessType?: BusinessModeKey;
@@ -86,7 +99,11 @@ export async function updateTenantSettingAction(
   return { success: true };
 }
 
-export async function exportTenantBackupAction(): Promise<{ error?: string; success?: boolean; data?: any }> {
+export async function exportTenantBackupAction(): Promise<{
+  error?: string;
+  success?: boolean;
+  data?: TenantBackupPayload;
+}> {
   const user = await requireRole(["OWNER"]);
   
   try {

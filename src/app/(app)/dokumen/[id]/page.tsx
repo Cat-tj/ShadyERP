@@ -1,5 +1,5 @@
 import { requireRole } from "@/server/require-session";
-import { getDocumentById } from "@/server/services/document-service";
+import { getAccessibleDocumentById } from "@/server/services/document-service";
 import { DocumentViewer } from "@/components/dokumen/document-viewer";
 
 export default async function DokumenDetailPage({
@@ -9,7 +9,7 @@ export default async function DokumenDetailPage({
 }) {
   const user = await requireRole(["OWNER", "MANAGER", "STAFF"]);
 
-  const document = await getDocumentById(user.tenantId, params.id);
+  const document = await getAccessibleDocumentById(user.tenantId, params.id, user.id, user.role);
   if (!document) {
     return <div className="p-4">Dokumen tidak ditemukan</div>;
   }

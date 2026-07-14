@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/lib/auth";
+import { requireSession } from "@/server/require-session";
 import {
   createPurchaseOrder,
   approvePO,
@@ -17,12 +17,9 @@ export interface POItemInput {
 
 export async function createPurchaseOrderAction(supplierId: string, items: POItemInput[]) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
-    const po = await createPurchaseOrder(session.user.tenantId, supplierId, items);
+    const po = await createPurchaseOrder(user.tenantId, supplierId, items);
 
     return { data: po };
   } catch (err) {
@@ -33,12 +30,9 @@ export async function createPurchaseOrderAction(supplierId: string, items: POIte
 
 export async function approvePurchaseOrderAction(poId: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId || !session.user.id) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
-    const po = await approvePO(session.user.tenantId, poId, session.user.id);
+    const po = await approvePO(user.tenantId, poId, user.id);
 
     return { data: po };
   } catch (err) {
@@ -49,12 +43,9 @@ export async function approvePurchaseOrderAction(poId: string) {
 
 export async function rejectPurchaseOrderAction(poId: string, reason: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
-    const po = await rejectPO(session.user.tenantId, poId, reason);
+    const po = await rejectPO(user.tenantId, poId, reason);
 
     return { data: po };
   } catch (err) {
@@ -65,17 +56,14 @@ export async function rejectPurchaseOrderAction(poId: string, reason: string) {
 
 export async function confirmPurchaseOrderAction(poId: string, expectedDateStr: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
     const expectedDate = new Date(expectedDateStr);
     if (isNaN(expectedDate.getTime())) {
       return { error: "Format tanggal tidak valid" };
     }
 
-    const po = await confirmPOReceipt(session.user.tenantId, poId, expectedDate);
+    const po = await confirmPOReceipt(user.tenantId, poId, expectedDate);
 
     return { data: po };
   } catch (err) {
@@ -86,12 +74,9 @@ export async function confirmPurchaseOrderAction(poId: string, expectedDateStr: 
 
 export async function cancelPurchaseOrderAction(poId: string, reason: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
-    await cancelPO(session.user.tenantId, poId, reason);
+    await cancelPO(user.tenantId, poId, reason);
 
     return { data: null };
   } catch (err) {

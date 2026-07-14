@@ -1,6 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import * as billingService from '@/server/services/billing-service';
 import * as sumopodService from '@/server/services/sumopod-service';
+import { z } from 'zod';
+
+const webhookPayloadSchema = z.object({
+  order_id: z.string().min(1).max(160),
+  payment_link_id: z.string().min(1).max(160),
+  status: z.enum(['success', 'failed', 'expired']),
+  amount: z.number().int().nonnegative(),
+  currency: z.literal('IDR'),
+  payment_method: z.string().max(100).optional().default('UNKNOWN'),
+  paid_at: z.string().min(1).max(80).optional(),
+  payer_email: z.string().email().optional(),
+});
 
 export async function POST(request: NextRequest) {
   try {
@@ -30,7 +42,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const payload = JSON.parse(body);
+    const parsed = webhookPayloadSchema.safeParse(JSON.parse(body));
+    if (!parsed.success) {
+      return NextResponse.json({ error: 'Invalid webhook payload' }, { status: 400 });
+    }
+    const payload = parsed.data;
 
     console.log(`🔔 Webhook received: ${payload.order_id} - ${payload.status}`);
 

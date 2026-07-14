@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { requireRole } from "@/server/require-session";
 import { createUser, updateUser, setUserActive, type UserInput } from "@/server/services/user-service";
+import { validateCashierPin } from "@/server/validation/user-input";
 
 export type ActionResult = { error?: string; success?: boolean };
 
@@ -13,6 +14,8 @@ export async function createUserAction(input: UserInput): Promise<ActionResult> 
   if (!input.password || input.password.length < 6) {
     return { error: "Kata sandi minimal 6 karakter." };
   }
+  const pinError = validateCashierPin(input.pin);
+  if (pinError) return { error: pinError };
   try {
     await createUser(user.tenantId, input);
   } catch (error) {
@@ -31,6 +34,8 @@ export async function updateUserAction(
   if (input.password && input.password.length < 6) {
     return { error: "Kata sandi minimal 6 karakter." };
   }
+  const pinError = validateCashierPin(input.pin);
+  if (pinError) return { error: pinError };
   try {
     await updateUser(user.tenantId, id, input, user.id);
   } catch (error) {

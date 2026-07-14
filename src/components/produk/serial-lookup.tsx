@@ -51,7 +51,7 @@ export function SerialLookup() {
         <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-5">
           {!result ? (
             <p className="text-sm text-[var(--color-text-secondary)]">
-              Serial/IMEI "{query}" tidak ditemukan di sistem.
+              Serial/IMEI &quot;{query}&quot; tidak ditemukan di sistem.
             </p>
           ) : (
             <div className="flex flex-col gap-2 text-sm">

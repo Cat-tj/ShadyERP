@@ -12,7 +12,6 @@ export type EditingUser = {
   name: string;
   email: string;
   role: "OWNER" | "MANAGER" | "STAFF";
-  pin: string | null;
   outletIds: string[];
   jobTitle?: string | null;
 };
@@ -40,7 +39,7 @@ export function UserFormModal({
   const [name, setName] = useState(user?.name ?? "");
   const [email, setEmail] = useState(user?.email ?? "");
   const [role, setRole] = useState<EditingUser["role"]>(user?.role ?? "STAFF");
-  const [pin, setPin] = useState(user?.pin ?? "");
+  const [pin, setPin] = useState("");
   const [jobTitle, setJobTitle] = useState(user?.jobTitle ?? "");
   const [password, setPassword] = useState("");
   const [outletIds, setOutletIds] = useState<string[]>(user?.outletIds ?? []);
@@ -63,7 +62,7 @@ export function UserFormModal({
             email: user.email,
             role,
             outletIds,
-            pin: pin.trim() || null,
+            pin: pin.trim() || undefined,
             password: password.trim() || undefined,
             jobTitle: jobTitle.trim() || null,
           })
@@ -72,7 +71,7 @@ export function UserFormModal({
             email: email.trim(),
             role,
             outletIds,
-            pin: pin.trim() || null,
+            pin: pin.trim() || undefined,
             password: password.trim(),
             jobTitle: jobTitle.trim() || null,
           });
@@ -191,12 +190,14 @@ export function UserFormModal({
           </div>
 
           <div className="flex flex-col gap-1.5">
-            <label className="text-sm font-medium text-[var(--color-text)]">PIN kasir (opsional, 6 digit)</label>
+            <label className="text-sm font-medium text-[var(--color-text)]">
+              {user ? "PIN kasir baru (opsional, 6 digit)" : "PIN kasir (opsional, 6 digit)"}
+            </label>
             <input
               value={pin}
               onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
               inputMode="numeric"
-              placeholder="123456"
+              placeholder={user ? "Kosongkan jika tidak diubah" : "6 angka"}
               className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base tabular-nums outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
             />
           </div>

@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/lib/auth";
+import { requireSession } from "@/server/require-session";
 import {
   createSupplier,
   updateSupplier,
@@ -16,12 +16,9 @@ export async function createSupplierAction(data: {
   paymentTerms?: string;
 }) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
-    const supplier = await createSupplier(session.user.tenantId, {
+    const supplier = await createSupplier(user.tenantId, {
       name: data.name,
       phone: data.phone,
       email: data.email,
@@ -48,12 +45,9 @@ export async function updateSupplierAction(
   }
 ) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
-    const supplier = await updateSupplier(session.user.tenantId, supplierId, {
+    const supplier = await updateSupplier(user.tenantId, supplierId, {
       name: data.name,
       phone: data.phone,
       email: data.email,
@@ -70,12 +64,9 @@ export async function updateSupplierAction(
 
 export async function setSupplierStatusAction(supplierId: string, status: "ACTIVE" | "INACTIVE" | "BLACKLISTED") {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
-    const supplier = await setSupplierStatusService(session.user.tenantId, supplierId, status);
+    const supplier = await setSupplierStatusService(user.tenantId, supplierId, status);
 
     return { data: supplier };
   } catch (err) {
