@@ -82,16 +82,21 @@ eksternal".)
 - **Idempotency**: satu-satunya mekanisme yang ada sekarang adalah status-guard di dalam transaksi (`if (status === "COMPLETED") throw`). Belum ada idempotency key generik — modul Pabrik yang lebih rawan double-submit (scan barcode, operator tap cepat) sebaiknya mulai pakai idempotency key asli (kolom unique di `StockMovement`/`WorkOrderEvent`), bukan cuma status-guard.
 - **Module registration**: `src/lib/modules.ts` (`MODULES` array) belum ada key untuk manufaktur. Perlu tambah `{ key: "produksi", label: "Produksi", core: false, color/colorDark/colorSoft }` dan wire ke `Tenant.disabledModules` + nav gating (`src/lib/nav.ts` atau sejenisnya) — ikuti pola modul lain yang sudah ada persis.
 - **UOM**: belum ada tabel UOM global, cuma `ProductUom` per-produk (konversi lokal, mis. "Dus" = 12x "Pcs"). Untuk M1 minimal, BOM/routing bisa reuse `ProductUom` yang sudah ada dulu — tabel UOM canonical bisa nyusul kalau memang dibutuhkan (jangan over-engineer duluan).
+- **KOREKSI (setelah baca schema lebih detail)**: `Equipment`/`EquipmentMaintenanceLog` SUDAH ADA (status ACTIVE/NEEDS_REPAIR/REPAIRING/RETIRED, log OPEN/IN_PROGRESS/RESOLVED) — dipakai sebagai "Machine" untuk M1, TIDAK bikin model `Machine` baru. `WorkCenter.equipmentId` (opsional) sudah di-wire ke `Equipment` yang ada.
 
 ---
 
 ## 📋 M1 — Core Manufacturing (breakdown kerja, urutan implementasi)
 
-- [ ] **P1** — Migration: `Warehouse` (sub-lokasi dalam Outlet: RAW_MATERIAL/WIP/FINISHED_GOODS/QUARANTINE/REJECT/SCRAP/IN_TRANSIT) + `StorageLocation` (bin/rak opsional di bawah Warehouse)
-- [ ] **P2** — Migration: `StockMovement` ledger (append-only: tenantId, productId, lotId?, fromLocation?, toLocation?, qty, uom, sourceType enum, sourceId, actorId, idempotencyKey unique, createdAt) + service `stock-movement-service.ts` (fungsi `recordMovement()` generik dipakai semua modul produksi)
-- [ ] **P3** — Migration: `BomVersion` + `BomVersionItem` (header: productId, version int, status DRAFT/ACTIVE/OBSOLETE, outputQty, effectiveDate; item: ingredientId, qty, uom, wasteAllowancePct?, isOptional) + service `bom-service.ts` (create/activate/obsolete version, tidak boleh edit version yang sudah ACTIVE dan dipakai WO — sesuai guardrail #9)
-- [ ] **P4** — Migration: `WorkCenter` (nama, outletId, kapasitas/jam, mesin terkait opsional) + `RoutingVersion`/`RoutingOperationStep` (header per productId+version; step: sequence, workCenterId, standardDurationMin, instruction?, qcCheckpoint bool) + service `routing-service.ts`
-- [ ] **P5** — Migration: `WorkOrder` + `WorkOrderOperation` (WO: tenantId, outletId, productId, bomVersionId, routingVersionId — snapshot di release bukan live-reference, targetQty, status enum sesuai state machine di atas, dueDate?, PIC?; operation: sequence, workCenterId, status, actualStart/End?) + service `work-order-service.ts` dengan state machine transitions eksplisit (bukan status string bebas)
+- [x] **P1** — Migration: `Warehouse` (sub-lokasi dalam Outlet: RAW_MATERIAL/WIP/FINISHED_GOODS/QUARANTINE/REJECT/SCRAP/IN_TRANSIT) + `StorageLocation` (bin/rak opsional di bawah Warehouse) — `4e56fe3`+schema commit (lihat migration `20260714150616_pabrik_m1_core_manufacturing`)
+- [x] **P2a** — Migration: `StockMovement` ledger (append-only: tenantId, productId, fromWarehouseId?, toWarehouseId?, qty, sourceType enum, sourceId, actorId, idempotencyKey unique, createdAt) — migration sama di atas
+- [ ] **P2b** — Service `stock-movement-service.ts` (fungsi `recordMovement()` generik dipakai semua modul produksi) — **sedang dikerjakan**
+- [x] **P3a** — Migration: `BomVersion` + `BomVersionItem` (header: productId, version int, status DRAFT/ACTIVE/OBSOLETE, outputQty, effectiveDate; item: ingredientId, qty, wasteAllowancePct?, isOptional) — migration sama di atas
+- [ ] **P3b** — Service `bom-service.ts` (create/activate/obsolete version, tidak boleh edit version yang sudah ACTIVE dan dipakai WO — sesuai guardrail #9)
+- [x] **P4a** — Migration: `WorkCenter` (nama, outletId, `equipmentId?` reuse model `Equipment` yang sudah ada) + `RoutingVersion`/`RoutingOperationStep` (header per productId+version; step: sequence, workCenterId, standardDurationMin, instruction?, qcCheckpoint bool) — migration sama di atas
+- [ ] **P4b** — Service `routing-service.ts`
+- [x] **P5a** — Migration: `WorkOrder` + `WorkOrderOperation` (WO: tenantId, outletId, productId, bomVersionId, routingVersionId — snapshot di release bukan live-reference, targetQty, status enum sesuai state machine di atas, dueDate?, plannedById/approvedById?; operation: sequence, workCenterId, status, actualStart/EndAt?, goodQty/rejectQty/reworkQty/scrapQty) — migration sama di atas
+- [ ] **P5b** — Service `work-order-service.ts` dengan state machine transitions eksplisit (bukan status string bebas)
 - [ ] **P6** — Service: material reservation/issue/return/consumption — nulis ke `StockMovement`, update projection `ProductStock`(atau kolom reserved baru), cek guardrail #16 (jangan issue material Hold/Reject/Expired/Reserved-untuk-WO-lain)
 - [ ] **P7** — Service: operation execution (start/pause/resume/complete) + output recording (good/reject/rework/scrap/waste) — invariant "Issued = Consumed + Returned + Waste + Remaining WIP" (dokumen section 9) wajib dicek sebelum WO bisa closed
 - [ ] **P8** — Module registration: tambah `produksi` ke `MODULES`, gating nav, cek `Tenant.disabledModules`
@@ -103,18 +108,21 @@ eksternal".)
 
 ## Status saat ini
 
-**Terakhir dikerjakan**: riset codebase selesai (lihat "Arsitektur" di atas). Belum ada
-kode/migration yang ditulis. Mulai dari **P1** (Warehouse/StorageLocation).
+**Terakhir dikerjakan**: seluruh schema fondasi M1 sudah di-migrate dalam SATU migration
+`20260714150616_pabrik_m1_core_manufacturing` (Warehouse, StorageLocation, StockMovement,
+BomVersion, BomVersionItem, WorkCenter, RoutingVersion, RoutingOperationStep, WorkOrder,
+WorkOrderOperation — semua model P1-P5 sekaligus, karena saling bergantung dan migration
+terpisah-pisah akan saling mereferensikan tabel yang belum ada). `npx prisma validate`,
+`npx prisma generate`, dan `npx tsc --noEmit` semua hijau setelah migration ini.
+
+Sedang lanjut ke **P2b** (`stock-movement-service.ts`) — ini fondasi paling penting
+karena P6/P7 (issue/consume/output) semua nulis lewat service ini.
 
 **Belum diputuskan / perlu keputusan sebelum lanjut ke item terkait**:
 - Nama modul di `MODULES`: `produksi` vs `manufaktur` vs `pabrik` — pilih salah satu,
   konsisten dipakai di seluruh route/label. (Sementara dipakai: `produksi`.)
-- Apakah `WorkCenter` butuh relasi eksplisit ke `Machine` sebagai model terpisah di M1,
-  atau cukup field teks dulu dan `Machine` model baru masuk M6 (Maintenance)? Dokumen
-  asli taruh "Machine registry" di Fase 0 (fondasi) tapi "Maintenance"-nya sendiri di
-  M6 — kemungkinan besar `Machine` sebagai referensi ringan boleh masuk M1, detail
-  maintenance-nya nanti di M6. **Rekomendasi**: buat `Machine` model ringan di M1
-  (id, name, outletId, workCenterId?, status) tanpa fitur maintenance dulu.
+- ~~Apakah WorkCenter butuh relasi ke Machine~~ — **sudah diputuskan**, reuse `Equipment`
+  yang sudah ada (lihat section Arsitektur di atas), tidak bikin model `Machine` baru.
 
 ---
 
