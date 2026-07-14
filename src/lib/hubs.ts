@@ -17,6 +17,7 @@ import {
   BriefcaseIcon,
   GridIcon,
   PackageIcon,
+  BuildingIcon,
 } from "@/components/ui/icons";
 
 export type HubKey =
@@ -28,7 +29,8 @@ export type HubKey =
   | "finance"
   | "admin"
   | "command"
-  | "dokumen";
+  | "dokumen"
+  | "produksi";
 
 export type HubDef = {
   key: HubKey;
@@ -123,6 +125,16 @@ export const HUBS: HubDef[] = [
     icon: BriefcaseIcon,
     homeHref: "/dokumen",
   },
+  {
+    key: "produksi",
+    label: "Produksi",
+    description: "Work order, BOM, routing, gudang bahan baku/WIP/barang jadi, dan proses produksi.",
+    color: "#334155",
+    colorDark: "#1e293b",
+    colorSoft: "rgba(51, 65, 85, 0.12)",
+    icon: BuildingIcon,
+    homeHref: "/produksi",
+  },
 ];
 
 export const HUB_MAP: Record<HubKey, HubDef> = Object.fromEntries(
@@ -159,6 +171,8 @@ const ROUTE_HUB_MAP: { prefix: string; hub: HubKey }[] = [
   { prefix: "/pengaturan", hub: "admin" },
   // Dokumen & Arsip
   { prefix: "/dokumen", hub: "dokumen" },
+  // Produksi
+  { prefix: "/produksi", hub: "produksi" },
 ];
 
 export function getHubForPath(pathname: string): HubDef | null {
