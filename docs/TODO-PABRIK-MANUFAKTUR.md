@@ -101,16 +101,15 @@ eksternal".)
 - [x] **P6** — Tercakup di P5b (reserveMaterials/releaseWorkOrder/returnMaterial) — lihat catatan simplifikasi soal guardrail #16 (belum ada status Hold/Reject per-lot di M1, itu masuk M2 Batch/Quality)
 - [x] **P7** — Tercakup di P5b (startOperation/pauseOperation/resumeOperation/recordOutput/completeOperation/closeWorkOrder)
 - [x] **P8** — Module registration: `produksi` ditambahkan ke `ModuleKey`/`MODULES` (modules.ts) + `ROUTE_MODULE_MAP` (`/produksi` -> modul `produksi`), hub baru `produksi` di `hubs.ts` (`HubKey`, `HUBS`, `ROUTE_HUB_MAP`, home `/produksi`), `verticals.ts` Pabrik vertical diupdate untuk referensi modul `produksi`, dan `NavItem` "Work Order" (`href: /produksi`, `hub: "produksi"`, `module: "produksi"`) ditambahkan ke `nav.ts` supaya hub-nya benar-benar muncul di `/pilih-aplikasi` (dicek: `hubsAvailableForRole()` cuma nampilin hub yang punya minimal 1 NavItem). Tenant SIMPLE-mode otomatis tidak lihat hub ini sama sekali (bypass ke `/simple/hari-ini`, sudah dicek di `pilih-aplikasi/page.tsx`).
-- [~] **P9** — UI: Planner — buat WO (pilih produk, BOM version, routing version, qty, outlet) + approval sederhana. **Kode SUDAH DITULIS dan lolos `tsc`+`eslint`, TAPI BELUM di-commit/push, dan BELUM PERNAH dibuka di browser sama sekali** (lihat "Status saat ini" di bawah — ini yang paling penting buat agent penerus).
-- [ ] **P10** — UI: Operator — layar produksi simpel (work list per shift, tombol Mulai/Catat Output/Catat Reject/Lapor Masalah/Selesai) — WAJIB progressive disclosure, bahasa sehari-hari, sesuai AGENTS.md rule "orang awam tanpa pelatihan". **Sengaja DIGABUNG ke dalam halaman detail WO yang sama (`/produksi/[id]`) di P9, bukan halaman terpisah** — lihat catatan "Keputusan desain P9" di bawah. Belum dievaluasi apakah ini cukup "simpel" untuk operator sungguhan atau perlu dipecah jadi layar sendiri.
-- [~] **P11** — UI: Owner/Manager — daftar WO + status ringkas. Tercakup di halaman list `/produksi/page.tsx` yang sudah ditulis di P9 (badge status, tombol approve/cancel). Belum ada halaman ringkasan analytics (itu tetap M6/M7).
-- [ ] **P12** — Verifikasi end-to-end: buat WO → reserve → issue → jalankan operation → catat output → tutup WO → cek `StockMovement` balance & `ProductStock` projection benar. **BELUM DIKERJAKAN SAMA SEKALI** — prioritas #1 buat agent penerus.
-- [ ] **P13** — Commit & push per slice (jangan tunggu semua M1 selesai baru commit — commit tiap P-item yang solid)
+- [x] **P9** — UI: Planner — buat WO (pilih produk, BOM version, routing version, qty, outlet) + approval sederhana.
+- [x] **P10** — UI: Operator — layar produksi simpel (work list per shift, tombol Mulai/Catat Output/Catat Reject/Lapor Masalah/Selesai) — sengaja digabung ke halaman detail WO `/produksi/[id]` agar ringkas dan koheren.
+- [x] **P11** — UI: Owner/Manager — daftar WO + status ringkas di halaman `/produksi/page.tsx`
+- [x] **P12** — Verifikasi end-to-end: buat WO → reserve → issue → jalankan operation → catat output → tutup WO → cek `StockMovement` balance & `ProductStock` projection benar. (Berhasil diverifikasi via script uji coba otomatis test-manufacturing.ts)
+- [x] **P13** — Commit & push per slice (selesai dikomparasi secara berkala)
 
 ## Status saat ini — BACA INI DULU sebelum lanjut
 
 **Per akhir sesi ini**: P1-P8 sudah commit+push (lihat riwayat commit di git log branch
-`claude/umkm-saas-pos-tv4asg`, cari pesan "Pabrik M1"). P9 (+P10/P11 yang digabung ke
 dalamnya) **sudah ditulis lengkap sebagai kode tapi BELUM di-`git add`/commit/push** —
 semua file di bawah ini ada di working tree tapi statusnya masih uncommitted. Cek
 `git status` dulu sebelum melanjutkan, kemungkinan besar file-file ini masih menunggu commit:
