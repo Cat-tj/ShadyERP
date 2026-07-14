@@ -37,7 +37,17 @@ const ACTIVE_RESERVATION_STATUSES: WorkOrderStatus[] = [
   "AWAITING_QC",
 ];
 
-export type WorkOrderWithOperations = WorkOrder & { operations: WorkOrderOperation[] };
+export type WorkOrderWithOperations = WorkOrder & {
+  operations: WorkOrderOperation[];
+  product: { id: string; name: string };
+  outlet: { id: string; name: string };
+};
+
+const workOrderListInclude = {
+  operations: { orderBy: { sequence: "asc" as const } },
+  product: { select: { id: true, name: true } },
+  outlet: { select: { id: true, name: true } },
+};
 
 export async function generateWorkOrderCode(tenantId: string): Promise<string> {
   const today = new Date().toISOString().split("T")[0].replace(/-/g, "");
@@ -48,7 +58,7 @@ export async function generateWorkOrderCode(tenantId: string): Promise<string> {
 export async function listWorkOrders(tenantId: string, outletId?: string): Promise<WorkOrderWithOperations[]> {
   return prisma.workOrder.findMany({
     where: { tenantId, ...(outletId ? { outletId } : {}) },
-    include: { operations: { orderBy: { sequence: "asc" } } },
+    include: workOrderListInclude,
     orderBy: { createdAt: "desc" },
   });
 }
@@ -56,7 +66,7 @@ export async function listWorkOrders(tenantId: string, outletId?: string): Promi
 export async function getWorkOrderById(tenantId: string, workOrderId: string): Promise<WorkOrderWithOperations | null> {
   return prisma.workOrder.findFirst({
     where: { id: workOrderId, tenantId },
-    include: { operations: { orderBy: { sequence: "asc" } } },
+    include: workOrderListInclude,
   });
 }
 
@@ -109,7 +119,7 @@ export async function createWorkOrder(
         })),
       },
     },
-    include: { operations: { orderBy: { sequence: "asc" } } },
+    include: workOrderListInclude,
   });
 }
 
@@ -283,7 +293,7 @@ export async function releaseWorkOrder(tenantId: string, workOrderId: string, ac
     return tx.workOrder.update({
       where: { id: workOrderId },
       data: { status: "RELEASED", releasedAt: new Date() },
-      include: { operations: { orderBy: { sequence: "asc" } } },
+      include: workOrderListInclude,
     });
   });
 }
@@ -475,8 +485,8 @@ export async function completeOperation(tenantId: string, operationId: string): 
 
     const remaining = siblings.filter((s) => s.id !== operationId && s.status !== "COMPLETED" && s.status !== "SKIPPED");
     const wo = remaining.length === 0
-      ? await tx.workOrder.update({ where: { id: op.workOrderId }, data: { status: "AWAITING_QC" }, include: { operations: { orderBy: { sequence: "asc" } } } })
-      : await tx.workOrder.findFirstOrThrow({ where: { id: op.workOrderId }, include: { operations: { orderBy: { sequence: "asc" } } } });
+      ? await tx.workOrder.update({ where: { id: op.workOrderId }, data: { status: "AWAITING_QC" }, include: workOrderListInclude })
+      : await tx.workOrder.findFirstOrThrow({ where: { id: op.workOrderId }, include: workOrderListInclude });
 
     return wo;
   });

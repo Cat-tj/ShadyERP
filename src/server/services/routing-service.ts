@@ -41,6 +41,20 @@ export async function listRoutingVersions(tenantId: string, productId: string): 
   });
 }
 
+/** Semua versi routing yang lagi ACTIVE untuk tenant ini — dipakai buat cek produk mana yang "siap produksi". */
+export async function listActiveRoutingVersions(tenantId: string): Promise<RoutingVersion[]> {
+  return prisma.routingVersion.findMany({ where: { tenantId, status: "ACTIVE" } });
+}
+
+/** Semua versi routing tenant ini (semua produk sekaligus) — dipakai halaman Data Produksi supaya gak perlu 1 query per produk. */
+export async function listAllRoutingVersionsForTenant(tenantId: string): Promise<RoutingVersionWithSteps[]> {
+  return prisma.routingVersion.findMany({
+    where: { tenantId },
+    include: { steps: { orderBy: { sequence: "asc" } } },
+    orderBy: [{ productId: "asc" }, { version: "desc" }],
+  });
+}
+
 export async function getActiveRoutingVersion(tenantId: string, productId: string): Promise<RoutingVersionWithSteps | null> {
   return prisma.routingVersion.findFirst({
     where: { tenantId, productId, status: "ACTIVE" },

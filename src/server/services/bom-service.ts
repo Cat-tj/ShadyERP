@@ -25,6 +25,20 @@ export async function getBomVersionById(tenantId: string, bomVersionId: string):
   });
 }
 
+/** Semua versi BOM yang lagi ACTIVE untuk tenant ini — dipakai buat cek produk mana yang "siap produksi". */
+export async function listActiveBomVersions(tenantId: string): Promise<BomVersion[]> {
+  return prisma.bomVersion.findMany({ where: { tenantId, status: "ACTIVE" } });
+}
+
+/** Semua versi BOM tenant ini (semua produk sekaligus) — dipakai halaman Data Produksi supaya gak perlu 1 query per produk. */
+export async function listAllBomVersionsForTenant(tenantId: string): Promise<BomVersionWithItems[]> {
+  return prisma.bomVersion.findMany({
+    where: { tenantId },
+    include: { items: { orderBy: { sortOrder: "asc" } } },
+    orderBy: [{ productId: "asc" }, { version: "desc" }],
+  });
+}
+
 export async function getActiveBomVersion(tenantId: string, productId: string): Promise<BomVersionWithItems | null> {
   return prisma.bomVersion.findFirst({
     where: { tenantId, productId, status: "ACTIVE" },
