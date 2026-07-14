@@ -11,6 +11,10 @@ dipecah jadi beberapa "aplikasi" (hub) supaya tidak berisik dipakai sehari-hari.
 performa) dan [docs/SKEMA-DATABASE.md](./docs/SKEMA-DATABASE.md) (semua model
 data dijelaskan per domain, dengan diagram).
 
+👩‍💼 **Panduan operasional Owner, Manager, dan Staff:**
+[docs/panduan-pengguna/README.md](./docs/panduan-pengguna/README.md) mencakup Cafe,
+Toko/Retail, Laundry, Counter, Barbershop, dan Company.
+
 ## Daftar isi
 
 1. [Konsep: Hub & Modul](#konsep-hub--modul)

@@ -1592,6 +1592,66 @@ html { scroll-behavior: auto; }
   
 .altora-landing .ps-tabbar { margin-top: auto; display: flex; justify-content: space-around; padding-top: 10px; border-top: 1px solid var(--border); }
 
+/* ---------- BUSINESS SHOWCASE: independent workflow screens ---------- */
+.altora-landing .business-showcase {
+  position: relative;
+  overflow: clip;
+  padding: clamp(64px, 8vw, 104px) 0;
+  background: linear-gradient(180deg, var(--showcase-bg) 0%, #f7f9fc 100%);
+}
+.altora-landing .business-showcase-head { max-width: 720px; }
+.altora-landing .business-showcase-head h2 { margin: 14px 0 0; font-size: clamp(30px, 4vw, 48px); line-height: 1.08; letter-spacing: -0.035em; color: var(--text); }
+.altora-landing .business-showcase-head p { max-width: 62ch; margin: 16px 0 0; color: var(--text-secondary); font-size: 16px; line-height: 1.65; }
+.altora-landing .bs-tabs-wrap { position: relative; margin-top: 28px; max-width: 100%; }
+.altora-landing .bs-tabs-wrap::after { content: ""; position: absolute; right: 0; top: 0; bottom: 0; width: 48px; pointer-events: none; background: linear-gradient(90deg, transparent, var(--showcase-bg)); }
+.altora-landing .bs-tabs { display: flex; min-height: 48px; gap: 8px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: none; padding: 2px 52px 2px 2px; }
+.altora-landing .bs-tabs::-webkit-scrollbar { display: none; }
+.altora-landing .bs-tabs button { flex: 0 0 auto; min-height: 44px; border: 1px solid var(--border); border-radius: 999px; background: rgba(255,255,255,.82); color: var(--text-secondary); padding: 0 15px; font: 700 12px/1 var(--font-jakarta), sans-serif; cursor: pointer; transition: background .2s ease, color .2s ease, border-color .2s ease, box-shadow .2s ease; }
+.altora-landing .bs-tabs button:hover, .altora-landing .bs-tabs button:focus-visible { border-color: color-mix(in srgb, var(--showcase-primary) 45%, var(--border)); color: var(--text); outline: none; }
+.altora-landing .bs-tabs button:focus-visible { box-shadow: 0 0 0 3px color-mix(in srgb, var(--showcase-primary) 20%, transparent); }
+.altora-landing .bs-tabs button.is-active { border-color: var(--showcase-primary); background: var(--showcase-primary); color: #fff; }
+.altora-landing .business-showcase-body { display: grid; grid-template-columns: minmax(280px, .8fr) minmax(0, 1.2fr); align-items: center; gap: clamp(28px, 6vw, 88px); min-height: 650px; padding-top: 30px; }
+.altora-landing .business-showcase-copy > span { display: inline-flex; border-radius: 999px; background: var(--showcase-soft); color: var(--showcase-primary); padding: 6px 10px; font-size: 11px; font-weight: 800; }
+.altora-landing .business-showcase-copy h3 { margin: 16px 0 0; color: var(--text); font-size: clamp(27px, 3.5vw, 42px); line-height: 1.12; letter-spacing: -0.035em; }
+.altora-landing .business-showcase-copy p { margin: 15px 0 0; max-width: 46ch; color: var(--text-secondary); font-size: 15px; line-height: 1.65; }
+.altora-landing .business-showcase-copy ul { display: grid; gap: 10px; margin: 22px 0 0; padding: 0; list-style: none; }
+.altora-landing .business-showcase-copy li { display: flex; gap: 9px; color: var(--text); font-size: 13px; line-height: 1.45; }
+.altora-landing .business-showcase-copy li::before { content: ""; width: 7px; height: 7px; flex: 0 0 auto; margin-top: 6px; border-radius: 50%; background: var(--showcase-primary); }
+
+.altora-landing .bs-stage { position: relative; isolation: isolate; min-height: 620px; width: min(100%, 650px); margin: 0 auto; }
+.altora-landing .bs-stage-glow { position: absolute; inset: 10% 6% 4%; border-radius: 48%; background: radial-gradient(circle, var(--showcase-soft) 0%, transparent 68%); z-index: -1; }
+.altora-landing .bs-laptop { position: absolute; top: 24px; right: 0; width: clamp(390px, 58vw, 580px); transform: rotate(-2.5deg); }
+.altora-landing .bs-desktop { overflow: hidden; border: 8px solid #111827; border-bottom-width: 13px; border-radius: 15px 15px 7px 7px; background: #111827; box-shadow: 0 30px 65px rgba(8,33,69,.22); }
+.altora-landing .bs-desktop::after { content: ""; display: block; height: 11px; margin: 0 -7%; border-radius: 0 0 16px 16px; background: linear-gradient(#e8edf5, #b8c3d3); }
+.altora-landing .bs-desktop-chrome { display: flex; align-items: center; gap: 5px; height: 27px; padding: 0 9px; background: #f5f7fa; }
+.altora-landing .bs-desktop-chrome i { width: 6px; height: 6px; border-radius: 50%; background: #cbd5e1; }
+.altora-landing .bs-desktop-chrome i:first-child { background: #fb7185; }.altora-landing .bs-desktop-chrome i:nth-child(2) { background: #fbbf24; }
+.altora-landing .bs-desktop-chrome span { min-width: 0; margin-left: 6px; overflow: hidden; color: #667085; font-size: 8px; white-space: nowrap; text-overflow: ellipsis; }
+.altora-landing .bs-desktop-body { min-height: 230px; padding: 14px; background: #f8fafc; }
+.altora-landing .bs-desktop-title { display: flex; align-items: center; justify-content: space-between; gap: 8px; color: var(--text); font-size: 11px; font-weight: 750; }
+.altora-landing .bs-desktop-title b { border-radius: 999px; background: #e8f6ee; color: #238a57; padding: 4px 7px; font-size: 8px; }
+.altora-landing .bs-desktop-list { display: grid; gap: 5px; margin-top: 10px; border-radius: 10px; background: #fff; border: 1px solid #e4e7ec; padding: 10px; }
+.altora-landing .bs-desktop-list > strong { color: var(--text); font-size: 10px; }.altora-landing .bs-desktop-list > span { color: var(--text-secondary); font-size: 8px; line-height: 1.4; }
+
+.altora-landing .bs-tablet-wrap { position: absolute; left: -6px; bottom: 10px; z-index: 2; width: 210px; transform: rotate(5deg); }
+.altora-landing .bs-tablet { display: grid; gap: 9px; min-height: 295px; border: 7px solid #172033; border-radius: 22px; background: #fff; padding: 18px 12px 12px; box-shadow: 0 24px 48px rgba(8,33,69,.2); }
+.altora-landing .bs-tablet > strong { color: var(--text); font-size: 12px; }.altora-landing .bs-tablet > span { color: var(--text-secondary); font-size: 9px; }
+.altora-landing .bs-phone-wrap { position: absolute; right: 38px; bottom: 0; z-index: 3; }
+.altora-landing .bs-phone { position: relative; width: clamp(205px, 23vw, 238px); aspect-ratio: 9 / 19.3; border: 7px solid #111827; border-radius: 34px; background: #111827; padding: 5px; box-shadow: 0 32px 70px rgba(8,33,69,.3), inset 0 0 0 1px rgba(255,255,255,.12); }
+.altora-landing .bs-phone-island { position: absolute; z-index: 3; top: 12px; left: 50%; width: 62px; height: 18px; transform: translateX(-50%); border-radius: 999px; background: #020617; }
+.altora-landing .bs-phone-screen { display: grid; height: 100%; min-height: 0; grid-template-rows: auto auto minmax(0,1fr) auto; gap: 7px; overflow: hidden; border-radius: 25px; background: var(--showcase-bg); padding: 37px 10px 9px; }
+.altora-landing .bs-phone-header { display: flex; min-width: 0; align-items: flex-start; justify-content: space-between; gap: 5px; }.altora-landing .bs-phone-header > div { min-width: 0; }.altora-landing .bs-phone-header strong { display: block; overflow: hidden; color: var(--text); font-size: 12px; line-height: 1.15; white-space: nowrap; text-overflow: ellipsis; }.altora-landing .bs-phone-header span { display: block; overflow: hidden; margin-top: 2px; color: var(--text-secondary); font-size: 9px; white-space: nowrap; text-overflow: ellipsis; }
+.altora-landing .bs-live { display: inline-flex; align-items: center; flex: 0 0 auto; gap: 3px; border-radius: 999px; background: #e8f6ee; color: #238a57; padding: 3px 5px; font-size: 8px; }.altora-landing .bs-live i,.altora-landing .bs-status-footer i { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+.altora-landing .bs-metrics { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }.altora-landing .bs-metric { min-width: 0; border: 1px solid color-mix(in srgb, var(--showcase-soft) 70%, #dfe4ec); border-radius: 9px; background: rgba(255,255,255,.88); padding: 6px 7px; }.altora-landing .bs-density-dense .bs-metric { padding: 5px 6px; }.altora-landing .bs-metric span { display: block; overflow: hidden; color: var(--text-secondary); font-size: 8px; white-space: nowrap; text-overflow: ellipsis; }.altora-landing .bs-metric strong { display: block; overflow: hidden; margin-top: 2px; color: var(--text); font-size: 13px; line-height: 1.1; white-space: nowrap; text-overflow: ellipsis; }.altora-landing .bs-metric.is-success strong { color: #238a57; }.altora-landing .bs-metric.is-warning strong { color: #c47a12; }.altora-landing .bs-metric.is-danger strong { color: #c83e4d; }
+.altora-landing .bs-main-list,.altora-landing .bs-pipeline { display: grid; min-height: 0; align-content: start; gap: 5px; overflow: hidden; border-radius: 10px; background: rgba(255,255,255,.82); border: 1px solid color-mix(in srgb, var(--showcase-soft) 72%, #dfe4ec); padding: 7px; }.altora-landing .bs-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 4px; }.altora-landing .bs-list-heading strong,.altora-landing .bs-pipeline > strong { color: var(--text); font-size: 9px; }.altora-landing .bs-list-heading span { color: var(--showcase-primary); font-size: 8px; font-weight: 700; }
+.altora-landing .bs-activity { display: grid; grid-template-columns: 5px minmax(0,1fr) auto; align-items: center; gap: 6px; min-height: 31px; border-top: 1px solid #eef1f5; padding-top: 5px; }.altora-landing .bs-activity > i { width: 5px; height: 5px; border-radius: 50%; background: #3374c5; }.altora-landing .bs-activity > i.is-success { background: #238a57; }.altora-landing .bs-activity > i.is-warning { background: #c47a12; }.altora-landing .bs-activity > i.is-danger { background: #c83e4d; }.altora-landing .bs-activity div { min-width: 0; }.altora-landing .bs-activity strong,.altora-landing .bs-activity span { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }.altora-landing .bs-activity strong { color: var(--text); font-size: 8.5px; }.altora-landing .bs-activity span { margin-top: 1px; color: var(--text-secondary); font-size: 7.5px; }.altora-landing .bs-activity > b { border-radius: 999px; padding: 3px 4px; background: #eaf2fc; color: #3374c5; font-size: 7px; white-space: nowrap; }.altora-landing .bs-activity > b.is-success { background: #e8f6ee; color: #238a57; }.altora-landing .bs-activity > b.is-warning { background: #fff4de; color: #c47a12; }.altora-landing .bs-activity > b.is-danger { background: #fdecee; color: #c83e4d; }
+.altora-landing .bs-pipeline { gap: 6px; }.altora-landing .bs-progress { display: grid; gap: 3px; }.altora-landing .bs-progress > div { display: flex; justify-content: space-between; gap: 6px; color: var(--text-secondary); font-size: 8px; }.altora-landing .bs-progress b { color: var(--text); font-weight: 700; }.altora-landing .bs-progress > i { display: block; height: 5px; overflow: hidden; border-radius: 999px; background: #e8edf4; }.altora-landing .bs-progress em { display: block; height: 100%; border-radius: inherit; background: var(--showcase-primary); }.altora-landing .bs-progress.is-success em { background: #238a57; }.altora-landing .bs-progress.is-warning em { background: #c47a12; }.altora-landing .bs-progress.is-danger em { background: #c83e4d; }
+.altora-landing .bs-status-footer { display: flex; align-items: center; justify-content: center; gap: 4px; min-height: 19px; color: #238a57; font-size: 8px; font-weight: 700; }.altora-landing .bs-desktop .bs-status-footer { justify-content: flex-start; font-size: 8px; }
+.altora-landing .bs-screen-enter { animation: bs-screen-in .38s cubic-bezier(.16,1,.3,1) both; }@keyframes bs-screen-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .altora-landing .bs-screen-enter { animation: none; } }
+@media (max-width: 940px) { .altora-landing .business-showcase-body { grid-template-columns: 1fr; min-height: 0; }.altora-landing .business-showcase-copy { max-width: 660px; }.altora-landing .bs-stage { min-height: 610px; }.altora-landing .bs-laptop { right: 4%; }.altora-landing .bs-phone-wrap { right: 12%; } }
+@media (max-width: 640px) { .altora-landing .business-showcase { padding: 56px 0 64px; }.altora-landing .business-showcase-head h2 { font-size: 30px; }.altora-landing .business-showcase-head p { font-size: 15px; }.altora-landing .bs-tabs-wrap { margin-left: -20px; margin-right: -20px; }.altora-landing .bs-tabs { padding-left: 20px; }.altora-landing .business-showcase-body { gap: 22px; padding-top: 24px; }.altora-landing .business-showcase-copy ul { display: none; }.altora-landing .bs-stage { min-height: 510px; width: 100%; }.altora-landing .bs-laptop,.altora-landing .bs-tablet-wrap { display: none; }.altora-landing .bs-phone-wrap { right: 50%; bottom: 0; transform: translateX(50%); }.altora-landing .bs-phone { width: clamp(214px, 65vw, 250px); }.altora-landing .bs-phone-screen { padding-left: 10px; padding-right: 10px; }.altora-landing .bs-tabs button { min-height: 44px; }.altora-landing .bs-tabs-wrap::after { width: 34px; } }
+
   
 .altora-landing .ps-tab { display: flex; flex-direction: column; align-items: center; gap: 3px; font-size: 8.5px; color: var(--text-faint); }
 

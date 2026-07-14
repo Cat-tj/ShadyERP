@@ -8,12 +8,14 @@ declare module "@auth/core/types" {
       id: string;
       tenantId: string;
       role: "OWNER" | "MANAGER" | "STAFF";
+      sessionVersion: number;
     } & DefaultSession["user"];
   }
 
   interface User {
     tenantId: string;
     role: "OWNER" | "MANAGER" | "STAFF";
+    sessionVersion: number;
   }
 }
 
@@ -22,5 +24,6 @@ declare module "@auth/core/jwt" {
     userId: string;
     tenantId: string;
     role: "OWNER" | "MANAGER" | "STAFF";
+    sessionVersion: number;
   }
 }

@@ -364,7 +364,7 @@ export function ModifierManager({ categories }: { categories: CategoryWithModifi
       <div>
         <h1 className="font-display text-xl font-semibold text-[var(--color-text)]">Modifier Menu</h1>
         <p className="text-sm text-[var(--color-text-secondary)]">
-          Buat grup modifier sekali per kategori (mis. "Level Gula", "Tambahan Espresso" untuk kategori Kopi) —
+          Buat grup modifier sekali per kategori (mis. &quot;Level Gula&quot;, &quot;Tambahan Espresso&quot; untuk kategori Kopi) —
           otomatis muncul di kasir & pemesanan QR meja untuk semua produk kategori itu. Butuh pengecualian buat
           produk tertentu? Atur di halaman edit produknya.
         </p>

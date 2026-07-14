@@ -11,7 +11,16 @@ import type { UserRole } from "@prisma/client";
 export async function listUsers(tenantId: string) {
   return prisma.user.findMany({
     where: { tenantId },
-    include: { userOutlets: { include: { outlet: true } } },
+    // Jangan ambil passwordHash, pinHash, atau legacyPin untuk daftar UI.
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      role: true,
+      jobTitle: true,
+      isActive: true,
+      userOutlets: { select: { outletId: true, outlet: { select: { name: true } } } },
+    },
     orderBy: { name: "asc" },
   });
 }
@@ -21,7 +30,8 @@ export type UserInput = {
   email: string;
   role: UserRole;
   outletIds: string[];
-  pin?: string | null;
+  /** PIN baru opsional. Tidak pernah dipakai untuk mengirim PIN tersimpan. */
+  pin?: string;
   password?: string;
   jobTitle?: string | null;
 };
@@ -38,6 +48,7 @@ export async function createUser(tenantId: string, input: UserInput) {
   }
 
   const passwordHash = await bcrypt.hash(input.password, 10);
+  const pinHash = input.pin ? await bcrypt.hash(input.pin, 10) : undefined;
 
   return prisma.$transaction(async (tx) => {
     const user = await tx.user.create({
@@ -46,7 +57,7 @@ export async function createUser(tenantId: string, input: UserInput) {
         name: input.name,
         email,
         role: input.role,
-        pin: input.pin || null,
+        ...(pinHash ? { pinHash } : {}),
         passwordHash,
         jobTitle: input.jobTitle || null,
       },
@@ -70,6 +81,7 @@ export async function updateUser(
   if (!user) throw new Error("Karyawan tidak ditemukan.");
 
   const passwordHash = input.password ? await bcrypt.hash(input.password, 10) : undefined;
+  const pinHash = input.pin ? await bcrypt.hash(input.pin, 10) : undefined;
 
   return prisma.$transaction(async (tx) => {
     if (passwordHash) {
@@ -87,9 +99,10 @@ export async function updateUser(
       data: {
         name: input.name,
         role: input.role,
-        pin: input.pin || null,
         jobTitle: input.jobTitle || null,
         ...(passwordHash ? { passwordHash } : {}),
+        ...(pinHash ? { pinHash } : {}),
+        sessionVersion: { increment: 1 },
       },
     });
 
@@ -116,7 +129,10 @@ export async function changeOwnPassword(
   }
 
   const passwordHash = await bcrypt.hash(newPassword, 10);
-  await prisma.user.update({ where: { id: userId }, data: { passwordHash } });
+  await prisma.user.update({
+    where: { id: userId },
+    data: { passwordHash, sessionVersion: { increment: 1 } },
+  });
 }
 
 export async function setUserActive(tenantId: string, id: string, isActive: boolean, actorId: string) {
@@ -125,5 +141,8 @@ export async function setUserActive(tenantId: string, id: string, isActive: bool
   }
   const user = await prisma.user.findFirst({ where: { id, tenantId } });
   if (!user) throw new Error("Karyawan tidak ditemukan.");
-  return prisma.user.update({ where: { id }, data: { isActive } });
+  return prisma.user.update({
+    where: { id },
+    data: { isActive, sessionVersion: { increment: 1 } },
+  });
 }

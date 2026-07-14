@@ -1,4 +1,4 @@
-function todayCodeJakarta(date: Date): string {
+export function buildInvoiceDayKey(date: Date): string {
   const parts = new Intl.DateTimeFormat("en-CA", {
     timeZone: "Asia/Jakarta",
     year: "numeric",
@@ -12,7 +12,7 @@ function todayCodeJakarta(date: Date): string {
 /** Prefix harian per outlet, dipakai untuk menghitung urutan invoice berikutnya. */
 export function buildInvoicePrefix(outletId: string, date: Date): string {
   const kodeOutlet = outletId.slice(-4).toUpperCase();
-  const ymd = todayCodeJakarta(date);
+  const ymd = buildInvoiceDayKey(date);
   return `INV-${kodeOutlet}-${ymd}`;
 }
 

@@ -1,15 +1,12 @@
 "use server";
 
-import { auth } from "@/lib/auth";
+import { requireSession } from "@/server/require-session";
 import { createDocument, getDocumentById, updateDocumentStatus } from "@/server/services/document-service";
 import { signDocument, rejectDocument, initiateSigning } from "@/server/services/e-sign-service";
 
 export async function uploadDocumentAction(formData: FormData) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId || !session.user.id) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
     const file = formData.get("file") as File;
     const name = formData.get("name") as string;
@@ -34,8 +31,8 @@ export async function uploadDocumentAction(formData: FormData) {
     const fileUrl = `data:${mimeType};base64,${buffer.toString("base64")}`;
 
     const doc = await createDocument(
-      session.user.tenantId,
-      session.user.id,
+      user.tenantId,
+      user.id,
       name,
       fileUrl,
       description
@@ -43,7 +40,7 @@ export async function uploadDocumentAction(formData: FormData) {
 
     // If signers selected, initiate signing workflow
     if (signers.length > 0) {
-      await initiateSigning(session.user.tenantId, doc.id, signers);
+      await initiateSigning(user.tenantId, doc.id, signers);
     }
 
     return { data: doc };
@@ -55,22 +52,19 @@ export async function uploadDocumentAction(formData: FormData) {
 
 export async function deleteDocumentAction(documentId: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
-    const doc = await getDocumentById(session.user.tenantId, documentId);
+    const doc = await getDocumentById(user.tenantId, documentId);
     if (!doc) {
       return { error: "Dokumen tidak ditemukan" };
     }
 
     // Only uploader can delete
-    if (doc.uploadedBy !== session.user.id) {
+    if (doc.uploadedBy !== user.id) {
       return { error: "Hanya pembuat dokumen yang bisa menghapus" };
     }
 
-    await updateDocumentStatus(session.user.tenantId, documentId, "EXPIRED");
+    await updateDocumentStatus(user.tenantId, documentId, "EXPIRED");
 
     return { data: null };
   } catch (err) {
@@ -81,15 +75,12 @@ export async function deleteDocumentAction(documentId: string) {
 
 export async function signDocumentAction(documentId: string, signatureData: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId || !session.user.id) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
     const result = await signDocument(
-      session.user.tenantId,
+      user.tenantId,
       documentId,
-      session.user.id,
+      user.id,
       signatureData
     );
 
@@ -102,15 +93,12 @@ export async function signDocumentAction(documentId: string, signatureData: stri
 
 export async function rejectDocumentAction(documentId: string, reason: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId || !session.user.id) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
     const result = await rejectDocument(
-      session.user.tenantId,
+      user.tenantId,
       documentId,
-      session.user.id,
+      user.id,
       reason
     );
 
@@ -123,22 +111,19 @@ export async function rejectDocumentAction(documentId: string, reason: string) {
 
 export async function initiateSigningAction(documentId: string, signerUserIds: string[]) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
-    const doc = await getDocumentById(session.user.tenantId, documentId);
+    const doc = await getDocumentById(user.tenantId, documentId);
     if (!doc) {
       return { error: "Dokumen tidak ditemukan" };
     }
 
     // Only uploader can initiate signing
-    if (doc.uploadedBy !== session.user.id) {
+    if (doc.uploadedBy !== user.id) {
       return { error: "Hanya pembuat dokumen yang bisa memulai tanda tangan" };
     }
 
-    const result = await initiateSigning(session.user.tenantId, documentId, signerUserIds);
+    const result = await initiateSigning(user.tenantId, documentId, signerUserIds);
 
     return { data: result };
   } catch (err) {

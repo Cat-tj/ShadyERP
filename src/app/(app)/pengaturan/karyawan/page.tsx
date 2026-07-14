@@ -25,7 +25,6 @@ export default async function KaryawanPage() {
         name: u.name,
         email: u.email,
         role: u.role,
-        pin: u.pin,
         isActive: u.isActive,
         outletNames: u.userOutlets.map((uo) => uo.outlet.name),
         outletIds: u.userOutlets.map((uo) => uo.outletId),

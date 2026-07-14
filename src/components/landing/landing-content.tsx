@@ -2,7 +2,7 @@ import { Fragment } from "react";
 import Image from "next/image";
 import { VERTICALS, DEFAULT_THEME, type VerticalDef } from "@/lib/verticals";
 import { HERO_MOCKS, DEFAULT_HERO_MOCK } from "@/lib/hero-mocks";
-import { VerticalRotator } from "./vertical-rotator";
+import { BusinessShowcase } from "./business-showcase/business-showcase";
 import { SiteNav } from "./site-nav";
 import { FaqAccordion } from "./faq-accordion";
 import {
@@ -427,7 +427,7 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
     </div>
   </section>
 
-  {!vertical && <VerticalRotator />}
+  {!vertical && <BusinessShowcase />}
 
   {/* FEATURE SPOTLIGHT — Pelanggan pesan sendiri */}
   <section id="qr-meja" className="spotlight">

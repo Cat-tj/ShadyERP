@@ -54,9 +54,10 @@ async function withStore<T>(mode: IDBTransactionMode, fn: (store: IDBObjectStore
 }
 
 export async function queueSale(payload: CreateSalePayload): Promise<QueuedSale> {
+  const id = `offline-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
   const entry: QueuedSale = {
-    id: `offline-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-    payload,
+    id,
+    payload: { ...payload, idempotencyKey: payload.idempotencyKey ?? id },
     createdAt: new Date().toISOString(),
     lastError: null,
   };

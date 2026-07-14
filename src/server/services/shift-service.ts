@@ -1,3 +1,4 @@
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import type { PaymentMethod } from "@prisma/client";
 
@@ -53,20 +54,25 @@ export async function openShift(input: {
   outletId: string;
   openingCash: number;
 }) {
-  const existing = await getOpenShift(input.tenantId, input.userId);
-  if (existing) {
-    throw new Error("Kamu masih punya shift yang terbuka. Tutup shift itu dulu sebelum buka yang baru.");
-  }
+  const outlet = await prisma.outlet.findFirst({ where: { id: input.outletId, tenantId: input.tenantId } });
+  if (!outlet) throw new Error("Outlet tidak ditemukan.");
 
-  return prisma.cashierShift.create({
-    data: {
-      tenantId: input.tenantId,
-      userId: input.userId,
-      outletId: input.outletId,
-      openingCash: input.openingCash,
-      status: "OPEN",
-    },
-  });
+  try {
+    return await prisma.cashierShift.create({
+      data: {
+        tenantId: input.tenantId,
+        userId: input.userId,
+        outletId: input.outletId,
+        openingCash: input.openingCash,
+        status: "OPEN",
+      },
+    });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
+      throw new Error("Kamu masih punya shift yang terbuka. Tutup shift itu dulu sebelum buka yang baru.");
+    }
+    throw error;
+  }
 }
 
 export async function closeShift(input: {
@@ -131,8 +137,8 @@ export async function closeShift(input: {
     );
   }
 
-  return prisma.cashierShift.update({
-    where: { id: shift.id },
+  const closed = await prisma.cashierShift.updateMany({
+    where: { id: shift.id, tenantId: input.tenantId, status: "OPEN" },
     data: {
       status: "CLOSED",
       closedAt: new Date(),
@@ -142,6 +148,10 @@ export async function closeShift(input: {
       varianceNote,
     },
   });
+  if (closed.count !== 1) {
+    throw new Error("Shift ini sudah ditutup sebelumnya.");
+  }
+  return prisma.cashierShift.findFirstOrThrow({ where: { id: shift.id, tenantId: input.tenantId } });
 }
 
 export async function getShiftSummary(tenantId: string, shiftId: string) {

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import QRCode from "qrcode";
@@ -123,6 +123,9 @@ export function PaymentSheet({
   const [qrisError, setQrisError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [, startGiftCardTransition] = useTransition();
+  // Keep one key for the lifetime of this payment attempt. A retry caused by a
+  // timeout must resolve to the same Sale instead of charging stock twice.
+  const paymentAttemptKeyRef = useRef<string | null>(null);
 
   const canRedeemStamp = Boolean(
     stampProgram.enabled && member && member.stampCount >= stampProgram.target
@@ -157,10 +160,6 @@ export function PaymentSheet({
       Boolean(giftCardLookup.error) ||
       giftCardLookup.status !== "ACTIVE" ||
       (giftCardLookup.balance ?? 0) < effectiveTotal);
-
-  useEffect(() => {
-    if (!canRedeemStamp) setRedeemStamp(false);
-  }, [canRedeemStamp]);
 
   function checkGiftCard() {
     const code = giftCardCode.trim();
@@ -223,6 +222,8 @@ export function PaymentSheet({
 
   function handleSubmit() {
     setError(null);
+    const idempotencyKey = paymentAttemptKeyRef.current ?? crypto.randomUUID();
+    paymentAttemptKeyRef.current = idempotencyKey;
     startTransition(async () => {
       const payload: CreateSalePayload = splitMode
         ? {
@@ -233,6 +234,7 @@ export function PaymentSheet({
             amountPaid: effectiveTotal,
             memberId: member?.id ?? null,
             redeemStamp: canRedeemStamp && redeemStamp,
+            idempotencyKey,
             splitPayments: [
               { method: splitMethodA, amount: splitAmountA },
               { method: splitMethodB, amount: splitAmountB },
@@ -247,6 +249,7 @@ export function PaymentSheet({
             memberId: member?.id ?? null,
             redeemStamp: canRedeemStamp && redeemStamp,
             giftCardCode: method === "GIFT_CARD" ? giftCardCode.trim() : undefined,
+            idempotencyKey,
           };
 
       try {
@@ -480,8 +483,8 @@ export function PaymentSheet({
               </span>
               <input
                 type="checkbox"
-                checked={redeemStamp}
-                onChange={(e) => setRedeemStamp(e.target.checked)}
+                checked={canRedeemStamp && redeemStamp}
+                onChange={(e) => setRedeemStamp(canRedeemStamp && e.target.checked)}
                 className="h-5 w-5 shrink-0 accent-[var(--color-primary)]"
               />
             </label>

@@ -8,6 +8,21 @@ Dokumen ini adalah checklist kerja Altora. Setiap agent yang menyelesaikan item 
 - `[ ]` Belum selesai.
 - Catatan singkat ditulis di bawah item jika perlu.
 
+## Audit Hardening Loop
+
+> Tidak ada fitur besar baru yang boleh melewati item P0/P1 di bawah. Detail, bukti, dan urutan kerja ada di `docs/audit/WORK-QUEUE.md`.
+
+- [x] Baseline audit arsitektur, keamanan, transaksi, dan release gate.
+  - Bukti: `docs/audit/*` dibuat 13 Juli 2026.
+- [x] P0 supplier mutation tenant-scoped.
+  - `updateSupplier` sekarang mengunci `id + tenantId` secara atomik dan memakai allowlist field.
+- [ ] P1 PIN kasir hashed + tidak terserialisasi ke client.
+- [ ] P1 Session version/revocation saat user berubah/nonaktif.
+- [ ] P1 Tenant-scoped foreign-ID guard + integration test dua tenant.
+- [ ] P1 Idempotency command foundation untuk transaksi finansial.
+- [ ] P1 Stock/payment/journal reconciliation foundation.
+- [ ] Release gate hijau: lint, build, unit/integration/E2E smoke.
+
 ## Foundation SaaS
 
 - [x] Mode bisnis utama: Altora Cafe, Altora Toko, Altora Laundry, Altora Counter, Altora Company.
@@ -249,8 +264,8 @@ Dokumen ini adalah checklist kerja Altora. Setiap agent yang menyelesaikan item 
 ## Quality
 
 - [x] Build berhasil untuk update Simple Mode dan Superadmin.
-- [x] Lint debt cleanup.
-  - Berhasil dibersihkan sepenuhnya di seluruh folder src/, build linting sekarang hijau sempurna.
+- [ ] Lint debt cleanup.
+  - Baseline audit 13 Juli 2026 menemukan 18 lint error. Status sebelumnya tidak sesuai hasil command aktual dan telah dikoreksi.
 - [ ] E2E smoke test login/kasir/simple/superadmin.
 - [ ] Responsive screenshot checklist.
   - Mobile, tablet, desktop, wide desktop.

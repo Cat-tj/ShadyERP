@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/lib/auth";
+import { requireSession } from "@/server/require-session";
 import {
   createStockCount,
   updateCountItems,
@@ -16,12 +16,9 @@ export interface CountItemInput {
 
 export async function createStockCountAction(outletId: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId || !session.user.id) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
-    const count = await createStockCount(session.user.tenantId, outletId, new Date(), session.user.id);
+    const count = await createStockCount(user.tenantId, outletId, new Date(), user.id);
 
     return { data: count };
   } catch (err) {
@@ -32,12 +29,9 @@ export async function createStockCountAction(outletId: string) {
 
 export async function updateCountItemsAction(countId: string, items: CountItemInput[]) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
-    const count = await updateCountItems(session.user.tenantId, countId, items);
+    const count = await updateCountItems(user.tenantId, countId, items);
 
     return { data: count };
   } catch (err) {
@@ -48,12 +42,9 @@ export async function updateCountItemsAction(countId: string, items: CountItemIn
 
 export async function completeStockCountAction(countId: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId || !session.user.id) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
-    const count = await completeCount(session.user.tenantId, countId, session.user.id);
+    const count = await completeCount(user.tenantId, countId, user.id);
 
     return { data: count };
   } catch (err) {
@@ -64,12 +55,9 @@ export async function completeStockCountAction(countId: string) {
 
 export async function verifyStockCountAction(countId: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId || !session.user.id) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
-    const count = await verifyAndApplyCount(session.user.tenantId, countId, session.user.id);
+    const count = await verifyAndApplyCount(user.tenantId, countId, user.id);
 
     return { data: count };
   } catch (err) {

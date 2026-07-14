@@ -76,13 +76,20 @@ export function verifyWebhookSignature(
   signature: string,
   timestamp: string
 ): boolean {
+  const timestampSeconds = Number(timestamp);
+  const nowSeconds = Math.floor(Date.now() / 1000);
+  if (!Number.isInteger(timestampSeconds) || Math.abs(nowSeconds - timestampSeconds) > 300) {
+    return false;
+  }
   const message = `${timestamp}.${body}`;
   const expectedSignature = crypto
     .createHmac('sha256', SUMOPOD_WEBHOOK_SECRET)
     .update(message)
     .digest('hex');
 
-  return signature === expectedSignature;
+  const received = Buffer.from(signature, "utf8");
+  const expected = Buffer.from(expectedSignature, "utf8");
+  return received.length === expected.length && crypto.timingSafeEqual(received, expected);
 }
 
 /**

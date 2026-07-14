@@ -224,7 +224,14 @@ model User {
   passwordHash String
   role         UserRole @default(STAFF)
   jobTitle     String?
-  pin          String? // PIN 6 digit, opsional (untuk kunci cepat kasir)
+  /// Hanya dipakai sementara oleh skrip backfill lalu dikosongkan. Jangan pernah
+  /// dipilih atau dikirim ke client; kolom fisik lama tetap bernama `pin` agar
+  /// migrasi ke pinHash tidak pernah mengubah plaintext menjadi "hash" palsu.
+  legacyPin    String?  @map("pin")
+  pinHash      String?
+  /// Incremented after password, role, outlet, or active-state changes so all
+  /// existing JWTs for this user become invalid on the next server request.
+  sessionVersion Int    @default(0)
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -832,6 +839,9 @@ model Sale {
   cashierId      String
   memberId       String?
   invoiceNumber  String        @unique
+  /// Client-generated key for safe retry/offline synchronization. Unique only
+  /// within the tenant; legacy/server-created sales leave this null.
+  idempotencyKey String?
   subtotal       Int
   discountAmount Int           @default(0)
   taxAmount      Int           @default(0)
@@ -874,6 +884,20 @@ model Sale {
   @@index([outletId])
   @@index([shiftId])
   @@index([memberId])
+  @@unique([tenantId, idempotencyKey])
+}
+
+/** Atomically allocated daily invoice sequence per tenant/outlet. */
+model InvoiceSequence {
+  id       String   @id @default(cuid())
+  tenantId String
+  outletId String
+  dayKey   String
+  sequence Int      @default(0)
+  updatedAt DateTime @updatedAt
+
+  @@unique([tenantId, outletId, dayKey])
+  @@index([tenantId])
 }
 
 /// Rincian per-metode buat transaksi split payment (Sale.isSplitPayment true) — mis. sebagian cash, sebagian QRIS.
@@ -2196,11 +2220,14 @@ model JournalEntry {
   creditCode  String
   amount      Int      // Rupiah
   reference   String?  // e.g., "SALE-123", "EXP-456"
+  /// Stable source-event line key, used to make automatic posting retry-safe.
+  sourceKey   String?
   createdAt   DateTime @default(now())
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+  @@unique([tenantId, sourceKey])
 }
 
 enum LeadStatus {

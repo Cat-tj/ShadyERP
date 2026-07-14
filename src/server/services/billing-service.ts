@@ -1,4 +1,5 @@
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 import * as sumopodService from './sumopod-service';
 import { Plan } from '@prisma/client';
 
@@ -118,13 +119,26 @@ export async function handlePaymentSuccess(
     return;
   }
 
+  if (invoice.status === 'PAID') return;
+  if (invoice.sumopodPaymentId !== payment_link_id) {
+    throw new Error('Webhook payment link tidak cocok dengan invoice.');
+  }
+  if (amount !== invoice.total || payload.currency !== invoice.currency) {
+    throw new Error('Webhook amount atau currency tidak cocok dengan invoice.');
+  }
+
   if (status !== 'success') {
     await handlePaymentFailed(invoice.id, payload);
     return;
   }
 
-  await prisma.paymentHistory.create({
-    data: {
+  const existingPayment = await prisma.paymentHistory.findUnique({ where: { sumopodPaymentId: payment_link_id } });
+  if (existingPayment) return;
+
+  await prisma.$transaction(async (tx) => {
+  await tx.paymentHistory.upsert({
+    where: { sumopodPaymentId: payment_link_id },
+    create: {
       subscriptionId: invoice.subscriptionId,
       sumopodPaymentId: payment_link_id,
       invoiceId: invoice.id,
@@ -133,11 +147,12 @@ export async function handlePaymentSuccess(
       paymentMethod: payload.payment_method || 'UNKNOWN',
       status: 'SUCCESS',
       processedAt: paid_at ? new Date(paid_at) : new Date(),
-      metadata: payload as any,
+      metadata: payload as unknown as Prisma.InputJsonValue,
     },
+    update: {},
   });
 
-  await prisma.invoice.update({
+  await tx.invoice.update({
     where: { id: invoice.id },
     data: {
       status: 'PAID',
@@ -148,7 +163,7 @@ export async function handlePaymentSuccess(
   const newPlan = extractPlanFromDescription(invoice.description) as Plan;
   const newPeriodEnd = invoice.toDate;
 
-  await prisma.subscription.update({
+  await tx.subscription.update({
     where: { id: invoice.subscriptionId },
     data: {
       plan: newPlan,
@@ -165,6 +180,7 @@ export async function handlePaymentSuccess(
     },
   });
 
+  });
   console.log(`✅ Payment success: ${order_id}`);
 }
 
@@ -189,7 +205,7 @@ async function handlePaymentFailed(
       status: 'FAILED',
       failureReason:
         payload.status === 'expired' ? 'Payment link expired' : 'Payment failed',
-      metadata: payload as any,
+      metadata: payload as unknown as Prisma.InputJsonValue,
     },
   });
 

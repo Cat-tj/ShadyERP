@@ -110,10 +110,25 @@ export async function postJournalEntry(params: {
   creditCode: string;
   amount: number;
   reference?: string;
+  sourceKey?: string;
   date?: Date;
   tx?: Prisma.TransactionClient;
 }) {
   const client = params.tx || prisma;
+
+  if (!Number.isSafeInteger(params.amount) || params.amount <= 0) {
+    throw new Error("Nominal jurnal harus berupa Rupiah bulat lebih dari nol.");
+  }
+  if (!params.debitCode.trim() || !params.creditCode.trim() || params.debitCode === params.creditCode) {
+    throw new Error("Akun debit dan kredit jurnal harus valid dan berbeda.");
+  }
+
+  if (params.sourceKey) {
+    const existing = await client.journalEntry.findFirst({
+      where: { tenantId: params.tenantId, sourceKey: params.sourceKey },
+    });
+    if (existing) return existing;
+  }
 
   // Skip posting if tenant is in SIMPLE mode
   const setting = await client.tenantSetting.findUnique({
@@ -144,6 +159,7 @@ export async function postJournalEntry(params: {
       creditCode: params.creditCode,
       amount: params.amount,
       reference: params.reference,
+      sourceKey: params.sourceKey,
       date,
     },
   });
@@ -175,6 +191,7 @@ export async function logSaleToJournal(tenantId: string, saleId: string, tx?: Pr
     creditCode: "41100", // Sales Revenue
     amount: total,
     reference: `SALE-${sale.id}`,
+    sourceKey: `SALE:${sale.id}:REVENUE`,
     tx: client,
   });
 
@@ -187,6 +204,7 @@ export async function logSaleToJournal(tenantId: string, saleId: string, tx?: Pr
       creditCode: debitCode,
       amount: discount,
       reference: `SALE-${sale.id}`,
+      sourceKey: `SALE:${sale.id}:DISCOUNT`,
       tx: client,
     });
   }
@@ -211,6 +229,7 @@ export async function logSaleToJournal(tenantId: string, saleId: string, tx?: Pr
       creditCode: "11300", // Inventory Asset
       amount: totalCOGS,
       reference: `SALE-${sale.id}`,
+      sourceKey: `SALE:${sale.id}:COGS`,
       tx: client,
     });
   }
@@ -237,6 +256,7 @@ export async function logExpenseToJournal(tenantId: string, expenseId: string, t
     creditCode: "11100", // Cash Drawer (debit/credit cash)
     amount: expense.amount,
     reference: `EXP-${expense.id}`,
+    sourceKey: `EXP:${expense.id}:POST`,
     date: expense.spentAt,
     tx: client,
   });

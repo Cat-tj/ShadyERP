@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/lib/auth";
+import { requireSession } from "@/server/require-session";
 import {
   createStockReceipt,
   createDirectStockReceipt,
@@ -32,17 +32,14 @@ export async function createStockReceiptAction(
   landedCost?: { shippingCost?: number; otherCost?: number }
 ) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId || !session.user.id) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
     const receipt = await createStockReceipt(
-      session.user.tenantId,
+      user.tenantId,
       poId,
       outletId,
       items,
-      session.user.id,
+      user.id,
       landedCost
     );
 
@@ -61,17 +58,14 @@ export async function createDirectStockReceiptAction(
   landedCost?: { shippingCost?: number; otherCost?: number }
 ) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId || !session.user.id) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
     const receipt = await createDirectStockReceipt(
-      session.user.tenantId,
+      user.tenantId,
       outletId,
       supplierId,
       items,
-      session.user.id,
+      user.id,
       note,
       landedCost
     );
@@ -85,12 +79,9 @@ export async function createDirectStockReceiptAction(
 
 export async function performQCAction(receiptId: string, qcChecks: QCInput[]) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId || !session.user.id) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
-    const receipt = await performQC(session.user.tenantId, receiptId, qcChecks, session.user.id);
+    const receipt = await performQC(user.tenantId, receiptId, qcChecks, user.id);
 
     return { data: receipt };
   } catch (err) {
@@ -101,12 +92,9 @@ export async function performQCAction(receiptId: string, qcChecks: QCInput[]) {
 
 export async function completeStockReceiptAction(receiptId: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
-    const receipt = await completeReceipt(session.user.tenantId, receiptId);
+    const receipt = await completeReceipt(user.tenantId, receiptId);
 
     return { data: receipt };
   } catch (err) {
@@ -117,12 +105,9 @@ export async function completeStockReceiptAction(receiptId: string) {
 
 export async function rejectStockReceiptAction(receiptId: string, reason: string) {
   try {
-    const session = await auth();
-    if (!session?.user?.tenantId) {
-      return { error: "Unauthorized" };
-    }
+    const user = await requireSession();
 
-    const receipt = await rejectReceipt(session.user.tenantId, receiptId, reason);
+    const receipt = await rejectReceipt(user.tenantId, receiptId, reason);
 
     return { data: receipt };
   } catch (err) {

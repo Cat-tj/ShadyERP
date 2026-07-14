@@ -2,7 +2,6 @@
 
 import { useState } from 'react';
 import { upgradeSubscription } from '@/app/(app)/billing/actions';
-import { useRouter } from 'next/navigation';
 
 const PLANS = [
   {
@@ -40,13 +39,12 @@ const PLANS = [
 export function PricingCards({ currentPlan }: { currentPlan?: string }) {
   const [billingCycle, setBillingCycle] = useState<'MONTHLY' | 'YEARLY'>('MONTHLY');
   const [loading, setLoading] = useState(false);
-  const router = useRouter();
 
   async function handleUpgrade(plan: string) {
     setLoading(true);
     try {
       const result = await upgradeSubscription(plan, billingCycle);
-      window.location.href = result.paymentUrl;
+      window.location.assign(result.paymentUrl);
     } catch (error) {
       alert(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       setLoading(false);

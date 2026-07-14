@@ -10,8 +10,8 @@ export type AuditLogDef = {
   action: string;
   targetTenantId: string | null;
   description: string;
-  beforeJson: any;
-  afterJson: any;
+  beforeJson: unknown;
+  afterJson: unknown;
   createdAt: string;
 };
 

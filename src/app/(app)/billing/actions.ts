@@ -4,6 +4,14 @@ import { requireSession } from '@/server/require-session';
 import * as billingService from '@/server/services/billing-service';
 import { revalidatePath } from 'next/cache';
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
+
+type SubscriptionWithHistory = Prisma.SubscriptionGetPayload<{
+  include: {
+    invoices: true;
+    paymentHistory: true;
+  };
+}>;
 
 export async function upgradeSubscription(
   newPlan: string,
@@ -31,7 +39,7 @@ export async function getSubscription() {
   const tenantId = user.tenantId;
 
   // Auto-create subscription if doesn't exist
-  let subscription: any = await prisma.subscription.findUnique({
+  let subscription: SubscriptionWithHistory | null = await prisma.subscription.findUnique({
     where: { tenantId },
     include: {
       invoices: {
@@ -46,7 +54,7 @@ export async function getSubscription() {
   });
 
   if (!subscription) {
-    subscription = await billingService.createSubscription(tenantId);
+    await billingService.createSubscription(tenantId);
     // Re-fetch with relations
     subscription = await prisma.subscription.findUnique({
       where: { tenantId },

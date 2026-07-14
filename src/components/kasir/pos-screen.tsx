@@ -78,6 +78,7 @@ export function PosScreen({
   const [showCartSheet, setShowCartSheet] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [showCashOut, setShowCashOut] = useState(false);
+  const [showShiftMenu, setShowShiftMenu] = useState(false);
   const [showBarcodeScanner, setShowBarcodeScanner] = useState(false);
   const [scannerAlwaysOn, setScannerAlwaysOn] = useState(false);
   const [lastAddedProductId, setLastAddedProductId] = useState<string | null>(null);
@@ -92,7 +93,6 @@ export function PosScreen({
 
   useEffect(() => {
     if (!posMember) {
-      setFavoriteProducts([]);
       return;
     }
     let cancelled = false;
@@ -106,6 +106,20 @@ export function PosScreen({
   useEffect(() => {
     const handleGlobalKeyDown = (e: globalThis.KeyboardEvent) => {
       const target = e.target as HTMLElement;
+      const searchInput = document.getElementById("pos-search-input") as HTMLInputElement | null;
+      if (e.key === "F2") {
+        e.preventDefault();
+        searchInput?.focus();
+        return;
+      }
+      if (e.key === "Escape") {
+        if (document.activeElement === searchInput) {
+          setSearch("");
+          searchInput?.blur();
+          return;
+        }
+        setShowShiftMenu(false);
+      }
       if (
         target.tagName === "INPUT" ||
         target.tagName === "TEXTAREA" ||
@@ -116,7 +130,6 @@ export function PosScreen({
       }
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (e.key.length === 1) {
-        const searchInput = document.getElementById("pos-search-input") as HTMLInputElement;
         if (searchInput) {
           searchInput.focus();
         }
@@ -337,40 +350,48 @@ export function PosScreen({
   );
 
   return (
-    <div className="flex flex-col h-full md:h-[calc(100dvh-160px)] lg:h-[calc(100dvh-var(--topbar-height)-32px)] overflow-hidden pb-4">
+    <div className="flex h-full min-h-0 flex-col overflow-hidden lg:h-[calc(100dvh-var(--topbar-height)-24px)] lg:pb-3">
       <OfflineSyncBanner />
-      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between shrink-0">
-        <div>
-          <h1 className="text-2xl font-bold text-[var(--color-text)]">Kasir</h1>
-          <p className="text-sm text-[var(--color-text-secondary)]">{outletName}</p>
+
+      <header className="mb-3 flex shrink-0 items-center justify-between gap-3 lg:h-12">
+        <div className="min-w-0">
+          <h1 className="text-[22px] font-bold leading-tight text-[var(--color-text)]">Kasir</h1>
+          <p className="truncate text-xs text-[var(--color-text-secondary)]">{outletName} <span className="hidden sm:inline">· Shift aktif</span></p>
         </div>
-        <div className="flex flex-wrap gap-2 sm:justify-end">
-          <button
-            type="button"
-            onClick={() => setShowCashOut(true)}
-            className="flex min-h-[44px] flex-1 items-center justify-center rounded-lg bg-[var(--color-primary)] px-5 text-sm font-semibold text-[var(--color-on-primary)] hover:opacity-90 sm:flex-none"
-          >
-            Gesek tunai
-          </button>
+        <div className="flex items-center gap-2">
           <Link
             href="/kasir/riwayat"
-            className="flex min-h-[44px] flex-1 items-center justify-center rounded-lg border border-[var(--color-border)] px-5 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)] sm:flex-none"
+            className="hidden min-h-10 items-center justify-center rounded-[10px] border border-[var(--color-border)] px-3 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-surface)] sm:flex"
           >
-            Riwayat
+            Transaksi
           </Link>
-          <Link
-            href="/kasir/tutup"
-            className="flex min-h-[44px] flex-1 items-center justify-center rounded-lg border border-[var(--color-border)] px-5 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-surface)] sm:flex-none"
-          >
-            Tutup shift
-          </Link>
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowShiftMenu((visible) => !visible)}
+              aria-expanded={showShiftMenu}
+              className="flex min-h-10 items-center gap-1.5 rounded-[10px] border border-[var(--color-border)] bg-[var(--color-surface)] px-3 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+            >
+              Shift <span aria-hidden className="text-[10px]">▾</span>
+            </button>
+            {showShiftMenu && (
+              <div className="absolute right-0 top-[calc(100%+8px)] z-30 w-48 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-1.5 shadow-[0_12px_28px_rgba(8,33,69,0.12)]">
+                <button type="button" onClick={() => { setShowCashOut(true); setShowShiftMenu(false); }} className="flex min-h-10 w-full items-center rounded-lg px-3 text-left text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]">
+                  Gesek tunai
+                </button>
+                <Link href="/kasir/tutup" onClick={() => setShowShiftMenu(false)} className="flex min-h-10 items-center rounded-lg px-3 text-sm font-medium text-[var(--color-danger)] hover:bg-[var(--color-danger-surface)]">
+                  Tutup shift
+                </Link>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
+      </header>
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Katalog produk — full width, invoice cuma bar ringkas (lihat di bawah) */}
-        <div className="min-w-0 flex flex-col h-full overflow-hidden">
-          <div className="relative mb-3.5 shrink-0">
+      <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_380px]">
+        <section className="min-w-0 overflow-y-auto pb-24 lg:pb-0">
+          <div className="sticky top-0 z-10 -mx-4 mb-3 bg-[var(--color-bg)]/95 px-4 pb-2 pt-0 backdrop-blur sm:mx-0 sm:px-0">
+            <div className="relative">
             <svg
               aria-hidden
               viewBox="0 0 24 24"
@@ -389,7 +410,7 @@ export function PosScreen({
               onChange={(event) => setSearch(event.target.value)}
               onKeyDown={handleSearchKeyDown}
               placeholder="Cari nama produk, SKU, atau scan barcode"
-              className="min-h-[48px] w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] pl-11 pr-14 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
+              className="h-12 w-full rounded-[10px] border border-[var(--color-border)] bg-[var(--color-surface)] pl-11 pr-14 text-sm text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
             />
             <button
               type="button"
@@ -402,44 +423,26 @@ export function PosScreen({
             >
               <CameraIcon aria-hidden className="h-5 w-5" />
             </button>
-          </div>
-
-          <div className="mb-3 flex justify-end">
-            <button
-              type="button"
-              role="switch"
-              aria-checked={scannerAlwaysOn}
-              onClick={() => {
-                setShowBarcodeScanner(false);
-                setScannerAlwaysOn((current) => !current);
-              }}
-              className={`inline-flex min-h-10 items-center gap-2 rounded-lg border px-3 text-xs font-semibold transition-colors active:scale-[0.98] ${
-                scannerAlwaysOn
-                  ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)]"
-                  : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)]"
-              }`}
-            >
-              <CameraIcon aria-hidden className="h-4 w-4" />
-              Scanner selalu aktif
-              <span
-                aria-hidden
-                className={`relative h-5 w-9 rounded-full transition-colors ${
-                  scannerAlwaysOn ? "bg-white/35" : "bg-[var(--color-border)]"
-                }`}
+            <div className="mt-2 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                role="switch"
+                aria-checked={scannerAlwaysOn}
+                onClick={() => { setShowBarcodeScanner(false); setScannerAlwaysOn((current) => !current); }}
+                className={`inline-flex min-h-8 items-center gap-1.5 text-xs font-semibold ${scannerAlwaysOn ? "text-[var(--color-success)]" : "text-[var(--color-text-secondary)]"}`}
               >
-                <span
-                  className={`absolute top-0.5 h-4 w-4 rounded-full bg-white shadow-sm transition-transform ${
-                    scannerAlwaysOn ? "translate-x-4" : "translate-x-0.5"
-                  }`}
-                />
-              </span>
-            </button>
+                <span aria-hidden className={`h-2 w-2 rounded-full ${scannerAlwaysOn ? "bg-[var(--color-success)]" : "bg-[var(--color-text-muted)]"}`} />
+                Scanner {scannerAlwaysOn ? "aktif" : "siap"}
+              </button>
+              <span className="hidden text-xs text-[var(--color-text-muted)] lg:inline">F2 cari · Esc bersihkan</span>
+            </div>
+          </div>
           </div>
 
-          <div className="mb-3 shrink-0">
+          <div className="mb-2 shrink-0">
             {posMember ? (
               <div className="flex items-center justify-between rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2">
-                <span className="text-sm font-medium text-[var(--color-text)]">👤 {posMember.name}</span>
+                <span className="text-sm font-medium text-[var(--color-text)]">Pelanggan: {posMember.name}</span>
                 <button
                   type="button"
                   onClick={() => setPosMember(null)}
@@ -462,7 +465,7 @@ export function PosScreen({
                 onClick={() => setShowMemberPicker(true)}
                 className="text-xs font-semibold text-[var(--color-primary)]"
               >
-                + Pilih member (biar kelihatan menu favoritnya)
+                + Tambahkan pelanggan
               </button>
             )}
 
@@ -486,10 +489,10 @@ export function PosScreen({
             )}
           </div>
 
-          <div className="mb-4 flex gap-2 overflow-x-auto pb-1 shrink-0 scrollbar-none">
+          <div className="mb-3 flex gap-2 overflow-x-auto pb-1 scrollbar-none">
             <button
               onClick={() => setActiveCategory("ALL")}
-              className={`flex min-h-[42px] shrink-0 items-center gap-2 rounded-full border px-4 text-sm transition-all active:scale-[0.98] ${
+              className={`flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors active:scale-[0.98] ${
                 activeCategory === "ALL"
                   ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)] shadow-sm font-semibold"
                   : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-white/70"
@@ -504,7 +507,7 @@ export function PosScreen({
               <button
                 key={category.id}
                 onClick={() => setActiveCategory(category.id)}
-                className={`flex min-h-[42px] shrink-0 items-center gap-2 rounded-full border px-4 text-sm transition-all active:scale-[0.98] ${
+                className={`flex min-h-9 shrink-0 items-center gap-1.5 rounded-full border px-3 text-xs font-semibold transition-colors active:scale-[0.98] ${
                   activeCategory === category.id
                     ? "border-[var(--color-primary)] bg-[var(--color-primary)] text-[var(--color-on-primary)] shadow-sm font-semibold"
                     : "border-[var(--color-border)] bg-[var(--color-surface)] text-[var(--color-text)] hover:bg-white/70"
@@ -518,7 +521,7 @@ export function PosScreen({
             ))}
           </div>
 
-          <div className="flex-1 overflow-y-auto scrollbar-none pb-24 md:pb-0">
+          <div>
             {filteredProducts.length === 0 ? (
               <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-6 py-16 text-center">
                 <p className="text-sm text-[var(--color-text-secondary)]">
@@ -527,7 +530,7 @@ export function PosScreen({
                 </p>
               </div>
             ) : (
-              <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-3.5">
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-[repeat(auto-fill,minmax(180px,1fr))]">
                 {filteredProducts.map((product) => {
                   const linesForProduct = cart.filter((line) => line.productId === product.id);
                   const qtyInCart = linesForProduct.reduce((sum, line) => sum + line.qty, 0);
@@ -550,109 +553,88 @@ export function PosScreen({
                           addToCart(product);
                         }
                       }}
-                      className={`flex min-h-[112px] flex-col gap-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 shadow-sm transition-all hover:shadow-md ${
+                      className={`flex min-h-[126px] flex-col justify-between rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-3 shadow-[0_2px_6px_rgba(16,24,40,0.04)] transition-shadow hover:shadow-[0_5px_12px_rgba(16,24,40,0.08)] md:p-3.5 ${
                         cardDisabled ? "opacity-50 cursor-not-allowed" : "cursor-pointer active:scale-[0.98]"
                       } ${
                         lastAddedProductId === product.id ? "ring-2 ring-[var(--color-primary)]/30" : ""
                       }`}
                     >
-                      {/* Baris atas: avatar + nama + harga/stok (harga & nama nggak pernah berebut ruang dengan stepper) */}
-                      <div className="flex items-start gap-3">
+                      <div className="flex items-start gap-2.5">
                         <ProductVisual product={product} />
                         <div className="min-w-0 flex-1">
-                          <p className="truncate text-[15px] font-semibold text-[var(--color-text)]">{product.name}</p>
-                          {product.sku && (
-                            <p className="mt-0.5 truncate font-mono text-[11px] text-[var(--color-text-secondary)]">
-                              {product.sku}
-                            </p>
-                          )}
-                          <div className="mt-1.5 flex items-center gap-2">
+                          <p className="line-clamp-2 text-sm font-semibold leading-5 text-[var(--color-text)]">{product.name}</p>
+                          <div className="mt-1 flex items-center gap-1.5">
                             <p className="tabular-nums text-sm font-bold text-[var(--color-text)]">
                               {formatRupiah(product.price)}
                             </p>
-                            {product.recipeUnavailable ? (
-                              <p className="text-xs font-medium text-[var(--color-danger)]">Bahan habis</p>
-                            ) : (
-                              product.trackStock && (
-                                <p className="text-xs text-[var(--color-text-secondary)]">
-                                  {outOfStock ? "Stok habis" : `Stok ${product.stockQty}`}
-                                </p>
-                              )
-                            )}
+                            {product.recipeUnavailable ? <p className="text-[11px] font-semibold text-[var(--color-danger)]">Bahan habis</p> : outOfStock ? <p className="text-[11px] font-semibold text-[var(--color-danger)]">Habis</p> : product.trackStock && product.stockQty <= 5 ? <p className="text-[11px] font-semibold text-[var(--color-warning-text)]">Sisa {product.stockQty}</p> : null}
                           </div>
                         </div>
                       </div>
 
-                      {/* Baris bawah: stepper — stopPropagation supaya klik di sini nggak dobel nambah lewat card */}
-                      <div
-                        onClick={(event) => event.stopPropagation()}
-                        className="flex items-center justify-center gap-2 rounded-full bg-[var(--color-bg)] p-1 border border-[var(--color-border)]/50">
+                      {qtyInCart > 0 ? (
+                        <div onClick={(event) => event.stopPropagation()} className="flex items-center justify-between rounded-[10px] border border-[var(--color-border)] bg-[var(--color-bg)] px-1 py-1">
                             <button
                               type="button"
                               onClick={() => decrementProduct(product.id)}
                               disabled={qtyInCart <= 0}
                               aria-label={`Kurangi ${product.name}`}
-                              className="flex h-8 w-8 items-center justify-center rounded-full bg-white border border-[var(--color-border)] text-base font-bold text-[var(--color-text)] hover:bg-[var(--color-surface-muted)] transition-colors disabled:opacity-30"
+                              className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-surface)] text-base font-bold text-[var(--color-text)] hover:bg-white transition-colors disabled:opacity-30"
                             >
                               −
                             </button>
-                            {product.variantGroups.length === 0 ? (
-                              <CartQtyInput
-                                qty={qtyInCart}
-                                stockQty={product.stockQty}
-                                trackStock={product.trackStock}
-                                onChange={(val) => {
-                                  const line = cart.find((item) => item.productId === product.id);
-                                  if (line) {
-                                    updateQty(line.cartKey, val);
-                                  } else if (val > 0) {
-                                    addLineToCart(product, [], 0, null, val);
-                                  }
-                                }}
-                              />
-                            ) : (
-                              <span className="w-6 text-center tabular-nums text-sm font-bold text-[var(--color-text)]">
-                                {qtyInCart}
-                              </span>
-                            )}
+                            <span className="min-w-8 text-center tabular-nums text-sm font-bold text-[var(--color-text)]">{qtyInCart}</span>
                             <button
                               type="button"
                               onClick={() => addToCart(product)}
                               disabled={outOfStock || atStockLimit}
                               aria-label={`Tambah ${product.name}`}
-                              className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--color-primary)] text-base font-bold text-[var(--color-on-primary)] hover:opacity-90 transition-opacity disabled:opacity-35"
+                              className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--color-primary)] text-base font-bold text-[var(--color-on-primary)] hover:opacity-90 transition-opacity disabled:opacity-35"
                             >
                               +
                             </button>
-                      </div>
+                        </div>
+                      ) : null}
                     </div>
                   );
                 })}
               </div>
             )}
           </div>
-        </div>
+        </section>
 
+        <aside className="hidden min-h-0 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4 lg:flex lg:flex-col">
+          <div className="mb-3 flex items-center justify-between border-b border-[var(--color-border)] pb-3">
+            <div>
+              <h2 className="text-base font-semibold text-[var(--color-text)]">Keranjang</h2>
+              <p className="text-xs text-[var(--color-text-secondary)]">{cartCount} item</p>
+            </div>
+            <button type="button" onClick={() => setShowMemberPicker(true)} className="text-xs font-semibold text-[var(--color-primary)]">Pelanggan</button>
+          </div>
+          {cartPanel}
+        </aside>
       </div>
 
-      {/* Invoice — bar ringkas mengambang di semua ukuran layar, klik buat buka panel lengkap */}
       {cart.length > 0 && !showCartSheet && (
         <button
           onClick={() => setShowCartSheet(true)}
-          className="fixed inset-x-4 bottom-20 z-20 flex min-h-[52px] items-center justify-between gap-3 rounded-xl bg-[var(--color-primary)] px-5 text-[var(--color-on-primary)] shadow-lg transition-transform hover:scale-[1.01] md:bottom-6 md:inset-x-auto md:right-6 md:min-w-[300px] md:max-w-sm lg:right-8"
+          className="fixed inset-x-4 bottom-[calc(var(--bottom-nav-height)+12px)] z-20 flex min-h-[52px] items-center justify-between gap-3 rounded-xl bg-[var(--color-primary)] px-4 text-[var(--color-on-primary)] shadow-[0_10px_24px_rgba(135,35,136,0.22)] md:bottom-6 md:left-auto md:right-6 md:min-w-[300px] lg:hidden"
         >
           <span className="shrink-0 text-sm font-medium">{cartCount} item</span>
           <span className="min-w-0 truncate text-right tabular-nums text-base font-bold">
-            Lihat Invoice • {formatRupiah(total)}
+            Bayar · {formatRupiah(total)}
           </span>
         </button>
       )}
 
       {showCartSheet && (
-        <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/40 sm:items-center sm:justify-center">
-          <div className="max-h-[85vh] w-full overflow-y-auto rounded-t-2xl bg-[var(--color-bg)] p-4 sm:max-w-md sm:rounded-2xl">
-            <div className="mb-2 flex items-center justify-between">
-              <h2 className="text-base font-bold text-[var(--color-text)]">Invoice</h2>
+        <div className="fixed inset-0 z-40 flex items-end bg-black/40 md:justify-end">
+          <div className="max-h-[85dvh] w-full overflow-y-auto rounded-t-2xl bg-[var(--color-surface)] p-4 md:h-full md:max-h-none md:w-[380px] md:rounded-none md:border-l md:border-[var(--color-border)] md:p-5">
+            <div className="mb-3 flex items-center justify-between border-b border-[var(--color-border)] pb-3">
+              <div>
+                <h2 className="text-base font-semibold text-[var(--color-text)]">Keranjang</h2>
+                <p className="text-xs text-[var(--color-text-secondary)]">{cartCount} item</p>
+              </div>
               <button
                 onClick={() => setShowCartSheet(false)}
                 className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)]"
@@ -852,7 +834,7 @@ export function ProductVisual({ product }: { product: PosProduct }) {
 
   return (
     <div
-      className="relative flex h-16 w-16 md:h-18 md:w-18 shrink-0 items-center justify-center overflow-hidden rounded-xl"
+      className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-[10px] md:h-12 md:w-12"
       style={{ backgroundColor: bg }}
     >
       {product.imageUrl ? (
@@ -860,7 +842,7 @@ export function ProductVisual({ product }: { product: PosProduct }) {
           src={product.imageUrl}
           alt={product.name}
           fill
-          sizes="72px"
+          sizes="48px"
           className="object-cover"
         />
       ) : (
@@ -873,7 +855,7 @@ export function ProductVisual({ product }: { product: PosProduct }) {
             className="absolute -bottom-7 -left-5 h-20 w-20 rounded-full opacity-20"
             style={{ backgroundColor: accent }}
           />
-          <span className="relative text-lg md:text-xl font-black tracking-normal" style={{ color: accent }}>
+          <span className="relative text-sm font-black tracking-normal md:text-base" style={{ color: accent }}>
             {initials || "M"}
           </span>
         </>
@@ -1060,7 +1042,18 @@ function CartPanel({
   );
 }
 
-function CartQtyInput({
+function CartQtyInput({ qty, ...props }: {
+  qty: number;
+  stockQty: number;
+  trackStock: boolean;
+  onChange: (val: number) => void;
+}) {
+  // Qty changes made outside this input intentionally remount its local draft,
+  // avoiding a synchronous state reset effect while preserving free typing.
+  return <CartQtyInputDraft key={qty} qty={qty} {...props} />;
+}
+
+function CartQtyInputDraft({
   qty,
   stockQty,
   trackStock,
@@ -1072,10 +1065,6 @@ function CartQtyInput({
   onChange: (val: number) => void;
 }) {
   const [val, setVal] = useState(String(qty));
-
-  useEffect(() => {
-    setVal(String(qty));
-  }, [qty]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, "");
