@@ -88,18 +88,19 @@ eksternal".)
 
 ## 📋 M1 — Core Manufacturing (breakdown kerja, urutan implementasi)
 
-- [x] **P1** — Migration: `Warehouse` (sub-lokasi dalam Outlet: RAW_MATERIAL/WIP/FINISHED_GOODS/QUARANTINE/REJECT/SCRAP/IN_TRANSIT) + `StorageLocation` (bin/rak opsional di bawah Warehouse) — `4e56fe3`+schema commit (lihat migration `20260714150616_pabrik_m1_core_manufacturing`)
-- [x] **P2a** — Migration: `StockMovement` ledger (append-only: tenantId, productId, fromWarehouseId?, toWarehouseId?, qty, sourceType enum, sourceId, actorId, idempotencyKey unique, createdAt) — migration sama di atas
-- [ ] **P2b** — Service `stock-movement-service.ts` (fungsi `recordMovement()` generik dipakai semua modul produksi) — **sedang dikerjakan**
-- [x] **P3a** — Migration: `BomVersion` + `BomVersionItem` (header: productId, version int, status DRAFT/ACTIVE/OBSOLETE, outputQty, effectiveDate; item: ingredientId, qty, wasteAllowancePct?, isOptional) — migration sama di atas
-- [ ] **P3b** — Service `bom-service.ts` (create/activate/obsolete version, tidak boleh edit version yang sudah ACTIVE dan dipakai WO — sesuai guardrail #9)
-- [x] **P4a** — Migration: `WorkCenter` (nama, outletId, `equipmentId?` reuse model `Equipment` yang sudah ada) + `RoutingVersion`/`RoutingOperationStep` (header per productId+version; step: sequence, workCenterId, standardDurationMin, instruction?, qcCheckpoint bool) — migration sama di atas
-- [ ] **P4b** — Service `routing-service.ts`
-- [x] **P5a** — Migration: `WorkOrder` + `WorkOrderOperation` (WO: tenantId, outletId, productId, bomVersionId, routingVersionId — snapshot di release bukan live-reference, targetQty, status enum sesuai state machine di atas, dueDate?, plannedById/approvedById?; operation: sequence, workCenterId, status, actualStart/EndAt?, goodQty/rejectQty/reworkQty/scrapQty) — migration sama di atas
-- [ ] **P5b** — Service `work-order-service.ts` dengan state machine transitions eksplisit (bukan status string bebas)
-- [ ] **P6** — Service: material reservation/issue/return/consumption — nulis ke `StockMovement`, update projection `ProductStock`(atau kolom reserved baru), cek guardrail #16 (jangan issue material Hold/Reject/Expired/Reserved-untuk-WO-lain)
-- [ ] **P7** — Service: operation execution (start/pause/resume/complete) + output recording (good/reject/rework/scrap/waste) — invariant "Issued = Consumed + Returned + Waste + Remaining WIP" (dokumen section 9) wajib dicek sebelum WO bisa closed
-- [ ] **P8** — Module registration: tambah `produksi` ke `MODULES`, gating nav, cek `Tenant.disabledModules`
+- [x] **P1** — Migration: `Warehouse` + `StorageLocation` — `ecf30e4` (migration `20260714150616_pabrik_m1_core_manufacturing`)
+- [x] **P2a** — Migration: `StockMovement` ledger — migration sama di atas
+- [x] **P2b** — Service `stock-movement-service.ts` — `recordMovement()` (idempotent lewat unique `idempotencyKey`, kembalikan record lama kalau key sama sudah pernah dipakai, bukan re-insert/error), `getWarehouseBalance()` (saldo dihitung ulang dari ledger, bukan field terpisah), `listMovementsBySource()`, `listMovementsForProductWarehouse()`, `buildIdempotencyKey()` helper
+- [x] **P2c** — Service `warehouse-service.ts` (CRUD Warehouse/StorageLocation + `ensureDefaultWarehouses()` yang bikin 5 gudang standar otomatis sekali per outlet — sesuai AGENTS.md "isi otomatis, jangan suruh input manual")
+- [x] **P3a** — Migration: `BomVersion` + `BomVersionItem` — migration sama di atas
+- [x] **P3b** — Service `bom-service.ts` — create (auto-increment version per produk), activate (versi ACTIVE lama otomatis jadi OBSOLETE), update ISI HANYA kalau status DRAFT (guardrail #9 ditegakkan di kode, bukan cuma dokumentasi), obsolete
+- [x] **P4a** — Migration: `WorkCenter` + `RoutingVersion`/`RoutingOperationStep` — migration sama di atas
+- [x] **P4b** — Service `routing-service.ts` — pola sama persis dengan bom-service.ts (create/activate versi, guardrail #9)
+- [x] **P5a** — Migration: `WorkOrder` + `WorkOrderOperation` — migration sama di atas
+- [x] **P5b** — Service `work-order-service.ts` — state machine lengkap lewat `assertStatus()` guard di tiap fungsi transisi (bukan status string bebas): createWorkOrder (snapshot operation dari routing) → submitForApproval → approveWorkOrder → reserveMaterials (cek saldo ledger, TIDAK cek antar-WO secara atomik — lihat catatan simplifikasi di kepala file) → scheduleWorkOrder → releaseWorkOrder (di sinilah movement ISSUE beneran ditulis ke ledger, raw material → WIP) → startOperation/pauseOperation/resumeOperation → recordOutput (idempotency key dari caller, good→finished goods, reject+scrap→gudang scrap, rework tetap di WIP) → completeOperation (auto-buka operation berikutnya, WO ke AWAITING_QC kalau semua selesai) → markWorkOrderCompleted → closeWorkOrder (guardrail #13 versi ringan: semua operation selesai + minimal 1 output tercatat — BELUM invariant material balance penuh, lihat catatan di kepala file). Plus `cancelWorkOrder`, `returnMaterial`.
+- [x] **P6** — Tercakup di P5b (reserveMaterials/releaseWorkOrder/returnMaterial) — lihat catatan simplifikasi soal guardrail #16 (belum ada status Hold/Reject per-lot di M1, itu masuk M2 Batch/Quality)
+- [x] **P7** — Tercakup di P5b (startOperation/pauseOperation/resumeOperation/recordOutput/completeOperation/closeWorkOrder)
+- [ ] **P8** — Module registration: tambah `produksi` ke `MODULES`, gating nav, cek `Tenant.disabledModules` — **sedang dikerjakan**
 - [ ] **P9** — UI: Planner — buat WO (pilih produk, BOM version, routing version, qty, outlet) + approval sederhana
 - [ ] **P10** — UI: Operator — layar produksi simpel (work list per shift, tombol Mulai/Catat Output/Catat Reject/Lapor Masalah/Selesai) — WAJIB progressive disclosure, bahasa sehari-hari, sesuai AGENTS.md rule "orang awam tanpa pelatihan"
 - [ ] **P11** — UI: Owner/Manager — daftar WO + status ringkas (bukan dashboard penuh dulu, itu masuk M6/M7)
@@ -108,21 +109,34 @@ eksternal".)
 
 ## Status saat ini
 
-**Terakhir dikerjakan**: seluruh schema fondasi M1 sudah di-migrate dalam SATU migration
-`20260714150616_pabrik_m1_core_manufacturing` (Warehouse, StorageLocation, StockMovement,
-BomVersion, BomVersionItem, WorkCenter, RoutingVersion, RoutingOperationStep, WorkOrder,
-WorkOrderOperation — semua model P1-P5 sekaligus, karena saling bergantung dan migration
-terpisah-pisah akan saling mereferensikan tabel yang belum ada). `npx prisma validate`,
-`npx prisma generate`, dan `npx tsc --noEmit` semua hijau setelah migration ini.
+**Terakhir dikerjakan**: seluruh service layer P1-P7 sudah ditulis dan `npx tsc --noEmit`
+hijau (dicek berkali-kali, tiap file baru). File yang sudah ada dan siap dipakai:
+`src/server/services/warehouse-service.ts`, `stock-movement-service.ts`, `bom-service.ts`,
+`routing-service.ts`, `work-order-service.ts`. Sedang lanjut ke **P8** (module registration
+ke `src/lib/modules.ts`), lalu **P9-P11** (UI planner/operator/owner) dan **P12** (verifikasi
+end-to-end nyata pakai data pilot, bukan cuma tsc hijau — service belum pernah dites jalan
+beneran end-to-end).
 
-Sedang lanjut ke **P2b** (`stock-movement-service.ts`) — ini fondasi paling penting
-karena P6/P7 (issue/consume/output) semua nulis lewat service ini.
+**⚠️ Known gaps sengaja ditunda (JANGAN dianggap selesai, ini bukan bug tersembunyi —
+sudah dicatat di komentar kepala `work-order-service.ts` juga)**:
+1. `reserveMaterials()` cek saldo ledger dikurangi kebutuhan WO lain yang masih aktif,
+   TAPI belum atomik lintas WO — race condition kecil masih mungkin kalau dua planner
+   approve WO yang rebutan bahan yang sama nyaris bersamaan. Perbaikan: tabel
+   `MaterialReservation` terpisah dengan unique constraint, bukan hitung ulang tiap kali.
+2. Invariant "Issued = Consumed + Returned + Waste + Remaining WIP" (dokumen section 9/26)
+   BELUM ditegakkan penuh — `closeWorkOrder()` cuma mewajibkan minimal satu output
+   tercatat. Butuh model konsumsi per-lot dari M2 (Batch dan Quality) untuk presisi.
+3. Guardrail #14 (pekerja tidak boleh aktif di dua operation sekaligus) — `WorkOrderOperation`
+   belum punya kolom operator wajib, jadi belum bisa dicek.
+4. Guardrail #16 (jangan issue material Hold/Reject/Expired) — M1 belum punya status
+   kualitas per-lot (itu `StockBatch`-nya modul retail lama, bukan untuk Pabrik), jadi
+   semua saldo di ledger dianggap "available" tanpa pengecualian. Masuk cakupan M2.
+5. Belum ada UI sama sekali (P9-P11) — service layer belum pernah dites lewat aksi nyata
+   di browser, cuma lolos `tsc`. **Jangan anggap P1-P7 "selesai teruji"** sebelum P12.
 
 **Belum diputuskan / perlu keputusan sebelum lanjut ke item terkait**:
 - Nama modul di `MODULES`: `produksi` vs `manufaktur` vs `pabrik` — pilih salah satu,
   konsisten dipakai di seluruh route/label. (Sementara dipakai: `produksi`.)
-- ~~Apakah WorkCenter butuh relasi ke Machine~~ — **sudah diputuskan**, reuse `Equipment`
-  yang sudah ada (lihat section Arsitektur di atas), tidak bikin model `Machine` baru.
 
 ---
 
