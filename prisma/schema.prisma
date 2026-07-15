@@ -78,99 +78,100 @@ model Tenant {
   createdAt       DateTime     @default(now())
   updatedAt       DateTime     @updatedAt
 
-  outlets                  Outlet[]
-  users                    User[]
-  uidBatches               UidBatch[]
-  uidCards                 UidCard[]
-  members                  Member[]
-  pointTransactions        PointTransaction[]
-  stampTransactions        StampTransaction[]
-  giftCards                GiftCard[]
-  giftCardTransactions     GiftCardTransaction[]
-  categories               Category[]
-  products                 Product[]
-  productStocks            ProductStock[]
+  outlets                   Outlet[]
+  users                     User[]
+  uidBatches                UidBatch[]
+  uidCards                  UidCard[]
+  members                   Member[]
+  pointTransactions         PointTransaction[]
+  stampTransactions         StampTransaction[]
+  giftCards                 GiftCard[]
+  giftCardTransactions      GiftCardTransaction[]
+  categories                Category[]
+  products                  Product[]
+  productStocks             ProductStock[]
   productUnavailabilityLogs ProductUnavailabilityLog[]
-  cashierShifts            CashierShift[]
-  sales                    Sale[]
-  salePayments             SalePayment[]
-  cashOutTransactions      CashOutTransaction[]
-  saleItems                SaleItem[]
-  saleReturns              SaleReturn[]
-  saleReturnItems          SaleReturnItem[]
-  shiftSchedules           ShiftSchedule[]
-  attendances              Attendance[]
-  stockAdjustments         StockAdjustment[]
-  stockTransfers           StockTransfer[]
-  expenses                 Expense[]
-  tables                   Table[]
-  tableOrders              TableOrder[]
-  tableOrderItems          TableOrderItem[]
-  subscriptionRequests     SubscriptionRequest[]
-  productVariantGroups     ProductVariantGroup[]
-  productVariantOptions    ProductVariantOption[]
-  modifierGroups           ModifierGroup[]
-  modifierOptions          ModifierOption[]
+  cashierShifts             CashierShift[]
+  sales                     Sale[]
+  salePayments              SalePayment[]
+  cashOutTransactions       CashOutTransaction[]
+  saleItems                 SaleItem[]
+  saleReturns               SaleReturn[]
+  saleReturnItems           SaleReturnItem[]
+  shiftSchedules            ShiftSchedule[]
+  attendances               Attendance[]
+  stockAdjustments          StockAdjustment[]
+  stockTransfers            StockTransfer[]
+  expenses                  Expense[]
+  tables                    Table[]
+  tableOrders               TableOrder[]
+  tableOrderItems           TableOrderItem[]
+  subscriptionRequests      SubscriptionRequest[]
+  productVariantGroups      ProductVariantGroup[]
+  productVariantOptions     ProductVariantOption[]
+  modifierGroups            ModifierGroup[]
+  modifierOptions           ModifierOption[]
   productModifierExclusions ProductModifierExclusion[]
-  auditLogs                AuditLog[]
-  promos                   Promo[]
-  bookings                 Booking[]
-  cateringOrders           CateringOrder[]
-  cateringOrderItems       CateringOrderItem[]
-  cateringPayments         CateringPayment[]
-  equipments               Equipment[]
-  equipmentMaintenanceLogs EquipmentMaintenanceLog[]
-  reorderPoints            StockReorderPoint[]
-  stockBatches             StockBatch[]
-  productSerials           ProductSerial[]
-  suppliers                Supplier[]
-  supplierContracts        SupplierPricingContract[]
-  purchaseOrders           PurchaseOrder[]
-  stockReceipts            StockReceipt[]
-  stockCounts              StockCount[]
-  productCostHistory       ProductCostHistory[]
-  documents                Document[]
-  setting                  TenantSetting?
-  productUoms              ProductUom[]
-  wholesalePrices          WholesalePrice[]
-  channelPricingRules      ChannelPricingRule[]
-  productRecipeItems       ProductRecipeItem[]
-  laundryOrders            LaundryOrder[]
-  laundryServices          LaundryService[]
-  laundryPayments          LaundryPayment[]
-  supplierInvoices         SupplierInvoice[]
-  supplierPayments         SupplierPayment[]
-  accounts                 Account[]
-  journalEntries           JournalEntry[]
-  fiscalPeriods            FiscalPeriod[]
-  accountingJournals       AccountingJournal[]
-  accountingJournalLines   AccountingJournalLine[]
-  leads                    Lead[]
-  cashFlows                CashFlow[]
-  subscription             Subscription?
+  auditLogs                 AuditLog[]
+  promos                    Promo[]
+  bookings                  Booking[]
+  cateringOrders            CateringOrder[]
+  cateringOrderItems        CateringOrderItem[]
+  cateringPayments          CateringPayment[]
+  equipments                Equipment[]
+  equipmentMaintenanceLogs  EquipmentMaintenanceLog[]
+  reorderPoints             StockReorderPoint[]
+  stockBatches              StockBatch[]
+  productSerials            ProductSerial[]
+  suppliers                 Supplier[]
+  supplierContracts         SupplierPricingContract[]
+  purchaseOrders            PurchaseOrder[]
+  stockReceipts             StockReceipt[]
+  stockCounts               StockCount[]
+  productCostHistory        ProductCostHistory[]
+  documents                 Document[]
+  setting                   TenantSetting?
+  productUoms               ProductUom[]
+  wholesalePrices           WholesalePrice[]
+  channelPricingRules       ChannelPricingRule[]
+  productRecipeItems        ProductRecipeItem[]
+  laundryOrders             LaundryOrder[]
+  laundryServices           LaundryService[]
+  laundryPayments           LaundryPayment[]
+  supplierInvoices          SupplierInvoice[]
+  supplierPayments          SupplierPayment[]
+  accounts                  Account[]
+  journalEntries            JournalEntry[]
+  fiscalPeriods             FiscalPeriod[]
+  accountingJournals        AccountingJournal[]
+  accountingJournalLines    AccountingJournalLine[]
+  leads                     Lead[]
+  cashFlows                 CashFlow[]
+  subscription              Subscription?
   // ---- Altora Pabrik (manufaktur) ----
-  warehouses             Warehouse[]
-  storageLocations       StorageLocation[]
-  stockMovements         StockMovement[]
-  bomVersions            BomVersion[]
-  bomVersionItems        BomVersionItem[]
-  workCenters            WorkCenter[]
-  routingVersions        RoutingVersion[]
-  routingOperationSteps  RoutingOperationStep[]
-  workOrders             WorkOrder[]
-  workOrderOperations    WorkOrderOperation[]
-  workers                Worker[]
-  payGroups              PayGroup[]
-  payrollPeriods         PayrollPeriod[]
-  productionRateCards    ProductionRateCard[]
-  workerProductionLogs   WorkerProductionLog[]
-  jobRequisitions        JobRequisition[]
-  candidates             Candidate[]
-  kpiGoals               KpiGoal[]
-  reviews                PerformanceReview[]
-  learningCourses        LearningCourse[]
-  hrisAuditLogs          HrisAuditLog[]
-  ssoSettings            SsoSetting[]
+  warehouses                Warehouse[]
+  storageLocations          StorageLocation[]
+  stockMovements            StockMovement[]
+  bomVersions               BomVersion[]
+  bomVersionItems           BomVersionItem[]
+  workCenters               WorkCenter[]
+  routingVersions           RoutingVersion[]
+  routingOperationSteps     RoutingOperationStep[]
+  workOrders                WorkOrder[]
+  workOrderOperations       WorkOrderOperation[]
+  workers                   Worker[]
+  payGroups                 PayGroup[]
+  payrollPeriods            PayrollPeriod[]
+  productionRateCards       ProductionRateCard[]
+  workerProductionLogs      WorkerProductionLog[]
+  jobRequisitions           JobRequisition[]
+  candidates                Candidate[]
+  kpiGoals                  KpiGoal[]
+  reviews                   PerformanceReview[]
+  learningCourses           LearningCourse[]
+  hrisAuditLogs             HrisAuditLog[]
+  ssoSettings               SsoSetting[]
+  qualityInspections        QualityInspection[]
 }
 
 /// PERMANENT = cabang tetap biasa. POPUP = cabang kecil & portable (mis. lapak/booth
@@ -183,60 +184,60 @@ enum OutletType {
 }
 
 model Outlet {
-  id        String   @id @default(cuid())
-  tenantId  String
-  name      String
-  address   String?
-  phone     String?
+  id                String     @id @default(cuid())
+  tenantId          String
+  name              String
+  address           String?
+  phone             String?
   /// Lebar kertas printer thermal outlet ini dalam mm — cuma 58 atau 80, dipakai buat format struk ESC/POS.
-  receiptPaperWidth Int @default(58)
-  outletType OutletType @default(PERMANENT)
+  receiptPaperWidth Int        @default(58)
+  outletType        OutletType @default(PERMANENT)
   /// Field event* di bawah cuma relevan kalau outletType EVENT — diisi dari form Tambah/Ubah outlet.
-  eventName      String?
-  eventStartDate DateTime?
-  eventEndDate   DateTime?
+  eventName         String?
+  eventStartDate    DateTime?
+  eventEndDate      DateTime?
   /// Biaya sewa tempat/booth event — kalau diisi saat outlet EVENT baru dibuat, otomatis
   /// dicatat sebagai satu baris Pengeluaran (kategori EVENT) biar tidak perlu input dobel.
-  eventFee       Int?
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  eventFee          Int?
+  isActive          Boolean    @default(true)
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  userOutlets              UserOutlet[]
-  productStocks            ProductStock[]
+  userOutlets               UserOutlet[]
+  productStocks             ProductStock[]
   productUnavailabilityLogs ProductUnavailabilityLog[]
-  cashierShifts            CashierShift[]
-  sales                    Sale[]
-  cashOutTransactions      CashOutTransaction[]
-  shiftSchedules           ShiftSchedule[]
-  attendances              Attendance[]
-  stockAdjustments         StockAdjustment[]
-  expenses                 Expense[]
-  transfersFrom            StockTransfer[]           @relation("StockTransferFromOutlet")
-  transfersTo              StockTransfer[]           @relation("StockTransferToOutlet")
-  tables                   Table[]
-  tableOrders              TableOrder[]
-  bookings                 Booking[]
-  cateringOrders           CateringOrder[]
-  equipments               Equipment[]
-  equipmentMaintenanceLogs EquipmentMaintenanceLog[]
-  reorderPoints            StockReorderPoint[]
-  stockBatches             StockBatch[]
-  productSerials           ProductSerial[]
-  stockReceipts            StockReceipt[]
-  stockCounts              StockCount[]
-  laundryOrders            LaundryOrder[]
-  cashFlows                CashFlow[]
-  accountingJournals       AccountingJournal[]
-  accountingJournalLines   AccountingJournalLine[]
-  assignments              Assignment[]
+  cashierShifts             CashierShift[]
+  sales                     Sale[]
+  cashOutTransactions       CashOutTransaction[]
+  shiftSchedules            ShiftSchedule[]
+  attendances               Attendance[]
+  stockAdjustments          StockAdjustment[]
+  expenses                  Expense[]
+  transfersFrom             StockTransfer[]            @relation("StockTransferFromOutlet")
+  transfersTo               StockTransfer[]            @relation("StockTransferToOutlet")
+  tables                    Table[]
+  tableOrders               TableOrder[]
+  bookings                  Booking[]
+  cateringOrders            CateringOrder[]
+  equipments                Equipment[]
+  equipmentMaintenanceLogs  EquipmentMaintenanceLog[]
+  reorderPoints             StockReorderPoint[]
+  stockBatches              StockBatch[]
+  productSerials            ProductSerial[]
+  stockReceipts             StockReceipt[]
+  stockCounts               StockCount[]
+  laundryOrders             LaundryOrder[]
+  cashFlows                 CashFlow[]
+  accountingJournals        AccountingJournal[]
+  accountingJournalLines    AccountingJournalLine[]
+  assignments               Assignment[]
 
   // ---- Altora Pabrik (manufaktur) ----
-  warehouses   Warehouse[]
-  workCenters  WorkCenter[]
-  workOrders   WorkOrder[]
+  warehouses  Warehouse[]
+  workCenters WorkCenter[]
+  workOrders  WorkOrder[]
 
   @@index([tenantId])
 }
@@ -265,44 +266,45 @@ model User {
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  userOutlets              UserOutlet[]
-  uidCardsAssigned         UidCard[]                 @relation("EmployeeCard")
-  cashierShifts            CashierShift[]
-  salesAsCashier           Sale[]                    @relation("SaleCashier")
-  cashOutTransactions      CashOutTransaction[]      @relation("CashOutCashier")
-  saleReturnsProcessed     SaleReturn[]              @relation("SaleReturnProcessedBy")
-  attendances              Attendance[]
-  shiftSchedules           ShiftSchedule[]
-  stockAdjustments         StockAdjustment[]
-  expensesCreated          Expense[]
-  stockTransfersCreated    StockTransfer[]           @relation("StockTransferCreatedBy")
-  stockTransfersApproved   StockTransfer[]           @relation("StockTransferApprovedBy")
-  stockTransfersSent       StockTransfer[]           @relation("StockTransferSentBy")
-  stockTransfersReceived   StockTransfer[]           @relation("StockTransferReceivedBy")
-  auditLogs                AuditLog[]
-  bookingsAssigned         Booking[]
-  equipmentMaintenanceLogs EquipmentMaintenanceLog[]
-  purchaseOrdersApproved   PurchaseOrder[]
-  stockReceiptsReceived    StockReceipt[]            @relation("StockReceiptReceivedBy")
-  stockReceiptsChecked     StockReceipt[]            @relation("StockReceiptCheckedBy")
-  stockCountsStarted       StockCount[]              @relation("StockCountStartedBy")
-  stockCountsCompleted     StockCount[]              @relation("StockCountCompletedBy")
-  stockCountsVerified      StockCount[]              @relation("StockCountVerifiedBy")
-  costHistoryChanges       ProductCostHistory[]
-  documentsUploaded        Document[]                @relation("DocumentUploader")
-  giftCardsSold            GiftCard[]
-  documentVersions         DocumentVersion[]
-  documentSignings         DocumentSigner[]
-  documentAccess           DocumentAccess[]
-  laundryOrdersCreated     LaundryOrder[]            @relation("LaundryOrderCreatedBy")
-  cateringOrdersCreated    CateringOrder[]           @relation("CateringOrderCreatedBy")
-  cashFlowsCreated         CashFlow[]                @relation("UserCashFlows")
-  accountingJournalsCreated AccountingJournal[]      @relation("AccountingJournalCreatedBy")
+  userOutlets               UserOutlet[]
+  uidCardsAssigned          UidCard[]                 @relation("EmployeeCard")
+  cashierShifts             CashierShift[]
+  salesAsCashier            Sale[]                    @relation("SaleCashier")
+  cashOutTransactions       CashOutTransaction[]      @relation("CashOutCashier")
+  saleReturnsProcessed      SaleReturn[]              @relation("SaleReturnProcessedBy")
+  attendances               Attendance[]
+  shiftSchedules            ShiftSchedule[]
+  stockAdjustments          StockAdjustment[]
+  expensesCreated           Expense[]
+  stockTransfersCreated     StockTransfer[]           @relation("StockTransferCreatedBy")
+  stockTransfersApproved    StockTransfer[]           @relation("StockTransferApprovedBy")
+  stockTransfersSent        StockTransfer[]           @relation("StockTransferSentBy")
+  stockTransfersReceived    StockTransfer[]           @relation("StockTransferReceivedBy")
+  auditLogs                 AuditLog[]
+  bookingsAssigned          Booking[]
+  equipmentMaintenanceLogs  EquipmentMaintenanceLog[]
+  purchaseOrdersApproved    PurchaseOrder[]
+  stockReceiptsReceived     StockReceipt[]            @relation("StockReceiptReceivedBy")
+  stockReceiptsChecked      StockReceipt[]            @relation("StockReceiptCheckedBy")
+  stockCountsStarted        StockCount[]              @relation("StockCountStartedBy")
+  stockCountsCompleted      StockCount[]              @relation("StockCountCompletedBy")
+  stockCountsVerified       StockCount[]              @relation("StockCountVerifiedBy")
+  costHistoryChanges        ProductCostHistory[]
+  documentsUploaded         Document[]                @relation("DocumentUploader")
+  giftCardsSold             GiftCard[]
+  documentVersions          DocumentVersion[]
+  documentSignings          DocumentSigner[]
+  documentAccess            DocumentAccess[]
+  laundryOrdersCreated      LaundryOrder[]            @relation("LaundryOrderCreatedBy")
+  cateringOrdersCreated     CateringOrder[]           @relation("CateringOrderCreatedBy")
+  cashFlowsCreated          CashFlow[]                @relation("UserCashFlows")
+  accountingJournalsCreated AccountingJournal[]       @relation("AccountingJournalCreatedBy")
 
   // ---- Altora Pabrik (manufaktur) ----
-  stockMovementsActed  StockMovement[]
-  workOrdersPlanned    WorkOrder[]       @relation("WorkOrderPlannedBy")
-  workOrdersApproved   WorkOrder[]       @relation("WorkOrderApprovedBy")
+  stockMovementsActed StockMovement[]
+  workOrdersPlanned   WorkOrder[]         @relation("WorkOrderPlannedBy")
+  workOrdersApproved  WorkOrder[]         @relation("WorkOrderApprovedBy")
+  qualityInspections  QualityInspection[]
 
   @@index([tenantId])
 }
@@ -418,14 +420,14 @@ enum StampTransactionType {
 }
 
 model StampTransaction {
-  id        String                @id @default(cuid())
+  id        String               @id @default(cuid())
   tenantId  String
   memberId  String
   type      StampTransactionType
   count     Int // positif untuk EARN, negatif untuk REDEEM/ADJUST
   saleId    String?
   note      String?
-  createdAt DateTime              @default(now())
+  createdAt DateTime             @default(now())
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   member Member @relation(fields: [memberId], references: [id], onDelete: Cascade)
@@ -489,14 +491,14 @@ enum GiftCardTransactionType {
 }
 
 model GiftCardTransaction {
-  id         String                   @id @default(cuid())
+  id         String                  @id @default(cuid())
   tenantId   String
   giftCardId String
   type       GiftCardTransactionType
   amount     Int // positif untuk SALE (isi saldo), negatif untuk REDEEM/ADJUST
   saleId     String?
   note       String?
-  createdAt  DateTime                 @default(now())
+  createdAt  DateTime                @default(now())
 
   tenant   Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   giftCard GiftCard @relation(fields: [giftCardId], references: [id], onDelete: Cascade)
@@ -515,9 +517,9 @@ model Category {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  products Product[]
-  promos   Promo[]
+  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products       Product[]
+  promos         Promo[]
   modifierGroups ModifierGroup[]
 
   @@index([tenantId])
@@ -572,18 +574,18 @@ model Product {
   costHistory        ProductCostHistory[]
   uoms               ProductUom[]
   wholesalePrices    WholesalePrice[]
-  recipes            ProductRecipeItem[]       @relation("ProductRecipe")
-  ingredients        ProductRecipeItem[]       @relation("ProductIngredient")
+  recipes            ProductRecipeItem[]        @relation("ProductRecipe")
+  ingredients        ProductRecipeItem[]        @relation("ProductIngredient")
   serials            ProductSerial[]
   unavailabilityLogs ProductUnavailabilityLog[]
   cateringOrderItems CateringOrderItem[]
 
   // ---- Altora Pabrik (manufaktur) ----
-  bomVersionsAsProduct     BomVersion[]        @relation("BomVersionProduct")
+  bomVersionsAsProduct        BomVersion[]     @relation("BomVersionProduct")
   bomVersionItemsAsIngredient BomVersionItem[] @relation("BomVersionItemIngredient")
-  routingVersionsAsProduct RoutingVersion[]    @relation("RoutingVersionProduct")
-  workOrdersAsProduct      WorkOrder[]         @relation("WorkOrderProduct")
-  stockMovements           StockMovement[]
+  routingVersionsAsProduct    RoutingVersion[] @relation("RoutingVersionProduct")
+  workOrdersAsProduct         WorkOrder[]      @relation("WorkOrderProduct")
+  stockMovements              StockMovement[]
 
   @@index([tenantId])
   @@index([categoryId])
@@ -644,9 +646,9 @@ model ModifierGroup {
   sortOrder  Int              @default(0)
   createdAt  DateTime         @default(now())
 
-  tenant   Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  category Category         @relation(fields: [categoryId], references: [id], onDelete: Cascade)
-  options  ModifierOption[]
+  tenant               Tenant                     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category             Category                   @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+  options              ModifierOption[]
   excludedFromProducts ProductModifierExclusion[]
 
   @@index([tenantId])
@@ -733,7 +735,7 @@ enum StockAdjustmentReason {
 }
 
 model StockAdjustment {
-  id          String   @id @default(cuid())
+  id          String                 @id @default(cuid())
   tenantId    String
   productId   String
   outletId    String
@@ -745,7 +747,7 @@ model StockAdjustment {
   /// Kategori alasan kalau ini adalah catatan kerugian (waste/expired/rusak/dll).
   /// null = koreksi stok biasa (bukan dari alur catat kerugian).
   reason      StockAdjustmentReason?
-  createdAt   DateTime @default(now())
+  createdAt   DateTime               @default(now())
 
   tenant    Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
@@ -814,21 +816,21 @@ enum ShiftStatus {
 }
 
 model CashierShift {
-  id           String      @id @default(cuid())
-  tenantId     String
-  outletId     String
-  userId       String
-  openingCash  Int
-  closingCash  Int?
+  id                   String      @id @default(cuid())
+  tenantId             String
+  outletId             String
+  userId               String
+  openingCash          Int
+  closingCash          Int?
   /// Rincian hitungan pecahan uang saat tutup shift, mis. {"100000": 5, "50000": 3, ...}
   /// — opsional, cuma keisi kalau kasir pakai kalkulator pecahan uang. Buat audit/dispute.
   closingCashBreakdown Json?
-  expectedCash Int?
+  expectedCash         Int?
   /// Catatan alasan kalau selisih kas (closingCash vs expectedCash) melebihi batas wajar — wajib diisi saat itu terjadi.
-  varianceNote String?
-  status       ShiftStatus @default(OPEN)
-  openedAt     DateTime    @default(now())
-  closedAt     DateTime?
+  varianceNote         String?
+  status               ShiftStatus @default(OPEN)
+  openedAt             DateTime    @default(now())
+  closedAt             DateTime?
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   outlet Outlet @relation(fields: [outletId], references: [id], onDelete: Cascade)
@@ -872,32 +874,32 @@ enum CashOutStatus {
 }
 
 model Sale {
-  id             String        @id @default(cuid())
-  tenantId       String
-  outletId       String
-  shiftId        String?
-  cashierId      String
-  memberId       String?
-  invoiceNumber  String        @unique
-  subtotal       Int
-  discountAmount Int           @default(0)
-  taxAmount      Int           @default(0)
+  id                  String        @id @default(cuid())
+  tenantId            String
+  outletId            String
+  shiftId             String?
+  cashierId           String
+  memberId            String?
+  invoiceNumber       String        @unique
+  subtotal            Int
+  discountAmount      Int           @default(0)
+  taxAmount           Int           @default(0)
   /// Markup harga per channel (mis. GoFood/GrabFood buat nutup potongan platform) — dari ChannelPricingRule.
-  channelMarkupAmount Int      @default(0)
-  total          Int
+  channelMarkupAmount Int           @default(0)
+  total               Int
   /// Metode bayar utama — kalau isSplitPayment true, ini metode dengan porsi terbesar (buat laporan/summary lama tetap jalan).
-  paymentMethod  PaymentMethod
-  amountPaid     Int
-  changeAmount   Int           @default(0)
+  paymentMethod       PaymentMethod
+  amountPaid          Int
+  changeAmount        Int           @default(0)
   /// True kalau transaksi dibayar pakai lebih dari 1 metode — rincian per metode ada di relasi `payments`.
-  isSplitPayment Boolean       @default(false)
-  orderType      OrderType     @default(DINE_IN)
-  cashbackAmount Int           @default(0)
-  parkingFee     Int           @default(0)
-  status         SaleStatus    @default(COMPLETED)
-  voidReason     String?
-  createdAt      DateTime      @default(now())
-  updatedAt      DateTime      @updatedAt
+  isSplitPayment      Boolean       @default(false)
+  orderType           OrderType     @default(DINE_IN)
+  cashbackAmount      Int           @default(0)
+  parkingFee          Int           @default(0)
+  status              SaleStatus    @default(COMPLETED)
+  voidReason          String?
+  createdAt           DateTime      @default(now())
+  updatedAt           DateTime      @updatedAt
 
   tenant  Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   outlet  Outlet        @relation(fields: [outletId], references: [id], onDelete: Cascade)
@@ -911,11 +913,11 @@ model Sale {
   stampTransactions    StampTransaction[]
   giftCardTransactions GiftCardTransaction[]
   saleReturns          SaleReturn[]
-  tableOrder        TableOrder?
-  bookingId         String?
-  booking           Booking?      @relation(fields: [bookingId], references: [id])
-  cateringOrderId   String?
-  cateringOrder     CateringOrder? @relation(fields: [cateringOrderId], references: [id])
+  tableOrder           TableOrder?
+  bookingId            String?
+  booking              Booking?              @relation(fields: [bookingId], references: [id])
+  cateringOrderId      String?
+  cateringOrder        CateringOrder?        @relation(fields: [cateringOrderId], references: [id])
 
   @@index([tenantId])
   @@index([outletId])
@@ -1041,7 +1043,7 @@ model ShiftSchedule {
   tenantId     String
   outletId     String
   userId       String
-  workerId     String?       // Opsional untuk integrasi HRIS
+  workerId     String? // Opsional untuk integrasi HRIS
   startAt      DateTime
   endAt        DateTime
   workType     ShiftWorkType @default(REGULAR)
@@ -1086,7 +1088,7 @@ model Attendance {
   tenantId        String
   outletId        String
   userId          String
-  workerId        String?          // Opsional untuk integrasi HRIS
+  workerId        String? // Opsional untuk integrasi HRIS
   clockInAt       DateTime?
   clockOutAt      DateTime?
   clockInPhotoUrl String?
@@ -1390,29 +1392,29 @@ enum CateringOrderStatus {
 /// normal kasir. Waktu status jadi DONE, otomatis bikin Sale asli lewat createSale()
 /// (potong stok/resep beneran, masuk jurnal akuntansi) — lihat catering-order-service.ts.
 model CateringOrder {
-  id            String              @id @default(cuid())
-  tenantId      String
-  outletId      String
-  orderNumber   String              @unique
+  id              String              @id @default(cuid())
+  tenantId        String
+  outletId        String
+  orderNumber     String              @unique
   /// Auto-matched dari customerPhone kalau nomornya kedaftar sebagai member — biar dapat poin & histori.
-  memberId      String?
-  customerName  String
-  customerPhone String?
-  eventName     String?
-  eventAddress  String?
-  eventDate     DateTime?
-  total         Int
-  paidAmount    Int                 @default(0)
+  memberId        String?
+  customerName    String
+  customerPhone   String?
+  eventName       String?
+  eventAddress    String?
+  eventDate       DateTime?
+  total           Int
+  paidAmount      Int                 @default(0)
   /// Biaya operasional (transport, tenaga tambahan, sewa alat) — kalau diisi saat order
   /// BARU dibuat, otomatis dicatat sebagai satu baris Pengeluaran outlet ini.
   operationalCost Int?
-  status        CateringOrderStatus @default(PENDING)
+  status          CateringOrderStatus @default(PENDING)
   /// Jaga dari poin dobel kalau status ditoggle maju-mundur.
-  pointsAwarded Boolean             @default(false)
-  note          String?
-  createdById   String
-  createdAt     DateTime            @default(now())
-  updatedAt     DateTime            @updatedAt
+  pointsAwarded   Boolean             @default(false)
+  note            String?
+  createdById     String
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
 
   tenant    Tenant              @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   outlet    Outlet              @relation(fields: [outletId], references: [id], onDelete: Cascade)
@@ -1519,11 +1521,11 @@ model LaundryOrder {
   createdAt        DateTime           @default(now())
   updatedAt        DateTime           @updatedAt
 
-  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  outlet         Outlet          @relation(fields: [outletId], references: [id], onDelete: Cascade)
-  laundryService LaundryService? @relation(fields: [laundryServiceId], references: [id], onDelete: SetNull)
-  member         Member?         @relation(fields: [memberId], references: [id], onDelete: SetNull)
-  createdBy      User            @relation("LaundryOrderCreatedBy", fields: [createdById], references: [id])
+  tenant         Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet         Outlet           @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  laundryService LaundryService?  @relation(fields: [laundryServiceId], references: [id], onDelete: SetNull)
+  member         Member?          @relation(fields: [memberId], references: [id], onDelete: SetNull)
+  createdBy      User             @relation("LaundryOrderCreatedBy", fields: [createdById], references: [id])
   payments       LaundryPayment[]
 
   @@index([tenantId])
@@ -1661,7 +1663,7 @@ model StockReorderPoint {
 /// Stock batch/lot tracking untuk FMCG, makanan, farmasi.
 /// Catat batch number, exp date, dan kuantitas yang masuk per batch.
 model StockBatch {
-  id             String    @id @default(cuid())
+  id             String      @id @default(cuid())
   tenantId       String
   productId      String
   outletId       String
@@ -1669,14 +1671,16 @@ model StockBatch {
   expirationDate DateTime?
   qtyReceived    Int
   qtyRemaining   Int
-  receivedDate   DateTime  @default(now())
+  receivedDate   DateTime    @default(now())
+  status         BatchStatus @default(AVAILABLE)
   note           String?
-  createdAt      DateTime  @default(now())
-  updatedAt      DateTime  @updatedAt
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
 
-  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
-  outlet  Outlet  @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  tenant    Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product   Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+  outlet    Outlet          @relation(fields: [outletId], references: [id], onDelete: Cascade)
+  movements StockMovement[]
 
   @@index([tenantId])
   @@index([productId])
@@ -1866,20 +1870,20 @@ enum QCStatus {
 }
 
 model StockReceiptItem {
-  id          String   @id @default(cuid())
-  receiptId   String
-  productId   String
-  qtyReceived Int // Dari PO
-  qtyAccepted Int      @default(0) // Lolos QC
-  qtyDefect   Int      @default(0) // Rusak/bermasalah
-  batchNumber String?
+  id             String    @id @default(cuid())
+  receiptId      String
+  productId      String
+  qtyReceived    Int // Dari PO
+  qtyAccepted    Int       @default(0) // Lolos QC
+  qtyDefect      Int       @default(0) // Rusak/bermasalah
+  batchNumber    String?
   expirationDate DateTime?
   /// Nomor seri/IMEI per unit (kalau produknya trackSerial) — satu entri per unit qtyAccepted.
-  serialNumbers String[] @default([])
-  qcStatus    QCStatus @default(PENDING)
-  qcNotes     String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  serialNumbers  String[]  @default([])
+  qcStatus       QCStatus  @default(PENDING)
+  qcNotes        String?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
   receipt StockReceipt @relation(fields: [receiptId], references: [id], onDelete: Cascade)
   product Product      @relation(fields: [productId], references: [id])
@@ -1962,25 +1966,25 @@ model ProductCostHistory {
 // ================== PENGATURAN TENANT ==================
 
 model TenantSetting {
-  id                String   @id @default(cuid())
-  tenantId          String   @unique
-  taxPercent        Int      @default(0)
-  pointsPerAmount   Int            @default(10000) // 1 poin per Rp10.000
-  receiptFooter     String?
-  staticQrisPayload String?
-  enableParkingFee  Boolean        @default(false)
-  accountingMode    AccountingMode @default(SIMPLE)
+  id                  String         @id @default(cuid())
+  tenantId            String         @unique
+  taxPercent          Int            @default(0)
+  pointsPerAmount     Int            @default(10000) // 1 poin per Rp10.000
+  receiptFooter       String?
+  staticQrisPayload   String?
+  enableParkingFee    Boolean        @default(false)
+  accountingMode      AccountingMode @default(SIMPLE)
   /// Tanggal terakhir yang sudah "ditutup" (kunci pembukuan) — tidak ada jurnal
   /// baru/void/retur/hapus pengeluaran yang boleh menyentuh tanggal ini ke belakang.
   /// null = belum pernah tutup buku, semua tanggal masih terbuka.
-  periodLockDate    DateTime?
+  periodLockDate      DateTime?
   /// Kartu stempel: 1 stempel per transaksi member, gratis reward saat capai target.
-  stampProgramEnabled Boolean @default(false)
-  stampTarget         Int     @default(10)
+  stampProgramEnabled Boolean        @default(false)
+  stampTarget         Int            @default(10)
   stampRewardName     String?
   /// Nilai reward gratis (Rp) yang dipotong dari total saat stempel ditukar.
-  stampRewardValue    Int     @default(0)
-  updatedAt         DateTime       @updatedAt
+  stampRewardValue    Int            @default(0)
+  updatedAt           DateTime       @updatedAt
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 }
@@ -2249,22 +2253,22 @@ enum FiscalPeriodStatus {
 }
 
 model Account {
-  id        String      @id @default(cuid())
-  tenantId  String
-  code      String // e.g., "11100" for Cash Drawer
-  name      String // e.g., "Cash Drawer"
-  type      AccountType
-  accountClass AccountClass @default(ASSET)
+  id            String        @id @default(cuid())
+  tenantId      String
+  code          String // e.g., "11100" for Cash Drawer
+  name          String // e.g., "Cash Drawer"
+  type          AccountType
+  accountClass  AccountClass  @default(ASSET)
   normalBalance NormalBalance @default(DEBIT)
-  parentId  String?
-  isGroup   Boolean  @default(false)
-  isSystem  Boolean  @default(false)
-  isActive  Boolean  @default(true)
-  createdAt DateTime    @default(now())
+  parentId      String?
+  isGroup       Boolean       @default(false)
+  isSystem      Boolean       @default(false)
+  isActive      Boolean       @default(true)
+  createdAt     DateTime      @default(now())
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  parent Account? @relation("AccountHierarchy", fields: [parentId], references: [id])
-  children Account[] @relation("AccountHierarchy")
+  tenant       Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  parent       Account?                @relation("AccountHierarchy", fields: [parentId], references: [id])
+  children     Account[]               @relation("AccountHierarchy")
   journalLines AccountingJournalLine[]
 
   @@unique([tenantId, code])
@@ -2286,8 +2290,8 @@ model JournalEntry {
   description String
   debitCode   String
   creditCode  String
-  amount      Int      // Rupiah
-  reference   String?  // e.g., "SALE-123", "EXP-456"
+  amount      Int // Rupiah
+  reference   String? // e.g., "SALE-123", "EXP-456"
   createdAt   DateTime @default(now())
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
@@ -2331,10 +2335,10 @@ model AccountingJournal {
   createdAt      DateTime                @default(now())
   updatedAt      DateTime                @updatedAt
 
-  tenant       Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  fiscalPeriod FiscalPeriod? @relation(fields: [fiscalPeriodId], references: [id])
-  outlet       Outlet?       @relation(fields: [outletId], references: [id])
-  createdBy    User?         @relation("AccountingJournalCreatedBy", fields: [createdById], references: [id])
+  tenant       Tenant                  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  fiscalPeriod FiscalPeriod?           @relation(fields: [fiscalPeriodId], references: [id])
+  outlet       Outlet?                 @relation(fields: [outletId], references: [id])
+  createdBy    User?                   @relation("AccountingJournalCreatedBy", fields: [createdById], references: [id])
   lines        AccountingJournalLine[]
 
   @@unique([tenantId, journalNumber])
@@ -2346,17 +2350,17 @@ model AccountingJournal {
 }
 
 model AccountingJournalLine {
-  id          String            @id @default(cuid())
-  tenantId    String
-  journalId   String
-  accountId   String
-  outletId    String?
-  partyType   String?
-  partyId     String?
-  debit       Int               @default(0)
-  credit      Int               @default(0)
-  memo        String?
-  createdAt   DateTime          @default(now())
+  id        String   @id @default(cuid())
+  tenantId  String
+  journalId String
+  accountId String
+  outletId  String?
+  partyType String?
+  partyId   String?
+  debit     Int      @default(0)
+  credit    Int      @default(0)
+  memo      String?
+  createdAt DateTime @default(now())
 
   tenant  Tenant            @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   journal AccountingJournal @relation(fields: [journalId], references: [id], onDelete: Cascade)
@@ -2382,8 +2386,8 @@ model Lead {
   name           String
   phone          String?
   email          String?
-  source         String?    // e.g. "Instagram", "WhatsApp", "Rekomendasi"
-  interest       String?    // e.g. "Catering Event", "Kopi Bubuk Grosir"
+  source         String? // e.g. "Instagram", "WhatsApp", "Rekomendasi"
+  interest       String? // e.g. "Catering Event", "Kopi Bubuk Grosir"
   expectedValue  Int        @default(0)
   nextFollowUpAt DateTime?
   status         LeadStatus @default(NEW)
@@ -2407,7 +2411,7 @@ model CashFlow {
   outletId    String
   createdById String
   type        CashFlowType
-  category    String       // e.g., "Penjualan", "Modal", "Sewa", "Gaji", "Bahan Baku", "Lainnya"
+  category    String // e.g., "Penjualan", "Modal", "Sewa", "Gaji", "Bahan Baku", "Lainnya"
   amount      Int
   note        String?
   spentAt     DateTime     @default(now())
@@ -2432,34 +2436,34 @@ enum SubscriptionStatus {
 }
 
 model Subscription {
-  id String @id @default(cuid())
+  id       String @id @default(cuid())
   tenantId String @unique
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant   Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  plan Plan @default(FREE)
+  plan   Plan               @default(FREE)
   status SubscriptionStatus @default(ACTIVE)
 
-  billingCycle String @default("MONTHLY") // MONTHLY, YEARLY
+  billingCycle       String    @default("MONTHLY") // MONTHLY, YEARLY
   currentPeriodStart DateTime
-  currentPeriodEnd DateTime
-  nextBillingDate DateTime?
+  currentPeriodEnd   DateTime
+  nextBillingDate    DateTime?
 
-  lastPaymentId String?
+  lastPaymentId     String?
   lastPaymentAmount Int?
-  lastPaymentDate DateTime?
+  lastPaymentDate   DateTime?
 
   trialStartDate DateTime?
-  trialEndDate DateTime?
-  isOnTrial Boolean @default(false)
+  trialEndDate   DateTime?
+  isOnTrial      Boolean   @default(false)
 
-  autoRenew Boolean @default(true)
-  cancelledAt DateTime?
+  autoRenew       Boolean   @default(true)
+  cancelledAt     DateTime?
   cancelledReason String?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  invoices Invoice[]
+  invoices       Invoice[]
   paymentHistory PaymentHistory[]
 
   @@index([tenantId])
@@ -2476,27 +2480,27 @@ enum InvoiceStatus {
 }
 
 model Invoice {
-  id String @id @default(cuid())
+  id             String       @id @default(cuid())
   subscriptionId String
-  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
-  invoiceNumber String @unique
+  invoiceNumber    String  @unique
   sumopodPaymentId String?
 
   amount Int
-  tax Int @default(0)
-  total Int
+  tax    Int @default(0)
+  total  Int
 
   currency String @default("IDR")
 
-  status InvoiceStatus @default(DRAFT)
-  dueDate DateTime
+  status   InvoiceStatus @default(DRAFT)
+  dueDate  DateTime
   paidDate DateTime?
 
   description String
 
   fromDate DateTime
-  toDate DateTime
+  toDate   DateTime
 
   items Json?
 
@@ -2519,23 +2523,23 @@ enum PaymentStatus {
 }
 
 model PaymentHistory {
-  id String @id @default(cuid())
+  id             String       @id @default(cuid())
   subscriptionId String
-  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
-  sumopodPaymentId String @unique
-  invoiceId String
-  invoice Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  sumopodPaymentId String  @unique
+  invoiceId        String
+  invoice          Invoice @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
 
-  amount Int
+  amount   Int
   currency String @default("IDR")
 
   paymentMethod String?
-  status PaymentStatus @default(PENDING)
+  status        PaymentStatus @default(PENDING)
 
   failureReason String?
 
-  createdAt DateTime @default(now())
+  createdAt   DateTime  @default(now())
   processedAt DateTime?
 
   metadata Json?
@@ -2610,6 +2614,7 @@ enum StockMovementSourceType {
   WORK_ORDER_OUTPUT
   WORK_ORDER_WASTE
   MANUAL_ADJUSTMENT
+  QUALITY_CONTROL
 }
 
 /// Ledger pergerakan stok produksi — append-only, sumber kebenaran. Saldo
@@ -2618,7 +2623,7 @@ enum StockMovementSourceType {
 /// (POS retail) yang memutasi field qty langsung — jangan disatukan, modul
 /// Pabrik ditelusuri lewat tabel ini.
 model StockMovement {
-  id              String                   @id @default(cuid())
+  id              String                  @id @default(cuid())
   tenantId        String
   productId       String
   qty             Int
@@ -2627,21 +2632,24 @@ model StockMovement {
   sourceType      StockMovementSourceType
   sourceId        String
   actorId         String
-  idempotencyKey  String                   @unique
+  batchId         String?
+  idempotencyKey  String                  @unique
   note            String?
-  createdAt       DateTime                 @default(now())
+  createdAt       DateTime                @default(now())
 
-  tenant        Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  product       Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
-  fromWarehouse Warehouse? @relation("StockMovementFromWarehouse", fields: [fromWarehouseId], references: [id])
-  toWarehouse   Warehouse? @relation("StockMovementToWarehouse", fields: [toWarehouseId], references: [id])
-  actor         User       @relation(fields: [actorId], references: [id])
+  tenant        Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product       Product     @relation(fields: [productId], references: [id], onDelete: Cascade)
+  fromWarehouse Warehouse?  @relation("StockMovementFromWarehouse", fields: [fromWarehouseId], references: [id])
+  toWarehouse   Warehouse?  @relation("StockMovementToWarehouse", fields: [toWarehouseId], references: [id])
+  actor         User        @relation(fields: [actorId], references: [id])
+  batch         StockBatch? @relation(fields: [batchId], references: [id])
 
   @@index([tenantId])
   @@index([productId])
   @@index([sourceType, sourceId])
   @@index([fromWarehouseId])
   @@index([toWarehouseId])
+  @@index([batchId])
 }
 
 enum BomVersionStatus {
@@ -2666,9 +2674,9 @@ model BomVersion {
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
 
-  tenant  Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  product Product          @relation("BomVersionProduct", fields: [productId], references: [id], onDelete: Cascade)
-  items   BomVersionItem[]
+  tenant     Tenant           @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product    Product          @relation("BomVersionProduct", fields: [productId], references: [id], onDelete: Cascade)
+  items      BomVersionItem[]
   workOrders WorkOrder[]
 
   @@unique([productId, version])
@@ -2713,7 +2721,7 @@ model WorkCenter {
   equipment Equipment? @relation(fields: [equipmentId], references: [id])
 
   routingSteps        RoutingOperationStep[]
-  workOrderOperations  WorkOrderOperation[]
+  workOrderOperations WorkOrderOperation[]
   rateCards           ProductionRateCard[]
   productionLogs      WorkerProductionLog[]
 
@@ -2750,7 +2758,7 @@ model RoutingVersion {
 }
 
 model RoutingOperationStep {
-  id                  String   @id @default(cuid())
+  id                  String  @id @default(cuid())
   tenantId            String
   routingVersionId    String
   workCenterId        String
@@ -2758,7 +2766,7 @@ model RoutingOperationStep {
   name                String
   standardDurationMin Int?
   instruction         String?
-  qcCheckpoint        Boolean  @default(false)
+  qcCheckpoint        Boolean @default(false)
 
   tenant         Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   routingVersion RoutingVersion @relation(fields: [routingVersionId], references: [id], onDelete: Cascade)
@@ -2822,7 +2830,7 @@ model WorkOrder {
   plannedBy      User           @relation("WorkOrderPlannedBy", fields: [plannedById], references: [id])
   approvedBy     User?          @relation("WorkOrderApprovedBy", fields: [approvedById], references: [id])
 
-  operations WorkOrderOperation[]
+  operations     WorkOrderOperation[]
   productionLogs WorkerProductionLog[]
 
   @@unique([tenantId, code])
@@ -2875,8 +2883,8 @@ model WorkOrderOperation {
 
 model Person {
   id            String    @id @default(cuid())
-  name          String    // Nama legal
-  preferredName String?   // Nama panggilan
+  name          String // Nama legal
+  preferredName String? // Nama panggilan
   birthPlace    String?
   birthDate     DateTime?
   gender        String?
@@ -2886,43 +2894,43 @@ model Person {
   bankName      String?
   bankAccount   String?
   bankHolder    String?
-  nik           String?   // NIK KTP
-  npwp          String?   // Nomor NPWP
-  taxStatus     String?   // TK/0, K/1, dll.
+  nik           String? // NIK KTP
+  npwp          String? // Nomor NPWP
+  taxStatus     String? // TK/0, K/1, dll.
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
 
-  workers       Worker[]
+  workers Worker[]
 }
 
 model Worker {
-  id             String          @id @default(cuid())
+  id             String   @id @default(cuid())
   tenantId       String
   personId       String
-  employeeNumber String          // NIK Karyawan unik per tenant
-  workerType     String          // EMPLOYEE, CONTRACTOR, INTERN, OUTSOURCED
+  employeeNumber String // NIK Karyawan unik per tenant
+  workerType     String // EMPLOYEE, CONTRACTOR, INTERN, OUTSOURCED
   payGroupId     String?
-  isActive       Boolean         @default(true)
-  createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
 
-  tenant         Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  person         Person          @relation(fields: [personId], references: [id], onDelete: Cascade)
-  payGroup       PayGroup?       @relation(fields: [payGroupId], references: [id], onDelete: SetNull)
-  employments    Employment[]
-  assignments    Assignment[]
-  compensations  CompensationProfile[]
-  shiftSchedules ShiftSchedule[]
-  attendances    Attendance[]
-  leaveLedgers   LeaveLedgerEntry[]
+  tenant           Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  person           Person                @relation(fields: [personId], references: [id], onDelete: Cascade)
+  payGroup         PayGroup?             @relation(fields: [payGroupId], references: [id], onDelete: SetNull)
+  employments      Employment[]
+  assignments      Assignment[]
+  compensations    CompensationProfile[]
+  shiftSchedules   ShiftSchedule[]
+  attendances      Attendance[]
+  leaveLedgers     LeaveLedgerEntry[]
   overtimeRequests OvertimeRequest[]
-  timesheets     ProjectTimesheet[]
-  payrollLines   PayrollLine[]
-  productionLogs WorkerProductionLog[]
-  kpiGoals       KpiGoal[]
-  reviews        PerformanceReview[]
-  enrollments    CourseEnrollment[]
-  talentProfiles TalentProfile[]
+  timesheets       ProjectTimesheet[]
+  payrollLines     PayrollLine[]
+  productionLogs   WorkerProductionLog[]
+  kpiGoals         KpiGoal[]
+  reviews          PerformanceReview[]
+  enrollments      CourseEnrollment[]
+  talentProfiles   TalentProfile[]
 
   @@unique([tenantId, employeeNumber])
   @@index([tenantId])
@@ -2935,52 +2943,52 @@ model Employment {
   workerId     String
   startDate    DateTime
   endDate      DateTime? // Null jika tidak terbatas / tetap
-  status       String    // ACTIVE, SUSPENDED, TERMINATED, LEAVE
+  status       String // ACTIVE, SUSPENDED, TERMINATED, LEAVE
   probationEnd DateTime?
   note         String?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
 
-  worker      Worker    @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  worker Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
 
   @@index([workerId])
 }
 
 model Assignment {
-  id            String    @id @default(cuid())
-  workerId      String
-  startDate     DateTime  // Effective date start
-  endDate       DateTime? // Effective date end
-  position      String?   // Jabatan / Kursi Organisasi
-  department    String?
-  outletId      String?
-  managerId     String?   // ID Worker manajer langsung
-  costCenter    String?
-  shiftGroup    String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id         String    @id @default(cuid())
+  workerId   String
+  startDate  DateTime // Effective date start
+  endDate    DateTime? // Effective date end
+  position   String? // Jabatan / Kursi Organisasi
+  department String?
+  outletId   String?
+  managerId  String? // ID Worker manajer langsung
+  costCenter String?
+  shiftGroup String?
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
 
-  worker        Worker    @relation(fields: [workerId], references: [id], onDelete: Cascade)
-  outlet        Outlet?   @relation(fields: [outletId], references: [id], onDelete: SetNull)
+  worker Worker  @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  outlet Outlet? @relation(fields: [outletId], references: [id], onDelete: SetNull)
 
   @@index([workerId])
   @@index([outletId])
 }
 
 model CompensationProfile {
-  id          String    @id @default(cuid())
-  workerId    String
-  startDate   DateTime  // Effective date start
-  endDate     DateTime? // Effective date end
-  grade       String?
-  salaryBasis String    // MONTHLY, DAILY, HOURLY, PIECE_RATE
-  baseRate    Int       // Nominal gaji pokok dalam rupiah
-  bpjsKesActive Boolean @default(false)
-  bpjsTkActive  Boolean @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  id            String    @id @default(cuid())
+  workerId      String
+  startDate     DateTime // Effective date start
+  endDate       DateTime? // Effective date end
+  grade         String?
+  salaryBasis   String // MONTHLY, DAILY, HOURLY, PIECE_RATE
+  baseRate      Int // Nominal gaji pokok dalam rupiah
+  bpjsKesActive Boolean   @default(false)
+  bpjsTkActive  Boolean   @default(false)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  worker      Worker    @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  worker Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
 
   @@index([workerId])
 }
@@ -2988,8 +2996,8 @@ model CompensationProfile {
 model LeaveLedgerEntry {
   id              String   @id @default(cuid())
   workerId        String
-  transactionType String   // ENTITLEMENT, ACCRUAL, USAGE, CANCEL, ADJUST
-  amount          Float    // Jumlah hari cuti (bisa pecahan misal 0.5 hari)
+  transactionType String // ENTITLEMENT, ACCRUAL, USAGE, CANCEL, ADJUST
+  amount          Float // Jumlah hari cuti (bisa pecahan misal 0.5 hari)
   createdAt       DateTime @default(now())
   note            String?
 
@@ -2999,16 +3007,16 @@ model LeaveLedgerEntry {
 }
 
 model OvertimeRequest {
-  id           String    @id @default(cuid())
+  id           String   @id @default(cuid())
   workerId     String
   date         DateTime
   plannedHours Float
   actualHours  Float?
-  status       String    // PENDING, APPROVED, REJECTED, WORKED, VALIDATED
+  status       String // PENDING, APPROVED, REJECTED, WORKED, VALIDATED
   note         String?
-  approvedById String?   // ID Worker manajer penyetuju
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
+  approvedById String? // ID Worker manajer penyetuju
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   worker Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
 
@@ -3033,75 +3041,75 @@ model ProjectTimesheet {
 }
 
 model PayGroup {
-  id         String          @id @default(cuid())
+  id         String   @id @default(cuid())
   tenantId   String
-  name       String          // e.g. "Gaji Bulanan Staff", "Gaji Harian Pabrik"
-  cutoffDay  Int             // Tanggal cut-off (misal 25)
-  paymentDay Int             // Tanggal pembayaran (misal 1)
-  createdAt  DateTime        @default(now())
-  updatedAt  DateTime        @updatedAt
+  name       String // e.g. "Gaji Bulanan Staff", "Gaji Harian Pabrik"
+  cutoffDay  Int // Tanggal cut-off (misal 25)
+  paymentDay Int // Tanggal pembayaran (misal 1)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  tenant     Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  workers    Worker[]
-  periods    PayrollPeriod[]
+  tenant  Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  workers Worker[]
+  periods PayrollPeriod[]
 
   @@index([tenantId])
 }
 
 model PayrollPeriod {
-  id         String        @id @default(cuid())
+  id         String   @id @default(cuid())
   tenantId   String
   payGroupId String
-  name       String        // e.g. "Juli 2026"
+  name       String // e.g. "Juli 2026"
   startDate  DateTime
   endDate    DateTime
-  status     String        // DRAFT, LOCKED, PAID
-  createdAt  DateTime      @default(now())
-  updatedAt  DateTime      @updatedAt
+  status     String // DRAFT, LOCKED, PAID
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
 
-  tenant     Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  payGroup   PayGroup      @relation(fields: [payGroupId], references: [id], onDelete: Cascade)
-  lines      PayrollLine[]
+  tenant   Tenant        @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  payGroup PayGroup      @relation(fields: [payGroupId], references: [id], onDelete: Cascade)
+  lines    PayrollLine[]
 
   @@index([tenantId])
   @@index([payGroupId])
 }
 
 model PayrollLine {
-  id              String        @id @default(cuid())
+  id              String @id @default(cuid())
   payrollPeriodId String
   workerId        String
   baseSalary      Int
-  overtimePay     Int           @default(0)
-  lateDeductions  Int           @default(0)
-  leaveDeductions Int           @default(0)
-  bpjsKesCompany  Int           @default(0)
-  bpjsKesEmployee Int           @default(0)
-  bpjsTkCompany   Int           @default(0)
-  bpjsTkEmployee  Int           @default(0)
-  taxAmount       Int           @default(0) // PPh 21
-  allowances      Int           @default(0)
-  variablePay     Int           @default(0) // Komisi produksi / borongan (Milestone 4)
+  overtimePay     Int    @default(0)
+  lateDeductions  Int    @default(0)
+  leaveDeductions Int    @default(0)
+  bpjsKesCompany  Int    @default(0)
+  bpjsKesEmployee Int    @default(0)
+  bpjsTkCompany   Int    @default(0)
+  bpjsTkEmployee  Int    @default(0)
+  taxAmount       Int    @default(0) // PPh 21
+  allowances      Int    @default(0)
+  variablePay     Int    @default(0) // Komisi produksi / borongan (Milestone 4)
   netPay          Int
-  status          String        // DRAFT, APPROVED
+  status          String // DRAFT, APPROVED
 
-  payrollPeriod   PayrollPeriod @relation(fields: [payrollPeriodId], references: [id], onDelete: Cascade)
-  worker          Worker        @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  payrollPeriod PayrollPeriod @relation(fields: [payrollPeriodId], references: [id], onDelete: Cascade)
+  worker        Worker        @relation(fields: [workerId], references: [id], onDelete: Cascade)
 
   @@index([payrollPeriodId])
   @@index([workerId])
 }
 
 model ProductionRateCard {
-  id           String     @id @default(cuid())
+  id           String    @id @default(cuid())
   tenantId     String
   workCenterId String
-  productName  String     // e.g. "Kaos Polos Cotton 30s", "Jahit Kerah"
-  ratePerUnit  Int        // Tarif borongan per unit output yang lolos QC
+  productName  String // e.g. "Kaos Polos Cotton 30s", "Jahit Kerah"
+  ratePerUnit  Int // Tarif borongan per unit output yang lolos QC
   startDate    DateTime
   endDate      DateTime?
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
   tenant     Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   workCenter WorkCenter @relation(fields: [workCenterId], references: [id], onDelete: Cascade)
@@ -3118,7 +3126,7 @@ model WorkerProductionLog {
   workCenterId     String
   quantityProduced Int
   quantityPassedQc Int
-  status           String   // PENDING, APPROVED
+  status           String // PENDING, APPROVED
   note             String?
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -3135,14 +3143,14 @@ model WorkerProductionLog {
 }
 
 model JobRequisition {
-  id           String      @id @default(cuid())
+  id           String   @id @default(cuid())
   tenantId     String
-  title        String      // e.g. "Operator Mesin Bubut"
+  title        String // e.g. "Operator Mesin Bubut"
   department   String?
   budgetSalary Int
-  status       String      // DRAFT, OPEN, FILLED, CANCELLED
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  status       String // DRAFT, OPEN, FILLED, CANCELLED
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   tenant     Tenant      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   candidates Candidate[]
@@ -3151,15 +3159,15 @@ model JobRequisition {
 }
 
 model Candidate {
-  id            String         @id @default(cuid())
+  id            String   @id @default(cuid())
   tenantId      String
   name          String
   email         String
   phone         String?
-  status        String         // APPLIED, INTERVIEW, OFFERED, HIRED, REJECTED
+  status        String // APPLIED, INTERVIEW, OFFERED, HIRED, REJECTED
   requisitionId String
-  createdAt     DateTime       @default(now())
-  updatedAt     DateTime       @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   tenant      Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   requisition JobRequisition @relation(fields: [requisitionId], references: [id], onDelete: Cascade)
@@ -3172,11 +3180,11 @@ model KpiGoal {
   id          String   @id @default(cuid())
   tenantId    String
   workerId    String
-  title       String   // e.g. "Efisiensi Produksi 98%"
-  weight      Float    // Bobot penilaian (0 - 1)
+  title       String // e.g. "Efisiensi Produksi 98%"
+  weight      Float // Bobot penilaian (0 - 1)
   targetValue Float
   actualValue Float    @default(0)
-  status      String   // ACTIVE, ACHIEVED, FAILED
+  status      String // ACTIVE, ACHIEVED, FAILED
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -3192,7 +3200,7 @@ model PerformanceReview {
   tenantId   String
   workerId   String
   reviewerId String
-  rating     Float    // Skor penilaian (e.g. 1.0 - 5.0)
+  rating     Float // Skor penilaian (e.g. 1.0 - 5.0)
   feedback   String?
   reviewDate DateTime
   createdAt  DateTime @default(now())
@@ -3206,13 +3214,13 @@ model PerformanceReview {
 }
 
 model LearningCourse {
-  id            String             @id @default(cuid())
+  id            String   @id @default(cuid())
   tenantId      String
   title         String
   description   String?
   durationHours Float
-  createdAt     DateTime           @default(now())
-  updatedAt     DateTime           @updatedAt
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   tenant      Tenant             @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   enrollments CourseEnrollment[]
@@ -3221,13 +3229,13 @@ model LearningCourse {
 }
 
 model CourseEnrollment {
-  id          String         @id @default(cuid())
+  id          String    @id @default(cuid())
   workerId    String
   courseId    String
-  status      String         // ENROLLED, IN_PROGRESS, COMPLETED
+  status      String // ENROLLED, IN_PROGRESS, COMPLETED
   completedAt DateTime?
-  createdAt   DateTime       @default(now())
-  updatedAt   DateTime       @updatedAt
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 
   worker Worker         @relation(fields: [workerId], references: [id], onDelete: Cascade)
   course LearningCourse @relation(fields: [courseId], references: [id], onDelete: Cascade)
@@ -3239,10 +3247,10 @@ model CourseEnrollment {
 model TalentProfile {
   id               String   @id @default(cuid())
   workerId         String
-  potential        String   // HIGH, MEDIUM, LOW
-  performance      String   // HIGH, MEDIUM, LOW
-  nineBoxGrid      String   // e.g. "Star", "High Performer", "Solid Citizen"
-  successionTarget String?  // Target jabatan untuk suksesi
+  potential        String // HIGH, MEDIUM, LOW
+  performance      String // HIGH, MEDIUM, LOW
+  nineBoxGrid      String // e.g. "Star", "High Performer", "Solid Citizen"
+  successionTarget String? // Target jabatan untuk suksesi
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
@@ -3254,9 +3262,9 @@ model TalentProfile {
 model HrisAuditLog {
   id        String   @id @default(cuid())
   tenantId  String
-  actorId   String   // ID User/Worker pelaku
-  action    String   // e.g. "MUTATION", "PAYROLL_APPROVED"
-  details   String   // Catatan perubahan detail JSON
+  actorId   String // ID User/Worker pelaku
+  action    String // e.g. "MUTATION", "PAYROLL_APPROVED"
+  details   String // Catatan perubahan detail JSON
   ipAddress String?
   createdAt DateTime @default(now())
 
@@ -3269,7 +3277,7 @@ model SsoSetting {
   id           String   @id @default(cuid())
   tenantId     String   @unique
   enabled      Boolean  @default(false)
-  provider     String   // e.g. "GOOGLE", "AZURE"
+  provider     String // e.g. "GOOGLE", "AZURE"
   clientId     String?
   clientSecret String?
   createdAt    DateTime @default(now())
@@ -3278,4 +3286,46 @@ model SsoSetting {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
+}
+
+enum BatchStatus {
+  AVAILABLE
+  QUARANTINED
+  REJECTED
+  HOLD
+}
+
+enum InspectionType {
+  INCOMING
+  IN_PROCESS
+  FINAL
+}
+
+enum InspectionStatus {
+  PENDING
+  PASSED
+  FAILED
+}
+
+model QualityInspection {
+  id                String           @id @default(cuid())
+  tenantId          String
+  inspectionType    InspectionType
+  sourceType        String // "STOCK_RECEIPT", "WORK_ORDER_OPERATION", "WORK_ORDER"
+  sourceId          String
+  inspectorId       String
+  status            InspectionStatus @default(PENDING)
+  quantityInspected Int
+  quantityPassed    Int
+  quantityFailed    Int
+  notes             String?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  inspector User   @relation(fields: [inspectorId], references: [id])
+
+  @@index([tenantId])
+  @@index([sourceType, sourceId])
+  @@index([inspectorId])
 }

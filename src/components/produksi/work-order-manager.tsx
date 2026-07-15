@@ -255,6 +255,12 @@ export function WorkOrderManager({
         {canManage && (
           <div className="flex gap-2">
             <Link
+              href="/produksi/qc"
+              className="flex min-h-[44px] items-center justify-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-bg)]"
+            >
+              Quality Control (QC)
+            </Link>
+            <Link
               href="/produksi/master"
               className="flex min-h-[44px] items-center justify-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-semibold text-[var(--color-text)] hover:bg-[var(--color-bg)]"
             >

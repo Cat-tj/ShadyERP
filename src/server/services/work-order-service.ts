@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import { prisma } from "@/lib/prisma";
 import type { Prisma, WorkOrder, WorkOrderOperation, WorkOrderStatus, WorkOrderOperationStatus } from "@prisma/client";
-import { recordMovement, getWarehouseBalance, buildIdempotencyKey } from "@/server/services/stock-movement-service";
+import { recordMovement, getWarehouseBalance, getBatchBalance, buildIdempotencyKey } from "@/server/services/stock-movement-service";
 
 /**
  * Perintah produksi (Work Order) + state machine-nya. Lihat
@@ -172,16 +172,23 @@ async function requiredQtyPerIngredient(
   }));
 }
 
-async function findRawMaterialWarehouse(tenantId: string, outletId: string) {
-  const warehouse = await prisma.warehouse.findFirst({
+type Client = Prisma.TransactionClient | typeof prisma;
+
+async function findRawMaterialWarehouse(tenantId: string, outletId: string, tx: Client = prisma) {
+  const warehouse = await tx.warehouse.findFirst({
     where: { tenantId, outletId, type: "RAW_MATERIAL", isActive: true },
   });
   if (!warehouse) throw new Error("Belum ada gudang bahan baku untuk outlet ini — buat dulu di Pengaturan Produksi.");
   return warehouse;
 }
 
-async function findWarehouseByType(tenantId: string, outletId: string, type: "WIP" | "FINISHED_GOODS" | "REJECT" | "SCRAP") {
-  const warehouse = await prisma.warehouse.findFirst({ where: { tenantId, outletId, type, isActive: true } });
+async function findWarehouseByType(
+  tenantId: string,
+  outletId: string,
+  type: "WIP" | "FINISHED_GOODS" | "REJECT" | "SCRAP" | "QUARANTINE",
+  tx: Client = prisma
+) {
+  const warehouse = await tx.warehouse.findFirst({ where: { tenantId, outletId, type, isActive: true } });
   if (!warehouse) throw new Error(`Belum ada gudang ${type} untuk outlet ini — buat dulu di Pengaturan Produksi.`);
   return warehouse;
 }
@@ -269,20 +276,61 @@ export async function releaseWorkOrder(tenantId: string, workOrderId: string, ac
 
   return prisma.$transaction(async (tx) => {
     for (const item of required) {
-      await recordMovement(
-        tenantId,
-        {
+      // FEFO / FIFO Batch allocation
+      const batches = await tx.stockBatch.findMany({
+        where: {
+          tenantId,
           productId: item.ingredientId,
-          qty: item.qty,
-          fromWarehouseId: rawWarehouse.id,
-          toWarehouseId: wipWarehouse.id,
-          sourceType: "WORK_ORDER_ISSUE",
-          sourceId: workOrderId,
-          actorId,
-          idempotencyKey: buildIdempotencyKey("WORK_ORDER_ISSUE", workOrderId, item.ingredientId),
+          outletId: wo.outletId,
+          status: "AVAILABLE",
         },
-        tx
-      );
+        orderBy: [
+          { expirationDate: "asc" },
+          { receivedDate: "asc" },
+        ],
+      });
+
+      let remainingToAllocate = item.qty;
+      for (const batch of batches) {
+        if (remainingToAllocate <= 0) break;
+        const batchBalance = await getBatchBalance(tenantId, item.ingredientId, rawWarehouse.id, batch.id);
+        if (batchBalance <= 0) continue;
+
+        const allocatedQty = Math.min(remainingToAllocate, batchBalance);
+        await recordMovement(
+          tenantId,
+          {
+            productId: item.ingredientId,
+            qty: allocatedQty,
+            fromWarehouseId: rawWarehouse.id,
+            toWarehouseId: wipWarehouse.id,
+            sourceType: "WORK_ORDER_ISSUE",
+            sourceId: workOrderId,
+            actorId,
+            batchId: batch.id,
+            idempotencyKey: buildIdempotencyKey("WORK_ORDER_ISSUE", workOrderId, `${item.ingredientId}:${batch.id}`),
+          },
+          tx
+        );
+        remainingToAllocate -= allocatedQty;
+      }
+
+      if (remainingToAllocate > 0) {
+        await recordMovement(
+          tenantId,
+          {
+            productId: item.ingredientId,
+            qty: remainingToAllocate,
+            fromWarehouseId: rawWarehouse.id,
+            toWarehouseId: wipWarehouse.id,
+            sourceType: "WORK_ORDER_ISSUE",
+            sourceId: workOrderId,
+            actorId,
+            idempotencyKey: buildIdempotencyKey("WORK_ORDER_ISSUE", workOrderId, `${item.ingredientId}:unbatched`),
+          },
+          tx
+        );
+      }
     }
 
     const firstOp = wo.operations[0];
@@ -418,21 +466,74 @@ export async function recordOutput(
     const wipWarehouse = await findWarehouseByType(tenantId, wo.outletId, "WIP");
 
     if (goodQty > 0) {
-      const finishedWarehouse = await findWarehouseByType(tenantId, wo.outletId, "FINISHED_GOODS");
-      await recordMovement(
-        tenantId,
-        {
-          productId: wo.productId,
-          qty: goodQty,
-          fromWarehouseId: wipWarehouse.id,
-          toWarehouseId: finishedWarehouse.id,
-          sourceType: "WORK_ORDER_OUTPUT",
-          sourceId: wo.id,
-          actorId,
-          idempotencyKey: buildIdempotencyKey("WORK_ORDER_OUTPUT", operationId, key),
-        },
-        tx
-      );
+      const allOps = await tx.workOrderOperation.findMany({
+        where: { workOrderId: wo.id },
+        orderBy: { sequence: "asc" },
+      });
+      const isLastOp = allOps[allOps.length - 1].id === operationId;
+
+      if (isLastOp) {
+        // Buat atau update batch produksi baru berstatus QUARANTINED
+        let batch = await tx.stockBatch.findFirst({
+          where: { tenantId, batchNumber: `BATCH-${wo.code}`, productId: wo.productId },
+        });
+        if (!batch) {
+          batch = await tx.stockBatch.create({
+            data: {
+              tenantId,
+              productId: wo.productId,
+              outletId: wo.outletId,
+              batchNumber: `BATCH-${wo.code}`,
+              status: "QUARANTINED",
+              qtyReceived: goodQty,
+              qtyRemaining: goodQty,
+              expirationDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000), // default 1 tahun
+            },
+          });
+        } else {
+          await tx.stockBatch.update({
+            where: { id: batch.id },
+            data: {
+              qtyReceived: batch.qtyReceived + goodQty,
+              qtyRemaining: batch.qtyRemaining + goodQty,
+            },
+          });
+        }
+
+        const quarantineWarehouse = await findWarehouseByType(tenantId, wo.outletId, "QUARANTINE", tx);
+        await recordMovement(
+          tenantId,
+          {
+            productId: wo.productId,
+            qty: goodQty,
+            fromWarehouseId: wipWarehouse.id,
+            toWarehouseId: quarantineWarehouse.id,
+            sourceType: "WORK_ORDER_OUTPUT",
+            sourceId: wo.id,
+            actorId,
+            batchId: batch.id,
+            idempotencyKey: buildIdempotencyKey("WORK_ORDER_OUTPUT", operationId, key),
+          },
+          tx
+        );
+
+        // Buat inspeksi kualitas (QualityInspection) baru
+        await tx.qualityInspection.create({
+          data: {
+            tenantId,
+            inspectionType: "FINAL",
+            sourceType: "WORK_ORDER",
+            sourceId: wo.id,
+            inspectorId: actorId,
+            quantityInspected: goodQty,
+            quantityPassed: 0,
+            quantityFailed: 0,
+            status: "PENDING",
+          },
+        });
+      } else {
+        // Untuk intermediate operation, barang tetap di area WIP, tidak ada pergerakan gudang eksternal
+      }
     }
     if (rejectQty + scrapQty > 0) {
       const scrapWarehouse = await findWarehouseByType(tenantId, wo.outletId, "SCRAP");
@@ -497,6 +598,17 @@ export async function markWorkOrderCompleted(tenantId: string, workOrderId: stri
   const wo = await prisma.workOrder.findFirst({ where: { id: workOrderId, tenantId } });
   if (!wo) throw new Error("WO tidak ditemukan.");
   assertStatus(wo, "AWAITING_QC");
+
+  const inspection = await prisma.qualityInspection.findFirst({
+    where: { tenantId, sourceType: "WORK_ORDER", sourceId: workOrderId, inspectionType: "FINAL" },
+  });
+  if (!inspection) {
+    throw new Error("Inspeksi QC Final belum dibuat atau belum dilakukan.");
+  }
+  if (inspection.status !== "PASSED") {
+    throw new Error("Inspeksi QC Final belum Lolos (PASSED) — tidak bisa menyelesaikan Work Order.");
+  }
+
   return prisma.workOrder.update({ where: { id: workOrderId }, data: { status: "COMPLETED", completedAt: new Date() } });
 }
 

@@ -23,8 +23,8 @@
 
 | # | Milestone | Cakupan | Status |
 |---|---|---|---|
-| M1 | Core Manufacturing | Plant, warehouse, location, product, UOM, BOM/routing version, WO, reservation, issue, return, operation, output, waste, stock movement | 🟡 **sedang jalan** |
-| M2 | Batch dan Quality | Batch, expiry, incoming/in-process/final QC, quarantine, hold/release/reject, rework, genealogy, traceability | ⬜ belum |
+| M1 | Core Manufacturing | Plant, warehouse, location, product, UOM, BOM/routing version, WO, reservation, issue, return, operation, output, waste, stock movement | 🟢 **selesai** |
+| M2 | Batch dan Quality | Batch, expiry, incoming/in-process/final QC, quarantine, hold/release/reject, rework, genealogy, traceability | 🟢 **selesai** |
 | M3 | Planning dan Procurement | Demand, forecast, production plan, MRP, material request, purchase, receipt, supplier QC, putaway | ⬜ belum |
 | M4 | Labor dan Payroll Produksi | Labor group, crew, skill, shift, assignment, labor log/output, rate card, hourly/piece/crew pay, approval, labor cost | ⬜ belum |
 | M5 | Costing dan Finance | Material/labor/machine/overhead cost, WIP, standard/actual, variance, inventory valuation, journal, COGS, reports | ⬜ belum |

@@ -24,6 +24,7 @@ import { createWorkCenter } from "@/server/services/routing-service";
 import { createBomVersion, activateBomVersion, type BomItemInput } from "@/server/services/bom-service";
 import { createRoutingVersion, activateRoutingVersion, type RoutingStepInput } from "@/server/services/routing-service";
 import { ensureDefaultWarehouses } from "@/server/services/warehouse-service";
+import { listInspections, submitInspectionResult } from "@/server/services/quality-service";
 
 async function requireSessionUser() {
   const session = await auth();
@@ -292,5 +293,30 @@ export async function returnMaterialAction(
     return { success: true };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Gagal mengembalikan sisa bahan." };
+  }
+}
+
+export async function listInspectionsAction() {
+  try {
+    const { tenantId } = await requireSessionUser();
+    const list = await listInspections(tenantId);
+    return { data: list };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Gagal mengambil daftar inspeksi QC." };
+  }
+}
+
+export async function submitInspectionResultAction(
+  inspectionId: string,
+  passedQty: number,
+  failedQty: number,
+  notes?: string
+) {
+  try {
+    const { tenantId } = await requireSessionUser();
+    const result = await submitInspectionResult(tenantId, inspectionId, passedQty, failedQty, notes);
+    return { data: result };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Gagal menyimpan hasil inspeksi QC." };
   }
 }

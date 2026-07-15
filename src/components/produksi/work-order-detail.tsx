@@ -307,6 +307,11 @@ export function WorkOrderDetail({ workOrder, canManage }: { workOrder: WorkOrder
         {workOrder.dueDate && (
           <p className="text-xs text-[var(--color-text-secondary)]">Target selesai: {new Date(workOrder.dueDate).toLocaleDateString("id-ID")}</p>
         )}
+        {["AWAITING_QC", "COMPLETED", "CLOSED"].includes(workOrder.status) && (
+          <p className="mt-2 text-xs text-[var(--color-text-secondary)] font-medium">
+            No. Batch Produksi: <span className="font-mono bg-[var(--color-bg)] border border-[var(--color-border)] px-1.5 py-0.5 rounded text-[var(--color-text)]">BATCH-{workOrder.code}</span>
+          </p>
+        )}
         {workOrder.note && <p className="mt-2 text-sm text-[var(--color-text)]">{workOrder.note}</p>}
       </div>
 
