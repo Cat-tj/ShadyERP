@@ -25,6 +25,7 @@ import { createBomVersion, activateBomVersion, type BomItemInput } from "@/serve
 import { createRoutingVersion, activateRoutingVersion, type RoutingStepInput } from "@/server/services/routing-service";
 import { ensureDefaultWarehouses } from "@/server/services/warehouse-service";
 import { listInspections, submitInspectionResult } from "@/server/services/quality-service";
+import { createProductionPlan, approveProductionPlan, runMRP, listProductionPlans } from "@/server/services/mrp-service";
 
 async function requireSessionUser() {
   const session = await auth();
@@ -318,5 +319,67 @@ export async function submitInspectionResultAction(
     return { data: result };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Gagal menyimpan hasil inspeksi QC." };
+  }
+}
+
+export async function createProductionPlanAction(
+  productId: string,
+  targetQty: number,
+  startDate: string,
+  endDate: string,
+  note?: string
+) {
+  try {
+    const { tenantId, role } = await requireSessionUser();
+    if (role !== "OWNER" && role !== "MANAGER") {
+      return { error: "Cuma Owner/Manager yang bisa membuat rencana produksi." };
+    }
+    const plan = await createProductionPlan(
+      tenantId,
+      productId,
+      targetQty,
+      new Date(startDate),
+      new Date(endDate),
+      note
+    );
+    return { data: plan };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Gagal membuat rencana produksi." };
+  }
+}
+
+export async function approveProductionPlanAction(planId: string) {
+  try {
+    const { tenantId, role } = await requireSessionUser();
+    if (role !== "OWNER" && role !== "MANAGER") {
+      return { error: "Cuma Owner/Manager yang bisa menyetujui rencana produksi." };
+    }
+    const plan = await approveProductionPlan(tenantId, planId);
+    return { data: plan };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Gagal menyetujui rencana produksi." };
+  }
+}
+
+export async function runMRPAction(planId: string) {
+  try {
+    const { tenantId, userId, role } = await requireSessionUser();
+    if (role !== "OWNER" && role !== "MANAGER") {
+      return { error: "Cuma Owner/Manager yang bisa menjalankan MRP." };
+    }
+    const result = await runMRP(tenantId, planId, userId);
+    return { data: result };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Gagal menjalankan perencanaan MRP." };
+  }
+}
+
+export async function listProductionPlansAction() {
+  try {
+    const { tenantId } = await requireSessionUser();
+    const list = await listProductionPlans(tenantId);
+    return { data: list };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Gagal mengambil rencana produksi." };
   }
 }

@@ -172,6 +172,9 @@ model Tenant {
   hrisAuditLogs             HrisAuditLog[]
   ssoSettings               SsoSetting[]
   qualityInspections        QualityInspection[]
+  productionPlans           ProductionPlan[]
+  materialRequests          MaterialRequest[]
+  materialRequestItems      MaterialRequestItem[]
 }
 
 /// PERMANENT = cabang tetap biasa. POPUP = cabang kecil & portable (mis. lapak/booth
@@ -235,9 +238,11 @@ model Outlet {
   assignments               Assignment[]
 
   // ---- Altora Pabrik (manufaktur) ----
-  warehouses  Warehouse[]
-  workCenters WorkCenter[]
-  workOrders  WorkOrder[]
+  warehouses             Warehouse[]
+  workCenters            WorkCenter[]
+  workOrders             WorkOrder[]
+  materialRequestsDest   MaterialRequest[] @relation("MaterialRequestDestination")
+  materialRequestsSource MaterialRequest[] @relation("MaterialRequestSource")
 
   @@index([tenantId])
 }
@@ -581,11 +586,13 @@ model Product {
   cateringOrderItems CateringOrderItem[]
 
   // ---- Altora Pabrik (manufaktur) ----
-  bomVersionsAsProduct        BomVersion[]     @relation("BomVersionProduct")
-  bomVersionItemsAsIngredient BomVersionItem[] @relation("BomVersionItemIngredient")
-  routingVersionsAsProduct    RoutingVersion[] @relation("RoutingVersionProduct")
-  workOrdersAsProduct         WorkOrder[]      @relation("WorkOrderProduct")
+  bomVersionsAsProduct        BomVersion[]          @relation("BomVersionProduct")
+  bomVersionItemsAsIngredient BomVersionItem[]      @relation("BomVersionItemIngredient")
+  routingVersionsAsProduct    RoutingVersion[]      @relation("RoutingVersionProduct")
+  workOrdersAsProduct         WorkOrder[]           @relation("WorkOrderProduct")
   stockMovements              StockMovement[]
+  productionPlans             ProductionPlan[]
+  materialRequestItems        MaterialRequestItem[]
 
   @@index([tenantId])
   @@index([categoryId])
@@ -3328,4 +3335,73 @@ model QualityInspection {
   @@index([tenantId])
   @@index([sourceType, sourceId])
   @@index([inspectorId])
+}
+
+enum ProductionPlanStatus {
+  DRAFT
+  APPROVED
+  COMPLETED
+  CANCELLED
+}
+
+model ProductionPlan {
+  id        String               @id @default(cuid())
+  tenantId  String
+  productId String
+  targetQty Int
+  startDate DateTime
+  endDate   DateTime
+  status    ProductionPlanStatus @default(DRAFT)
+  note      String?
+  createdAt DateTime             @default(now())
+  updatedAt DateTime             @updatedAt
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([productId])
+}
+
+enum MaterialRequestStatus {
+  DRAFT
+  PENDING
+  APPROVED
+  FULFILLED
+  CANCELLED
+}
+
+model MaterialRequest {
+  id           String                @id @default(cuid())
+  tenantId     String
+  outletId     String
+  fromOutletId String?
+  status       MaterialRequestStatus @default(DRAFT)
+  note         String?
+  createdAt    DateTime              @default(now())
+  updatedAt    DateTime              @updatedAt
+
+  tenant     Tenant                @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  outlet     Outlet                @relation("MaterialRequestDestination", fields: [outletId], references: [id], onDelete: Cascade)
+  fromOutlet Outlet?               @relation("MaterialRequestSource", fields: [fromOutletId], references: [id])
+  items      MaterialRequestItem[]
+
+  @@index([tenantId])
+  @@index([outletId])
+}
+
+model MaterialRequestItem {
+  id                String @id @default(cuid())
+  tenantId          String
+  materialRequestId String
+  productId         String
+  qty               Int
+
+  tenant          Tenant          @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  materialRequest MaterialRequest @relation(fields: [materialRequestId], references: [id], onDelete: Cascade)
+  product         Product         @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([materialRequestId])
+  @@index([productId])
 }
