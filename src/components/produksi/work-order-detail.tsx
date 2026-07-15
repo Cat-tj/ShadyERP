@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useState, useTransition, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import type { WorkOrderWithOperations } from "@/server/services/work-order-service";
@@ -18,6 +18,8 @@ import {
   completeOperationAction,
   markWorkOrderCompletedAction,
   closeWorkOrderAction,
+  getWorkOrderIngredientsAction,
+  returnMaterialAction,
 } from "@/app/(app)/produksi/actions";
 import { useToast, Toast } from "@/components/toast";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -222,6 +224,9 @@ export function WorkOrderDetail({ workOrder, canManage }: { workOrder: WorkOrder
   const { toastMessage, showToast } = useToast();
   const [isPending, startTransition] = useTransition();
   const [availability, setAvailability] = useState<Availability[] | null>(null);
+  const [ingredients, setIngredients] = useState<{ id: string; name: string }[]>([]);
+  const [isReturning, setIsReturning] = useState(false);
+  const [returnQtys, setReturnQtys] = useState<Record<string, number>>({});
 
   function run(action: () => Promise<{ error?: string }>, successMessage?: string) {
     startTransition(async () => {
@@ -244,6 +249,45 @@ export function WorkOrderDetail({ workOrder, canManage }: { workOrder: WorkOrder
 
   const cancellable = ["DRAFT", "PENDING_APPROVAL", "APPROVED", "MATERIAL_SHORTAGE", "MATERIAL_RESERVED", "SCHEDULED"].includes(workOrder.status);
   const showOperations = ["RELEASED", "IN_PROGRESS", "PAUSED", "AWAITING_QC", "COMPLETED", "CLOSED"].includes(workOrder.status);
+
+  useEffect(() => {
+    if (showOperations) {
+      getWorkOrderIngredientsAction(workOrder.id).then((res) => {
+        if (res.data) {
+          setIngredients(res.data);
+          const initialQtys: Record<string, number> = {};
+          res.data.forEach((ing) => {
+            initialQtys[ing.id] = 0;
+          });
+          setReturnQtys(initialQtys);
+        }
+      });
+    }
+  }, [workOrder.id, showOperations]);
+
+  function handleReturnMaterial() {
+    const items = Object.entries(returnQtys)
+      .map(([ingredientId, qty]) => ({ ingredientId, qty }))
+      .filter((item) => item.qty > 0);
+
+    if (items.length === 0) {
+      showToast("Isi minimal salah satu jumlah bahan yang akan dikembalikan.");
+      return;
+    }
+
+    startTransition(async () => {
+      const res = await returnMaterialAction(workOrder.id, items);
+      if (res.error) return showToast(res.error);
+      showToast("Bahan sisa berhasil dikembalikan ke gudang.");
+      const resetQtys: Record<string, number> = {};
+      ingredients.forEach((ing) => {
+        resetQtys[ing.id] = 0;
+      });
+      setReturnQtys(resetQtys);
+      setIsReturning(false);
+      router.refresh();
+    });
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -341,6 +385,53 @@ export function WorkOrderDetail({ workOrder, canManage }: { workOrder: WorkOrder
               <OperationRow key={op.id} operation={op} />
             ))}
           </div>
+        </div>
+      )}
+
+      {showOperations && ingredients.length > 0 && (
+        <div className="rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <div className="flex items-center justify-between gap-3 mb-3">
+            <h3 className="text-sm font-semibold text-[var(--color-text)]">Retur Sisa Bahan Baku</h3>
+            <button
+              onClick={() => setIsReturning((v) => !v)}
+              className="text-xs font-semibold text-[var(--color-primary)] hover:underline"
+            >
+              {isReturning ? "Batal" : "Form Retur"}
+            </button>
+          </div>
+          {isReturning && (
+            <div className="flex flex-col gap-3 rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] p-3">
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                Kembalikan sisa bahan yang tidak terpakai dari area WIP ke gudang bahan baku.
+              </p>
+              <div className="space-y-3">
+                {ingredients.map((ing) => (
+                  <div key={ing.id} className="flex items-center justify-between gap-4">
+                    <span className="text-sm font-medium text-[var(--color-text)]">{ing.name}</span>
+                    <input
+                      type="number"
+                      min="0"
+                      value={returnQtys[ing.id] ?? 0}
+                      onChange={(e) =>
+                        setReturnQtys((prev) => ({
+                          ...prev,
+                          [ing.id]: Number(e.target.value),
+                        }))
+                      }
+                      className="w-24 min-h-[36px] rounded border border-[var(--color-border)] bg-[var(--color-surface)] px-2 text-sm text-right"
+                    />
+                  </div>
+                ))}
+              </div>
+              <button
+                onClick={handleReturnMaterial}
+                disabled={isPending}
+                className="mt-2 min-h-[40px] rounded-lg bg-[var(--color-primary)] text-sm font-semibold text-[var(--color-on-primary)] disabled:opacity-60"
+              >
+                {isPending ? "Mengirim..." : "Kirim Pengembalian"}
+              </button>
+            </div>
+          )}
         </div>
       )}
 

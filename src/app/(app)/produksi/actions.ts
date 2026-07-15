@@ -17,6 +17,7 @@ import {
   completeOperation,
   markWorkOrderCompleted,
   closeWorkOrder,
+  returnMaterial,
   type RecordOutputInput,
 } from "@/server/services/work-order-service";
 import { createWorkCenter } from "@/server/services/routing-service";
@@ -254,5 +255,42 @@ export async function activateRoutingVersionAction(routingVersionId: string) {
     return { data: routing };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Gagal mengaktifkan routing." };
+  }
+}
+
+export async function getWorkOrderIngredientsAction(workOrderId: string) {
+  try {
+    const { tenantId } = await requireSessionUser();
+    const wo = await prisma.workOrder.findFirst({
+      where: { id: workOrderId, tenantId },
+      select: { bomVersionId: true },
+    });
+    if (!wo) throw new Error("Work Order tidak ditemukan.");
+    const bomItems = await prisma.bomVersionItem.findMany({
+      where: { bomVersionId: wo.bomVersionId, tenantId },
+      include: { ingredient: { select: { id: true, name: true } } },
+    });
+    return {
+      data: bomItems.map((item) => ({
+        id: item.ingredient.id,
+        name: item.ingredient.name,
+      })),
+    };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Gagal mengambil daftar bahan." };
+  }
+}
+
+export async function returnMaterialAction(
+  workOrderId: string,
+  items: { ingredientId: string; qty: number }[]
+) {
+  try {
+    const { tenantId, userId } = await requireSessionUser();
+    const submissionKey = crypto.randomUUID();
+    await returnMaterial(tenantId, workOrderId, userId, items, submissionKey);
+    return { success: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Gagal mengembalikan sisa bahan." };
   }
 }
