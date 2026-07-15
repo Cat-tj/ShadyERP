@@ -39,7 +39,7 @@ test.describe("Smoke test: jalur kritis", () => {
   test("login staff kasir sampai ke pilih aplikasi", async ({ page }) => {
     await login(page, STAFF_EMAIL);
     await expect(page).toHaveURL(/\/pilih-aplikasi/);
-    await expect(page.getByText("Kasir", { exact: true })).toBeVisible();
+    await expect(page.getByRole("link", { name: "Kasir", exact: true }).first()).toBeVisible();
   });
 
   test("transaksi kasir: buka shift, jual produk, bayar tunai", async ({ page }) => {
