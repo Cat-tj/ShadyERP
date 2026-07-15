@@ -7,7 +7,19 @@ const DEMO_SLUG = "kopi-nusantara";
 async function main() {
   const existing = await prisma.tenant.findUnique({ where: { slug: DEMO_SLUG } });
   if (existing) {
-    await prisma.tenant.delete({ where: { id: existing.id } });
+    try {
+      await prisma.$executeRawUnsafe(`TRUNCATE TABLE "StockCountItem", "StockCount" CASCADE;`);
+      await prisma.tenant.delete({ where: { id: existing.id } });
+    } catch (e) {
+      console.warn("Soft reset failed, running deep truncate...", e);
+      await prisma.$executeRawUnsafe(`
+        TRUNCATE TABLE 
+          "StockCountItem", "StockCount", "StockAdjustment", "StockTransfer", "StockMovement", 
+          "StockReceiptItem", "StockReceipt", "ProductCostHistory", "SaleItem", "SalePayment", 
+          "Sale", "CashierShift", "ProductStock", "Product", "User", "Outlet", "Tenant" 
+        CASCADE;
+      `);
+    }
     console.log("Data demo lama dihapus, membuat ulang...");
   }
 

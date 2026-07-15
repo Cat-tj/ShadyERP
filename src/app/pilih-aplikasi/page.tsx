@@ -11,7 +11,11 @@ export default async function PilihAplikasiPage() {
   const setting = await getTenantSetting(user.tenantId);
 
   if ((setting?.accountingMode ?? "SIMPLE") === "SIMPLE") {
-    redirect("/simple/hari-ini");
+    if (user.role === "STAFF") {
+      redirect("/kasir");
+    } else {
+      redirect("/simple/hari-ini");
+    }
   }
 
   const enabledModules = resolveEnabledModules(tenant?.disabledModules ?? []);
