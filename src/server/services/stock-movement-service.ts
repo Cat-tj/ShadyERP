@@ -22,6 +22,7 @@ export interface RecordMovementInput {
   sourceType: StockMovementSourceType;
   sourceId: string;
   actorId: string;
+  batchId?: string | null;
   idempotencyKey: string;
   note?: string;
 }
@@ -69,6 +70,7 @@ export async function recordMovement(
       sourceType: input.sourceType,
       sourceId: input.sourceId,
       actorId: input.actorId,
+      batchId: input.batchId ?? null,
       idempotencyKey: input.idempotencyKey,
       note: input.note,
     },
@@ -84,6 +86,26 @@ export async function getWarehouseBalance(tenantId: string, productId: string, w
     }),
     prisma.stockMovement.aggregate({
       where: { tenantId, productId, fromWarehouseId: warehouseId },
+      _sum: { qty: true },
+    }),
+  ]);
+  return (inSum._sum.qty ?? 0) - (outSum._sum.qty ?? 0);
+}
+
+/** Saldo batch produk di satu gudang = total masuk - total keluar, dihitung ulang dari ledger per batch. */
+export async function getBatchBalance(
+  tenantId: string,
+  productId: string,
+  warehouseId: string,
+  batchId: string
+): Promise<number> {
+  const [inSum, outSum] = await Promise.all([
+    prisma.stockMovement.aggregate({
+      where: { tenantId, productId, toWarehouseId: warehouseId, batchId },
+      _sum: { qty: true },
+    }),
+    prisma.stockMovement.aggregate({
+      where: { tenantId, productId, fromWarehouseId: warehouseId, batchId },
       _sum: { qty: true },
     }),
   ]);

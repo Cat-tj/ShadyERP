@@ -17,12 +17,15 @@ import {
   completeOperation,
   markWorkOrderCompleted,
   closeWorkOrder,
+  returnMaterial,
   type RecordOutputInput,
 } from "@/server/services/work-order-service";
 import { createWorkCenter } from "@/server/services/routing-service";
 import { createBomVersion, activateBomVersion, type BomItemInput } from "@/server/services/bom-service";
 import { createRoutingVersion, activateRoutingVersion, type RoutingStepInput } from "@/server/services/routing-service";
 import { ensureDefaultWarehouses } from "@/server/services/warehouse-service";
+import { listInspections, submitInspectionResult } from "@/server/services/quality-service";
+import { createProductionPlan, approveProductionPlan, runMRP, listProductionPlans } from "@/server/services/mrp-service";
 
 async function requireSessionUser() {
   const session = await auth();
@@ -254,5 +257,129 @@ export async function activateRoutingVersionAction(routingVersionId: string) {
     return { data: routing };
   } catch (err) {
     return { error: err instanceof Error ? err.message : "Gagal mengaktifkan routing." };
+  }
+}
+
+export async function getWorkOrderIngredientsAction(workOrderId: string) {
+  try {
+    const { tenantId } = await requireSessionUser();
+    const wo = await prisma.workOrder.findFirst({
+      where: { id: workOrderId, tenantId },
+      select: { bomVersionId: true },
+    });
+    if (!wo) throw new Error("Work Order tidak ditemukan.");
+    const bomItems = await prisma.bomVersionItem.findMany({
+      where: { bomVersionId: wo.bomVersionId, tenantId },
+      include: { ingredient: { select: { id: true, name: true } } },
+    });
+    return {
+      data: bomItems.map((item) => ({
+        id: item.ingredient.id,
+        name: item.ingredient.name,
+      })),
+    };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Gagal mengambil daftar bahan." };
+  }
+}
+
+export async function returnMaterialAction(
+  workOrderId: string,
+  items: { ingredientId: string; qty: number }[]
+) {
+  try {
+    const { tenantId, userId } = await requireSessionUser();
+    const submissionKey = crypto.randomUUID();
+    await returnMaterial(tenantId, workOrderId, userId, items, submissionKey);
+    return { success: true };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Gagal mengembalikan sisa bahan." };
+  }
+}
+
+export async function listInspectionsAction() {
+  try {
+    const { tenantId } = await requireSessionUser();
+    const list = await listInspections(tenantId);
+    return { data: list };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Gagal mengambil daftar inspeksi QC." };
+  }
+}
+
+export async function submitInspectionResultAction(
+  inspectionId: string,
+  passedQty: number,
+  failedQty: number,
+  notes?: string
+) {
+  try {
+    const { tenantId } = await requireSessionUser();
+    const result = await submitInspectionResult(tenantId, inspectionId, passedQty, failedQty, notes);
+    return { data: result };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Gagal menyimpan hasil inspeksi QC." };
+  }
+}
+
+export async function createProductionPlanAction(
+  productId: string,
+  targetQty: number,
+  startDate: string,
+  endDate: string,
+  note?: string
+) {
+  try {
+    const { tenantId, role } = await requireSessionUser();
+    if (role !== "OWNER" && role !== "MANAGER") {
+      return { error: "Cuma Owner/Manager yang bisa membuat rencana produksi." };
+    }
+    const plan = await createProductionPlan(
+      tenantId,
+      productId,
+      targetQty,
+      new Date(startDate),
+      new Date(endDate),
+      note
+    );
+    return { data: plan };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Gagal membuat rencana produksi." };
+  }
+}
+
+export async function approveProductionPlanAction(planId: string) {
+  try {
+    const { tenantId, role } = await requireSessionUser();
+    if (role !== "OWNER" && role !== "MANAGER") {
+      return { error: "Cuma Owner/Manager yang bisa menyetujui rencana produksi." };
+    }
+    const plan = await approveProductionPlan(tenantId, planId);
+    return { data: plan };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Gagal menyetujui rencana produksi." };
+  }
+}
+
+export async function runMRPAction(planId: string) {
+  try {
+    const { tenantId, userId, role } = await requireSessionUser();
+    if (role !== "OWNER" && role !== "MANAGER") {
+      return { error: "Cuma Owner/Manager yang bisa menjalankan MRP." };
+    }
+    const result = await runMRP(tenantId, planId, userId);
+    return { data: result };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Gagal menjalankan perencanaan MRP." };
+  }
+}
+
+export async function listProductionPlansAction() {
+  try {
+    const { tenantId } = await requireSessionUser();
+    const list = await listProductionPlans(tenantId);
+    return { data: list };
+  } catch (err) {
+    return { error: err instanceof Error ? err.message : "Gagal mengambil rencana produksi." };
   }
 }
