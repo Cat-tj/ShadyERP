@@ -109,7 +109,41 @@ eksternal".)
 
 ## Status saat ini — BACA INI DULU sebelum lanjut
 
-**Update sesi 2026-07-16 (agent verifikasi, tidak ada perubahan kode)**: Checklist P1-P13
+**⚠️⚠️ Update sesi 2026-07-16 lanjutan — MIGRATION GAP KE-3 DITEMUKAN DAN DIPERBAIKI**:
+Setelah verifikasi awal (di bawah) selesai, branch remote ternyata sudah maju lagi dengan
+2 commit fitur nyata (bukan cuma doc): `6aade54` (Milestone 2 Batch/Quality, diff
+`schema.prisma` 1032 baris) dan `ad53073` (Milestone 3 Planning/MRP, diff `schema.prisma`
+90 baris) — **KEDUANYA TIDAK MENYERTAKAN FILE MIGRATION SAMA SEKALI**, pola persis yang
+sudah 2x terjadi sebelumnya di commit HRIS (`af42845`, `fa01297`) dan sempat ditambal.
+Setelah merge ke branch lokal, dijalankan `prisma migrate diff --from-config-datasource
+prisma.config.ts --to-schema prisma/schema.prisma --script` dan ditemukan **595 baris SQL
+drift**: 21 tabel baru + 5 kolom baru tidak ada di migration manapun (mencakup baik model
+Pabrik M2/M3 — `QualityInspection`, `ProductionPlan`, `MaterialRequest`,
+`MaterialRequestItem` — maupun model HRIS M4-M8 yang numpuk di commit sebelumnya —
+`PayGroup`, `PayrollPeriod`, `PayrollLine`, `ProductionRateCard`, `WorkerProductionLog`,
+`JobRequisition`, `Candidate`, `KpiGoal`, `PerformanceReview`, `LearningCourse`,
+`CourseEnrollment`, `TalentProfile`, `HrisAuditLog`, `SsoSetting`, dll). **Dikonfirmasi
+tidak ada satu pun `DROP` statement** (murni CREATE TABLE/ALTER TABLE ADD COLUMN, aman).
+
+**Sudah diperbaiki**: migration baru `prisma/migrations/20260716163442_pabrik_m2_m3_and_hris_gap_fill/migration.sql`
+dibuat via `npx prisma migrate dev --name pabrik_m2_m3_and_hris_gap_fill --create-only`,
+diverifikasi isinya identik dengan diff di atas, lalu di-apply (`prisma migrate deploy`).
+Setelah apply: `prisma migrate diff` kosong (nol drift), `prisma migrate status` bersih
+(61 migration, up to date), `npx tsc --noEmit` bersih. Commit migration ini akan menyusul
+commit dokumentasi ini.
+
+**Pesan buat agent penerus dan buat user**: pola "tambah model besar ke `schema.prisma`
+tanpa migration" ini sudah terjadi **berulang kali** (minimal 3x: HRIS M2, lalu M4-M8
+sekaligus, lalu Pabrik M2/M3) dari kontributor yang sama (`icattj123`). Ini bukan lagi
+insiden sekali, tapi kebiasaan proses yang perlu diperbaiki di sumbernya (instruksi ke
+kontributor tsb.), bukan cuma ditambal diam-diam terus-menerus oleh agent berikutnya.
+**Kalau kerja di area manapun yang menyentuh `schema.prisma`, WAJIB cek dulu**:
+`npx prisma migrate diff --from-config-datasource prisma.config.ts --to-schema prisma/schema.prisma`
+(kosong = aman) sebelum melanjutkan.
+
+---
+
+**Update sesi 2026-07-16 awal (agent verifikasi, tidak ada perubahan kode saat itu)**: Checklist P1-P13
 di atas semua `[x]` per commit `d74bbe1` ("docs: mark manufacturing Milestone 1 tasks as
 completed after E2E test verification", kontributor lain). Sesi ini melakukan verifikasi
 independen dan menemukan hal penting:
