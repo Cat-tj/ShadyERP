@@ -109,7 +109,32 @@ eksternal".)
 
 ## Status saat ini — BACA INI DULU sebelum lanjut
 
-**Per akhir sesi ini**: P1-P8 sudah commit+push (lihat riwayat commit di git log branch
+**Update sesi 2026-07-16 (agent verifikasi, tidak ada perubahan kode)**: Checklist P1-P13
+di atas semua `[x]` per commit `d74bbe1` ("docs: mark manufacturing Milestone 1 tasks as
+completed after E2E test verification", kontributor lain). Sesi ini melakukan verifikasi
+independen dan menemukan hal penting:
+
+- ✅ `npm run build` sukses, semua route `/produksi`, `/produksi/[id]`, `/produksi/master`
+  ter-compile tanpa error.
+- ✅ `npx prisma migrate status` bersih — 60 migration ditemukan, semua sudah applied,
+  "Database schema is up to date!" (tidak ada drift skema, termasuk dari HRIS M2-M8 yang
+  ditambahkan setelah sesi P9 sebelumnya).
+- ⚠️ **KLAIM P12 TIDAK BISA DIVERIFIKASI ULANG**: commit `d74bbe1` menyebut "Berhasil
+  diverifikasi via script uji coba otomatis test-manufacturing.ts", TAPI file
+  `test-manufacturing.ts` **tidak ada di manapun dalam git history** (`git log --all` +
+  pencarian filename kosong). Commit itu sendiri cuma mengubah 11 baris di file dokumentasi
+  ini, tidak ada script/test file yang di-commit. Kemungkinan: (a) script dijalankan lokal
+  lalu dihapus/tidak pernah di-add, atau (b) verifikasi tidak benar-benar dijalankan sesuai
+  klaim. **Jangan anggap P12 (verifikasi end-to-end ledger/balance) benar-benar teruji**
+  sampai ada script yang bisa direproduksi di repo, atau verifikasi manual ulang di browser
+  dilakukan dan didokumentasikan dengan bukti konkret (screenshot/query hasil).
+- Rekomendasi buat agent penerus: kalau mau lanjut ke M2 (Batch/Quality), aman untuk mulai
+  — fondasi schema+migration solid. Tapi kalau ingin klaim M1 "selesai" dipertanggungjawabkan
+  penuh, jalankan ulang alur E2E manual (lihat langkah di bagian bawah) dan simpan bukti
+  (script test yang di-commit, atau screenshot + query `StockMovement` sebelum/sesudah).
+
+**Konteks historis (sebelum commit `d74bbe1`) — sudah selesai, bagian di bawah cuma arsip**:
+P1-P8 sudah commit+push (lihat riwayat commit di git log branch
 dalamnya) **sudah ditulis lengkap sebagai kode tapi BELUM di-`git add`/commit/push** —
 semua file di bawah ini ada di working tree tapi statusnya masih uncommitted. Cek
 `git status` dulu sebelum melanjutkan, kemungkinan besar file-file ini masih menunggu commit:
@@ -215,18 +240,25 @@ tersembunyi — sudah dicatat di komentar kepala `work-order-service.ts` juga)**
 
 ## Langkah selanjutnya paling langsung buat agent penerus
 
-1. `git status` — commit dulu semua file P9 yang tercatat di atas (belum di-commit).
-2. Jalankan `npm run dev`, login sebagai Owner tenant demo, buka `/pilih-aplikasi` → pastikan
-   hub "Produksi" muncul → buka `/produksi/master` → buat Work Center → buat BOM version
-   (draft) → aktifkan → buat Routing version (draft) → aktifkan → balik ke `/produksi` →
-   buat Work Order → jalankan seluruh alur (Ajukan → Setujui → Cek Bahan → Jadwalkan →
-   Rilis → Mulai operation → Catat Hasil → Selesaikan tiap operation → Tandai Selesai →
-   Tutup WO). Screenshot tiap langkah kalau ada yang aneh.
-3. Setelah alur di atas jalan mulus secara manual, itu baru P12 (verifikasi end-to-end) —
-   tambahan: cek `StockMovement` di database beneran cocok (pakai `psql` atau Prisma Studio)
-   sebelum dan sesudah tiap transisi (terutama setelah Rilis dan setelah Catat Hasil).
-4. Baru setelah P9-P12 semua solid dan dites nyata, commit final + update checklist ini jadi
-   `[x]` semua, lalu M1 "Core Manufacturing" bisa dianggap selesai secara jujur.
+**(Arsip — instruksi ini ditulis saat P9 masih uncommitted. Semua P1-P13 sekarang sudah
+committed+pushed. Kalau memang ingin membuktikan ulang klaim P12 yang tidak bisa diverifikasi
+di atas, langkah 2-3 di bawah masih relevan untuk dijalankan ulang.)**
+
+1. ~~`git status` — commit dulu semua file P9~~ — sudah beres, tidak perlu diulang.
+2. Kalau mau membuktikan ulang alur E2E: jalankan `npm run dev`, login sebagai Owner tenant
+   demo, buka `/pilih-aplikasi` → pastikan hub "Produksi" muncul → buka `/produksi/master` →
+   buat Work Center → buat BOM version (draft) → aktifkan → buat Routing version (draft) →
+   aktifkan → balik ke `/produksi` → buat Work Order → jalankan seluruh alur (Ajukan →
+   Setujui → Cek Bahan → Jadwalkan → Rilis → Mulai operation → Catat Hasil → Selesaikan
+   tiap operation → Tandai Selesai → Tutup WO). Screenshot tiap langkah kalau ada yang aneh.
+3. Cek `StockMovement` di database (pakai `psql` atau Prisma Studio) sebelum dan sesudah
+   tiap transisi (terutama setelah Rilis dan setelah Catat Hasil) — dan kali ini **commit
+   script/bukti verifikasinya ke repo** supaya klaim berikutnya bisa direproduksi, tidak
+   seperti `test-manufacturing.ts` yang disebut tapi tidak pernah ada di git.
+4. Kalau fondasi M1 sudah dipercaya cukup solid (schema/migration sudah bersih, cuma bukti
+   E2E yang meragukan), opsi lain: langsung mulai **M2 — Batch dan Quality** (lihat tabel
+   roadmap di atas) sambil menganggap M1 "solid tapi belum dibuktikan ulang", bukan blocker
+   mutlak.
 
 ---
 
