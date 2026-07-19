@@ -1,4 +1,5 @@
 import type { ModuleKey } from "@/lib/modules";
+import type { BusinessModeKey } from "@/lib/business-modes";
 
 /**
  * Vertikal = kemasan produk per jenis usaha (lihat docs/MASTER-GUIDELINE.md §2).
@@ -12,6 +13,7 @@ import type { ModuleKey } from "@/lib/modules";
 export type VerticalKey =
   | "cafe"
   | "toko"
+  | "ecommerce"
   | "supermarket"
   | "laundry"
   | "counter"
@@ -94,6 +96,27 @@ export const VERTICALS: VerticalDef[] = [
       background: "#F0FDFA",
       letterOnLight: "#082145",
       ribbon: { start: "#5EEAD4", middle: "#14B8A6", end: "#0F766E" },
+    },
+  },
+  {
+    key: "ecommerce",
+    subdomain: "ecommerce",
+    label: "Altora E-commerce",
+    eyebrow: "Operasional Katalog & Pesanan Online untuk UMKM Indonesia",
+    headline: "Jualan online, stok tetap satu angka.",
+    lede: "Kelola katalog, pesanan, dan stok dari satu fondasi toko supaya penjualan online tidak membuat data barang dan laporan berantakan.",
+    caseKicker: "Toko online & omnichannel",
+    caseTitle: "Pesanan bertambah, stok tetap terkendali.",
+    caseDescription: "Satu katalog, stok yang terjaga, dan alur pesanan yang siap disambungkan ke kanal penjualan tanpa membuat tim mencatat dua kali.",
+    modules: ["kasir", "inventory", "member", "keuangan", "promo"],
+    theme: {
+      primary: "#2563EB",
+      deep: "#1D4ED8",
+      accent: "#60A5FA",
+      soft: "#DBEAFE",
+      background: "#F5F9FF",
+      letterOnLight: "#082145",
+      ribbon: { start: "#93C5FD", middle: "#3B82F6", end: "#2563EB" },
     },
   },
   {
@@ -190,7 +213,7 @@ export const VERTICALS: VerticalDef[] = [
     caseKicker: "Produksi & manufaktur kecil",
     caseTitle: "Bahan baku terpantau, mesin terjadwal.",
     caseDescription: "Stok bahan baku, jadwal maintenance mesin/alat, dan laporan pemakaian tercatat rapi.",
-    modules: ["produksi", "inventory", "hr", "keuangan"],
+    modules: ["inventory", "hr", "keuangan"],
     theme: {
       primary: "#334155",
       deep: "#1E293B",
@@ -280,6 +303,29 @@ export const DEFAULT_THEME: VerticalTheme = {
 export const VERTICAL_MAP: Record<VerticalKey, VerticalDef> = Object.fromEntries(
   VERTICALS.map((v) => [v.key, v])
 ) as Record<VerticalKey, VerticalDef>;
+
+/**
+ * A product domain may package the same operational mode differently (for
+ * example Toko and Supermarket). Registration still persists one canonical
+ * business mode so reporting and permissions stay consistent.
+ */
+export const VERTICAL_BUSINESS_MODE: Record<VerticalKey, BusinessModeKey> = {
+  cafe: "CAFE",
+  toko: "TOKO",
+  ecommerce: "TOKO",
+  supermarket: "TOKO",
+  laundry: "LAUNDRY",
+  counter: "COUNTER",
+  jasa: "COUNTER",
+  pabrik: "PABRIK",
+  company: "COMPANY",
+  teams: "COMPANY",
+  accounting: "COMPANY",
+};
+
+export function getBusinessModeForVertical(vertical: VerticalDef | null | undefined): BusinessModeKey | null {
+  return vertical ? VERTICAL_BUSINESS_MODE[vertical.key] : null;
+}
 
 /** Cocokkan hostname (mis. "cafe.altora.my.id") ke vertikalnya — null kalau bukan subdomain vertikal yang dikenal. */
 export function getVerticalForHostname(hostname: string): VerticalDef | null {

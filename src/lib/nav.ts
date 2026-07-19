@@ -13,7 +13,9 @@ import {
   CalendarIcon,
   FlameIcon,
   CurrencyIcon,
+  AwardIcon,
   BriefcaseIcon,
+  EditIcon,
   WalletIcon,
   BuildingIcon,
   GridIcon,
@@ -54,9 +56,11 @@ export const NAV_ITEMS: NavItem[] = [
   // ===== Inventory =====
   { href: "/inventory", label: "Stok", icon: PackageIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "inventory", hub: "inventory" },
   { href: "/supplier", label: "Supplier", icon: UsersIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "inventory", hub: "inventory" },
+  { href: "/supplier/returns", label: "Retur Supplier", icon: TrendingDownIcon, roles: ["OWNER", "MANAGER"], module: "inventory", hub: "inventory" },
   { href: "/purchase-order", label: "Beli", icon: ReceiptIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "inventory", hub: "inventory" },
   { href: "/stock-receipt", label: "Masuk", icon: PackageIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "inventory", hub: "inventory" },
   { href: "/stock-count", label: "Opname", icon: SettingsIcon, roles: ["OWNER", "MANAGER"], showOnBottomNav: true, module: "inventory", hub: "inventory" },
+  { href: "/inventory/exceptions", label: "Pengecualian", icon: BellIcon, roles: ["OWNER", "MANAGER"], module: "inventory", hub: "inventory" },
   { href: "/inventory/waste", label: "Catat Kerugian", icon: TrendingDownIcon, roles: ["OWNER", "MANAGER"], module: "inventory", hub: "inventory" },
   { href: "/maintenance", label: "Maintenance", icon: SettingsIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "inventory", hub: "inventory" },
 
@@ -84,16 +88,24 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/finance/laba-rugi-coa", label: "Laba Rugi (COA)", icon: TrendingUpIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
   { href: "/finance/tutup-buku", label: "Tutup Buku", icon: LockIcon, roles: ["OWNER"], module: "keuangan", hub: "finance" },
   { href: "/finance/laba-rugi", label: "Laba Rugi", icon: TrendingUpIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
+  { href: "/finance/settlement", label: "Settlement Digital", icon: CheckCircleIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
   { href: "/finance/metode-bayar", label: "Metode Bayar", icon: BuildingIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
 
   // ===== Admin =====
-  { href: "/pengaturan", label: "Pengaturan", icon: SettingsIcon, roles: ["OWNER"], showOnBottomNav: true, hub: "admin" },
+  { href: "/pengaturan", label: "Ringkasan", icon: SettingsIcon, roles: ["OWNER"], showOnBottomNav: true, hub: "admin" },
+  { href: "/pengaturan/karyawan", label: "Karyawan", icon: UsersIcon, roles: ["OWNER"], showOnBottomNav: true, module: "hr", hub: "admin" },
+  { href: "/pengaturan/outlet", label: "Outlet", icon: BuildingIcon, roles: ["OWNER"], showOnBottomNav: true, hub: "admin" },
+  { href: "/pengaturan/bisnis", label: "Bisnis", icon: BriefcaseIcon, roles: ["OWNER"], showOnBottomNav: true, hub: "admin" },
+  { href: "/pengaturan/kartu", label: "Kartu", icon: AwardIcon, roles: ["OWNER"], showOnBottomNav: true, module: "member", hub: "admin" },
+  { href: "/pengaturan/meja", label: "Meja", icon: GridIcon, roles: ["OWNER"], module: "pesanan-digital", hub: "admin" },
+  { href: "/pengaturan/laundry", label: "Laundry", icon: ReceiptIcon, roles: ["OWNER"], module: "laundry", hub: "admin" },
+  { href: "/pengaturan/modifier", label: "Modifier Menu", icon: EditIcon, roles: ["OWNER"], module: "kasir", hub: "admin" },
+  { href: "/pengaturan/promo", label: "Promo", icon: FlameIcon, roles: ["OWNER"], module: "promo", hub: "admin" },
+  { href: "/pengaturan/langganan", label: "Langganan", icon: LockIcon, roles: ["OWNER"], hub: "admin" },
+  { href: "/pengaturan/audit-log", label: "Log audit", icon: FileIcon, roles: ["OWNER"], hub: "admin" },
 
   // ===== Dokumen =====
   { href: "/dokumen", label: "Dokumen & Arsip", icon: BriefcaseIcon, roles: ["OWNER", "MANAGER", "STAFF"], hub: "dokumen" },
-
-  // ===== Produksi (Altora Pabrik) =====
-  { href: "/produksi", label: "Work Order", icon: BuildingIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "produksi", hub: "produksi" },
 ];
 
 export function navItemsForRole(role: Role, enabledModules?: Set<ModuleKey>): NavItem[] {

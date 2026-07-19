@@ -1,6 +1,6 @@
 import type { ModuleKey } from "@/lib/modules";
 
-export type BusinessModeKey = "CAFE" | "TOKO" | "LAUNDRY" | "COUNTER" | "COMPANY";
+export type BusinessModeKey = "CAFE" | "TOKO" | "LAUNDRY" | "COUNTER" | "PABRIK" | "COMPANY";
 
 export type BusinessModeDef = {
   key: BusinessModeKey;
@@ -45,6 +45,14 @@ export const BUSINESS_MODES: BusinessModeDef[] = [
     painKillers: ["Aksesoris", "Service/repair", "Garansi", "Gesek tunai"],
   },
   {
+    key: "PABRIK",
+    label: "Altora Pabrik",
+    shortLabel: "Pabrik",
+    description: "Produksi, work order, material, gudang, batch, quality control, dan costing.",
+    recommendedModules: ["inventory", "hr", "keuangan"],
+    painKillers: ["Work order", "Material & gudang", "Batch & QC", "Biaya produksi"],
+  },
+  {
     key: "COMPANY",
     label: "Altora Company",
     shortLabel: "Company",
@@ -83,6 +91,7 @@ export function normalizeBusinessMode(value: string | null | undefined): Busines
     case "TOKO":
     case "LAUNDRY":
     case "COUNTER":
+    case "PABRIK":
     case "COMPANY":
       return value;
     default:
