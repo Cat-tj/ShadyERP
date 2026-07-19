@@ -9,7 +9,19 @@ const PUBLIC_PATHS = ["/login", "/register"];
 
 export default auth((req) => {
   const { pathname } = req.nextUrl;
-  const isPublicPath = pathname === "/" || PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+  const host = (req.headers.get("host") ?? "").split(":")[0].toLowerCase();
+  const isLanding = pathname === "/";
+  const isAuthEntryPath = PUBLIC_PATHS.some((path) => pathname.startsWith(path));
+  const isPublicPath = isLanding || isAuthEntryPath;
+
+  const vertical = getVerticalForHostname(host);
+  const isRootAltoraDomain = host === "altora.my.id" || host === "www.altora.my.id";
+
+  // The apex is a product directory and marketing site only. Product access
+  // always starts from the relevant product subdomain.
+  if (isRootAltoraDomain && (isAuthEntryPath || (req.auth && !isLanding))) {
+    return NextResponse.redirect(new URL("/", req.nextUrl.origin));
+  }
 
   if (!req.auth && !isPublicPath) {
     const loginUrl = new URL("/login", req.nextUrl.origin);
@@ -17,16 +29,15 @@ export default auth((req) => {
     return NextResponse.redirect(loginUrl);
   }
 
-  if (req.auth && isPublicPath) {
+  // Landing tetap dapat dibuka oleh user yang sudah login. Hanya halaman
+  // autentikasi yang tidak boleh dibuka ulang saat sesi masih aktif.
+  if (req.auth && isAuthEntryPath) {
     return NextResponse.redirect(new URL("/pilih-aplikasi", req.nextUrl.origin));
   }
 
-  const response = NextResponse.next();
-  // Subdomain -> vertikal (mis. cafe.altora.my.id) cuma buat nge-tag landing
-  // page dengan copy yang relevan — TIDAK memblokir modul lain (gating soft).
-  const vertical = getVerticalForHostname(req.headers.get("host") ?? "");
-  if (vertical) response.headers.set("x-altora-vertical", vertical.key);
-  return response;
+  const requestHeaders = new Headers(req.headers);
+  if (vertical) requestHeaders.set("x-altora-vertical", vertical.key);
+  return NextResponse.next({ request: { headers: requestHeaders } });
 });
 
 export const config = {

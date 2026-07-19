@@ -1,14 +1,14 @@
 "use client";
 
 import { useState } from "react";
-import { FAQ_ITEMS } from "@/lib/landing-data";
+import { FAQ_ITEMS, type FaqItem } from "@/lib/landing-data";
 
-export function FaqAccordion() {
+export function FaqAccordion({ items = FAQ_ITEMS }: { items?: FaqItem[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
 
   return (
     <div className="faq-list">
-      {FAQ_ITEMS.map((item, index) => {
+      {items.map((item, index) => {
         const isOpen = openIndex === index;
         const panelId = `faq-panel-${index}`;
         const buttonId = `faq-button-${index}`;
