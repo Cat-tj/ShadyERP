@@ -1435,8 +1435,10 @@ html { scroll-behavior: auto; }
 
 
 /* ---- Tablet (SupervisorFrame / TabletFrame) ---- */
+/* 3:4 — rasio layar iPad Pro asli (2752x2064 / 2732x2048), bukan 10:16
+   yang kepanjangan/kekurusan kayak laptop diputar. */
 .altora-landing .bs-tablet-wrap {
-    position: absolute; right: 92px; bottom: -8px; width: 192px; aspect-ratio: 10 / 16; z-index: 2;
+    position: absolute; right: 92px; bottom: -8px; width: 192px; aspect-ratio: 3 / 4; z-index: 2;
     animation: bs-float 6.4s .4s ease-in-out infinite;
   }
 
@@ -1470,8 +1472,16 @@ html { scroll-behavior: auto; }
 
 
 /* ---- Phone ---- */
+/* Lebar HP diturunkan biar proporsional ke tablet (iPad Pro 13" 215.5mm
+   vs iPhone Pro Max 77.6mm lebar, rasio ~0.36 — kalau diikuti persis jadi
+   70px, tapi di ukuran itu konten mockup-nya (tile angka, baris aktivitas)
+   kepotong/nggak kebaca sama sekali). 96px dipilih sebagai kompromi: masih
+   jelas jauh lebih kecil dari tablet (tinggi ~81% tablet, bukan malah
+   lebih tinggi kayak sebelumnya), tapi konten tetap kebaca — lihat juga
+   simplifikasi konten di bawah (sembunyikan 2 tile & 1 baris aktivitas)
+   yang menyesuaikan bingkai sekecil ini. */
 .altora-landing .bs-phone-wrap {
-    position: absolute; right: 0; bottom: -16px; width: 142px; aspect-ratio: 9 / 19.5; z-index: 3;
+    position: absolute; right: 0; bottom: -16px; width: 96px; aspect-ratio: 9 / 19.5; z-index: 3;
     animation: bs-float 5.6s .9s ease-in-out infinite;
   }
 
@@ -1585,7 +1595,20 @@ html { scroll-behavior: auto; }
 /* ---------- Responsive ---------- */
 @media (max-width: 1150px) {
   .altora-landing .bs-tablet-wrap { right: 74px; width: 176px; }
-  .altora-landing .bs-phone-wrap { width: 126px; }
+  .altora-landing .bs-phone-wrap { width: 88px; }
+}
+
+
+/* HP di ukuran kecil (dampingan tablet, viewport >860px): konten disederhanakan
+   biar muat & tetap kebaca — cuma 2 tile ringkasan (bukan 4) & 2 baris
+   aktivitas (bukan 3). Di bawah 860px tablet disembunyikan dan HP kembali
+   ke ukuran nyaman (118px/112px) dengan konten penuh, jadi rule ini
+   sengaja dibatasi di atas situ saja. */
+@media (min-width: 861px) {
+  .altora-landing .bs-phone .bs-metrics { grid-template-columns: 1fr; }
+  .altora-landing .bs-phone .bs-metrics > *:nth-child(n+3) { display: none; }
+  .altora-landing .bs-phone .bs-main-list > *:nth-child(n+4) { display: none; }
+  .altora-landing .bs-phone-header span { display: none; }
 }
 
 
