@@ -1227,6 +1227,7 @@ html { scroll-behavior: auto; }
 .altora-landing .vshow-curl {
     margin-left: 8px; font-size: 9px; color: var(--text-faint);
     background: var(--v-bg); border-radius: 6px; padding: 3px 9px;
+    min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     transition: background-color 0.6s ease;
   }
 
@@ -1595,8 +1596,22 @@ html { scroll-behavior: auto; }
 }
 
 
-@media (max-width: 520px) {
+/* HP kecil: sidebar & panel kanan laptop disembunyikan biar proporsi layar
+   laptop tetap melebar (bukan kotak tinggi), HP digeser ke bawah-kanan. */
+@media (max-width: 640px) {
+  .altora-landing .vshow-side { display: none; }
+  .altora-landing .vshow-lap-app { grid-template-columns: 1fr; }
+  .altora-landing .vshow-lap-cols { grid-template-columns: 1fr 1fr; }
+  .altora-landing .vshow-lap-cols .vshow-panel:nth-child(3) { display: none; }
   .altora-landing .vshow-lap-acts { display: none; }
+  .altora-landing .vshow-main-chips { display: none; }
+  .altora-landing .vshow-laptop { width: 100%; }
+  .altora-landing .vshow-stage { padding-bottom: 108px; }
+  .altora-landing .vshow-phone { width: 112px; bottom: 0; }
+}
+
+
+@media (max-width: 520px) {
   .altora-landing .vshow-strip { grid-template-columns: 1fr; }
 }
 
