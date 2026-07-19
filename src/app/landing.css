@@ -1150,7 +1150,11 @@ html { scroll-behavior: auto; }
 
 
 .altora-landing .vshow-integration b { display: block; font-size: 13.5px; color: var(--text); }
-.altora-landing .vshow-integration span { display: block; margin-top: 1px; font-size: 12px; color: var(--text-secondary); }
+/* Scoped ke div pembungkus caption (bukan "span" polos) — sebelumnya
+   descendant selector ini ikut nimpa warna .vshow-integration-ic (juga
+   sebuah <span>) karena spesifisitasnya lebih tinggi, bikin ikon jadi
+   abu-abu generik alih-alih teal --primary-dark. */
+.altora-landing .vshow-integration > div > span { display: block; margin-top: 1px; font-size: 12px; color: var(--text-secondary); }
 
 
 .altora-landing .vshow-devices {
