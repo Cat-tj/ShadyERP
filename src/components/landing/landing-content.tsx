@@ -6,11 +6,13 @@ import { VerticalRotator } from "./vertical-rotator";
 import { SiteNav } from "./site-nav";
 import { FaqAccordion } from "./faq-accordion";
 import {
+  ADDON_SERVICES,
   AUTOMATION_OUTPUTS,
   BENEFIT_BLOCKS,
   COMPARISON_GROUPS,
   PRODUCT_TOUR_TABS,
   TESTIMONIALS,
+  type AddonService,
 } from "@/lib/landing-data";
 
 type SpotlightSlide = {
@@ -199,6 +201,20 @@ function OutputIcon({ name }: { name: "box" | "chart" | "user" | "doc" }) {
   } as Record<"box" | "chart" | "user" | "doc", React.ReactNode>;
   return (
     <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      {paths[name]}
+    </svg>
+  );
+}
+
+function AddonIcon({ name }: { name: AddonService["icon"] }) {
+  const paths: Record<AddonService["icon"], React.ReactNode> = {
+    hardware: <path d="M14.7 6.3a3 3 0 0 0-4.2 4.2L3 18l3 3 7.5-7.5a3 3 0 0 0 4.2-4.2l-2.1 2.1-2-2 2.1-2.1Z" />,
+    cctv: <path d="M3 8h11l4-3v10l-4-3H3V8Zm0 0v6M17 10.5a2.5 2.5 0 1 1 0 .01M6 17l-1.5 4M9 17l-.8 4" />,
+    training: <path d="M3 8.5 12 4l9 4.5-9 4.5-9-4.5Zm5.5 3v4.7c0 .9 1.6 2.3 3.5 2.3s3.5-1.4 3.5-2.3v-4.7M21 8.5v6" />,
+    consulting: <path d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.4-4 8-9 8-1.4 0-2.7-.3-3.9-.8L3 20l1.1-3.9A7.9 7.9 0 0 1 3 12c0-4.4 4-8 9-8s9 3.6 9 8Z" />,
+  };
+  return (
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       {paths[name]}
     </svg>
   );
@@ -768,6 +784,32 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
     </div>
   </section>
 
+  {/* ADDON SERVICES — di luar software, dikerjakan tim Altora langsung */}
+  <section id="layanan-tambahan">
+    <div className="wrap">
+      <div className="section-head reveal">
+        <span className="eyebrow">Layanan tambahan</span>
+        <h2>Butuh bantuan di luar aplikasi? Kami juga bisa.</h2>
+        <p className="lede">Selain software, tim Altora juga bantu pasang perangkat, jaga keamanan toko, latih karyawan, sampai kasih masukan strategi bisnis.</p>
+      </div>
+      <div className="addon-services reveal">
+        {ADDON_SERVICES.map((service) => (
+          <div className="addon-card" key={service.key}>
+            <span className="addon-icon"><AddonIcon name={service.icon} /></span>
+            <h3>{service.title}</h3>
+            <p>{service.description}</p>
+          </div>
+        ))}
+      </div>
+      <div className="addon-cta reveal">
+        <a className="btn btn-primary" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20tanya%20layanan%20tambahan" target="_blank" rel="noopener">
+          Tanya Layanan Tambahan
+        </a>
+        <span className="addon-cta-note">Dipesan terpisah dari paket software, harga disesuaikan kebutuhan.</span>
+      </div>
+    </div>
+  </section>
+
   {/* HOW IT WORKS */}
   <section id="cara-kerja">
     <div className="wrap">
@@ -842,13 +884,13 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
       <div className="section-head reveal">
         <span className="eyebrow">Harga</span>
         <h2>Mulai gratis, naik kelas kalau sudah butuh.</h2>
-        <p className="lede">Bayar bulanan, tanpa kontrak tahunan. Batas paket otomatis mengikuti jumlah outlet, karyawan, dan produkmu.</p>
+        <p className="lede">Batas paket menyesuaikan jumlah outlet, karyawan, dan produkmu. Chat tim kami buat dapat harga yang pas untuk usahamu.</p>
       </div>
       <div className="pricing reveal">
         <div className="plan">
           <span className="plan-name mono">Free</span>
           <p className="plan-desc">Untuk usaha yang baru mulai jalan.</p>
-          <div className="plan-price">Rp0<small> /bulan</small></div>
+          <div className="plan-price">Gratis</div>
           <ul className="plan-specs">
             <li><b>1</b> outlet</li>
             <li><b>3</b> karyawan</li>
@@ -862,27 +904,27 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
           <span className="plan-badge">Paling Populer</span>
           <span className="plan-name mono">Basic</span>
           <p className="plan-desc">Untuk usaha yang sedang berkembang.</p>
-          <div className="plan-price">Rp99.000<small> /bulan</small></div>
+          <div className="plan-price">Hubungi Kami</div>
           <ul className="plan-specs">
             <li><b>3</b> outlet</li>
             <li><b>10</b> karyawan</li>
             <li><b>500</b> produk</li>
             <li>Semua fitur aktif</li>
           </ul>
-          <a className="btn btn-primary" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20pilih%20paket%20Basic" target="_blank" rel="noopener">Pilih Paket Bisnis</a>
+          <a className="btn btn-primary" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20tanya%20harga%20paket%20Basic" target="_blank" rel="noopener">Tanya Harga</a>
           <a className="plan-more" href="#perbandingan-fitur">Lihat semua fitur</a>
         </div>
         <div className="plan">
           <span className="plan-name mono">Pro</span>
           <p className="plan-desc">Untuk usaha multi-cabang dan kebutuhan lebih kompleks.</p>
-          <div className="plan-price">Rp249.000<small> /bulan</small></div>
+          <div className="plan-price">Hubungi Kami</div>
           <ul className="plan-specs">
             <li><b>Tanpa batas</b> outlet</li>
             <li><b>Tanpa batas</b> karyawan</li>
             <li><b>Tanpa batas</b> produk</li>
             <li>Semua fitur aktif</li>
           </ul>
-          <a className="btn btn-ghost" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20tanya%20paket%20Pro" target="_blank" rel="noopener">Hubungi Tim Altora</a>
+          <a className="btn btn-ghost" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20tanya%20harga%20paket%20Pro" target="_blank" rel="noopener">Tanya Harga</a>
           <a className="plan-more" href="#perbandingan-fitur">Lihat semua fitur</a>
         </div>
       </div>
@@ -894,8 +936,8 @@ export function LandingContent({ city, vertical }: { city?: string; vertical?: V
     <div className="wrap">
       <div className="section-head reveal">
         <span className="eyebrow">Kata pengguna</span>
-        <h2>Belum banyak, tapi jujur.</h2>
-        <p className="lede">Testimoni pelanggan asli akan tampil di sini begitu tersedia dan disetujui pemiliknya.</p>
+        <h2>Yang mereka rasakan setelah pakai Altora.</h2>
+        <p className="lede">Testimoni asli dari pemilik usaha yang sudah pakai Altora sehari-hari.</p>
       </div>
       <div className="testimonials reveal">
         {TESTIMONIALS.map((t) => (

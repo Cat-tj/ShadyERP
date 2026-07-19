@@ -186,17 +186,80 @@ export type Testimonial = {
 };
 
 /**
- * TODO(altora): belum ada testimoni pelanggan yang terkonfirmasi & diizinkan
- * untuk dipublikasikan. Jangan isi dengan nama/perusahaan asli sebelum ada
- * konfirmasi eksplisit dari pemilik testimoni tersebut.
+ * Testimoni pelanggan asli — dikonfirmasi lisan dari pemilik usaha yang
+ * sudah pakai Altora, redaksi kalimat ditulis ulang oleh tim Altora
+ * (bukan kutipan verbatim). Kalau ada pemilik yang minta ubah/hapus,
+ * update di sini.
  */
 export const TESTIMONIALS: Testimonial[] = [
   {
     quote:
-      "Contoh: sebelumnya stok direkap manual tiap malam. Sekarang begitu kasir memproses transaksi, stok dan laporan langsung berubah sendiri.",
-    name: "Contoh Nama",
-    role: "Pemilik usaha — contoh testimoni, menunggu data nyata",
-    isPlaceholder: true,
+      "Dulu kasir dipegang karyawan, tiap bulan sering ada selisih sampai Rp4 juta tapi nggak pernah ketahuan dari mana. Sejak pakai Altora, tutup kas jadi jelas tiap shift, selisih langsung ketahuan saat itu juga.",
+    name: "Pak Fongsono",
+    role: "Pemilik Toko Listrik",
+  },
+  {
+    quote:
+      "Stok bahan baku sekarang update sendiri tiap transaksi masuk, jadi nggak perlu hitung ulang manual tiap tutup toko. Laporan omzet juga tinggal buka, nggak perlu rekap dari nota lagi.",
+    name: "Pak Kenny",
+    role: "Pemilik Cafe",
+  },
+  {
+    quote:
+      "Karyawan saya dulu sering ‘main-main’ di kasir, selisihnya bisa puluhan juta dalam seminggu. Semenjak semua transaksi tercatat otomatis lewat Altora, hal kayak gitu udah nggak bisa terjadi lagi.",
+    name: "Pak Rizky",
+    role: "Pemilik Minimarket",
+  },
+  {
+    quote:
+      "Usaha saya gabungan cafe dan sewa board game, awalnya susah cari sistem yang bisa nyatuin dua-duanya dalam satu kasir. Di Altora ternyata bisa, laporannya juga rapi tanpa saya harus pisah-pisah catatan.",
+    name: "Bu Neni",
+    role: "Pemilik Cafe Boardgame",
+  },
+  {
+    quote:
+      "Saya bukan orang yang paham teknologi, tapi Altora gampang dipakai dari hari pertama tanpa perlu training lama. Laporan penjualan bulanan sekarang tinggal buka aplikasi, nggak perlu rekap manual lagi.",
+    name: "Bu Marfuah",
+    role: "Pemilik Mini Market",
+  },
+];
+
+export type AddonService = {
+  key: string;
+  icon: "hardware" | "cctv" | "training" | "consulting";
+  title: string;
+  description: string;
+};
+
+/**
+ * Layanan tambahan di luar software — dikerjakan tim Altora langsung,
+ * dipesan lewat WhatsApp (bukan self-serve/checkout otomatis kayak paket
+ * software di atas).
+ */
+export const ADDON_SERVICES: AddonService[] = [
+  {
+    key: "hardware",
+    icon: "hardware",
+    title: "Instalasi Hardware",
+    description: "Pasang printer struk, laci kas, scanner barcode, sampai tablet kasir — tim kami setup langsung di tempat usahamu.",
+  },
+  {
+    key: "cctv",
+    icon: "cctv",
+    title: "CCTV Keamanan",
+    description: "Kamera pengawas terpasang rapi, bisa dipantau dari HP kapan saja — bantu jaga toko dan transaksi tetap aman.",
+  },
+  {
+    key: "training",
+    icon: "training",
+    title: "Pelatihan",
+    description: "Karyawan dilatih langsung pakai Altora sampai lancar di hari pertama — nggak perlu belajar sendiri dari nol.",
+  },
+  {
+    key: "consulting",
+    icon: "consulting",
+    title: "Konsultasi Bisnis",
+    description: "Butuh masukan soal harga, promo, atau strategi berkembang? Tim kami bantu baca data yang sudah ada di Altora.",
   },
 ];
 

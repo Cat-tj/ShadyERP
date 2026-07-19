@@ -111,6 +111,13 @@ export function VerticalRotator() {
             <h3>{active.caseTitle}</h3>
             <p>{active.caseDescription}</p>
 
+            <span className="vshow-devices">
+              <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <rect x="2" y="4" width="14" height="10" rx="1.5" /><path d="M6 18h6M18 8h3v10a1 1 0 0 1-1 1h-2a1 1 0 0 1-1-1V8Z" />
+              </svg>
+              Bisa dipakai dari laptop, tablet, dan HP — data selalu sinkron otomatis.
+            </span>
+
             <div className="vshow-dots" role="tablist" aria-label="Pilih vertikal Altora" ref={dotsRef}>
               {VERTICALS.map((v, i) => (
                 <button
