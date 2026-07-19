@@ -1185,7 +1185,11 @@ html { scroll-behavior: auto; }
   }
 
 
+/* 16:10 — rasio layar laptop standar, dikunci biar konsisten di semua
+   lebar layar (sebelumnya tinggi cuma ngikutin konten, jadi kotak tinggi
+   waktu sidebar+panel numpuk di layar sempit). */
 .altora-landing .vshow-laptop-screen {
+    aspect-ratio: 16 / 10; overflow: hidden;
     background: linear-gradient(160deg, #2a3150 0%, #131828 55%, #05070d 100%);
     border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 18px 18px 4px 4px; padding: 10px 10px 13px;
@@ -1207,6 +1211,7 @@ html { scroll-behavior: auto; }
 
 
 .altora-landing .vshow-lap-inner {
+    height: 100%; display: flex; flex-direction: column;
     background: var(--surface); border-radius: 8px; overflow: hidden;
     will-change: transform;
   }
@@ -1233,11 +1238,11 @@ html { scroll-behavior: auto; }
 
 
 /* Layar laptop = app dengan sidebar + area kerja, bukan sekadar panel */
-.altora-landing .vshow-lap-app { display: grid; grid-template-columns: 104px 1fr; }
+.altora-landing .vshow-lap-app { flex: 1; min-height: 0; display: grid; grid-template-columns: 104px 1fr; }
 
 
 .altora-landing .vshow-side {
-    display: flex; flex-direction: column; gap: 8px; padding: 9px 8px;
+    display: flex; flex-direction: column; gap: 8px; padding: 9px 8px; overflow: hidden;
     border-right: 1px solid var(--v-soft); background: var(--surface);
     transition: border-color 0.6s ease;
   }
@@ -1285,7 +1290,7 @@ html { scroll-behavior: auto; }
 
 
 .altora-landing .vshow-main {
-    display: flex; flex-direction: column; gap: 8px; padding: 9px 10px 11px; min-width: 0;
+    display: flex; flex-direction: column; gap: 8px; padding: 9px 10px 11px; min-width: 0; min-height: 0;
     background: var(--v-bg); transition: background-color 0.6s ease;
   }
 
