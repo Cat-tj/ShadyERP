@@ -1157,19 +1157,25 @@ html { scroll-behavior: auto; }
   }
 
 
-/* ---- Panggung foto device asli (ganti .bs-stage ilustrasi CSS) ---- */
-.altora-landing .device-photo-stage { display: flex; align-items: flex-end; gap: clamp(16px, 3vw, 32px); width: 100%; }
+/* ---- Panggung foto device asli (ganti .bs-stage ilustrasi CSS) ----
+   Background foto udah dihapus (flood-fill dari sudut gambar), jadi bisa
+   numpuk kayak komposisi lama tanpa keliatan kotak putih. Posisi %
+   niru proporsi .bs-stage lama, disesuaikan ke aspect-ratio foto asli:
+   stage 100:70.53 (laptop 78.1% lebar, tablet nyusul di kanan-atas,
+   phone di kanan-bawah, paling depan). */
+.altora-landing .device-photo-stage { position: relative; width: 100%; aspect-ratio: 100 / 70.53; }
 
-.altora-landing .device-photo-laptop { flex: 1.7 1 0; min-width: 0; }
-.altora-landing .device-photo-laptop img { width: 100%; }
+.altora-landing .device-photo-laptop,
+.altora-landing .device-photo-tablet,
+.altora-landing .device-photo-phone { position: absolute; filter: drop-shadow(0 22px 30px rgba(10, 31, 68, 0.22)); }
 
-.altora-landing .device-photo-side { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+.altora-landing .device-photo-laptop img,
+.altora-landing .device-photo-tablet img,
+.altora-landing .device-photo-phone img { display: block; width: 100%; height: auto; }
 
-.altora-landing .device-photo-tablet { width: 68%; }
-.altora-landing .device-photo-tablet img { width: 100%; }
-
-.altora-landing .device-photo-phone { width: 46%; margin-top: -18%; align-self: flex-start; }
-.altora-landing .device-photo-phone img { width: 100%; }
+.altora-landing .device-photo-laptop { left: 0%; top: 0%; width: 78.1%; z-index: 1; }
+.altora-landing .device-photo-tablet { left: 66.25%; top: 17.14%; width: 25.49%; z-index: 2; }
+.altora-landing .device-photo-phone { left: 86.45%; top: 44.93%; width: 13.55%; z-index: 3; }
 
 
 .altora-landing .business-showcase-copy > span:first-child {
@@ -1700,11 +1706,9 @@ html { scroll-behavior: auto; }
      otomatis nyesuai ke width baru di sini — nggak perlu override lagi. */
   .altora-landing .bs-phone-wrap { left: auto; top: auto; right: 0; bottom: -6px; width: 118px; }
   .altora-landing .business-showcase-assurances { grid-template-columns: repeat(2, 1fr); gap: 14px; }
-  .altora-landing .device-photo-stage { flex-direction: column; align-items: center; gap: 24px; }
-  .altora-landing .device-photo-laptop { width: 100%; }
-  .altora-landing .device-photo-side { flex-direction: row; align-items: flex-end; width: 100%; justify-content: center; gap: 20px; }
-  .altora-landing .device-photo-tablet { width: 44%; }
-  .altora-landing .device-photo-phone { width: 30%; margin-top: 0; }
+  /* .device-photo-stage numpuk pakai absolute+aspect-ratio (lihat definisi
+     di atas) jadi seluruh komposisi otomatis scale bareng di lebar
+     berapa pun — nggak perlu override manual per breakpoint. */
 }
 
 
