@@ -1041,6 +1041,66 @@ html { scroll-behavior: auto; }
 .altora-landing .feature-float-bars i:nth-child(3) { height: 68%; opacity: 0.72; }
 
 
+/* ---------- MOBILE HIGHLIGHT (pantau & transaksi dari HP) ---------- */
+.altora-landing .mobile-highlight { padding: clamp(56px, 8vw, 96px) 0; }
+
+.altora-landing .mobile-highlight-grid {
+    display: grid; grid-template-columns: 1fr 0.82fr; gap: clamp(32px, 6vw, 64px); align-items: center;
+  }
+
+.altora-landing .mobile-highlight-copy { display: flex; flex-direction: column; gap: 18px; }
+
+.altora-landing .mobile-highlight-copy h2 { margin-top: 4px; }
+
+.altora-landing .mobile-highlight-points {
+    list-style: none; margin: 6px 0 0; padding: 0;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+.altora-landing .mobile-highlight-points li { position: relative; padding-left: 29px; }
+
+.altora-landing .mobile-highlight-points li::before {
+    content: ""; position: absolute; left: 0; top: 1px; width: 19px; height: 19px; border-radius: 999px;
+    background: var(--primary);
+  }
+
+.altora-landing .mobile-highlight-points li::after {
+    content: ""; position: absolute; left: 6px; top: 6.5px; width: 7px; height: 4px;
+    border-left: 2px solid var(--on-primary); border-bottom: 2px solid var(--on-primary);
+    transform: rotate(-45deg);
+  }
+
+.altora-landing .mobile-highlight-points b { display: block; font-size: 15px; font-weight: 700; color: var(--text); }
+.altora-landing .mobile-highlight-points span { display: block; margin-top: 3px; font-size: 13.5px; line-height: 1.55; color: var(--text-secondary); }
+
+.altora-landing .mobile-highlight-visual { position: relative; display: flex; justify-content: center; padding: 20px 10px; }
+
+.altora-landing .mobile-highlight-glow {
+    position: absolute; inset: 0; border-radius: 50%;
+    background: radial-gradient(circle, var(--primary-soft-strong) 0%, transparent 70%);
+    filter: blur(2px); pointer-events: none;
+  }
+
+/* Reuse .bs-phone/.bs-phone-screen/.bs-phone-island (proporsi cqw sudah
+   diukur presisi dari referensi device asli) sebagai hero standalone,
+   bukan di dalam .bs-stage — makanya sizing container-nya didefinisikan
+   sendiri di sini, bukan lewat .bs-phone-wrap. */
+.altora-landing .mobile-highlight-phone-wrap {
+    position: relative; width: min(300px, 78vw); aspect-ratio: 43 / 89;
+    container-type: inline-size;
+    animation: bs-float 6.8s ease-in-out infinite;
+  }
+
+@media (max-width: 900px) {
+  .altora-landing .mobile-highlight-grid { grid-template-columns: 1fr; }
+  .altora-landing .mobile-highlight-visual { order: -1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .altora-landing .mobile-highlight-phone-wrap { animation: none; }
+}
+
+
 /* ---------- BUSINESS SHOWCASE (tab vertikal + panggung 3 perangkat) ---------- */
 .altora-landing .business-showcase {
     position: relative; padding: clamp(56px, 8vw, 96px) 0; overflow: hidden;

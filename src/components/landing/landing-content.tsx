@@ -3,6 +3,7 @@ import Image from "next/image";
 import { VERTICALS, DEFAULT_THEME, type VerticalDef } from "@/lib/verticals";
 import { HERO_MOCKS, DEFAULT_HERO_MOCK } from "@/lib/hero-mocks";
 import { BusinessShowcase } from "./business-showcase/business-showcase";
+import { MobileHighlight } from "./mobile-highlight";
 import { LandingScripts } from "./landing-scripts";
 import { SiteNav } from "./site-nav";
 import { FaqAccordion } from "./faq-accordion";
@@ -448,6 +449,7 @@ export function LandingContent({ city, vertical, faqItems }: { city?: string; ve
     </div>
   </section>
 
+  {!vertical && <MobileHighlight />}
   {!vertical && <BusinessShowcase />}
 
   {/* FEATURE SPOTLIGHT — Pelanggan pesan sendiri */}
