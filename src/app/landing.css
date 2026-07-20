@@ -1441,9 +1441,14 @@ html { scroll-behavior: auto; }
 .altora-landing .bs-progress.is-danger em { background: #dc2626; }
 
 
-/* ---- Tablet (SupervisorFrame / TabletFrame) ---- */
+/* ---- Tablet (SupervisorFrame / TabletFrame) ----
+   Rasio 178.5:247.6 (0.721) = ukuran fisik iPad Pro 11" asli
+   (178.5x247.6mm). Sebelumnya 284:486 (0.584) — jauh lebih kurus dari
+   tablet manapun, itu sumber utama keluhan "kurus". container-type
+   dipasang biar border/radius (cqw) auto ikut lebar chassis-nya sendiri. */
 .altora-landing .bs-tablet-wrap {
-    position: absolute; left: 66.247756%; top: 17.138103%; width: 25.493716%; aspect-ratio: 284 / 486; z-index: 2;
+    position: absolute; left: 66.247756%; top: 17.138103%; width: 25.493716%; aspect-ratio: 178.5 / 247.6; z-index: 2;
+    container-type: inline-size;
     animation: bs-float 6.4s .4s ease-in-out infinite;
   }
 
@@ -1454,8 +1459,8 @@ html { scroll-behavior: auto; }
 .altora-landing .bs-tablet {
     height: 100%; display: flex; flex-direction: column;
     background: var(--showcase-bg);
-    border: 6px solid #141a2c;
-    border-radius: 22px; padding: 14px 12px;
+    border: 2.5cqw solid #141a2c;
+    border-radius: 7cqw; padding: 5cqw 4.5cqw;
     box-shadow: 0 22px 44px -26px rgba(10, 31, 68, 0.42);
     will-change: transform;
     transition: background-color 0.6s ease;
@@ -1476,9 +1481,21 @@ html { scroll-behavior: auto; }
 .altora-landing .bs-tablet .bs-app-panel { margin-bottom: 8px; }
 
 
-/* ---- Phone ---- */
+/* ---- Phone ----
+   Proporsi diukur langsung dari referensi asli (bukan tebakan):
+   - Chassis ratio 43:89 (0.483) = rata-rata bounding-box iPhone 15 Pro
+     asli (71.6x146.6mm, rasio 0.488) & wireframe device mockup yang
+     dikirim user (piksel diukur: 83-126 x 228-317 -> 43x89).
+   - Corner radius 13% lebar chassis = jarak kurva sudut yang diukur di
+     wireframe (y228->233 sebelum garis lurus, ~13% dari lebar 43px).
+   - Dynamic Island lebar 30% & tinggi 8.5% dari lebar layar = spek asli
+     Apple (126x37.3pt / layar 393pt lebar).
+   container-type:inline-size di wrapper supaya semua angka di bawah
+   (cqw = 1% lebar wrapper) auto nyesuai di breakpoint mobile juga —
+   nggak perlu lagi override px manual per breakpoint kayak sebelumnya. */
 .altora-landing .bs-phone-wrap {
-    position: absolute; left: 86.445242%; top: 44.925125%; width: 13.554758%; aspect-ratio: 151 / 331; z-index: 3;
+    position: absolute; left: 86.445242%; top: 48.1%; width: 13.554758%; aspect-ratio: 43 / 89; z-index: 3;
+    container-type: inline-size;
     animation: bs-float 5.6s .9s ease-in-out infinite;
   }
 
@@ -1486,21 +1503,20 @@ html { scroll-behavior: auto; }
 .altora-landing .bs-phone {
     position: relative; height: 100%;
     background: linear-gradient(145deg, #38405f 0%, #171b28 44%, #05070d 100%);
-    border-radius: 20px; padding: 7px;
+    border-radius: 13cqw; padding: 3cqw;
     box-shadow: 0 24px 44px -26px rgba(10, 31, 68, 0.45), inset 0 0 0 2px rgba(255, 255, 255, 0.08);
     border: 1px solid rgba(255, 255, 255, 0.14);
   }
 
 
-/* Dynamic Island proporsional ke device asli (~11% lebar layar, bukan 32%). */
 .altora-landing .bs-phone-island {
-    position: absolute; top: 10px; left: 50%; transform: translateX(-50%);
-    width: 20px; height: 6px; border-radius: 999px; background: #000; z-index: 2;
+    position: absolute; top: 4cqw; left: 50%; transform: translateX(-50%);
+    width: 30cqw; height: 8.5cqw; border-radius: 999px; background: #000; z-index: 2;
   }
 
 
 .altora-landing .bs-phone-screen {
-    position: relative; height: 100%; border-radius: 16px; padding: 20px 9px 7px;
+    position: relative; height: 100%; border-radius: 10cqw; padding: 11cqw 3cqw 2.5cqw;
     display: flex; flex-direction: column; gap: 6px; overflow: hidden;
     background: var(--showcase-bg); transition: background-color 0.6s ease;
     box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
@@ -1605,10 +1621,9 @@ html { scroll-behavior: auto; }
   .altora-landing .bs-stage { aspect-ratio: auto; max-width: 560px; margin: 0 auto; padding-bottom: 108px; }
   .altora-landing .bs-tablet-wrap { display: none; }
   .altora-landing .bs-laptop { position: relative; left: auto; top: auto; width: 100%; }
+  /* bezel/radius/island .bs-phone pakai cqw (lihat definisi di atas) jadi
+     otomatis nyesuai ke width baru di sini — nggak perlu override lagi. */
   .altora-landing .bs-phone-wrap { left: auto; top: auto; right: 0; bottom: -6px; width: 118px; }
-  .altora-landing .bs-phone { border-radius: 16px; padding: 5px; }
-  .altora-landing .bs-phone-screen { border-radius: 13px; padding: 16px 8px 7px; }
-  .altora-landing .bs-phone-island { top: 8px; width: 16px; height: 5px; }
   .altora-landing .business-showcase-assurances { grid-template-columns: repeat(2, 1fr); gap: 14px; }
 }
 
