@@ -1157,6 +1157,21 @@ html { scroll-behavior: auto; }
   }
 
 
+/* ---- Panggung foto device asli (ganti .bs-stage ilustrasi CSS) ---- */
+.altora-landing .device-photo-stage { display: flex; align-items: flex-end; gap: clamp(16px, 3vw, 32px); width: 100%; }
+
+.altora-landing .device-photo-laptop { flex: 1.7 1 0; min-width: 0; }
+.altora-landing .device-photo-laptop img { width: 100%; }
+
+.altora-landing .device-photo-side { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+
+.altora-landing .device-photo-tablet { width: 68%; }
+.altora-landing .device-photo-tablet img { width: 100%; }
+
+.altora-landing .device-photo-phone { width: 46%; margin-top: -18%; align-self: flex-start; }
+.altora-landing .device-photo-phone img { width: 100%; }
+
+
 .altora-landing .business-showcase-copy > span:first-child {
     display: inline-flex; align-items: center; width: fit-content;
     font-family: var(--font-jetbrains-mono), monospace; font-size: 10.5px; font-weight: 700;
@@ -1685,6 +1700,11 @@ html { scroll-behavior: auto; }
      otomatis nyesuai ke width baru di sini — nggak perlu override lagi. */
   .altora-landing .bs-phone-wrap { left: auto; top: auto; right: 0; bottom: -6px; width: 118px; }
   .altora-landing .business-showcase-assurances { grid-template-columns: repeat(2, 1fr); gap: 14px; }
+  .altora-landing .device-photo-stage { flex-direction: column; align-items: center; gap: 24px; }
+  .altora-landing .device-photo-laptop { width: 100%; }
+  .altora-landing .device-photo-side { flex-direction: row; align-items: flex-end; width: 100%; justify-content: center; gap: 20px; }
+  .altora-landing .device-photo-tablet { width: 44%; }
+  .altora-landing .device-photo-phone { width: 30%; margin-top: 0; }
 }
 
 
