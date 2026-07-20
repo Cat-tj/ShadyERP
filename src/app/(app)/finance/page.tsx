@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { requireRole } from "@/server/require-session";
 import { listOutletsForUser } from "@/server/services/outlet-service";
-import { getSalesSummary } from "@/server/services/report-service";
+import { getSalesSummary, getDailyTrend, getTopProducts } from "@/server/services/report-service";
 import {
   getCashOutletSummary,
   getPaymentMethodSummary,
@@ -9,6 +9,7 @@ import {
 } from "@/server/services/finance-operational-service";
 import { StatTile } from "@/components/laporan/stat-tile";
 import { RankingBarChart } from "@/components/laporan/ranking-bar-chart";
+import { TrendBarChart } from "@/components/laporan/trend-bar-chart";
 import { formatRupiah, formatTanggal } from "@/lib/format";
 import { WalletIcon, TrendingDownIcon, TrendingUpIcon, ReceiptIcon } from "@/components/ui/icons";
 import { EyebrowBadge } from "@/components/ui/eyebrow-badge";
@@ -34,11 +35,13 @@ export default async function FinanceHomePage() {
   const outlets = await listOutletsForUser(user.tenantId, user.id, user.role);
   const outletIds = outlets.map((outlet) => outlet.id);
 
-  const [summary, paymentMethods, cashOutlets, supplierDebt] = await Promise.all([
+  const [summary, paymentMethods, cashOutlets, supplierDebt, trend, topProducts] = await Promise.all([
     getSalesSummary(user.tenantId, outletIds, 30),
     getPaymentMethodSummary(user.tenantId, outletIds, 30),
     getCashOutletSummary(user.tenantId, outletIds, 30),
     getSupplierDebtSummary(user.tenantId),
+    getDailyTrend(user.tenantId, outletIds, 30),
+    getTopProducts(user.tenantId, outletIds, 30, 6),
   ]);
 
   const estimatedCash = cashOutlets.reduce((sum, outlet) => sum + outlet.estimatedCash, 0);
@@ -91,6 +94,20 @@ export default async function FinanceHomePage() {
           </Link>
         </SectionCard>
       </div>
+
+      <SectionCard eyebrow="30 hari terakhir" title="Tren omzet">
+        <TrendBarChart data={trend} />
+      </SectionCard>
+
+      <SectionCard eyebrow="30 hari terakhir" title="Produk terlaris">
+        <RankingBarChart
+          items={topProducts.map((p) => ({
+            label: p.productName,
+            value: p.omzet,
+            sublabel: `${p.qty} terjual`,
+          }))}
+        />
+      </SectionCard>
 
       <SectionCard eyebrow="Harian" title="Aksi finance harian">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
