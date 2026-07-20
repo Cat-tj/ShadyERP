@@ -12,13 +12,13 @@ export function DeviceStagePhoto() {
   return (
     <div className="device-photo-stage">
       <div className="device-photo-laptop">
-        <Image src="/landing-previews/showcase-laptop.png" alt="Tampilan Altora di laptop" width={1862} height={1080} sizes="(max-width: 860px) 100vw, 60vw" style={{ width: "100%", height: "auto" }} />
+        <Image src="/landing-previews/showcase-laptop.png" alt="Tampilan Altora di laptop" width={1788} height={1069} sizes="(max-width: 860px) 100vw, 60vw" style={{ width: "100%", height: "auto" }} />
       </div>
       <div className="device-photo-tablet">
-        <Image src="/landing-previews/showcase-tablet.png" alt="Tampilan Altora di tablet" width={1080} height={1714} sizes="(max-width: 860px) 30vw, 18vw" style={{ width: "100%", height: "auto" }} />
+        <Image src="/landing-previews/showcase-tablet.png" alt="Tampilan Altora di tablet" width={1080} height={1642} sizes="(max-width: 860px) 30vw, 18vw" style={{ width: "100%", height: "auto" }} />
       </div>
       <div className="device-photo-phone">
-        <Image src="/landing-previews/showcase-phone.png" alt="Tampilan Altora di HP" width={1016} height={1920} sizes="(max-width: 860px) 18vw, 10vw" style={{ width: "100%", height: "auto" }} />
+        <Image src="/landing-previews/showcase-phone.png" alt="Tampilan Altora di HP" width={942} height={1920} sizes="(max-width: 860px) 18vw, 10vw" style={{ width: "100%", height: "auto" }} />
       </div>
     </div>
   );

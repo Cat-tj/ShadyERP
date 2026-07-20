@@ -1081,14 +1081,17 @@ html { scroll-behavior: auto; }
     filter: blur(2px); pointer-events: none;
   }
 
-/* Reuse .bs-phone/.bs-phone-screen/.bs-phone-island (proporsi cqw sudah
-   diukur presisi dari referensi device asli) sebagai hero standalone,
-   bukan di dalam .bs-stage — makanya sizing container-nya didefinisikan
-   sendiri di sini, bukan lewat .bs-phone-wrap. */
-.altora-landing .mobile-highlight-phone-wrap {
-    position: relative; width: min(300px, 78vw); aspect-ratio: 43 / 89;
-    container-type: inline-size;
+/* Foto tangan pegang HP asli (background sudah transparan dari tool desain),
+   bukan ilustrasi CSS — biar section ini terasa "nyata dipegang", bukan
+   mockup layar doang. */
+.altora-landing .mobile-highlight-photo-wrap {
+    position: relative; width: min(340px, 78vw);
     animation: bs-float 6.8s ease-in-out infinite;
+  }
+
+.altora-landing .mobile-highlight-photo-wrap img {
+    display: block; width: 100%; height: auto;
+    filter: drop-shadow(0 24px 32px rgba(10, 31, 68, 0.18));
   }
 
 @media (max-width: 900px) {
@@ -1097,7 +1100,7 @@ html { scroll-behavior: auto; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .altora-landing .mobile-highlight-phone-wrap { animation: none; }
+  .altora-landing .mobile-highlight-photo-wrap { animation: none; }
 }
 
 
@@ -1158,12 +1161,12 @@ html { scroll-behavior: auto; }
 
 
 /* ---- Panggung foto device asli (ganti .bs-stage ilustrasi CSS) ----
-   Background foto udah dihapus (flood-fill dari sudut gambar), jadi bisa
-   numpuk kayak komposisi lama tanpa keliatan kotak putih. Posisi %
-   niru proporsi .bs-stage lama, disesuaikan ke aspect-ratio foto asli:
-   stage 100:70.53 (laptop 78.1% lebar, tablet nyusul di kanan-atas,
-   phone di kanan-bawah, paling depan). */
-.altora-landing .device-photo-stage { position: relative; width: 100%; aspect-ratio: 100 / 70.53; }
+   Foto sudah transparan (export langsung dari tool desain, bukan hasil
+   flood-fill), jadi bisa numpuk kayak komposisi lama tanpa keliatan kotak
+   putih. Posisi % niru proporsi .bs-stage lama, disesuaikan ke aspect-ratio
+   foto asli: stage 100:72.56 (laptop 78.1% lebar, tablet nyusul di
+   kanan-atas, phone di kanan-bawah, paling depan). */
+.altora-landing .device-photo-stage { position: relative; width: 100%; aspect-ratio: 100 / 72.56; }
 
 .altora-landing .device-photo-laptop,
 .altora-landing .device-photo-tablet,
