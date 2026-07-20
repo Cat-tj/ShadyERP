@@ -1174,7 +1174,13 @@ html { scroll-behavior: auto; }
 
 
 /* ---- Panggung perangkat ---- */
-.altora-landing .bs-stage { position: relative; width: 100%; }
+/* Posisi & skala 3 perangkat diukur presisi dari mockup referensi
+   (1536x1024px sumber): laptop 870x570 @ (0,0), tablet 284x486 @
+   (738,103), HP 151x331 @ (963,270), bounding box total 1114x601.
+   Dikunci pakai aspect-ratio + left/top/width persentase supaya seluruh
+   komposisi scale bareng secara proporsional persis, bukan diaawal-atur
+   manual per breakpoint. */
+.altora-landing .bs-stage { position: relative; width: 100%; aspect-ratio: 1114 / 601; }
 
 
 .altora-landing .bs-stage-glow {
@@ -1207,12 +1213,14 @@ html { scroll-behavior: auto; }
 
 /* ---- Laptop (bs-desktop) ---- */
 .altora-landing .bs-laptop {
-    position: relative; width: min(545px, 76%); z-index: 1;
+    position: absolute; left: 0%; top: 0%; width: 78.096948%; aspect-ratio: 870 / 570; z-index: 1;
+    display: flex; flex-direction: column;
     animation: bs-float 7.2s ease-in-out infinite;
   }
 
 
 .altora-landing .bs-desktop {
+    flex: 1; min-height: 0; display: flex; flex-direction: column;
     background: linear-gradient(160deg, #2a3150 0%, #131828 55%, #05070d 100%);
     border: 1px solid rgba(255, 255, 255, 0.14);
     border-radius: 18px 18px 4px 4px; padding: 10px 10px 13px;
@@ -1221,14 +1229,14 @@ html { scroll-behavior: auto; }
 
 
 .altora-landing .bs-desktop::after {
-    content: ""; display: block; margin: 13px -5% -13px; height: 15px;
+    content: ""; display: block; flex-shrink: 0; margin: 13px -5% -13px; height: 15px;
     background: linear-gradient(180deg, #e8edf6 0%, #c3ccdc 70%, #97a2b6 100%);
     border-radius: 2px 2px 14px 14px; position: relative;
   }
 
 
 .altora-landing .bs-desktop-chrome {
-    display: flex; align-items: center; gap: 5px; padding: 7px 10px;
+    flex-shrink: 0; display: flex; align-items: center; gap: 5px; padding: 7px 10px;
     background: var(--surface); border-radius: 8px 8px 0 0;
     border-bottom: 1px solid var(--showcase-soft); transition: border-color 0.6s ease;
   }
@@ -1250,12 +1258,11 @@ html { scroll-behavior: auto; }
   }
 
 
-/* 16:10 — rasio konten layar laptop dikunci di sini (bukan di .bs-desktop
-   induknya, karena .bs-desktop punya ::after buat "kaki" laptop yang harus
-   tetap di luar area yang di-ratio-kan). Tanpa ini tinggi cuma ngikutin
-   tumpukan konten sidebar+panel, jadi kotak tinggi di layar sempit. */
+/* Rasio layar laptop sekarang dikunci di .bs-laptop (870:570, dari
+   pengukuran referensi) yang membungkus chrome+body+kaki sekaligus —
+   .bs-desktop-body tinggal ngisi flex:1 sisa tingginya. */
 .altora-landing .bs-desktop-body {
-    aspect-ratio: 16 / 10; overflow: hidden; display: flex; flex-direction: column;
+    flex: 1; min-height: 0; overflow: hidden; display: flex; flex-direction: column;
     background: var(--surface); border-radius: 0 0 8px 8px;
   }
 
@@ -1435,10 +1442,8 @@ html { scroll-behavior: auto; }
 
 
 /* ---- Tablet (SupervisorFrame / TabletFrame) ---- */
-/* 3:4 — rasio layar iPad Pro asli (2752x2064 / 2732x2048), bukan 10:16
-   yang kepanjangan/kekurusan kayak laptop diputar. */
 .altora-landing .bs-tablet-wrap {
-    position: absolute; right: 92px; bottom: -8px; width: 192px; aspect-ratio: 3 / 4; z-index: 2;
+    position: absolute; left: 66.247756%; top: 17.138103%; width: 25.493716%; aspect-ratio: 284 / 486; z-index: 2;
     animation: bs-float 6.4s .4s ease-in-out infinite;
   }
 
@@ -1472,14 +1477,8 @@ html { scroll-behavior: auto; }
 
 
 /* ---- Phone ---- */
-/* Lebar HP mengikuti proporsi referensi mockup: HP jauh lebih ramping
-   dari tablet (rasio 9:19.5 vs 3:4 tablet) tapi TINGGINYA sebanding —
-   bukan drastis lebih pendek. Laptop (16:10) dan tablet (3:4) sudah benar
-   duluan; masalah "HP kelihatan raksasa" sebelumnya adalah efek tablet
-   yang masih salah rasio (10:16, sama kurusnya dengan HP) bikin dua-duanya
-   kelihatan "sama-sama aneh", bukan HP-nya sendiri yang kebesaran. */
 .altora-landing .bs-phone-wrap {
-    position: absolute; right: 0; bottom: -16px; width: 142px; aspect-ratio: 9 / 19.5; z-index: 3;
+    position: absolute; left: 86.445242%; top: 44.925125%; width: 13.554758%; aspect-ratio: 151 / 331; z-index: 3;
     animation: bs-float 5.6s .9s ease-in-out infinite;
   }
 
@@ -1591,23 +1590,21 @@ html { scroll-behavior: auto; }
 
 
 /* ---------- Responsive ---------- */
-@media (max-width: 1150px) {
-  .altora-landing .bs-tablet-wrap { right: 74px; width: 176px; }
-  .altora-landing .bs-phone-wrap { width: 126px; }
-}
+/* >860px: .bs-stage tetap satu komposisi persentase (dari pengukuran
+   referensi) yang scale bareng apa adanya — nggak perlu override manual
+   per breakpoint lagi karena laptop/tablet/HP semuanya posisi %. */
 
 
-@media (max-width: 1000px) {
-  .altora-landing .bs-tablet-wrap { display: none; }
-  .altora-landing .bs-laptop { width: 94%; }
-}
-
-
+/* <=860px: 3 perangkat nested jadi terlalu kecil buat kebaca kalau tetap
+   scale bareng (HP bisa di bawah 90px), jadi khusus mobile balik ke
+   layout sederhana: tablet disembunyikan, laptop lepas dari absolute
+   positioning (full width, rasio sendiri), HP di kanan-bawah ukuran tetap. */
 @media (max-width: 860px) {
   .altora-landing .business-showcase-body { grid-template-columns: 1fr; align-items: start; }
-  .altora-landing .bs-stage { max-width: 560px; margin: 0 auto; padding-bottom: 24px; }
-  .altora-landing .bs-laptop { width: 92%; }
-  .altora-landing .bs-phone-wrap { width: 118px; right: 0; bottom: -6px; }
+  .altora-landing .bs-stage { aspect-ratio: auto; max-width: 560px; margin: 0 auto; padding-bottom: 108px; }
+  .altora-landing .bs-tablet-wrap { display: none; }
+  .altora-landing .bs-laptop { position: relative; left: auto; top: auto; width: 100%; }
+  .altora-landing .bs-phone-wrap { left: auto; top: auto; right: 0; bottom: -6px; width: 118px; }
   .altora-landing .bs-phone { border-radius: 24px; padding: 5px; }
   .altora-landing .bs-phone-screen { border-radius: 20px; padding: 26px 8px 7px; }
   .altora-landing .bs-phone-island { top: 9px; width: 38px; height: 11px; }
@@ -1622,8 +1619,6 @@ html { scroll-behavior: auto; }
   .altora-landing .bs-app-shell { grid-template-columns: 1fr; }
   .altora-landing .bs-app-panel.is-wide ~ .bs-app-panel,
   .altora-landing .bs-app-columns > *:nth-child(2) { display: none; }
-  .altora-landing .bs-laptop { width: 100%; }
-  .altora-landing .bs-stage { padding-bottom: 108px; }
   .altora-landing .bs-phone-wrap { width: 112px; bottom: 0; }
 }
 
