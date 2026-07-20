@@ -1163,11 +1163,11 @@ html { scroll-behavior: auto; }
 /* ---- Panggung foto device asli (ganti .bs-stage ilustrasi CSS) ----
    Foto sudah transparan (export langsung dari tool desain, bukan hasil
    flood-fill), jadi bisa numpuk kayak komposisi lama tanpa keliatan kotak
-   putih. Tablet & phone ditumpuk dalam-dalam ke laptop (bukan cuma nyentuh
-   ujung) biar keliatan satu klaster, bukan 3 device yang mengambang
-   terpisah. Stage 100:79.06 (laptop hampir selebar stage, tablet numpuk
-   kanan-atas, phone numpuk kanan-bawah paling depan). */
-.altora-landing .device-photo-stage { position: relative; width: 100%; aspect-ratio: 100 / 79.06; }
+   putih. Posisi % diukur presisi pixel-by-pixel dari reference layout
+   user (bukan tebakan): tablet nyentuh sisi kanan laptop, phone numpuk
+   dekat sepertiga atas tablet (bukan di tengah/bawahnya) biar 3 device
+   keliatan satu klaster rapat, bukan mengambang tersebar. Stage 100:57.84. */
+.altora-landing .device-photo-stage { position: relative; width: 100%; aspect-ratio: 100 / 57.84; }
 
 .altora-landing .device-photo-laptop,
 .altora-landing .device-photo-tablet,
@@ -1177,9 +1177,9 @@ html { scroll-behavior: auto; }
 .altora-landing .device-photo-tablet img,
 .altora-landing .device-photo-phone img { display: block; width: 100%; height: auto; }
 
-.altora-landing .device-photo-laptop { left: 0%; top: 0%; width: 98.04%; z-index: 1; }
-.altora-landing .device-photo-tablet { left: 66.67%; top: 18.63%; width: 33.33%; z-index: 2; }
-.altora-landing .device-photo-phone { left: 81.37%; top: 46.08%; width: 16.18%; z-index: 3; }
+.altora-landing .device-photo-laptop { left: 0%; top: 0%; width: 75.14%; z-index: 1; }
+.altora-landing .device-photo-tablet { left: 63.53%; top: 11.60%; width: 24.38%; z-index: 2; }
+.altora-landing .device-photo-phone { left: 84.63%; top: 26.50%; width: 15.37%; z-index: 3; }
 
 
 .altora-landing .business-showcase-copy > span:first-child {
