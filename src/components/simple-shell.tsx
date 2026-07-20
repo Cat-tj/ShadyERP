@@ -74,7 +74,7 @@ export function SimpleShell({
         <div className="mx-auto flex h-[var(--topbar-height)] max-w-[1600px] items-center justify-between gap-4 px-[var(--content-padding-x)]">
           <div className="flex min-w-0 items-center gap-8">
             <Link href="/simple/hari-ini" className="flex min-w-0 shrink-0 items-center gap-2">
-              <img src="/brand/altora-symbol.svg" alt="Altora" className="h-8 w-8 shrink-0" />
+              <img src="/brand/altora-purple-symbol.svg" alt="Altora" className="h-8 w-8 shrink-0" />
               <p className="truncate text-xs font-medium text-[var(--color-text-secondary)]">{tenantName}</p>
             </Link>
             {/* Top nav — desktop only. Bottom tab bar (below) handles tablet/mobile. */}
