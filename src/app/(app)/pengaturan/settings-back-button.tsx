@@ -10,7 +10,7 @@ export function SettingsBackButton() {
   return (
     <Link
       href="/pengaturan"
-      className="md:hidden flex h-9 items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-xs font-bold text-[var(--color-text-secondary)] shadow-sm transition-colors hover:bg-[var(--color-bg-secondary)]"
+      className="flex h-9 items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3.5 text-xs font-bold text-[var(--color-text-secondary)] shadow-sm transition-colors hover:bg-[var(--color-bg-secondary)] lg:hidden"
     >
       ← Menu Pengaturan
     </Link>

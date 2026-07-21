@@ -1,5 +1,4 @@
-import { requireRole, requireSessionWithTenant } from "@/server/require-session";
-import { SettingsTabs } from "@/components/pengaturan/settings-tabs";
+import { requireRole } from "@/server/require-session";
 import { SettingsBackButton } from "./settings-back-button";
 import { EyebrowBadge } from "@/components/ui/eyebrow-badge";
 
@@ -9,9 +8,6 @@ export default async function PengaturanLayout({
   children: React.ReactNode;
 }) {
   await requireRole(["OWNER"]);
-  const { tenant } = await requireSessionWithTenant();
-  const disabledModules = tenant?.disabledModules ?? [];
-
   return (
     <div className="mx-auto max-w-3xl flex flex-col gap-4 pb-[var(--bottom-nav-height)]">
       <div>
@@ -23,7 +19,6 @@ export default async function PengaturanLayout({
           <SettingsBackButton />
         </div>
       </div>
-      <SettingsTabs disabledModules={disabledModules} />
       <div className="flex-1">
         {children}
       </div>

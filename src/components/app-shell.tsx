@@ -9,6 +9,7 @@ import { UserIcon, PowerIcon, GridIcon, ChevronDownIcon } from "@/components/ui/
 import MobileCartBar from "@/components/ui/mobile-cart-bar";
 import { resolveEnabledModules, getModuleForPath, MODULE_MAP } from "@/lib/modules";
 import { HUBS, HUB_MAP, getHubForPath, type HubKey } from "@/lib/hubs";
+import { SettingsSidebarNav } from "@/features/settings/components/settings-sidebar-nav";
 
 const ROLE_LABEL: Record<Role, string> = {
   OWNER: "Pemilik",
@@ -172,6 +173,16 @@ export function AppShell({
           </div>
           <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-2">
             {items.map((item) => {
+              if (item.href === "/pengaturan") {
+                return (
+                  <SettingsSidebarNav
+                    key={item.href}
+                    disabledModules={disabledModules}
+                    accentColor={activeHub.color}
+                  />
+                );
+              }
+
               const active = item.href === activeHref;
               const Icon = item.icon;
               const itemModule = item.module ? MODULE_MAP[item.module] : null;
