@@ -629,14 +629,28 @@ export function PaymentSheet({
                 ? giftCardLookup.error
                 : giftCardLookup.status !== "ACTIVE"
                   ? "Voucher ini sudah tidak aktif."
-                  : `Saldo voucher: ${formatRupiah(giftCardLookup.balance ?? 0)}`}
+                  : isGiftCardInsufficient
+                    ? `Saldo voucher ${formatRupiah(giftCardLookup.balance ?? 0)} tidak cukup untuk ${formatRupiah(effectiveTotal)}. Voucher belum bisa dipakai sebagian — pilih metode lain untuk transaksi ini.`
+                    : `Saldo voucher: ${formatRupiah(giftCardLookup.balance ?? 0)}`}
             </p>
           )}
         </div>
       ) : (
-        <p className="mt-4 text-sm text-[var(--color-text-secondary)]">
-          Pastikan pembayaran {formatRupiah(effectiveTotal)} sudah diterima lewat {PAYMENT_METHODS.find((m) => m.value === method)?.label} sebelum lanjut.
-        </p>
+        <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] p-4">
+          <p className="text-sm text-[var(--color-text-secondary)]">
+            Pastikan pembayaran {formatRupiah(effectiveTotal)} sudah diterima lewat {PAYMENT_METHODS.find((m) => m.value === method)?.label} sebelum lanjut.
+          </p>
+          {method === "TRANSFER" && (
+            <p className="mt-1.5 text-xs text-[var(--color-text-muted)]">
+              Uang masuk lewat transfer bank ke rekening usaha (bukan QRIS, bukan kartu debit fisik).
+            </p>
+          )}
+          {method === "EWALLET" && (
+            <p className="mt-1.5 text-xs text-[var(--color-text-muted)]">
+              Saldo e-wallet dikirim langsung ke akun e-wallet usaha (bukan lewat scan QRIS).
+            </p>
+          )}
+        </div>
       )}
     </>
   );
