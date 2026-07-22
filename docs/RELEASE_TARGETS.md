@@ -8,15 +8,14 @@ or deploying.
 | Field | Current value |
 | --- | --- |
 | Repository | `Cat-tj/ShadyERP` |
-| Release branch | `claude/umkm-saas-pos-tv4asg` |
-| Current release SHA | `20a5a77` |
+| Release branch | `master` |
+| Current release SHA | `be75e72` |
 | Runtime | Altora VPS |
 | Product scope | Altora web application and its verticals |
 
-The branch name above is currently the production branch even though its name
-contains `claude`. Treat it as the only release branch until the planned branch
-migration to `master` is completed together with the VPS deployment
-configuration.
+`master` is now the GitHub default branch and the only release branch. The
+former `claude/umkm-saas-pos-tv4asg` branch is retained temporarily only as a
+read-only compatibility reference while VPS deployment is migrated.
 
 ## Explicit boundaries
 
@@ -47,10 +46,10 @@ Before coding or pushing, an agent must state in its handover:
 5. Push that branch, then deploy the same SHA to the mapped VPS service.
 6. Record the deployed SHA and public verification result.
 
-## Planned migration to `master`
+## Migration record — 2026-07-23
 
-The desired end state is a branch literally named `master` as the GitHub
-default and VPS deployment branch. This is a production configuration change:
-create `master` from the current release SHA, update the VPS pull target,
-verify build and health checks, then retire the old release branch. Do not
-perform a partial rename.
+- `master` was created from release SHA `be75e72` and set as the GitHub default.
+- `ops/deploy.sh` now pulls `origin master`.
+- VPS deployment must pull this commit, build, migrate, restart
+  `altora-main`, and pass public health verification before the old branch can
+  be retired.

@@ -8,7 +8,7 @@
 set -euo pipefail
 
 echo "== git pull =="
-git pull origin claude/umkm-saas-pos-tv4asg
+git pull origin master
 
 echo "== npm install =="
 npm install
