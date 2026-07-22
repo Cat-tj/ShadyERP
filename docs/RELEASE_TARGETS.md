@@ -9,7 +9,7 @@ or deploying.
 | --- | --- |
 | Repository | `Cat-tj/ShadyERP` |
 | Release branch | `master` |
-| Current release SHA | `be75e72` |
+| Last deployed application SHA | `93a7b6a` |
 | Runtime | Altora VPS |
 | Product scope | Altora web application and its verticals |
 
@@ -53,3 +53,12 @@ Before coding or pushing, an agent must state in its handover:
 - VPS deployment must pull this commit, build, migrate, restart
   `altora-main`, and pass public health verification before the old branch can
   be retired.
+
+## VPS deployment record — 2026-07-23
+
+- Database backup completed before the branch migration.
+- Pending migration `20260722140000_cash_out_receipt_photo` was applied.
+- `altora-main` is running from `/home/altora/ShadyERP` on branch `master` at
+  application SHA `93a7b6a`.
+- Local health endpoint plus `https://altora.my.id` and
+  `https://teams.altora.my.id` returned HTTP 200 after restart.
