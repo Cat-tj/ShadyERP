@@ -415,7 +415,7 @@ export function LandingContent({ city, vertical, faqItems }: { city?: string; ve
     <div className="wrap reveal">
       <p className="social-proof-lede">Dipercaya berbagai jenis bisnis untuk mengelola operasional dalam satu sistem.</p>
       <div className="social-proof-badges">
-        {VERTICALS.filter((v) => v.key !== "teams" && v.key !== "accounting").map((v) => (
+        {VERTICALS.map((v) => (
           <span className="social-proof-badge" key={v.key}>
             <img src={`/brand/${v.key}-symbol-onlight.svg`} alt="" width={16} height={16} />
             {v.label.replace("Altora ", "")}
