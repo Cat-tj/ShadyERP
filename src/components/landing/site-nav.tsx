@@ -167,12 +167,6 @@ export function SiteNav({ vertical }: { vertical?: VerticalDef }) {
         </nav>
 
         <div className="nav-cta">
-          <a className="btn btn-ghost nav-login" href={authHref}>
-            {vertical ? "Login" : "Pilih produk"}
-          </a>
-          <a className="btn btn-primary" href={signupHref}>
-            {vertical ? "Mulai Gratis" : "Lihat solusi"}
-          </a>
           <button
             type="button"
             className="nav-drawer-toggle"
