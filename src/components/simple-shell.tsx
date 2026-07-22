@@ -98,10 +98,19 @@ function getSimpleTabs(vertical: VerticalDef | undefined, role: Role): SimpleTab
   if (role !== "STAFF") return allTabs;
 
   const visibleTabs = allTabs.filter((tab) => !OWNER_MANAGER_ONLY_HREFS.includes(tab.href));
-  // Selalu sisakan minimal satu tab selain "Lainnya" — absensi bisa dibuka semua role.
-  if (visibleTabs.length <= 1) {
-    return [{ href: "/absensi", label: "Absen", icon: UsersIcon }, ...visibleTabs];
+
+  // Absensi harus jadi tab utama buat STAFF, bukan ketimbun di dalam "Lainnya"
+  // (feedback user langsung soal ini) — sisipkan sebelum "Lainnya" kalau belum ada.
+  if (!visibleTabs.some((tab) => tab.href === "/absensi")) {
+    const menuIndex = visibleTabs.findIndex((tab) => tab.href === "/simple/menu");
+    const absenTab: SimpleTab = { href: "/absensi", label: "Absen", icon: UsersIcon };
+    if (menuIndex === -1) {
+      visibleTabs.push(absenTab);
+    } else {
+      visibleTabs.splice(menuIndex, 0, absenTab);
+    }
   }
+
   return visibleTabs;
 }
 
