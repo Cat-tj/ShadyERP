@@ -917,6 +917,9 @@ function CartPanel({
   onRemoveLine: (cartKey: string) => void;
   onCheckout: () => void;
 }) {
+  const [discountMode, setDiscountMode] = useState<"amount" | "percent">("amount");
+  const [discountPercentInput, setDiscountPercentInput] = useState("");
+
   return (
     <div className="flex flex-col h-full">
       {cart.length === 0 ? (
@@ -1012,16 +1015,61 @@ function CartPanel({
               <label className="text-xs text-[var(--color-text-secondary)] font-medium" htmlFor="cart-discount">
                 Diskon transaksi
               </label>
-              <input
-                id="cart-discount"
-                type="number"
-                min={0}
-                inputMode="numeric"
-                value={cartDiscount || ""}
-                onChange={(event) => onCartDiscountChange(Number(event.target.value) || 0)}
-                placeholder="0"
-                className="h-8 w-24 rounded border border-[var(--color-border)] px-2 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
-              />
+              <div className="flex items-center gap-1.5">
+                <div className="flex overflow-hidden rounded border border-[var(--color-border)]">
+                  <button
+                    type="button"
+                    onClick={() => setDiscountMode("amount")}
+                    className={`h-8 px-2 text-xs font-semibold ${
+                      discountMode === "amount"
+                        ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                        : "text-[var(--color-text-secondary)]"
+                    }`}
+                  >
+                    Rp
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setDiscountMode("percent")}
+                    className={`h-8 px-2 text-xs font-semibold ${
+                      discountMode === "percent"
+                        ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                        : "text-[var(--color-text-secondary)]"
+                    }`}
+                  >
+                    %
+                  </button>
+                </div>
+                {discountMode === "amount" ? (
+                  <input
+                    id="cart-discount"
+                    type="number"
+                    min={0}
+                    inputMode="numeric"
+                    value={cartDiscount || ""}
+                    onChange={(event) => onCartDiscountChange(Number(event.target.value) || 0)}
+                    placeholder="0"
+                    className="h-8 w-24 rounded border border-[var(--color-border)] px-2 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+                  />
+                ) : (
+                  <input
+                    id="cart-discount"
+                    type="number"
+                    min={0}
+                    max={100}
+                    inputMode="numeric"
+                    value={discountPercentInput}
+                    onChange={(event) => {
+                      const raw = event.target.value;
+                      setDiscountPercentInput(raw);
+                      const percent = Math.min(100, Math.max(0, Number(raw) || 0));
+                      onCartDiscountChange(Math.round((subtotal * percent) / 100));
+                    }}
+                    placeholder="0%"
+                    className="h-8 w-24 rounded border border-[var(--color-border)] px-2 text-sm tabular-nums outline-none focus:border-[var(--color-primary)]"
+                  />
+                )}
+              </div>
             </div>
 
             {appliedPromo && (
