@@ -8,9 +8,11 @@ import { getVisibleSettingsNavigation } from "@/features/settings/settings-navig
 export function SettingsSidebarNav({
   disabledModules,
   accentColor,
+  activeBackground,
 }: {
   disabledModules: string[];
   accentColor: string;
+  activeBackground?: string;
 }) {
   const pathname = usePathname();
   const isSettingsArea = pathname === "/pengaturan" || pathname.startsWith("/pengaturan/");
@@ -39,7 +41,7 @@ export function SettingsSidebarNav({
                 key={item.href}
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                style={active ? { color: accentColor, backgroundColor: `${accentColor}14` } : undefined}
+                style={active ? { color: accentColor, backgroundColor: activeBackground ?? `${accentColor}14` } : undefined}
                 className={`flex min-h-[36px] items-center rounded-md px-2.5 text-xs font-semibold transition-colors duration-150 ${
                   active
                     ? ""

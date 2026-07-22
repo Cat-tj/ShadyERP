@@ -18,6 +18,7 @@ export default async function AppLayout({
         userName={user.name}
         role={user.role}
         tenantName={tenant?.name ?? "Toko Saya"}
+        disabledModules={tenant?.disabledModules ?? []}
       >
         {children}
       </SimpleShell>

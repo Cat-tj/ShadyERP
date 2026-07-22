@@ -3,8 +3,9 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
-import { BarChartIcon, GridIcon, ReceiptIcon, WalletIcon, UserIcon, PowerIcon } from "@/components/ui/icons";
+import { BarChartIcon, GridIcon, HomeIcon, ReceiptIcon, WalletIcon, UserIcon, PowerIcon } from "@/components/ui/icons";
 import type { Role } from "@/lib/nav";
+import { SettingsSidebarNav } from "@/features/settings/components/settings-sidebar-nav";
 
 const ROLE_LABEL: Record<Role, string> = {
   OWNER: "Pemilik",
@@ -44,12 +45,14 @@ export function SimpleShell({
   userName,
   role,
   tenantName,
+  disabledModules = [],
   children,
   alertCount = 0,
 }: {
   userName: string;
   role: Role;
   tenantName: string;
+  disabledModules?: string[];
   children: React.ReactNode;
   alertCount?: number;
 }) {
@@ -66,43 +69,84 @@ export function SimpleShell({
   };
 
   return (
-    <div
-      className={`min-h-dvh bg-[var(--color-bg)] pb-[var(--content-padding-bottom)] lg:pb-0`}
-      style={shellBackgroundStyle}
-    >
-      <header className="glass-nav sticky top-0 z-20 border-x-0 border-t-0 rounded-none pt-[var(--safe-area-top)]">
+    <div className="flex min-h-dvh w-full bg-[var(--color-bg)]" style={shellBackgroundStyle}>
+      <aside className="glass-surface sticky top-0 hidden h-dvh w-64 shrink-0 flex-col rounded-none border-y-0 border-l-0 lg:flex">
+        <Link href="/simple/hari-ini" className="flex min-h-14 items-center gap-3 border-b border-[var(--color-gold-soft)] px-5">
+          <img src="/brand/altora-purple-symbol.svg" alt="Altora" className="h-8 w-8 shrink-0" />
+          <span className="min-w-0">
+            <span className="block truncate font-display text-sm font-semibold text-[var(--color-text)]">{tenantName}</span>
+            <span className="block text-xs font-medium text-[var(--color-primary)]">Mode Simpel</span>
+          </span>
+        </Link>
+
+        <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-2" aria-label="Navigasi utama">
+          <Link
+            href="/simple/hari-ini"
+            className={`flex min-h-[40px] items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+              pathname === "/simple/hari-ini"
+                ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                : "text-[var(--color-text)] hover:bg-white/40"
+            }`}
+          >
+            <HomeIcon aria-hidden className="h-5 w-5 shrink-0" />
+            Ringkasan
+          </Link>
+          {tabs.map((tab) => {
+            const Icon = tab.icon;
+            const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
+
+            return (
+              <Link
+                key={tab.href}
+                href={tab.href}
+                className={`flex min-h-[40px] items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
+                    : "text-[var(--color-text)] hover:bg-white/40"
+                }`}
+              >
+                <Icon aria-hidden className="h-5 w-5 shrink-0" />
+                <span className="flex-1">{tab.label}</span>
+                {tab.href === "/simple/data" && alertCount > 0 && (
+                  <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+                    {alertCount}
+                  </span>
+                )}
+              </Link>
+            );
+          })}
+          {role === "OWNER" && (
+            <SettingsSidebarNav
+              disabledModules={disabledModules}
+              accentColor="var(--color-primary)"
+              activeBackground="color-mix(in srgb, var(--color-primary) 10%, transparent)"
+            />
+          )}
+        </nav>
+
+        <div className="border-t border-[var(--color-gold-soft)] p-3">
+          <Link href="/akun" className="block hover:opacity-80">
+            <p className="truncate text-sm font-semibold text-[var(--color-text)]">{userName}</p>
+            <p className="text-xs text-[var(--color-text-secondary)]">{ROLE_LABEL[role]}</p>
+          </Link>
+          <button
+            type="button"
+            onClick={() => signOut({ callbackUrl: "/login" })}
+            className="mt-2.5 min-h-[36px] w-full rounded-lg border border-[var(--color-border)] bg-white/40 text-xs font-semibold text-[var(--color-text)] transition-colors duration-150 hover:bg-white/70"
+          >
+            Keluar
+          </button>
+        </div>
+      </aside>
+
+      <div className={`min-w-0 flex-1 pb-[var(--content-padding-bottom)] lg:pb-0`}>
+      <header className="glass-nav sticky top-0 z-20 rounded-none border-x-0 border-t-0 pt-[var(--safe-area-top)] lg:hidden">
         <div className="mx-auto flex h-[var(--topbar-height)] max-w-[1600px] items-center justify-between gap-4 px-[var(--content-padding-x)]">
           <div className="flex min-w-0 items-center gap-8">
             <Link href="/simple/hari-ini" className="flex min-w-0 shrink-0 items-center gap-2">
               <img src="/brand/altora-purple-symbol.svg" alt="Altora" className="h-8 w-8 shrink-0" />
               <p className="truncate text-xs font-medium text-[var(--color-text-secondary)]">{tenantName}</p>
             </Link>
-            {/* Top nav — desktop only. Bottom tab bar (below) handles tablet/mobile. */}
-            <nav className="hidden min-w-0 items-center gap-1 lg:flex">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
-                return (
-                  <Link
-                    key={tab.href}
-                    href={tab.href}
-                    className={`flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors ${
-                      active
-                        ? "bg-[var(--color-primary)] text-[var(--color-on-primary)]"
-                        : "text-[var(--color-text-secondary)] hover:bg-[var(--color-surface)]"
-                    }`}
-                  >
-                    <Icon className="h-4 w-4" />
-                    {tab.label}
-                    {tab.href === "/simple/data" && alertCount > 0 && (
-                      <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                        {alertCount}
-                      </span>
-                    )}
-                  </Link>
-                );
-              })}
-            </nav>
           </div>
           <div className="flex items-center gap-2">
             <Link
@@ -141,7 +185,7 @@ export function SimpleShell({
         {children}
       </main>
 
-      {/* Bottom tab bar — tablet & mobile only. Desktop (lg+) uses the top nav above. */}
+      {/* Bottom tab bar — tablet & mobile only. Desktop (lg+) uses the sidebar. */}
       <nav
         className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--color-border)] bg-[var(--color-surface)]/95 px-3 pb-[max(var(--safe-area-bottom),0.5rem)] pt-2 shadow-[0_-18px_40px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden"
         style={{ height: "calc(var(--bottom-nav-height) + var(--safe-area-bottom))" }}
@@ -174,6 +218,7 @@ export function SimpleShell({
           })}
         </div>
       </nav>
+      </div>
     </div>
   );
 }
