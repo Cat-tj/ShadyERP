@@ -963,6 +963,8 @@ model CashOutTransaction {
   status          CashOutStatus @default(COMPLETED)
   voidReason      String?
   note            String?
+  /// Data URL foto struk/bukti — wajib diisi kalau note kosong (lihat cash-out-service.ts).
+  receiptPhotoUrl String?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 

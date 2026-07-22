@@ -141,6 +141,7 @@ export type CreateCashOutPayload = {
   adminFee: number;
   method: CashOutMethod;
   note?: string;
+  receiptPhotoUrl?: string;
 };
 
 export type CreateCashOutResult = { error?: string; referenceNumber?: string };
@@ -167,6 +168,7 @@ export async function createCashOutAction(
       adminFee: payload.adminFee,
       method: payload.method,
       note: payload.note,
+      receiptPhotoUrl: payload.receiptPhotoUrl,
     });
     revalidatePath("/kasir");
     revalidatePath("/kasir/riwayat");

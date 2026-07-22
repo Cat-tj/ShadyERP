@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import { createCashOutAction } from "@/app/(app)/kasir/actions";
+import { compressImageFile } from "@/lib/compress-image";
 import { formatRupiah } from "@/lib/format";
 import { Toast, useToast } from "@/components/toast";
+import { CameraIcon } from "@/components/ui/icons";
 import type { CashOutMethod } from "@prisma/client";
 
 const METHOD_OPTIONS: { value: CashOutMethod; label: string }[] = [
@@ -22,8 +24,23 @@ export function CashOutModal({ onClose }: { onClose: () => void }) {
   const [adminFee, setAdminFee] = useState("5000");
   const [method, setMethod] = useState<CashOutMethod>("DEBIT_CARD");
   const [note, setNote] = useState("");
+  const [receiptPhotoUrl, setReceiptPhotoUrl] = useState<string | null>(null);
+  const [isCapturingPhoto, setIsCapturingPhoto] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  async function handlePhotoSelected(file: File) {
+    setIsCapturingPhoto(true);
+    try {
+      const url = await compressImageFile(file);
+      setReceiptPhotoUrl(url);
+    } catch {
+      setError("Gagal memproses foto struk.");
+    } finally {
+      setIsCapturingPhoto(false);
+    }
+  }
 
   const totals = useMemo(() => {
     const withdraw = Number(withdrawAmount || 0);
@@ -41,6 +58,10 @@ export function CashOutModal({ onClose }: { onClose: () => void }) {
       setError("Nominal cash yang diberikan wajib lebih dari 0.");
       return;
     }
+    if (!note.trim() && !receiptPhotoUrl) {
+      setError("Isi catatan atau foto struk sebagai bukti transaksi ini.");
+      return;
+    }
     setError(null);
 
     startTransition(async () => {
@@ -51,6 +72,7 @@ export function CashOutModal({ onClose }: { onClose: () => void }) {
         adminFee: totals.fee,
         method,
         note,
+        receiptPhotoUrl: receiptPhotoUrl ?? undefined,
       });
       if (result.error) {
         setError(result.error);
@@ -142,15 +164,51 @@ export function CashOutModal({ onClose }: { onClose: () => void }) {
               </select>
             </label>
             <label className="text-sm font-medium text-[var(--color-text)] sm:col-span-2">
-              Catatan
+              Catatan (wajib isi ini atau foto struk)
               <textarea
                 value={note}
                 onChange={(event) => setNote(event.target.value)}
                 rows={3}
-                placeholder="Opsional, mis. nomor approval mesin EDC"
+                placeholder="mis. nomor approval mesin EDC"
                 className="mt-1 w-full rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] p-3 text-sm outline-none focus:border-[var(--color-primary)]"
               />
             </label>
+            <div className="sm:col-span-2">
+              <span className="text-sm font-medium text-[var(--color-text)]">Foto struk (wajib isi ini atau catatan)</span>
+              <input
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(event) => {
+                  const file = event.target.files?.[0];
+                  if (file) handlePhotoSelected(file);
+                }}
+              />
+              {receiptPhotoUrl ? (
+                <div className="mt-1 flex items-center gap-3">
+                  <img src={receiptPhotoUrl} alt="Foto struk" className="h-16 w-16 rounded-lg border border-[var(--color-border)] object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => setReceiptPhotoUrl(null)}
+                    className="text-xs font-semibold text-[var(--color-danger)]"
+                  >
+                    Hapus foto
+                  </button>
+                </div>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => photoInputRef.current?.click()}
+                  disabled={isCapturingPhoto}
+                  className="mt-1 flex min-h-[44px] w-full items-center justify-center gap-2 rounded-lg border border-dashed border-[var(--color-border)] text-sm font-medium text-[var(--color-text-secondary)] hover:bg-[var(--color-bg)] disabled:opacity-60"
+                >
+                  <CameraIcon aria-hidden className="h-4 w-4" />
+                  {isCapturingPhoto ? "Memproses foto..." : "Ambil foto struk"}
+                </button>
+              )}
+            </div>
           </div>
 
           <div className="mt-4 rounded-xl border border-[var(--color-border)] bg-[var(--color-bg)] p-4">

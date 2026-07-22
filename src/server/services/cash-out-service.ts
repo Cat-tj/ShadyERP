@@ -13,6 +13,7 @@ export type CreateCashOutInput = {
   adminFee: number;
   method: CashOutMethod;
   note?: string | null;
+  receiptPhotoUrl?: string | null;
 };
 
 export async function createCashOutTransaction(input: CreateCashOutInput) {
@@ -24,6 +25,9 @@ export async function createCashOutTransaction(input: CreateCashOutInput) {
   }
   if (!Number.isFinite(adminFee) || adminFee < 0) {
     throw new Error("Admin fee tidak valid.");
+  }
+  if (!input.note?.trim() && !input.receiptPhotoUrl) {
+    throw new Error("Isi catatan atau foto struk sebagai bukti transaksi ini.");
   }
 
   const shift = await prisma.cashierShift.findFirst({
@@ -53,6 +57,7 @@ export async function createCashOutTransaction(input: CreateCashOutInput) {
       totalCharged: withdrawAmount + adminFee,
       method: input.method,
       note: input.note?.trim() || null,
+      receiptPhotoUrl: input.receiptPhotoUrl || null,
     },
   });
 }
