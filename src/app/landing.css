@@ -52,9 +52,18 @@
   
 html { scroll-behavior: smooth; }
 
-  
+/* Tiap section berhenti rapi di batasnya sendiri pas scroll (bukan
+   mandatory — section tinggi kayak tabel perbandingan fitur tetap bisa
+   discroll bebas di tengahnya, snap cuma aktif pas scroll berhenti deket
+   batas section). scroll-margin-top nyamain tinggi nav sticky (diukur
+   ~80px) biar section nggak ketutup nav pas snap/lompat via anchor link. */
+html { scroll-snap-type: y proximity; }
+
+.altora-landing main#top > section { scroll-snap-align: start; scroll-margin-top: 84px; }
+
+
 @media (prefers-reduced-motion: reduce) {
-html { scroll-behavior: auto; }
+html { scroll-behavior: auto; scroll-snap-type: none; }
 .altora-landing, .altora-landing * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
 }
 
@@ -69,7 +78,11 @@ html { scroll-behavior: auto; }
     font-size: 16px;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
-    overflow-x: hidden;
+    /* overflow-x:hidden (bukan clip) diam-diam bikin div ini jadi scroll
+       container sendiri, dan itu merusak position:sticky di header.site —
+       nav-nya lepas nempel, ikut ke-scroll normal kayak position:static.
+       clip meng-hide overflow yang sama tapi TIDAK bikin scroll container. */
+    overflow-x: clip;
   }
 
 
@@ -2322,53 +2335,36 @@ html { scroll-behavior: auto; }
   
 /* ---------- PRICING ---------- */
 
-  
-.altora-landing .pricing { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 
-  
-@media (max-width: 900px) {
-.altora-landing .pricing { grid-template-columns: 1fr; }
-}
-
-  
-.altora-landing .plan {
-    border: 1px solid var(--border); border-radius: var(--radius); padding: 28px 24px;
-    display: flex; flex-direction: column; gap: 16px; background: var(--surface); position: relative;
+.altora-landing .pricing-cta {
+    max-width: 560px; margin-inline: auto; text-align: center;
+    border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+    padding: clamp(32px, 5vw, 48px) clamp(24px, 5vw, 40px);
+    display: flex; flex-direction: column; align-items: center; gap: 14px;
+    box-shadow: var(--shadow-sm);
   }
 
-  
-.altora-landing .plan.featured { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary), var(--shadow-sm); }
 
-  
-.altora-landing .plan-badge {
-    position: absolute; top: -12px; right: 22px; background: var(--primary); color: var(--on-primary);
-    font-family: var(--font-jetbrains-mono), monospace; font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
-    padding: 4px 10px; border-radius: 6px;
+.altora-landing .pricing-cta-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--font-jetbrains-mono), monospace; font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+    color: var(--primary); background: var(--primary-soft); padding: 6px 12px; border-radius: 999px;
   }
 
-  
-.altora-landing .plan-name { font-family: var(--font-jetbrains-mono), monospace; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-secondary); }
 
-  
-.altora-landing .plan-price { font-weight: 800; font-size: 32px; letter-spacing: -0.02em; }
+.altora-landing .pricing-cta-badge svg { width: 14px; height: 14px; }
 
-  
-.altora-landing .plan-price small { font-family: var(--font-jetbrains-mono), monospace; font-size: 12.5px; font-weight: 500; color: var(--text-faint); }
 
-  
-.altora-landing .plan-desc { color: var(--text-secondary); font-size: 13.5px; min-height: 38px; }
+.altora-landing .pricing-cta h3 { font-size: clamp(20px, 2.4vw, 24px); letter-spacing: -0.01em; }
 
-  
-.altora-landing .plan-specs { display: flex; flex-direction: column; gap: 9px; font-size: 13.5px; margin: 0; padding: 0; }
 
-  
-.altora-landing .plan-specs li { list-style: none; display: flex; gap: 9px; align-items: baseline; color: var(--text-secondary); }
+.altora-landing .pricing-cta p { color: var(--text-secondary); font-size: 14.5px; max-width: 42ch; }
 
-  
-.altora-landing .plan-specs b { color: var(--text); font-weight: 700; font-family: var(--font-jetbrains-mono), monospace; font-variant-numeric: tabular-nums; }
 
-  
-.altora-landing .plan .btn { justify-content: center; margin-top: auto; }
+.altora-landing .pricing-cta .btn { margin-top: 6px; }
+
+
+.altora-landing .pricing-cta .plan-more { margin-top: 2px; }
 
 
   

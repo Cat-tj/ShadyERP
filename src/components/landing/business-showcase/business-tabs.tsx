@@ -21,8 +21,16 @@ const TAB_ICONS = {
 export function BusinessTabs({ items, activeKey, onChange }: { items: ShowcaseDefinition[]; activeKey: string; onChange: (key: ShowcaseDefinition["key"]) => void }) {
   const refs = useRef(new Map<string, HTMLButtonElement>());
   const activeIndex = items.findIndex((item) => item.key === activeKey);
+  const skipNextScroll = useRef(true);
 
-  useEffect(() => { refs.current.get(activeKey)?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" }); }, [activeKey]);
+  // block:"nearest" masih bisa scroll SELURUH HALAMAN secara vertikal kalau
+  // section ini belum kelihatan (mis. pas pertama kali page load, section ini
+  // masih di bawah layar) — makanya render pertama harus dilewati, cuma boleh
+  // jalan kalau activeKey benar-benar berubah karena user klik/keyboard.
+  useEffect(() => {
+    if (skipNextScroll.current) { skipNextScroll.current = false; return; }
+    refs.current.get(activeKey)?.scrollIntoView({ block: "nearest", inline: "center", behavior: "smooth" });
+  }, [activeKey]);
 
   function onKeyDown(event: React.KeyboardEvent<HTMLButtonElement>) {
     if (!items.length) return;

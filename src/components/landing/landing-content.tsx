@@ -7,6 +7,7 @@ import { MobileHighlight } from "./mobile-highlight";
 import { LandingScripts } from "./landing-scripts";
 import { SiteNav } from "./site-nav";
 import { FaqAccordion } from "./faq-accordion";
+import { ClockIcon } from "@/components/ui/icons";
 import {
   ADDON_SERVICES,
   AUTOMATION_OUTPUTS,
@@ -890,50 +891,18 @@ export function LandingContent({ city, vertical, faqItems }: { city?: string; ve
     <div className="wrap">
       <div className="section-head reveal">
         <span className="eyebrow">Harga</span>
-        <h2>Mulai gratis, naik kelas kalau sudah butuh.</h2>
-        <p className="lede">Batas paket menyesuaikan jumlah outlet, karyawan, dan produkmu. Chat tim kami buat dapat harga yang pas untuk usahamu.</p>
+        <h2>Konsultasi dulu, baru tahu harganya.</h2>
+        <p className="lede">Setiap usaha beda kebutuhan outlet, karyawan, dan produk. Chat tim kami langsung — nggak pakai form ribet.</p>
       </div>
-      <div className="pricing reveal">
-        <div className="plan">
-          <span className="plan-name mono">Free</span>
-          <p className="plan-desc">Untuk usaha yang baru mulai jalan.</p>
-          <div className="plan-price">Gratis</div>
-          <ul className="plan-specs">
-            <li><b>1</b> outlet</li>
-            <li><b>3</b> karyawan</li>
-            <li><b>50</b> produk</li>
-            <li>Semua fitur aktif</li>
-          </ul>
-          <a className="btn btn-ghost" href={signupHref}>{signupLabel}</a>
-          <a className="plan-more" href="#perbandingan-fitur">Lihat semua fitur</a>
-        </div>
-        <div className="plan featured">
-          <span className="plan-badge">Paling Populer</span>
-          <span className="plan-name mono">Basic</span>
-          <p className="plan-desc">Untuk usaha yang sedang berkembang.</p>
-          <div className="plan-price">Hubungi Kami</div>
-          <ul className="plan-specs">
-            <li><b>3</b> outlet</li>
-            <li><b>10</b> karyawan</li>
-            <li><b>500</b> produk</li>
-            <li>Semua fitur aktif</li>
-          </ul>
-          <a className="btn btn-primary" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20tanya%20harga%20paket%20Basic" target="_blank" rel="noopener">Tanya Harga</a>
-          <a className="plan-more" href="#perbandingan-fitur">Lihat semua fitur</a>
-        </div>
-        <div className="plan">
-          <span className="plan-name mono">Pro</span>
-          <p className="plan-desc">Untuk usaha multi-cabang dan kebutuhan lebih kompleks.</p>
-          <div className="plan-price">Hubungi Kami</div>
-          <ul className="plan-specs">
-            <li><b>Tanpa batas</b> outlet</li>
-            <li><b>Tanpa batas</b> karyawan</li>
-            <li><b>Tanpa batas</b> produk</li>
-            <li>Semua fitur aktif</li>
-          </ul>
-          <a className="btn btn-ghost" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20tanya%20harga%20paket%20Pro" target="_blank" rel="noopener">Tanya Harga</a>
-          <a className="plan-more" href="#perbandingan-fitur">Lihat semua fitur</a>
-        </div>
+      <div className="pricing-cta reveal">
+        <span className="pricing-cta-badge"><ClockIcon aria-hidden="true" />Cuma 5 menit</span>
+        <h3>Ngobrol langsung sama tim Altora.</h3>
+        <p>Ceritain jenis usaha, jumlah outlet, dan kebutuhanmu — kami bantu carikan paket yang paling pas, tanpa basa-basi.</p>
+        <a className="btn btn-primary btn-lg" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20konsultasi%20paket%20yang%20pas%20untuk%20usaha%20saya" target="_blank" rel="noopener">
+          <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2c-5.5 0-9.96 4.46-9.96 9.96 0 1.76.46 3.48 1.34 5L2 22l5.2-1.36a9.94 9.94 0 0 0 4.84 1.23h.01c5.5 0 9.96-4.46 9.96-9.96S17.55 2 12.04 2Zm5.87 14.24c-.25.7-1.45 1.34-2 1.43-.51.08-1.15.11-1.86-.12-.43-.13-.98-.32-1.69-.62-2.97-1.28-4.9-4.26-5.05-4.46-.15-.2-1.21-1.6-1.21-3.06 0-1.45.76-2.16 1.03-2.46.27-.3.6-.37.8-.37.2 0 .4 0 .58.01.18.01.44-.07.68.53.25.6.85 2.08.92 2.23.07.15.12.33.02.53-.1.2-.15.32-.3.5-.15.18-.31.4-.44.53-.15.15-.3.31-.13.6.17.3.76 1.28 1.64 2.08 1.13 1.03 2.08 1.35 2.38 1.5.3.15.47.13.65-.07.18-.2.75-.87.95-1.17.2-.3.4-.25.68-.15.28.1 1.76.85 2.06 1 .3.15.5.23.57.35.07.13.07.73-.18 1.43Z"/></svg>
+          Konsultasi Sekarang
+        </a>
+        <a className="plan-more" href="#perbandingan-fitur">Lihat semua fitur</a>
       </div>
     </div>
   </section>
