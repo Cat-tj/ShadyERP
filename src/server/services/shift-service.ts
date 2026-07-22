@@ -188,7 +188,10 @@ export async function getShiftSummary(tenantId: string, shiftId: string) {
   ).map(([method, value]) => ({ method, ...value }));
 
   const cashReturns = saleReturns.filter((sr) => sr.refundMethod === "CASH");
-  const digitalReturns = saleReturns.filter((sr) => sr.refundMethod !== "CASH");
+  // REPLACEMENT (barang pengganti) tidak melibatkan uang keluar sama sekali —
+  // dikeluarkan dari totalRefundDigital biar tidak melebih-lebihkan uang yang
+  // benar-benar direfund selama shift ini.
+  const digitalReturns = saleReturns.filter((sr) => sr.refundMethod !== "CASH" && sr.refundMethod !== "REPLACEMENT");
   const totalRefundCash = cashReturns.reduce((sum, sr) => sum + sr.totalRefund, 0);
   const totalRefundDigital = digitalReturns.reduce((sum, sr) => sum + sr.totalRefund, 0);
   const jumlahRetur = saleReturns.length;

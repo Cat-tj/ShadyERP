@@ -892,6 +892,15 @@ export async function processReturn(
           where: { productId: saleItem.productId, outletId: sale.outletId },
           data: { qty: { increment: returnItem.qty } },
         });
+        // Refund berupa barang pengganti (bukan uang): unit lama yang diretur
+        // sudah dikreditkan balik di atas, tapi toko langsung kasih unit baru
+        // ke customer, jadi stok itu juga harus keluar lagi.
+        if (refundMethod === "REPLACEMENT") {
+          await tx.productStock.updateMany({
+            where: { productId: saleItem.productId, outletId: sale.outletId },
+            data: { qty: { decrement: returnItem.qty } },
+          });
+        }
       }
       // trackSerial selalu qty=1 per baris — retur baris ini berarti unitnya utuh dikembalikan.
       if (product?.trackSerial) {

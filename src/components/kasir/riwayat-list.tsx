@@ -408,7 +408,13 @@ function ReturnModal({
               <option value="CASH">Tunai (Potong Laci Kas)</option>
               <option value="TRANSFER">Transfer Bank / QRIS</option>
               {sale.memberName && <option value="DEPOSIT">Saldo Member</option>}
+              <option value="REPLACEMENT">Barang pengganti (bukan uang)</option>
             </select>
+            {refundMethod === "REPLACEMENT" && (
+              <p className="text-xs text-[var(--color-text-secondary)]">
+                Tidak ada uang keluar. Stok produk yang sama akan dikurangi otomatis untuk unit pengganti yang dikirim ke customer.
+              </p>
+            )}
           </div>
         ) : (
           <div className="mt-3 rounded-lg bg-[var(--color-bg)] p-3 text-xs text-[var(--color-text-secondary)]">
