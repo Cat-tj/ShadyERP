@@ -153,7 +153,7 @@ export async function updateStockAction(
     return { error: error instanceof Error ? error.message : "Gagal memperbarui stok." };
   }
   revalidatePath("/produk");
-  revalidatePath("/produk/riwayat-stok");
+  revalidatePath("/inventory/riwayat-stok");
   revalidatePath("/kasir");
   return { success: true };
 }
@@ -381,10 +381,10 @@ export async function transferStockAction(
     return { error: error instanceof Error ? error.message : "Gagal transfer stok." };
   }
   revalidatePath("/produk");
-  revalidatePath("/produk/transfer-stok");
+  revalidatePath("/inventory/transfer-stok");
   revalidatePath("/inventory");
   revalidatePath("/inventory/transfer-stok");
-  revalidatePath("/produk/riwayat-stok");
+  revalidatePath("/inventory/riwayat-stok");
   revalidatePath("/kasir");
   return { success: true };
 }
@@ -404,7 +404,7 @@ export async function requestStockTransferAction(
     return { error: error instanceof Error ? error.message : "Gagal membuat request transfer stok." };
   }
   revalidatePath("/produk");
-  revalidatePath("/produk/transfer-stok");
+  revalidatePath("/inventory/transfer-stok");
   revalidatePath("/inventory");
   revalidatePath("/inventory/transfer-stok");
   return { success: true };
@@ -424,7 +424,7 @@ export async function sendStockTransferAction(
     return { error: error instanceof Error ? error.message : "Gagal mengirim stok." };
   }
   revalidatePath("/produk");
-  revalidatePath("/produk/transfer-stok");
+  revalidatePath("/inventory/transfer-stok");
   revalidatePath("/inventory");
   revalidatePath("/inventory/transfer-stok");
   revalidatePath("/kasir");
@@ -445,7 +445,7 @@ export async function receiveStockTransferAction(
     return { error: error instanceof Error ? error.message : "Gagal menerima stok." };
   }
   revalidatePath("/produk");
-  revalidatePath("/produk/transfer-stok");
+  revalidatePath("/inventory/transfer-stok");
   revalidatePath("/inventory");
   revalidatePath("/inventory/transfer-stok");
   revalidatePath("/kasir");
@@ -462,7 +462,7 @@ export async function rejectStockTransferAction(
   } catch (error) {
     return { error: error instanceof Error ? error.message : "Gagal menolak request transfer." };
   }
-  revalidatePath("/produk/transfer-stok");
+  revalidatePath("/inventory/transfer-stok");
   revalidatePath("/inventory/transfer-stok");
   return { success: true };
 }

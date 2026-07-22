@@ -34,58 +34,75 @@ type SimpleTab = {
   icon: typeof ReceiptIcon;
 };
 
+// Halaman yang hanya bisa dibuka OWNER/MANAGER (lihat requireRole di
+// masing-masing page). STAFF yang tap tab ini akan langsung ke-redirect ke
+// /pilih-aplikasi tanpa penjelasan — jadi tab-tab ini disaring keluar dari
+// bottom nav STAFF di bawah, bukan ditampilkan tapi tidak bisa dibuka.
+const OWNER_MANAGER_ONLY_HREFS = ["/simple/data", "/simple/hari-ini", "/finance", "/finance/laba-rugi", "/inventory"];
+
 function getSimpleTabs(vertical: VerticalDef | undefined, role: Role): SimpleTab[] {
-  switch (vertical?.key) {
-    case "teams":
-      return [
-        { href: role === "STAFF" ? "/absensi" : "/hris", label: role === "STAFF" ? "Absen" : "Tim", icon: UsersIcon },
-        { href: "/tim", label: "Jadwal", icon: CalendarIcon },
-        { href: "/simple/data", label: "Data", icon: BarChartIcon },
-        { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
-      ];
-    case "pabrik":
-      return [
-        { href: "/produksi", label: "Produksi", icon: BuildingIcon },
-        { href: "/inventory", label: "Stok", icon: PackageIcon },
-        { href: "/simple/data", label: "Data", icon: BarChartIcon },
-        { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
-      ];
-    case "accounting":
-      return [
-        { href: "/finance", label: "Finance", icon: WalletIcon },
-        { href: "/finance/laba-rugi", label: "Laporan", icon: BarChartIcon },
-        { href: "/simple/data", label: "Data", icon: BarChartIcon },
-        { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
-      ];
-    case "laundry":
-      return [
-        { href: "/laundry", label: "Laundry", icon: BriefcaseIcon },
-        { href: "/simple/uang", label: "Uang", icon: WalletIcon },
-        { href: "/simple/data", label: "Data", icon: BarChartIcon },
-        { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
-      ];
-    case "jasa":
-      return [
-        { href: "/booking", label: "Booking", icon: CalendarIcon },
-        { href: "/simple/uang", label: "Uang", icon: WalletIcon },
-        { href: "/simple/data", label: "Data", icon: BarChartIcon },
-        { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
-      ];
-    case "company":
-      return [
-        { href: "/simple/hari-ini", label: "Ringkasan", icon: HomeIcon },
-        { href: "/finance", label: "Finance", icon: WalletIcon },
-        { href: "/hris", label: "Tim", icon: UsersIcon },
-        { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
-      ];
-    default:
-      return [
-        { href: "/kasir", label: "Kasir", icon: ReceiptIcon },
-        { href: "/simple/uang", label: "Uang", icon: WalletIcon },
-        { href: "/simple/data", label: "Data", icon: BarChartIcon },
-        { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
-      ];
+  const allTabs: SimpleTab[] = (() => {
+    switch (vertical?.key) {
+      case "teams":
+        return [
+          { href: role === "STAFF" ? "/absensi" : "/hris", label: role === "STAFF" ? "Absen" : "Tim", icon: UsersIcon },
+          { href: "/tim", label: "Jadwal", icon: CalendarIcon },
+          { href: "/simple/data", label: "Data", icon: BarChartIcon },
+          { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
+        ];
+      case "pabrik":
+        return [
+          { href: "/produksi", label: "Produksi", icon: BuildingIcon },
+          { href: "/inventory", label: "Stok", icon: PackageIcon },
+          { href: "/simple/data", label: "Data", icon: BarChartIcon },
+          { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
+        ];
+      case "accounting":
+        return [
+          { href: "/finance", label: "Finance", icon: WalletIcon },
+          { href: "/finance/laba-rugi", label: "Laporan", icon: BarChartIcon },
+          { href: "/simple/data", label: "Data", icon: BarChartIcon },
+          { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
+        ];
+      case "laundry":
+        return [
+          { href: "/laundry", label: "Laundry", icon: BriefcaseIcon },
+          { href: "/simple/uang", label: "Uang", icon: WalletIcon },
+          { href: "/simple/data", label: "Data", icon: BarChartIcon },
+          { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
+        ];
+      case "jasa":
+        return [
+          { href: "/booking", label: "Booking", icon: CalendarIcon },
+          { href: "/simple/uang", label: "Uang", icon: WalletIcon },
+          { href: "/simple/data", label: "Data", icon: BarChartIcon },
+          { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
+        ];
+      case "company":
+        return [
+          { href: "/simple/hari-ini", label: "Ringkasan", icon: HomeIcon },
+          { href: "/finance", label: "Finance", icon: WalletIcon },
+          { href: "/hris", label: "Tim", icon: UsersIcon },
+          { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
+        ];
+      default:
+        return [
+          { href: "/kasir", label: "Kasir", icon: ReceiptIcon },
+          { href: "/simple/uang", label: "Uang", icon: WalletIcon },
+          { href: "/simple/data", label: "Data", icon: BarChartIcon },
+          { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
+        ];
+    }
+  })();
+
+  if (role !== "STAFF") return allTabs;
+
+  const visibleTabs = allTabs.filter((tab) => !OWNER_MANAGER_ONLY_HREFS.includes(tab.href));
+  // Selalu sisakan minimal satu tab selain "Lainnya" — absensi bisa dibuka semua role.
+  if (visibleTabs.length <= 1) {
+    return [{ href: "/absensi", label: "Absen", icon: UsersIcon }, ...visibleTabs];
   }
+  return visibleTabs;
 }
 
 // Halaman yang sengaja ditautkan dari hub "Lainnya" (simple/menu) — tetap bagian

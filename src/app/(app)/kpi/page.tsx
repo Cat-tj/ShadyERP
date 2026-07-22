@@ -45,6 +45,22 @@ export default async function KpiPage() {
         </p>
       </div>
 
+      {(user.role === "OWNER" || user.role === "MANAGER") &&
+        (summary.outletCount === 0 || summary.productCount === 0 || summary.userCount <= 1) && (
+          <Link
+            href="/onboarding"
+            className="flex items-center justify-between gap-4 rounded-xl border border-[var(--color-primary)]/30 bg-[var(--color-primary-soft)] px-4 py-3 hover:bg-[var(--color-primary)]/15"
+          >
+            <span>
+              <span className="block text-sm font-bold text-[var(--color-text)]">Selesaikan setup toko</span>
+              <span className="mt-0.5 block text-xs text-[var(--color-text-secondary)]">
+                Outlet, produk, dan staff belum lengkap — ikuti panduan langkah demi langkah.
+              </span>
+            </span>
+            <span className="shrink-0 text-xs font-bold text-[var(--color-primary)]">Lanjutkan →</span>
+          </Link>
+        )}
+
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {STAT_CARDS.map((card) => (
           <StatTile key={card.key} label={card.label} value={String(summary[card.key])} icon={card.icon} />

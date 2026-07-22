@@ -87,6 +87,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/finance/metode-bayar", label: "Metode Bayar", icon: BuildingIcon, roles: ["OWNER", "MANAGER"], module: "keuangan", hub: "finance" },
 
   // ===== Admin =====
+  { href: "/onboarding", label: "Panduan Setup", icon: CheckCircleIcon, roles: ["OWNER", "MANAGER"], hub: "admin" },
   { href: "/pengaturan", label: "Pengaturan", icon: SettingsIcon, roles: ["OWNER"], showOnBottomNav: true, hub: "admin" },
 
   // ===== Dokumen =====

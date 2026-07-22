@@ -658,7 +658,7 @@ export function ProductFormModal({
                   className="min-h-[44px] rounded-lg border border-[var(--color-border)] bg-[var(--color-bg)] px-3 text-sm outline-none focus:border-[var(--color-primary)]"
                 />
                 <Link
-                  href="/produk/riwayat-stok"
+                  href="/inventory/riwayat-stok"
                   className="text-xs font-medium text-[var(--color-primary)]"
                 >
                   Lihat riwayat perubahan stok →

@@ -358,10 +358,12 @@ function DirectStockReceiptModal({
   const [isPending, startTransition] = useTransition();
 
   function updateItem(index: number, patch: Partial<DirectReceiptItem>) {
+    setError(null);
     setItems((prev) => prev.map((item, idx) => (idx === index ? { ...item, ...patch } : item)));
   }
 
   function addItem() {
+    setError(null);
     setItems((prev) => [
       ...prev,
       { productId: products[0]?.id ?? "", qtyReceived: "1", unitPrice: String(products[0]?.cost ?? 0), batchNumber: "", expirationDate: "", serialNumbersText: "" },

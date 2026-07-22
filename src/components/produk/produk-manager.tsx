@@ -143,13 +143,13 @@ export function ProdukManager({
         <h1 className="font-display text-2xl font-semibold text-[var(--color-text)]">Produk</h1>
         <div className="flex flex-col gap-2 sm:flex-row">
           <Link
-            href="/produk/riwayat-stok"
+            href="/inventory/riwayat-stok"
             className="flex min-h-[44px] items-center justify-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
           >
             Riwayat stok
           </Link>
           <Link
-            href="/produk/transfer-stok"
+            href="/inventory/transfer-stok"
             className="flex min-h-[44px] items-center justify-center rounded-lg border border-[var(--color-border)] px-4 text-sm font-medium text-[var(--color-text)] hover:bg-[var(--color-bg)]"
           >
             Transfer stok
