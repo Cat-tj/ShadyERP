@@ -8,11 +8,10 @@ const initialState: ActionResult = {};
 export function OpenShiftForm({
   outlets,
 }: {
-  outlets: { id: string; name: string }[];
+  outlets: { id: string; name: string; suggestedOpeningCash?: number | null }[];
 }) {
   const [state, formAction, isPending] = useActionState(openShiftAction, initialState);
-  const [displayValue, setDisplayValue] = useState("Rp 0");
-  const [rawCash, setRawCash] = useState(0);
+  const [outletId, setOutletId] = useState(outlets[0]?.id ?? "");
 
   const formatNumber = (val: string) => {
     const clean = val.replace(/\D/g, "");
@@ -25,7 +24,24 @@ export function OpenShiftForm({
     }).format(Number(clean));
   };
 
+  const suggestedCash = outlets.find((o) => o.id === outletId)?.suggestedOpeningCash ?? null;
+  const [displayValue, setDisplayValue] = useState(() =>
+    suggestedCash ? formatNumber(String(suggestedCash)) : "Rp 0"
+  );
+  const [rawCash, setRawCash] = useState(suggestedCash ?? 0);
+  const [touchedCash, setTouchedCash] = useState(false);
+
+  const handleOutletChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const newOutletId = e.target.value;
+    setOutletId(newOutletId);
+    if (touchedCash) return;
+    const next = outlets.find((o) => o.id === newOutletId)?.suggestedOpeningCash ?? null;
+    setRawCash(next ?? 0);
+    setDisplayValue(next ? formatNumber(String(next)) : "Rp 0");
+  };
+
   const handleCashChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setTouchedCash(true);
     const rawValue = e.target.value;
     const cleanNum = Number(rawValue.replace(/\D/g, ""));
     setRawCash(cleanNum);
@@ -61,6 +77,8 @@ export function OpenShiftForm({
                   id="outletId"
                   name="outletId"
                   required
+                  value={outletId}
+                  onChange={handleOutletChange}
                   className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-[var(--color-surface)] px-4 text-base text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:ring-2 focus:ring-[var(--color-primary)]/20"
                 >
                   {outlets.map((outlet) => (
@@ -78,6 +96,11 @@ export function OpenShiftForm({
               <label htmlFor="displayOpeningCash" className="text-sm font-medium text-[var(--color-text)]">
                 Modal awal
               </label>
+              {suggestedCash !== null && !touchedCash && (
+                <p className="text-xs text-[var(--color-text-secondary)]">
+                  Disarankan dari sisa kas penutupan shift terakhir — ubah kalau hasil hitung ulang beda.
+                </p>
+              )}
               <input
                 id="displayOpeningCash"
                 type="text"

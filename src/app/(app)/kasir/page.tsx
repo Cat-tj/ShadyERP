@@ -1,5 +1,5 @@
 import { requireSession } from "@/server/require-session";
-import { getOpenShift } from "@/server/services/shift-service";
+import { getOpenShift, getLastClosingCash } from "@/server/services/shift-service";
 import { listOutletsForUser } from "@/server/services/outlet-service";
 import {
   listProductsWithStock,
@@ -20,9 +20,15 @@ export default async function KasirPage() {
 
   if (!shift) {
     const outlets = await listOutletsForUser(user.tenantId, user.id, user.role);
+    const outletsWithSuggestedCash = await Promise.all(
+      outlets.map(async (outlet) => ({
+        ...outlet,
+        suggestedOpeningCash: await getLastClosingCash(user.tenantId, outlet.id),
+      }))
+    );
     return (
       <div className="mx-auto max-w-5xl">
-        <OpenShiftForm outlets={outlets} />
+        <OpenShiftForm outlets={outletsWithSuggestedCash} />
       </div>
     );
   }

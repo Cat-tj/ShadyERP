@@ -47,6 +47,20 @@ export async function getOpenShift(tenantId: string, userId: string) {
   });
 }
 
+/**
+ * Uang kas penutup shift terakhir yang sudah closed di outlet ini — dipakai
+ * buat saran modal awal shift baru (uang di laci nyatanya nyambung antar
+ * shift, bukan mulai dari nol tiap buka shift).
+ */
+export async function getLastClosingCash(tenantId: string, outletId: string): Promise<number | null> {
+  const lastClosed = await prisma.cashierShift.findFirst({
+    where: { tenantId, outletId, status: "CLOSED", closingCash: { not: null } },
+    orderBy: { closedAt: "desc" },
+    select: { closingCash: true },
+  });
+  return lastClosed?.closingCash ?? null;
+}
+
 export async function openShift(input: {
   tenantId: string;
   userId: string;
