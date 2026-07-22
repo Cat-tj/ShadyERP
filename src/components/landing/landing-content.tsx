@@ -1,7 +1,6 @@
 import { Fragment } from "react";
 import Image from "next/image";
 import { VERTICALS, DEFAULT_THEME, type VerticalDef } from "@/lib/verticals";
-import { HERO_MOCKS, DEFAULT_HERO_MOCK } from "@/lib/hero-mocks";
 import { BusinessShowcase } from "./business-showcase/business-showcase";
 import { MobileHighlight } from "./mobile-highlight";
 import { LandingScripts } from "./landing-scripts";
@@ -13,7 +12,6 @@ import {
   AUTOMATION_OUTPUTS,
   BENEFIT_BLOCKS,
   COMPARISON_GROUPS,
-  PRODUCT_TOUR_TABS,
   TESTIMONIALS,
   type AddonService,
 } from "@/lib/landing-data";
@@ -189,27 +187,6 @@ function SpotlightPhone({ screen }: { screen: SpotlightSlide["screen"] }) {
   );
 }
 
-const HERO_OUTPUT_CHIPS = [
-  { label: "Stok diperbarui", icon: "box" },
-  { label: "Laba tercatat", icon: "chart" },
-  { label: "Pelanggan tersimpan", icon: "user" },
-  { label: "Laporan siap", icon: "doc" },
-] as const;
-
-function OutputIcon({ name }: { name: "box" | "chart" | "user" | "doc" }) {
-  const paths: Record<typeof name, React.ReactNode> = {
-    box: <path d="M3 7.5 12 3l9 4.5-9 4.5-9-4.5Zm0 0v9L12 21l9-4.5v-9M12 12v9" />,
-    chart: <path d="M4 20V10m6 10V4m6 16v-7" />,
-    user: <path d="M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8Zm-7 8a7 7 0 0 1 14 0" />,
-    doc: <path d="M6 3h9l4 4v14H6V3Zm9 0v4h4M9 12h6m-6 4h6" />,
-  } as Record<"box" | "chart" | "user" | "doc", React.ReactNode>;
-  return (
-    <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      {paths[name]}
-    </svg>
-  );
-}
-
 function AddonIcon({ name }: { name: AddonService["icon"] }) {
   const paths: Record<AddonService["icon"], React.ReactNode> = {
     hardware: <path d="M14.7 6.3a3 3 0 0 0-4.2 4.2L3 18l3 3 7.5-7.5a3 3 0 0 0 4.2-4.2l-2.1 2.1-2-2 2.1-2.1Z" />,
@@ -241,9 +218,8 @@ function ComparisonCell({ value }: { value: string | boolean }) {
 export function LandingContent({ city, vertical, faqItems }: { city?: string; vertical?: VerticalDef; faqItems?: FaqItem[] }) {
   const displayCity = city ? decodeURIComponent(city).replace(/-/g, ' ').replace(/\b\w/g, c => c.toUpperCase()) : "";
   const theme = vertical ? vertical.theme : DEFAULT_THEME;
-  const heroMock = vertical ? HERO_MOCKS[vertical.key] : DEFAULT_HERO_MOCK;
   const signupHref = vertical ? "/register" : "#tur-produk";
-  const signupLabel = vertical ? "Mulai Gratis" : "Pilih produk";
+  const signupLabel = vertical ? "Mulai Gratis" : "Coba Gratis";
   const themeVars = {
     "--primary": theme.primary,
     "--primary-dark": theme.deep,
@@ -262,11 +238,10 @@ export function LandingContent({ city, vertical, faqItems }: { city?: string; ve
   {/* HERO */}
   <section className="hero">
     <div className="hero-glow" aria-hidden="true"></div>
-    <div className="hero-dot-grid" aria-hidden="true"></div>
     <div className="wrap hero-grid">
       <div className="hero-copy">
         <span className="eyebrow">
-          {vertical ? vertical.eyebrow : `ERP ringan untuk bisnis modern ${displayCity ? `di ${displayCity}` : ""}`}
+          {vertical ? vertical.eyebrow : "Operasional bisnis dalam satu sistem"}
         </span>
         {vertical ? (
           <h1>
@@ -285,21 +260,21 @@ export function LandingContent({ city, vertical, faqItems }: { city?: string; ve
           </h1>
         ) : (
           <h1>
-            Satu transaksi.<br />
-            <span className="hero-headline-accent">Stok, laba, dan laporan langsung beres.</span>
+            Kelola penjualan, stok, dan laba dari{" "}
+            <span className="hero-headline-accent">satu aplikasi.</span>
           </h1>
         )}
         <p className="lede">
           {vertical
             ? vertical.lede
-            : "Altora menyatukan kasir, inventori, pelanggan, hutang-piutang, dan laporan bisnis tanpa input data berulang. Masukkan satu aktivitas, Altora yang mengurus dampaknya ke seluruh sistem."}
+            : "Altora membantu toko, kafe, laundry, dan bisnis jasa mencatat transaksi sekaligus memperbarui stok dan laporan secara otomatis — tanpa input berulang."}
         </p>
         <div className="hero-actions">
-          <a className="btn btn-primary btn-lg btn-shimmer" href={signupHref}>
-            {signupLabel}
+          <a className="btn btn-primary btn-lg" href={signupHref}>
+            {vertical ? signupLabel : "Coba Altora Gratis"}
           </a>
           <a className="btn btn-ghost btn-lg" href="#tur-produk">
-            Lihat Demo
+            Lihat Cara Kerjanya
           </a>
         </div>
         <p className="hero-microcopy">Tanpa kartu kredit &middot; Bisa dari HP &amp; desktop &middot; Setup cepat</p>
@@ -307,107 +282,20 @@ export function LandingContent({ city, vertical, faqItems }: { city?: string; ve
 
       <div className="hero-visual">
         <div className="hero-visual-inner">
-          <span className="badge-float"><span className="badge-dot" aria-hidden="true"></span>Langsung</span>
-
-          <div className="receipt-back" role="img" aria-label={`Contoh struk digital Altora untuk ${vertical ? vertical.label : "usaha kamu"}`}>
-            <div className="r-brand">ALTORA POS</div>
-            <div className="r-sub">{heroMock.receiptBrandSub}</div>
-            <hr className="r-rule" />
-            {heroMock.receiptItems.map(([label, price]) => (
-              <div className="r-row" key={label}><span>{label}</span><span>{price}</span></div>
-            ))}
-            <hr className="r-rule" />
-            <div className="r-row r-promo"><span>{heroMock.receiptHighlight[0]}</span><span>{heroMock.receiptHighlight[1]}</span></div>
-            <div className="r-row r-total-row"><span>TOTAL</span><span>{heroMock.receiptTotal}</span></div>
-          </div>
-
-          <div className="dash-card" role="img" aria-label={`Contoh dashboard Altora untuk ${vertical ? vertical.label : "usaha kamu"} menampilkan ringkasan hari ini`}>
-            <div className="dash-chrome">
-              <span className="dash-dot"></span><span className="dash-dot"></span><span className="dash-dot"></span>
-              <span className="dash-url mono">kasir.altora.id / dashboard</span>
-            </div>
-            <div className="dash-body">
-              <div className="dash-title-row">
-                <span className="dash-title">{vertical ? vertical.label.replace("Altora ", "") : "Kasir"} · Hari ini</span>
-                <span className="dash-live"><span className="badge-dot" aria-hidden="true"></span>Tersinkron</span>
-              </div>
-              <div className="dash-app-tabs" aria-hidden="true">
-                {heroMock.dashTabs.map((tab, i) => (
-                  <span key={tab} className={`dash-app-tab ${i === 0 ? "dash-app-active" : ""}`}>{tab}</span>
-                ))}
-              </div>
-              <div className="dash-grid">
-                {heroMock.dashTiles.map((tile) => (
-                  <div className="dash-tile" key={tile.label}>
-                    <span className="dash-tile-label">{tile.label}</span>
-                    <span className="dash-tile-value mono">{tile.value}</span>
-                    <span className={`dash-tile-delta ${tile.warn ? "warn" : ""}`}>{tile.delta}</span>
-                  </div>
-                ))}
-              </div>
-              <div className="live-order">
-                <div className="live-order-head">
-                  <span>{heroMock.liveTitle}</span>
-                  <span className="live-order-status">{heroMock.liveStatus}</span>
-                </div>
-                <div className="live-order-row">
-                  <span>{heroMock.liveDetail}</span>
-                  <span className="mono">{heroMock.liveValue}</span>
-                </div>
-                <div className="live-progress" aria-hidden="true"><span></span></div>
-              </div>
-              <div>
-                <span className="dash-chart-label">{heroMock.chartLabel}</span>
-                <svg viewBox="0 0 300 64" width="100%" height="56" preserveAspectRatio="none" aria-hidden="true">
-                  <polyline className="dash-chart-path" points="0,48 22,44 44,46 66,36 88,38 110,30 132,32 154,24 176,26 198,18 220,20 242,12 264,14 300,6" fill="none" stroke="var(--primary)" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
-                </svg>
-              </div>
-            </div>
-          </div>
+          <span className="badge-float"><span className="badge-dot" aria-hidden="true"></span>Langsung tersinkron</span>
+          <Image
+            className="hero-screenshot"
+            src="/landing-previews/showcase-laptop.png"
+            alt={`Tampilan asli dashboard Altora untuk ${vertical ? vertical.label : "usaha kamu"} — ringkasan omzet, metode bayar, dan tren penjualan`}
+            width={1788}
+            height={1069}
+            priority
+            sizes="(max-width: 900px) 92vw, 46vw"
+          />
         </div>
-
-        <ul className="hero-outputs" aria-label="Yang otomatis diperbarui tiap ada transaksi">
-          {HERO_OUTPUT_CHIPS.map((chip, i) => (
-            <li className="hero-output-chip" key={chip.label} style={{ "--chip-delay": `${0.9 + i * 0.1}s` } as React.CSSProperties}>
-              <OutputIcon name={chip.icon} />
-              {chip.label}
-            </li>
-          ))}
-        </ul>
       </div>
     </div>
   </section>
-
-  <div className="trust">
-    <div className="trust-track">
-      <div className="trust-row">
-        <span className="trust-item">Coffee Shop</span>
-        <span className="trust-item">Restoran &amp; Warung</span>
-        <span className="trust-item">Barbershop &amp; Salon</span>
-        <span className="trust-item">Retail &amp; Toko Kelontong</span>
-        <span className="trust-item">Laundry</span>
-        <span className="trust-item">Bengkel</span>
-        <span className="trust-item">Klinik &amp; Apotek</span>
-        <span className="trust-item">Butik &amp; Fashion</span>
-        <span className="trust-item">Percetakan &amp; ATK</span>
-        <span className="trust-item">Multi-Outlet</span>
-        <span className="trust-item">&amp; Semua Jenis UMKM Lainnya</span>
-      </div>
-      <div className="trust-row" aria-hidden="true">
-        <span className="trust-item">Coffee Shop</span>
-        <span className="trust-item">Restoran &amp; Warung</span>
-        <span className="trust-item">Barbershop &amp; Salon</span>
-        <span className="trust-item">Retail &amp; Toko Kelontong</span>
-        <span className="trust-item">Laundry</span>
-        <span className="trust-item">Bengkel</span>
-        <span className="trust-item">Klinik &amp; Apotek</span>
-        <span className="trust-item">Butik &amp; Fashion</span>
-        <span className="trust-item">Percetakan &amp; ATK</span>
-        <span className="trust-item">Multi-Outlet</span>
-        <span className="trust-item">&amp; Semua Jenis UMKM Lainnya</span>
-      </div>
-    </div>
-  </div>
 
   {/* SOCIAL PROOF */}
   {/* TODO(altora): ganti dengan statistik nyata (jumlah bisnis aktif, transaksi/hari, dll)
@@ -455,7 +343,7 @@ export function LandingContent({ city, vertical, faqItems }: { city?: string; ve
   {!vertical && <BusinessShowcase />}
 
   {/* FEATURE SPOTLIGHT — Pelanggan pesan sendiri */}
-  <section id="qr-meja" className="spotlight">
+  <section id="tur-produk" className="spotlight">
     <div className="wrap spotlight-wrap reveal">
       <div className="spotlight-control-row">
         <div>
@@ -522,205 +410,6 @@ export function LandingContent({ city, vertical, faqItems }: { city?: string; ve
             <span>{slide.label}</span>
           </button>
         ))}
-      </div>
-    </div>
-  </section>
-
-  {/* PRODUCT TOUR */}
-  <section id="tur-produk">
-    <div className="wrap">
-      <div className="section-head reveal">
-        <span className="eyebrow">Lihat isi aplikasinya</span>
-        <h2 className="gradient-text">Satu aplikasi, semua sisi usaha kamu.</h2>
-        <p className="lede">Geser buat lihat layar yang tim kamu pakai tiap hari, dari kasir sampai laporan bulanan.</p>
-      </div>
-      <div className="tour-tabs reveal" role="tablist" aria-label="Bagian aplikasi">
-        {PRODUCT_TOUR_TABS.map((tab, i) => (
-          <button
-            type="button"
-            key={tab.key}
-            className={`tour-tab ${i === 0 ? "is-active" : ""}`}
-            data-tour-tab
-            role="tab"
-            aria-selected={i === 0}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-      <div className="gallery-track reveal">
-        <div className="gallery-card">
-          <div className="dash-chrome">
-            <span className="dash-dot"></span><span className="dash-dot"></span><span className="dash-dot"></span>
-            <span className="dash-url mono">kasir.altora.id / kasir</span>
-          </div>
-          <div className="gal-shell">
-            <div className="gal-sidebar">
-              <span className="gal-nav-dot gal-nav-active"></span>
-              <span className="gal-nav-dot"></span><span className="gal-nav-dot"></span>
-              <span className="gal-nav-dot"></span><span className="gal-nav-dot"></span><span className="gal-nav-dot"></span>
-            </div>
-            <div className="gal-main">
-              <div className="gal-main-head"><span className="gal-main-title">Kasir · Kopi Nusantara BSD</span><span className="gal-badge gal-badge-good">Shift aktif</span></div>
-              <div className="gal-split">
-                <div className="gal-split-main">
-                  <div className="gal-row"><div><div className="gal-row-name">Kopi Susu</div><div className="gal-row-sub">Kopi · Rp18.000</div></div><span className="gal-row-value">2x</span></div>
-                  <div className="gal-row"><div><div className="gal-row-name">Croissant Coklat</div><div className="gal-row-sub">Makanan · Rp28.000</div></div><span className="gal-row-value">1x</span></div>
-                  <div className="gal-row"><div><div className="gal-row-name">Americano</div><div className="gal-row-sub">Kopi · Rp15.000</div></div><span className="gal-row-value">1x</span></div>
-                </div>
-                <div className="gal-split-side">
-                  <div className="gal-cart">
-                    <span className="gal-cart-title">Keranjang</span>
-                    <div className="gal-cart-row"><span>3 item</span><span>64.000</span></div>
-                    <div className="gal-cart-row"><span>Promo -10%</span><span>-6.400</span></div>
-                    <div className="gal-cart-total"><span>TOTAL</span><span>57.600</span></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="gallery-card">
-          <div className="dash-chrome">
-            <span className="dash-dot"></span><span className="dash-dot"></span><span className="dash-dot"></span>
-            <span className="dash-url mono">kasir.altora.id / laporan</span>
-          </div>
-          <div className="gal-shell">
-            <div className="gal-sidebar">
-              <span className="gal-nav-dot"></span>
-              <span className="gal-nav-dot gal-nav-active"></span><span className="gal-nav-dot"></span>
-              <span className="gal-nav-dot"></span><span className="gal-nav-dot"></span><span className="gal-nav-dot"></span>
-            </div>
-            <div className="gal-main">
-              <div className="gal-main-head"><span className="gal-main-title">Laporan · Bulan ini</span><span className="gal-badge gal-badge-good">+14%</span></div>
-              <div className="gal-tiles">
-                <div className="gal-tile"><span className="gal-tile-label">Omzet</span><span className="gal-tile-value mono">Rp84,2jt</span><span className="gal-tile-delta">+14% vs lalu</span></div>
-                <div className="gal-tile"><span className="gal-tile-label">Transaksi</span><span className="gal-tile-value mono">2.184</span><span className="gal-tile-delta">+8% vs lalu</span></div>
-                <div className="gal-tile"><span className="gal-tile-label">Rata-rata</span><span className="gal-tile-value mono">Rp38,5rb</span><span className="gal-tile-delta">+5% vs lalu</span></div>
-              </div>
-              <svg viewBox="0 0 400 90" width="100%" height="90" preserveAspectRatio="none" aria-hidden="true">
-                <polyline points="0,72 40,64 80,68 120,50 160,54 200,36 240,40 280,22 320,26 360,10 400,14" fill="none" stroke="var(--primary)" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
-          </div>
-        </div>
-
-        <div className="gallery-card">
-          <div className="dash-chrome">
-            <span className="dash-dot"></span><span className="dash-dot"></span><span className="dash-dot"></span>
-            <span className="dash-url mono">kasir.altora.id / produk</span>
-          </div>
-          <div className="gal-shell">
-            <div className="gal-sidebar">
-              <span className="gal-nav-dot"></span><span className="gal-nav-dot"></span>
-              <span className="gal-nav-dot gal-nav-active"></span>
-              <span className="gal-nav-dot"></span><span className="gal-nav-dot"></span><span className="gal-nav-dot"></span>
-            </div>
-            <div className="gal-main">
-              <div className="gal-main-head"><span className="gal-main-title">Produk &amp; Stok</span><span className="gal-badge gal-badge-warn">1 menipis</span></div>
-              <div className="gal-row"><div><div className="gal-row-name">Kopi Susu</div><div className="gal-row-sub">Kategori: Kopi</div></div><span className="gal-badge gal-badge-good">Stok 42</span></div>
-              <div className="gal-row"><div><div className="gal-row-name">Croissant Coklat</div><div className="gal-row-sub">Kategori: Makanan</div></div><span className="gal-badge gal-badge-warn">Stok 3</span></div>
-              <div className="gal-row"><div><div className="gal-row-name">Americano</div><div className="gal-row-sub">Kategori: Kopi</div></div><span className="gal-badge gal-badge-good">Stok 18</span></div>
-              <div className="gal-row"><div><div className="gal-row-name">Roti Bakar</div><div className="gal-row-sub">Kategori: Makanan</div></div><span className="gal-badge gal-badge-good">Stok 25</span></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="gallery-card">
-          <div className="dash-chrome">
-            <span className="dash-dot"></span><span className="dash-dot"></span><span className="dash-dot"></span>
-            <span className="dash-url mono">kasir.altora.id / absensi</span>
-          </div>
-          <div className="gal-shell">
-            <div className="gal-sidebar">
-              <span className="gal-nav-dot"></span><span className="gal-nav-dot"></span><span className="gal-nav-dot"></span>
-              <span className="gal-nav-dot gal-nav-active"></span>
-              <span className="gal-nav-dot"></span><span className="gal-nav-dot"></span>
-            </div>
-            <div className="gal-main">
-              <div className="gal-main-head"><span className="gal-main-title">Absensi · Hari ini</span><span className="gal-badge gal-badge-good">4/5 hadir</span></div>
-              <div className="gal-row"><div><div className="gal-row-name">Rani — Kasir</div><div className="gal-row-sub">Masuk 08.02</div></div><span className="gal-badge gal-badge-good">Hadir</span></div>
-              <div className="gal-row"><div><div className="gal-row-name">Dimas — Barista</div><div className="gal-row-sub">Masuk 08.15</div></div><span className="gal-badge gal-badge-good">Hadir</span></div>
-              <div className="gal-row"><div><div className="gal-row-name">Sinta — Barista</div><div className="gal-row-sub">Belum absen</div></div><span className="gal-badge gal-badge-warn">Telat</span></div>
-              <div className="gal-row"><div><div className="gal-row-name">Budi — Kasir</div><div className="gal-row-sub">Masuk 07.58</div></div><span className="gal-badge gal-badge-good">Hadir</span></div>
-            </div>
-          </div>
-        </div>
-
-        <div className="gallery-card">
-          <div className="dash-chrome">
-            <span className="dash-dot"></span><span className="dash-dot"></span><span className="dash-dot"></span>
-            <span className="dash-url mono">kasir.altora.id / dapur</span>
-          </div>
-          <div className="gal-shell">
-            <div className="gal-sidebar">
-              <span className="gal-nav-dot"></span><span className="gal-nav-dot"></span><span className="gal-nav-dot"></span><span className="gal-nav-dot"></span>
-              <span className="gal-nav-dot gal-nav-active"></span>
-              <span className="gal-nav-dot"></span>
-            </div>
-            <div className="gal-main">
-              <div className="gal-main-head"><span className="gal-main-title">Kitchen Display</span><span className="gal-badge gal-badge-warn">4 pesanan aktif</span></div>
-              <div className="gal-tickets">
-                <div className="gal-ticket">
-                  <div className="gal-ticket-head"><span>Meja 04</span><span>2 mnt lalu</span></div>
-                  <div className="gal-ticket-item">1x Kopi Susu · 1x Roti Bakar</div>
-                </div>
-                <div className="gal-ticket">
-                  <div className="gal-ticket-head"><span>Meja 07</span><span>5 mnt lalu</span></div>
-                  <div className="gal-ticket-item">2x Americano</div>
-                </div>
-                <div className="gal-ticket">
-                  <div className="gal-ticket-head"><span>Meja 02</span><span>7 mnt lalu</span></div>
-                  <div className="gal-ticket-item">1x Croissant Coklat</div>
-                </div>
-                <div className="gal-ticket">
-                  <div className="gal-ticket-head"><span>Take away</span><span>1 mnt lalu</span></div>
-                  <div className="gal-ticket-item">3x Kopi Susu</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <div className="gallery-card">
-          <div className="dash-chrome">
-            <span className="dash-dot"></span><span className="dash-dot"></span><span className="dash-dot"></span>
-            <span className="dash-url mono">kasir.altora.id / member</span>
-          </div>
-          <div className="gal-shell">
-            <div className="gal-sidebar">
-              <span className="gal-nav-dot"></span><span className="gal-nav-dot"></span><span className="gal-nav-dot"></span><span className="gal-nav-dot"></span><span className="gal-nav-dot"></span>
-              <span className="gal-nav-dot gal-nav-active"></span>
-            </div>
-            <div className="gal-main">
-              <div className="gal-main-head"><span className="gal-main-title">Member · Dewi A.</span><span className="gal-badge gal-badge-good">Member sejak 2023</span></div>
-              <div className="gal-split">
-                <div className="gal-split-side">
-                  <div className="gal-loyalty">
-                    <div className="gal-loyalty-top"><span>KARTU MEMBER</span><span>ALTORA</span></div>
-                    <div>
-                      <div className="gal-row-sub" style={{ color: "rgba(255,255,255,0.8)" }}>Poin terkumpul</div>
-                      <div className="gal-loyalty-points">1.240 pts</div>
-                    </div>
-                  </div>
-                </div>
-                <div className="gal-split-main">
-                  <div className="gal-row"><div><div className="gal-row-name">Transaksi terakhir</div><div className="gal-row-sub">3 hari lalu</div></div><span className="gal-row-value">Rp57.600</span></div>
-                  <div className="gal-row"><div><div className="gal-row-name">Total kunjungan</div><div className="gal-row-sub">Sejak Jan 2023</div></div><span className="gal-row-value">86x</span></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div className="gallery-nav">
-        <button type="button" className="gallery-nav-btn gallery-prev" aria-label="Sebelumnya">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6" /></svg>
-        </button>
-        <button type="button" className="gallery-nav-btn gallery-next" aria-label="Berikutnya">
-          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 18l6-6-6-6" /></svg>
-        </button>
       </div>
     </div>
   </section>
@@ -793,13 +482,30 @@ export function LandingContent({ city, vertical, faqItems }: { city?: string; ve
     </div>
   </section>
 
-  {/* ADDON SERVICES — di luar software, dikerjakan tim Altora langsung */}
-  <section id="layanan-tambahan">
+  {/* IMPLEMENTASI & DUKUNGAN — gabungan cara mulai + layanan tambahan di luar software */}
+  <section id="cara-kerja">
     <div className="wrap">
       <div className="section-head reveal">
-        <span className="eyebrow">Layanan tambahan</span>
-        <h2>Butuh bantuan di luar aplikasi? Kami juga bisa.</h2>
-        <p className="lede">Selain software, tim Altora juga bantu pasang perangkat, jaga keamanan toko, latih karyawan, sampai kasih masukan strategi bisnis.</p>
+        <span className="eyebrow">Implementasi &amp; dukungan</span>
+        <h2>Mulai dalam tiga langkah, dibantu sampai jalan.</h2>
+        <p className="lede">Tanpa training berhari-hari — dan kalau butuh bantuan di luar aplikasi, tim kami juga turun tangan.</p>
+      </div>
+      <div className="steps reveal">
+        <div className="step">
+          <span className="step-num">01</span>
+          <h3>Pilih jenis usahamu</h3>
+          <p>Altora menyiapkan modul dan tampilan yang sesuai — cafe, toko, laundry, atau jenis usaha lainnya.</p>
+        </div>
+        <div className="step">
+          <span className="step-num">02</span>
+          <h3>Masukkan data awal</h3>
+          <p>Tambahkan produk secara manual, atau impor dari file. Undang karyawan, cetak QR meja kalau perlu.</p>
+        </div>
+        <div className="step">
+          <span className="step-num">03</span>
+          <h3>Mulai transaksi</h3>
+          <p>Kasir langsung bisa dipakai hari itu juga — stok, keuangan, pelanggan, dan laporan langsung ikut diperbarui.</p>
+        </div>
       </div>
       <div className="addon-services reveal">
         {ADDON_SERVICES.map((service) => (
@@ -819,74 +525,7 @@ export function LandingContent({ city, vertical, faqItems }: { city?: string; ve
     </div>
   </section>
 
-  {/* HOW IT WORKS */}
-  <section id="cara-kerja">
-    <div className="wrap">
-      <div className="section-head reveal">
-        <span className="eyebrow">Cara kerja</span>
-        <h2>Mulai menjalankan bisnis dengan Altora dalam tiga langkah.</h2>
-        <p className="lede">Tiga langkah, tanpa training berhari-hari.</p>
-      </div>
-      <div className="steps reveal">
-        <div className="step">
-          <span className="step-num">01</span>
-          <h3>Pilih jenis usahamu</h3>
-          <p>Altora menyiapkan modul dan tampilan yang sesuai — cafe, toko, laundry, atau jenis usaha lainnya.</p>
-        </div>
-        <div className="step">
-          <span className="step-num">02</span>
-          <h3>Masukkan data awal</h3>
-          <p>Tambahkan produk secara manual, atau impor dari file. Undang karyawan, cetak QR meja kalau perlu.</p>
-        </div>
-        <div className="step">
-          <span className="step-num">03</span>
-          <h3>Mulai transaksi</h3>
-          <p>Kasir langsung bisa dipakai hari itu juga — stok, keuangan, pelanggan, dan laporan langsung ikut diperbarui.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
   {/* FEATURE COMPARISON */}
-  <section id="perbandingan-fitur">
-    <div className="wrap">
-      <div className="section-head reveal">
-        <span className="eyebrow">Detail per paket</span>
-        <h2>Semua fitur, di semua paket.</h2>
-        <p className="lede">Yang membedakan paket cuma batas jumlah outlet, karyawan, dan produk — bukan fitur yang dikunci.</p>
-      </div>
-      <div className="cmp-table-wrap reveal">
-        <table className="cmp-table">
-          <thead>
-            <tr>
-              <th scope="col" className="cmp-th-feature">Fitur</th>
-              <th scope="col">Free</th>
-              <th scope="col">Basic</th>
-              <th scope="col">Pro</th>
-            </tr>
-          </thead>
-          <tbody>
-            {COMPARISON_GROUPS.map((group) => (
-              <Fragment key={group.category}>
-                <tr className="cmp-group-row">
-                  <th scope="colgroup" colSpan={4}>{group.category}</th>
-                </tr>
-                {group.rows.map((row) => (
-                  <tr key={row.label}>
-                    <th scope="row" className="cmp-th-feature">{row.label}</th>
-                    <td><ComparisonCell value={row.free} /></td>
-                    <td><ComparisonCell value={row.basic} /></td>
-                    <td><ComparisonCell value={row.pro} /></td>
-                  </tr>
-                ))}
-              </Fragment>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </section>
-
   {/* PRICING */}
   <section id="harga">
     <div className="wrap">
@@ -899,12 +538,50 @@ export function LandingContent({ city, vertical, faqItems }: { city?: string; ve
         <span className="pricing-cta-badge"><ClockIcon aria-hidden="true" />Cuma 5 menit</span>
         <h3>Ngobrol langsung sama tim Altora.</h3>
         <p>Ceritain jenis usaha, jumlah outlet, dan kebutuhanmu — kami bantu carikan paket yang paling pas, tanpa basa-basi.</p>
-        <a className="btn btn-primary btn-lg btn-shimmer" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20konsultasi%20paket%20yang%20pas%20untuk%20usaha%20saya" target="_blank" rel="noopener">
+        <a className="btn btn-primary btn-lg" href="https://wa.me/6285190911170?text=Halo%20Altora%2C%20saya%20mau%20konsultasi%20paket%20yang%20pas%20untuk%20usaha%20saya" target="_blank" rel="noopener">
           <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12.04 2c-5.5 0-9.96 4.46-9.96 9.96 0 1.76.46 3.48 1.34 5L2 22l5.2-1.36a9.94 9.94 0 0 0 4.84 1.23h.01c5.5 0 9.96-4.46 9.96-9.96S17.55 2 12.04 2Zm5.87 14.24c-.25.7-1.45 1.34-2 1.43-.51.08-1.15.11-1.86-.12-.43-.13-.98-.32-1.69-.62-2.97-1.28-4.9-4.26-5.05-4.46-.15-.2-1.21-1.6-1.21-3.06 0-1.45.76-2.16 1.03-2.46.27-.3.6-.37.8-.37.2 0 .4 0 .58.01.18.01.44-.07.68.53.25.6.85 2.08.92 2.23.07.15.12.33.02.53-.1.2-.15.32-.3.5-.15.18-.31.4-.44.53-.15.15-.3.31-.13.6.17.3.76 1.28 1.64 2.08 1.13 1.03 2.08 1.35 2.38 1.5.3.15.47.13.65-.07.18-.2.75-.87.95-1.17.2-.3.4-.25.68-.15.28.1 1.76.85 2.06 1 .3.15.5.23.57.35.07.13.07.73-.18 1.43Z"/></svg>
           Konsultasi Sekarang
         </a>
-        <a className="plan-more" href="#perbandingan-fitur">Lihat semua fitur</a>
       </div>
+
+      <details className="cmp-drawer reveal">
+        <summary className="cmp-drawer-summary">
+          Bandingkan semua fitur per paket
+          <svg viewBox="0 0 12 8" width="11" height="8" aria-hidden="true" className="cmp-drawer-caret">
+            <path d="M1 1l5 5 5-5" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </summary>
+        <p className="cmp-drawer-note">Yang membedakan paket cuma batas jumlah outlet, karyawan, dan produk — bukan fitur yang dikunci.</p>
+        <div className="cmp-table-wrap">
+          <table className="cmp-table">
+            <thead>
+              <tr>
+                <th scope="col" className="cmp-th-feature">Fitur</th>
+                <th scope="col">Free</th>
+                <th scope="col">Basic</th>
+                <th scope="col">Pro</th>
+              </tr>
+            </thead>
+            <tbody>
+              {COMPARISON_GROUPS.map((group) => (
+                <Fragment key={group.category}>
+                  <tr className="cmp-group-row">
+                    <th scope="colgroup" colSpan={4}>{group.category}</th>
+                  </tr>
+                  {group.rows.map((row) => (
+                    <tr key={row.label}>
+                      <th scope="row" className="cmp-th-feature">{row.label}</th>
+                      <td><ComparisonCell value={row.free} /></td>
+                      <td><ComparisonCell value={row.basic} /></td>
+                      <td><ComparisonCell value={row.pro} /></td>
+                    </tr>
+                  ))}
+                </Fragment>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </details>
     </div>
   </section>
 
@@ -986,7 +663,7 @@ export function LandingContent({ city, vertical, faqItems }: { city?: string; ve
         <a href="#fitur">Inventori</a>
         <a href="#fitur">Keuangan</a>
         <a href="#fitur">Member &amp; CRM</a>
-        <a href="#perbandingan-fitur">Laporan</a>
+        <a href="#fitur">Laporan</a>
       </div>
       <div className="footer-col">
         <div className="footer-heading">Solusi</div>

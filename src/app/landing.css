@@ -52,18 +52,17 @@
   
 html { scroll-behavior: smooth; }
 
-/* Tiap section berhenti rapi di batasnya sendiri pas scroll (bukan
-   mandatory — section tinggi kayak tabel perbandingan fitur tetap bisa
-   discroll bebas di tengahnya, snap cuma aktif pas scroll berhenti deket
-   batas section). scroll-margin-top nyamain tinggi nav sticky (diukur
-   ~80px) biar section nggak ketutup nav pas snap/lompat via anchor link. */
-html { scroll-snap-type: y proximity; }
-
-.altora-landing main#top > section { scroll-snap-align: start; scroll-margin-top: 84px; }
+/* scroll-margin-top nyamain tinggi nav sticky (~80px) biar section nggak
+   ketutup nav pas lompat via anchor link. Scroll-snap sengaja TIDAK
+   dipakai di sini — pernah dicoba (y proximity) tapi menyebabkan konten
+   ".reveal" di beberapa section (harga/testimoni/faq) permanen tak
+   terlihat (opacity: 0) karena scroll wheel bisa "melompati" section
+   tanpa pernah membuat elemennya intersect viewport. */
+.altora-landing main#top > section { scroll-margin-top: 84px; }
 
 
 @media (prefers-reduced-motion: reduce) {
-html { scroll-behavior: auto; scroll-snap-type: none; }
+html { scroll-behavior: auto; }
 .altora-landing, .altora-landing * { animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
 }
 
@@ -94,7 +93,7 @@ html { scroll-behavior: auto; scroll-snap-type: none; }
 
 
   
-.altora-landing .wrap { max-width: 1160px; margin: 0 auto; padding-inline: clamp(20px, 5vw, 48px); }
+.altora-landing .wrap { max-width: 1200px; margin: 0 auto; padding-inline: clamp(20px, 5vw, 48px); }
 
   
 .altora-landing .mono { font-family: var(--font-jetbrains-mono), ui-monospace, "SFMono-Regular", monospace; }
@@ -137,7 +136,7 @@ html { scroll-behavior: auto; scroll-snap-type: none; }
   }
 
   
-.altora-landing h2 { font-size: clamp(30px, 4vw, 46px); }
+.altora-landing h2 { font-size: clamp(32px, 3.6vw, 44px); }
 
   
 .altora-landing h3 { font-size: clamp(18px, 2vw, 21px); font-weight: 600; letter-spacing: -0.01em; }
@@ -179,28 +178,6 @@ html { scroll-behavior: auto; scroll-snap-type: none; }
 
   
 .altora-landing .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 14px 30px -12px rgba(167, 48, 168, 0.45); }
-
-/* Efek sapuan cahaya berulang di CTA utama (gaya "shimmer button" ala
-   MagicUI/KokonutUI) — CSS murni, nggak nambah dependency Motion/shadcn
-   karena landing page ini masih pakai hand-rolled CSS, bukan Tailwind. */
-.altora-landing .btn-shimmer { position: relative; overflow: hidden; }
-
-.altora-landing .btn-shimmer::after {
-    content: ""; position: absolute; inset: 0;
-    background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.55) 50%, transparent 60%);
-    transform: translateX(-120%);
-    animation: btn-shimmer-sweep 3.4s ease-in-out infinite;
-    pointer-events: none;
-  }
-
-@keyframes btn-shimmer-sweep {
-  0%, 45% { transform: translateX(-120%); }
-  65%, 100% { transform: translateX(120%); }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .altora-landing .btn-shimmer::after { display: none; }
-}
 
 
 .altora-landing .btn-ghost { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
@@ -413,27 +390,6 @@ html { scroll-behavior: auto; scroll-snap-type: none; }
     pointer-events: none;
   }
 
-/* Pola titik yang pelan-pelan hanyut di belakang hero (gaya "dot pattern"
-   ala MagicUI), di-mask biar pudar ke tepi jadi nggak ganggu teks. */
-.altora-landing .hero-dot-grid {
-    position: absolute; inset: 0; pointer-events: none;
-    background-image: radial-gradient(circle, rgba(10, 31, 68, 0.16) 1px, transparent 1.6px);
-    background-size: 22px 22px;
-    -webkit-mask-image: radial-gradient(60% 55% at 50% 25%, black 0%, transparent 75%);
-    mask-image: radial-gradient(60% 55% at 50% 25%, black 0%, transparent 75%);
-    animation: hero-dot-drift 20s linear infinite;
-  }
-
-@keyframes hero-dot-drift {
-  from { background-position: 0 0; }
-  to { background-position: 22px 22px; }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .altora-landing .hero-dot-grid { animation: none; }
-}
-
-  
 .altora-landing .hero-grid {
     position: relative; display: grid; grid-template-columns: 0.95fr 1.05fr;
     gap: clamp(32px, 6vw, 64px); align-items: center;
@@ -448,7 +404,7 @@ html { scroll-behavior: auto; scroll-snap-type: none; }
 .altora-landing .hero-copy { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
 
   
-.altora-landing .hero-copy h1 { font-size: clamp(36px, 5.4vw, 58px); font-weight: 800; }
+.altora-landing .hero-copy h1 { font-size: clamp(38px, 5.4vw, 62px); font-weight: 800; }
 
   
 .altora-landing .hero-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 6px; }
@@ -464,7 +420,12 @@ html { scroll-behavior: auto; scroll-snap-type: none; }
 .altora-landing .hero-visual { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px 10px 10px; min-width: 0; }
 
 
-.altora-landing .hero-visual-inner { position: relative; width: min(500px, 100%, 94vw); }
+.altora-landing .hero-visual-inner { position: relative; width: min(720px, 100%, 94vw); }
+
+.altora-landing .hero-screenshot {
+    display: block; width: 100%; height: auto;
+    filter: drop-shadow(0 30px 50px rgba(10, 31, 68, 0.22));
+  }
 
 
   
@@ -2700,13 +2661,36 @@ html { scroll-behavior: auto; scroll-snap-type: none; }
 }
 
 
-/* ---------- PRICING: "lihat semua fitur" link ---------- */
+/* ---------- PRICING: drawer "bandingkan semua fitur" ---------- */
 
-.altora-landing .plan-more {
-  text-align: center; font-size: 12.5px; color: var(--text-faint); text-decoration: none; margin-top: -6px;
+.altora-landing .cmp-drawer {
+  margin-top: 40px; border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface);
+  overflow: hidden;
 }
 
-.altora-landing .plan-more:hover { color: var(--primary); text-decoration: underline; }
+.altora-landing .cmp-drawer-summary {
+  display: flex; align-items: center; justify-content: center; gap: 8px; cursor: pointer;
+  padding: 16px 20px; font-size: 14.5px; font-weight: 600; color: var(--text); list-style: none;
+  user-select: none;
+}
+
+.altora-landing .cmp-drawer-summary::-webkit-details-marker { display: none; }
+
+.altora-landing .cmp-drawer-summary:hover { color: var(--primary); }
+
+.altora-landing .cmp-drawer-summary:focus-visible {
+  outline: 2px solid var(--primary); outline-offset: 2px; border-radius: 6px;
+}
+
+.altora-landing .cmp-drawer-caret { transition: transform 0.2s ease; flex-shrink: 0; }
+
+.altora-landing .cmp-drawer[open] .cmp-drawer-caret { transform: rotate(180deg); }
+
+.altora-landing .cmp-drawer-note {
+  text-align: center; font-size: 13.5px; color: var(--text-secondary); margin: 0 20px 16px;
+}
+
+.altora-landing .cmp-drawer .cmp-table-wrap { margin: 0 20px 20px; border-radius: calc(var(--radius) - 4px); }
 
 
 /* ---------- TESTIMONIALS ---------- */

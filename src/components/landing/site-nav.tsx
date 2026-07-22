@@ -167,6 +167,9 @@ export function SiteNav({ vertical }: { vertical?: VerticalDef }) {
         </nav>
 
         <div className="nav-cta">
+          <a className="btn btn-primary nav-signup" href={signupHref}>
+            {vertical ? "Mulai Gratis" : "Coba Gratis"}
+          </a>
           <button
             type="button"
             className="nav-drawer-toggle"
