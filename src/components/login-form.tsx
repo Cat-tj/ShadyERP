@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import Link from "next/link";
 import { loginAction, type LoginState } from "@/app/login/actions";
 
@@ -8,6 +8,7 @@ const initialState: LoginState = {};
 
 export function LoginForm() {
   const [state, formAction, isPending] = useActionState(loginAction, initialState);
+  const [showPassword, setShowPassword] = useState(false);
 
   return (
     <form action={formAction} className="flex flex-col gap-4">
@@ -37,15 +38,26 @@ export function LoginForm() {
         <label htmlFor="password" className="text-sm font-medium text-[var(--color-text)]">
           Kata sandi
         </label>
-        <input
-          id="password"
-          name="password"
-          type="password"
-          required
-          autoComplete="current-password"
-          placeholder="Minimal 6 karakter"
-          className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-white/70 px-4 text-base text-[var(--color-text)] outline-none transition-colors duration-150 focus:border-[var(--color-primary)] focus:bg-white focus:ring-2 focus:ring-[var(--color-primary)]/20"
-        />
+        <div className="relative">
+          <input
+            id="password"
+            name="password"
+            type={showPassword ? "text" : "password"}
+            required
+            autoComplete="current-password"
+            placeholder="Minimal 6 karakter"
+            className="min-h-[48px] w-full rounded-lg border border-[var(--color-border)] bg-white/70 px-4 pr-24 text-base text-[var(--color-text)] outline-none transition-colors duration-150 focus:border-[var(--color-primary)] focus:bg-white focus:ring-2 focus:ring-[var(--color-primary)]/20"
+          />
+          <button
+            type="button"
+            aria-pressed={showPassword}
+            aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+            onClick={() => setShowPassword((visible) => !visible)}
+            className="absolute inset-y-1 right-1 min-w-20 rounded-md px-3 text-xs font-semibold text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+          >
+            {showPassword ? "Sembunyikan" : "Tampilkan"}
+          </button>
+        </div>
       </div>
 
       <button
