@@ -180,7 +180,29 @@ html { scroll-behavior: auto; scroll-snap-type: none; }
   
 .altora-landing .btn-primary:hover { background: var(--primary-dark); transform: translateY(-1px); box-shadow: 0 14px 30px -12px rgba(167, 48, 168, 0.45); }
 
-  
+/* Efek sapuan cahaya berulang di CTA utama (gaya "shimmer button" ala
+   MagicUI/KokonutUI) — CSS murni, nggak nambah dependency Motion/shadcn
+   karena landing page ini masih pakai hand-rolled CSS, bukan Tailwind. */
+.altora-landing .btn-shimmer { position: relative; overflow: hidden; }
+
+.altora-landing .btn-shimmer::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(115deg, transparent 40%, rgba(255, 255, 255, 0.55) 50%, transparent 60%);
+    transform: translateX(-120%);
+    animation: btn-shimmer-sweep 3.4s ease-in-out infinite;
+    pointer-events: none;
+  }
+
+@keyframes btn-shimmer-sweep {
+  0%, 45% { transform: translateX(-120%); }
+  65%, 100% { transform: translateX(120%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .altora-landing .btn-shimmer::after { display: none; }
+}
+
+
 .altora-landing .btn-ghost { background: var(--surface); color: var(--text); border-color: var(--border-strong); }
 
   
@@ -390,6 +412,26 @@ html { scroll-behavior: auto; scroll-snap-type: none; }
       radial-gradient(55% 70% at 94% 8%, var(--glow-orange) 0%, transparent 68%);
     pointer-events: none;
   }
+
+/* Pola titik yang pelan-pelan hanyut di belakang hero (gaya "dot pattern"
+   ala MagicUI), di-mask biar pudar ke tepi jadi nggak ganggu teks. */
+.altora-landing .hero-dot-grid {
+    position: absolute; inset: 0; pointer-events: none;
+    background-image: radial-gradient(circle, rgba(10, 31, 68, 0.16) 1px, transparent 1.6px);
+    background-size: 22px 22px;
+    -webkit-mask-image: radial-gradient(60% 55% at 50% 25%, black 0%, transparent 75%);
+    mask-image: radial-gradient(60% 55% at 50% 25%, black 0%, transparent 75%);
+    animation: hero-dot-drift 20s linear infinite;
+  }
+
+@keyframes hero-dot-drift {
+  from { background-position: 0 0; }
+  to { background-position: 22px 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .altora-landing .hero-dot-grid { animation: none; }
+}
 
   
 .altora-landing .hero-grid {
