@@ -1,4 +1,6 @@
 teams.altora.my.id {
   encode zstd gzip
-  reverse_proxy 127.0.0.1:3003
+  # Teams kini disatukan dengan app modular Altora agar /login dan /register
+  # tersedia pada host yang sama. Port 3003 hanya legacy landing, bukan auth.
+  reverse_proxy 127.0.0.1:3000
 }

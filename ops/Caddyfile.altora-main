@@ -1,8 +1,6 @@
-# Caddy config untuk app utama Altora (semua vertikal KECUALI Teams —
-# Teams punya app + Caddyfile terpisah sendiri di
-# apps/altora-teams-landing/ops/Caddyfile.altora-teams).
+# Caddy config untuk app utama Altora.
 #
-# Satu app Next.js yang sama melayani semua domain di bawah ini — dia
+# Satu app Next.js yang sama melayani seluruh domain produk di bawah ini — dia
 # baca header Host lewat src/proxy.ts buat nentuin tema/copy/logo per
 # vertikal (lihat src/lib/verticals.ts). Makanya tiap subdomain butuh
 # blok Caddy sendiri (bukan satu blok "*.altora.my.id") supaya Caddy
@@ -23,6 +21,11 @@ cafe.altora.my.id {
 }
 
 toko.altora.my.id {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:3000
+}
+
+ecommerce.altora.my.id {
   encode zstd gzip
   reverse_proxy 127.0.0.1:3000
 }
@@ -58,6 +61,13 @@ company.altora.my.id {
 }
 
 accounting.altora.my.id {
+  encode zstd gzip
+  reverse_proxy 127.0.0.1:3000
+}
+
+# Teams adalah vertical HRIS di app modular yang sama. Landing Teams lama pada
+# port 3003 tidak mempunyai rute auth, jadi tidak boleh jadi upstream domain.
+teams.altora.my.id {
   encode zstd gzip
   reverse_proxy 127.0.0.1:3000
 }
