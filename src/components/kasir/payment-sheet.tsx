@@ -645,14 +645,16 @@ export function PaymentSheet({
     <div className="fixed inset-0 z-40 flex flex-col justify-end bg-black/50 backdrop-blur-sm sm:items-center sm:justify-center">
       <div className="max-h-[90vh] w-full overflow-y-auto scrollbar-none bg-[var(--color-surface)] border border-[var(--color-border)] shadow-[var(--shadow-modal)] rounded-t-3xl sm:max-w-md sm:rounded-3xl">
         <div className="sticky top-0 z-10 flex items-center justify-between bg-[var(--color-surface)]/80 backdrop-blur-md px-6 py-4 border-b border-[var(--color-border)]/50">
-          <h2 className="text-lg font-bold text-[var(--color-text)]">Pembayaran</h2>
           <button
             onClick={onClose}
-            aria-label="Tutup"
-            className="flex h-10 w-10 items-center justify-center rounded-xl text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] transition-colors cursor-pointer"
+            disabled={isPending}
+            className="flex min-h-[40px] items-center gap-1.5 rounded-xl px-2 -ml-2 text-sm font-semibold text-[var(--color-text-secondary)] hover:bg-[var(--color-surface-muted)] transition-colors cursor-pointer disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <XIcon aria-hidden className="h-5 w-5" />
+            <XIcon aria-hidden className="h-4 w-4" />
+            Kembali ke keranjang
           </button>
+          <h2 className="text-lg font-bold text-[var(--color-text)]">Pembayaran</h2>
+          <div className="w-10" aria-hidden="true" />
         </div>
 
         <div className="p-6">
