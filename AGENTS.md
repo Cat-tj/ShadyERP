@@ -6,6 +6,13 @@ This version has breaking changes — APIs, conventions, and file structure may 
 
 # Aturan Produk Altora (WAJIB untuk semua agent)
 
+## Release target check (WAJIB)
+
+Before any implementation or deployment, read
+`docs/RELEASE_TARGETS.md` and state the repository, branch, target service, and
+domain in the handover. A commit in another repository must never be described
+as an Altora VPS deployment.
+
 Sebelum menambah/mengubah fitur apa pun, baca `docs/MASTER-GUIDELINE.md`.
 Intinya:
 
