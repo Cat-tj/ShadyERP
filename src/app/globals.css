@@ -19,6 +19,21 @@
   --color-good-bg: #dcfce7;
   --color-good-text: #15803d;
 
+  /* Token semantik yang sebelumnya di-alias di @theme inline tapi tidak
+     pernah diberi nilai nyata di :root — sudah dipakai banyak komponen
+     (StatCard, status-badge, payment-sheet, dll) yang selama ini resolve
+     ke nilai kosong/invalid. Diisi di sini, bukan token baru. */
+  --color-success: #16a34a;
+  --color-success-surface: #f0fdf4;
+  --color-warning: #d97706;
+  --color-warning-surface: #fffbeb;
+  --color-danger-surface: #fef2f2;
+  --color-info: #0284c7;
+  --color-info-surface: #f0f9ff;
+  --color-surface-muted: #f1f5f9;
+  --color-border-strong: #cbd5e1;
+  --color-text-muted: #94a3b8;
+
   /* Tint dari --color-primary — pakai color-mix (bukan rgba tetap) supaya otomatis
      ikut warna modul saat contentThemeStyle di AppShell override --color-primary. */
   --color-primary-soft: color-mix(in srgb, var(--color-primary) 10%, transparent);

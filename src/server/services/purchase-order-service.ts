@@ -174,3 +174,19 @@ export async function getPOStats(tenantId: string) {
     totalValue: totalValue._sum.totalAmount || 0,
   };
 }
+
+/** PO yang sudah dikirim ke supplier tapi belum diterima penuh, dan tanggal
+ * kedatangan yang dijanjikan (expectedAt) sudah lewat — dipakai buat action
+ * center dashboard ("N purchase order melewati jadwal tiba"). */
+export async function getOverduePurchaseOrders(tenantId: string, limit = 5) {
+  return prisma.purchaseOrder.findMany({
+    where: {
+      tenantId,
+      status: { in: ["SENT", "CONFIRMED", "PARTIALLY_RECEIVED"] },
+      expectedAt: { lt: new Date() },
+    },
+    include: { supplier: true },
+    orderBy: { expectedAt: "asc" },
+    take: limit,
+  });
+}

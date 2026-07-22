@@ -11,6 +11,7 @@ import MobileCartBar from "@/components/ui/mobile-cart-bar";
 import { resolveEnabledModules, getModuleForPath, MODULE_MAP } from "@/lib/modules";
 import { HUBS, HUB_MAP, getHubForPath, type HubKey } from "@/lib/hubs";
 import { SettingsSidebarNav } from "@/features/settings/components/settings-sidebar-nav";
+import type { VerticalDef } from "@/lib/verticals";
 
 const ROLE_LABEL: Record<Role, string> = {
   OWNER: "Pemilik",
@@ -42,6 +43,7 @@ export function AppShell({
   tenantName,
   disabledModules,
   accountingMode = "SIMPLE",
+  vertical,
   children,
 }: {
   userName: string;
@@ -49,6 +51,7 @@ export function AppShell({
   tenantName: string;
   disabledModules: string[];
   accountingMode?: "SIMPLE" | "ADVANCED";
+  vertical?: VerticalDef;
   children: React.ReactNode;
 }) {
   const pathname = usePathname();
@@ -88,6 +91,26 @@ export function AppShell({
     ? rawItems.filter((item) => !ADVANCED_ONLY_HREFS.has(item.href))
     : rawItems;
   const bottomItems = items.filter((item) => item.showOnBottomNav).slice(0, 5);
+
+  // Supermarket: beri subheading berbasis pekerjaan (guideline §5 — Overview/
+  // Operasional/Analitik/Pengaturan) di atas sidebar hub yang lagi aktif.
+  // Arsitektur hub (pindah "aplikasi" lewat /pilih-aplikasi, tanpa link silang
+  // di sidebar) TIDAK diubah — ini cuma subheading tambahan di dalam hub yang
+  // sama, digate ketat ke vertical supermarket biar hub lain tidak berubah.
+  const HUB_GUIDELINE_GROUP: Partial<Record<HubKey, string>> = {
+    inventory: "Operasional",
+    laundry: "Operasional",
+    produksi: "Operasional",
+    hris: "Operasional",
+    tim: "Operasional",
+    finance: "Analitik",
+    admin: "Pengaturan",
+    dokumen: "Pengaturan",
+  };
+  const guidelineGroupFor = (href: string): string => {
+    if (activeHub.key === "kasir") return href === "/kpi" ? "Overview" : "Operasional";
+    return HUB_GUIDELINE_GROUP[activeHub.key] ?? "Operasional";
+  };
   // Beberapa href saling jadi prefix (mis. /kpi & /kpi/analitik) — hanya item
   // dengan prefix TERPANJANG yang cocok yang boleh nyala, biar tidak dobel.
   const activeHref = items
@@ -95,13 +118,28 @@ export function AppShell({
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
   // Halaman fitur (mis. /absensi, /laporan) ikut warna modulnya sendiri; halaman
   // netral (Pengaturan, Akun) tetap pakai warna brand default dari globals.css.
+  //
+  // Pengecualian: tenant vertical "supermarket" punya identitas warna sendiri
+  // (indigo, lihat verticals.ts) yang harus tampil di dashboard (/kpi) —
+  // /kpi kebetulan ter-mapping ke modul "kasir" (magenta) di modules.ts,
+  // jadi tanpa pengecualian ini warna vertical-nya ketutupan warna modul.
+  // Sengaja digate ketat ke vertical supermarket biar cafe/toko/dll (yang juga
+  // punya theme di verticals.ts) tidak ikut berubah tanpa diminta.
+  const isSupermarketVertical = vertical?.key === "supermarket";
+  const isDashboardHome = pathname === "/kpi";
   const currentModule = getModuleForPath(pathname);
-  const contentThemeStyle = currentModule
-    ? ({
-        "--color-primary": currentModule.color,
-        "--color-primary-dark": currentModule.colorDark,
-      } as React.CSSProperties)
-    : undefined;
+  const contentThemeStyle =
+    currentModule && !(isDashboardHome && isSupermarketVertical)
+      ? ({
+          "--color-primary": currentModule.color,
+          "--color-primary-dark": currentModule.colorDark,
+        } as React.CSSProperties)
+      : isSupermarketVertical
+        ? ({
+            "--color-primary": vertical.theme.primary,
+            "--color-primary-dark": vertical.theme.deep,
+          } as React.CSSProperties)
+        : undefined;
 
   const shellBackgroundStyle: React.CSSProperties = {
     backgroundImage: `radial-gradient(1100px 640px at 12% -8%, rgba(167, 48, 168, 0.05) 0%, transparent 55%), radial-gradient(900px 560px at 100% 0%, rgba(37, 99, 235, 0.04) 0%, transparent 50%), linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-secondary) 100%)`,
@@ -173,42 +211,61 @@ export function AppShell({
             )}
           </div>
           <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-2">
-            {items.map((item) => {
+            {items.map((item, index) => {
+              const groupLabel = isSupermarketVertical ? guidelineGroupFor(item.href) : null;
+              const prevGroupLabel =
+                isSupermarketVertical && index > 0 ? guidelineGroupFor(items[index - 1].href) : null;
+              const showGroupHeading = groupLabel != null && groupLabel !== prevGroupLabel;
+              const heading = showGroupHeading ? (
+                <p className="mb-1 mt-3 px-3 text-[10px] font-bold uppercase tracking-wider text-[var(--color-text-secondary)] first:mt-0">
+                  {groupLabel}
+                </p>
+              ) : null;
+
               if (item.href === "/pengaturan") {
                 return (
-                  <SettingsSidebarNav
-                    key={item.href}
-                    disabledModules={disabledModules}
-                    accentColor={activeHub.color}
-                  />
+                  <div key={item.href}>
+                    {heading}
+                    <SettingsSidebarNav disabledModules={disabledModules} accentColor={activeHub.color} />
+                  </div>
                 );
               }
 
               const active = item.href === activeHref;
               const Icon = item.icon;
-              const itemModule = item.module ? MODULE_MAP[item.module] : null;
+              // Item Beranda (/kpi) pakai warna vertical, bukan warna modul kasir-nya,
+              // kalau tenant ini vertical supermarket — sama seperti contentThemeStyle
+              // di atas, biar highlight sidebar konsisten dengan warna dashboard-nya.
+              const itemModule =
+                item.href === "/kpi" && isSupermarketVertical
+                  ? { color: vertical!.theme.primary, colorDark: vertical!.theme.deep }
+                  : item.module
+                    ? MODULE_MAP[item.module]
+                    : null;
               return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  style={
-                    active && itemModule
-                      ? { backgroundColor: itemModule.color, color: "#fff" }
-                      : active
-                        ? { backgroundColor: activeHub.color, color: "#fff" }
-                        : undefined
-                  }
-                  className={`flex min-h-[40px] items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-150 ${
-                    active ? "" : "text-[var(--color-text)] hover:bg-white/40"
-                  }`}
-                >
-                  <Icon
-                    aria-hidden
-                    className="h-5 w-5 shrink-0"
-                    style={!active ? { color: itemModule?.color ?? activeHub.color } : undefined}
-                  />
-                  {item.label}
-                </Link>
+                <div key={item.href}>
+                  {heading}
+                  <Link
+                    href={item.href}
+                    style={
+                      active && itemModule
+                        ? { backgroundColor: itemModule.color, color: "#fff" }
+                        : active
+                          ? { backgroundColor: activeHub.color, color: "#fff" }
+                          : undefined
+                    }
+                    className={`flex min-h-[40px] items-center gap-3 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors duration-150 ${
+                      active ? "" : "text-[var(--color-text)] hover:bg-white/40"
+                    }`}
+                  >
+                    <Icon
+                      aria-hidden
+                      className="h-5 w-5 shrink-0"
+                      style={!active ? { color: itemModule?.color ?? activeHub.color } : undefined}
+                    />
+                    {item.label}
+                  </Link>
+                </div>
               );
             })}
           </nav>
@@ -354,7 +411,12 @@ export function AppShell({
             {bottomItems.map((item) => {
               const active = item.href === activeHref;
               const Icon = item.icon;
-              const itemModule = item.module ? MODULE_MAP[item.module] : null;
+              const itemModule =
+                item.href === "/kpi" && isSupermarketVertical
+                  ? { color: vertical!.theme.primary }
+                  : item.module
+                    ? MODULE_MAP[item.module]
+                    : null;
               const activeColor = itemModule?.color ?? activeHub.color;
               return (
                 <Link

@@ -35,6 +35,7 @@ export default async function AppLayout({
       tenantName={tenant?.name ?? "Toko Saya"}
       disabledModules={tenant?.disabledModules ?? []}
       accountingMode={accountingMode}
+      vertical={vertical}
     >
       {children}
     </AppShell>

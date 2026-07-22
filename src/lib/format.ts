@@ -9,6 +9,32 @@ export function formatRupiah(amount: number): string {
   return `${sign}Rp${rupiahNumberFormatter.format(Math.abs(rounded))}`;
 }
 
+const rupiahCompactScaleFormatter = new Intl.NumberFormat("id-ID", { maximumFractionDigits: 1 });
+
+/** Format ringkas untuk KPI card. Contoh: formatRupiahCompact(24800000) -> "Rp 24,8 jt" */
+export function formatRupiahCompact(amount: number): string {
+  const rounded = Math.round(amount);
+  const sign = rounded < 0 ? "-" : "";
+  const abs = Math.abs(rounded);
+
+  let divisor = 1;
+  let unit = "";
+  if (abs >= 1_000_000_000) {
+    divisor = 1_000_000_000;
+    unit = " M";
+  } else if (abs >= 1_000_000) {
+    divisor = 1_000_000;
+    unit = " jt";
+  } else if (abs >= 1_000) {
+    divisor = 1_000;
+    unit = " rb";
+  } else {
+    return formatRupiah(amount);
+  }
+
+  return `${sign}Rp ${rupiahCompactScaleFormatter.format(abs / divisor)}${unit}`;
+}
+
 const tanggalFormatter = new Intl.DateTimeFormat("id-ID", {
   weekday: "short",
   day: "numeric",

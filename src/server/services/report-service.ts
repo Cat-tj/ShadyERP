@@ -12,6 +12,109 @@ function rangeForDays(days: number) {
   return { start, end };
 }
 
+/**
+ * Penjualan hari ini vs kemarin, dibatasi tepat per hari kalender WIB (bukan
+ * "24 jam terakhir" seperti rangeForDays) — dipakai KPI card dashboard yang
+ * butuh perbandingan "vs kemarin" yang presisi.
+ */
+export async function getTodayVsYesterday(tenantId: string, outletIds: string[]) {
+  const today = todayRangeJakarta();
+  const yesterday = todayRangeJakarta(new Date(today.start.getTime() - 1));
+
+  const sales = await prisma.sale.findMany({
+    where: {
+      tenantId,
+      outletId: { in: outletIds },
+      status: "COMPLETED",
+      createdAt: { gte: yesterday.start, lt: today.end },
+    },
+    select: { total: true, createdAt: true, saleReturns: { select: { totalRefund: true } } },
+  });
+
+  const items = await prisma.saleItem.findMany({
+    where: {
+      tenantId,
+      sale: { outletId: { in: outletIds }, status: "COMPLETED", createdAt: { gte: yesterday.start, lt: today.end } },
+    },
+    select: { qty: true, returnedQty: true, price: true, productId: true, sale: { select: { createdAt: true } } },
+  });
+  const productIds = [...new Set(items.map((i) => i.productId))];
+  const products = await prisma.product.findMany({ where: { id: { in: productIds } }, select: { id: true, cost: true } });
+  const costMap = new Map(products.map((p) => [p.id, p.cost]));
+
+  function summarize(bucketStart: Date, bucketEnd: Date) {
+    const bucketSales = sales.filter((s) => s.createdAt >= bucketStart && s.createdAt < bucketEnd);
+    const totalOmzet = bucketSales.reduce(
+      (sum, s) => sum + s.total - s.saleReturns.reduce((r, sr) => r + sr.totalRefund, 0),
+      0
+    );
+    const totalTransaksi = bucketSales.length;
+    const rataRataTransaksi = totalTransaksi > 0 ? Math.round(totalOmzet / totalTransaksi) : 0;
+
+    let estimasiUntung = 0;
+    for (const item of items) {
+      if (item.sale.createdAt < bucketStart || item.sale.createdAt >= bucketEnd) continue;
+      const cost = costMap.get(item.productId);
+      const sellableQty = item.qty - item.returnedQty;
+      if (cost != null && sellableQty > 0) estimasiUntung += (item.price - cost) * sellableQty;
+    }
+
+    return { totalOmzet, totalTransaksi, rataRataTransaksi, estimasiUntung };
+  }
+
+  return {
+    today: summarize(today.start, today.end),
+    yesterday: summarize(yesterday.start, yesterday.end),
+  };
+}
+
+/**
+ * Omzet & transaksi hari ini per outlet, plus persentase perubahan vs kemarin
+ * (null kalau kemarin nol, biar tidak nampilin persentase absurd) — dipakai
+ * panel "Performa cabang" di dashboard.
+ */
+export async function getOutletPerformanceToday(tenantId: string, outletIds: string[]) {
+  const today = todayRangeJakarta();
+  const yesterday = todayRangeJakarta(new Date(today.start.getTime() - 1));
+
+  const [outlets, sales] = await Promise.all([
+    prisma.outlet.findMany({ where: { tenantId, id: { in: outletIds } } }),
+    prisma.sale.findMany({
+      where: {
+        tenantId,
+        outletId: { in: outletIds },
+        status: "COMPLETED",
+        createdAt: { gte: yesterday.start, lt: today.end },
+      },
+      select: { outletId: true, total: true, createdAt: true, saleReturns: { select: { totalRefund: true } } },
+    }),
+  ]);
+
+  function netOf(s: (typeof sales)[number]) {
+    return s.total - s.saleReturns.reduce((sum, sr) => sum + sr.totalRefund, 0);
+  }
+
+  return outlets.map((outlet) => {
+    const todaySales = sales.filter(
+      (s) => s.outletId === outlet.id && s.createdAt >= today.start && s.createdAt < today.end
+    );
+    const yesterdaySales = sales.filter(
+      (s) => s.outletId === outlet.id && s.createdAt >= yesterday.start && s.createdAt < yesterday.end
+    );
+    const todayOmzet = todaySales.reduce((sum, s) => sum + netOf(s), 0);
+    const yesterdayOmzet = yesterdaySales.reduce((sum, s) => sum + netOf(s), 0);
+    const changePercent = yesterdayOmzet > 0 ? ((todayOmzet - yesterdayOmzet) / yesterdayOmzet) * 100 : null;
+
+    return {
+      outletId: outlet.id,
+      outletName: outlet.name,
+      todayOmzet,
+      todayTransaksi: todaySales.length,
+      changePercent,
+    };
+  });
+}
+
 export async function getSalesSummary(tenantId: string, outletIds: string[], days: number) {
   const { start, end } = rangeForDays(days);
 

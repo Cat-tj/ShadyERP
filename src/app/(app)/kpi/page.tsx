@@ -4,6 +4,9 @@ import { getDashboardSummary } from "@/server/services/dashboard-service";
 import { getEnabledModules } from "@/server/services/tenant-service";
 import { listOutletsForUser } from "@/server/services/outlet-service";
 import { getLowStockProducts } from "@/server/services/inventory-service";
+import { getTodayVsYesterday, getDailyTrend, getTopProducts, getOutletPerformanceToday } from "@/server/services/report-service";
+import { getOverduePurchaseOrders } from "@/server/services/purchase-order-service";
+import { getRequestVertical } from "@/lib/request-vertical";
 import { formatTanggal } from "@/lib/format";
 import { navItemsForHub } from "@/lib/nav";
 import { BuildingIcon, BriefcaseIcon, PackageIcon, UsersIcon } from "@/components/ui/icons";
@@ -11,6 +14,7 @@ import { LowStockAlert } from "@/components/inventory/low-stock-alert";
 import { StatTile } from "@/components/laporan/stat-tile";
 import { EyebrowBadge } from "@/components/ui/eyebrow-badge";
 import { SectionCard } from "@/components/ui/section-card";
+import { SupermarketDashboard } from "./supermarket-dashboard";
 
 const STAT_CARDS = [
   { key: "outletCount", label: "Outlet aktif", icon: BuildingIcon },
@@ -21,10 +25,11 @@ const STAT_CARDS = [
 
 export default async function KpiPage() {
   const user = await requireSession();
-  const [summary, enabledModules, outlets] = await Promise.all([
+  const [summary, enabledModules, outlets, vertical] = await Promise.all([
     getDashboardSummary(user.tenantId),
     getEnabledModules(user.tenantId),
     listOutletsForUser(user.tenantId, user.id, user.role),
+    getRequestVertical(),
   ]);
   const quickLinks = navItemsForHub(user.role, "kasir", enabledModules).filter((item) => item.href !== "/kpi");
 
@@ -32,6 +37,30 @@ export default async function KpiPage() {
   const lowStockItems = firstOutletId
     ? await getLowStockProducts(user.tenantId, firstOutletId)
     : [];
+
+  if (vertical?.key === "supermarket") {
+    const outletIds = outlets.map((o) => o.id);
+    const [todayVsYesterday, dailyTrend, topProducts, overduePOs, outletPerformance] = await Promise.all([
+      getTodayVsYesterday(user.tenantId, outletIds),
+      getDailyTrend(user.tenantId, outletIds, 7),
+      getTopProducts(user.tenantId, outletIds, 7, 5),
+      getOverduePurchaseOrders(user.tenantId, 5),
+      getOutletPerformanceToday(user.tenantId, outletIds),
+    ]);
+
+    return (
+      <SupermarketDashboard
+        ownerFirstName={user.name.split(" ")[0]}
+        todayVsYesterday={todayVsYesterday}
+        dailyTrend={dailyTrend}
+        topProducts={topProducts}
+        lowStockItems={lowStockItems}
+        overduePOs={overduePOs}
+        outletPerformance={outletPerformance}
+        lowStockOutletName={outlets[0]?.name}
+      />
+    );
+  }
 
   return (
     <div className="mx-auto flex max-w-5xl flex-col gap-6">

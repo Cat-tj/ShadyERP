@@ -85,6 +85,13 @@ function getSimpleTabs(vertical: VerticalDef | undefined, role: Role): SimpleTab
           { href: "/hris", label: "Tim", icon: UsersIcon },
           { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
         ];
+      case "supermarket":
+        return [
+          { href: "/kpi", label: "Dashboard", icon: HomeIcon },
+          { href: "/kasir", label: "Kasir", icon: ReceiptIcon },
+          { href: "/inventory", label: "Stok", icon: PackageIcon },
+          { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
+        ];
       default:
         return [
           { href: "/kasir", label: "Kasir", icon: ReceiptIcon },
@@ -170,9 +177,20 @@ export function SimpleShell({
       "radial-gradient(900px 520px at 0% -10%, rgba(167, 48, 168, 0.06) 0%, transparent 58%), radial-gradient(760px 480px at 100% 0%, rgba(22, 163, 74, 0.05) 0%, transparent 52%), linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-secondary) 100%)",
     backgroundAttachment: "fixed",
   };
+  // SimpleShell tidak punya theming per-modul seperti AppShell, jadi cukup satu
+  // override di root — sengaja digate ketat ke vertical supermarket (sama seperti
+  // AppShell) biar cafe/toko/dll yang juga punya theme di verticals.ts tidak
+  // ikut berubah tanpa diminta.
+  const verticalThemeStyle: React.CSSProperties | undefined =
+    vertical?.key === "supermarket"
+      ? ({
+          "--color-primary": vertical.theme.primary,
+          "--color-primary-dark": vertical.theme.deep,
+        } as React.CSSProperties)
+      : undefined;
 
   return (
-    <div className="flex min-h-dvh w-full bg-[var(--color-bg)]" style={shellBackgroundStyle}>
+    <div className="flex min-h-dvh w-full bg-[var(--color-bg)]" style={{ ...shellBackgroundStyle, ...verticalThemeStyle }}>
       <aside className="glass-surface sticky top-0 hidden h-dvh w-64 shrink-0 flex-col rounded-none border-y-0 border-l-0 lg:flex">
         <Link href={homeHref} className="flex min-h-14 items-center gap-3 border-b border-[var(--color-gold-soft)] px-5">
           <img src={logoSrc} alt={modeLabel} className="h-8 w-8 shrink-0" />
