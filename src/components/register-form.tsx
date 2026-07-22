@@ -19,21 +19,32 @@ const TOGGLEABLE_MODULES = [
   { key: "resep", label: "Resep & Bahan Baku", desc: "Bahan baku, resep, dan HPP menu" },
 ] as const;
 
-export function RegisterForm() {
+type RegisterFormProps = {
+  lockedBusinessType?: BusinessModeKey;
+  lockedBusinessLabel?: string;
+};
+
+export function RegisterForm({ lockedBusinessType, lockedBusinessLabel }: RegisterFormProps) {
   const [state, formAction, isPending] = useActionState(registerAction, initialState);
   const [step, setStep] = useState(1);
   const [localError, setLocalError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Form Fields State
+  const initialBusinessType = lockedBusinessType ?? "CAFE";
   const [ownerName, setOwnerName] = useState(state.values?.ownerName ?? "");
   const [email, setEmail] = useState(state.values?.email ?? "");
   const [password, setPassword] = useState("");
   const [businessName, setBusinessName] = useState(state.values?.businessName ?? "");
-  const [businessType, setBusinessType] = useState<BusinessModeKey>("CAFE");
+  const [businessType, setBusinessType] = useState<BusinessModeKey>(initialBusinessType);
   const [outletName, setOutletName] = useState(state.values?.outletName ?? "");
-  const [enabledModules, setEnabledModules] = useState<string[]>(BUSINESS_MODE_MAP.CAFE.recommendedModules);
+  const [enabledModules, setEnabledModules] = useState<string[]>(
+    BUSINESS_MODE_MAP[initialBusinessType].recommendedModules
+  );
   const [seedSampleData, setSeedSampleData] = useState(false);
   const displayedError = localError ?? state.error ?? null;
+  const isLockedBusinessType = Boolean(lockedBusinessType);
+  const currentMode = BUSINESS_MODE_MAP[businessType];
 
   const allKeys = TOGGLEABLE_MODULES.map((m) => m.key);
   const disabledModules = allKeys.filter((k) => !enabledModules.includes(k));
@@ -70,7 +81,7 @@ export function RegisterForm() {
 
   function nextStep() {
     if (step === 1 && validateStep1()) setStep(2);
-    else if (step === 2 && validateStep2()) setStep(3);
+    else if (!isLockedBusinessType && step === 2 && validateStep2()) setStep(3);
   }
 
   function prevStep() {
@@ -96,7 +107,6 @@ export function RegisterForm() {
       <input type="hidden" name="disabledModules" value={JSON.stringify(disabledModules)} />
       <input type="hidden" name="seedSampleData" value={String(seedSampleData)} />
 
-      {/* Beautiful Progress Dots */}
       <div className="mb-2 flex items-center justify-between text-xs text-[var(--color-text-secondary)]">
         <span className={`font-semibold transition-colors ${step >= 1 ? "text-[var(--color-primary)] font-bold" : ""}`}>
           1. Akun Pemilik
@@ -105,10 +115,14 @@ export function RegisterForm() {
         <span className={`font-semibold transition-colors ${step >= 2 ? "text-[var(--color-primary)] font-bold" : ""}`}>
           2. Profil &amp; Modul
         </span>
-        <span className={`h-[2px] flex-1 mx-3 rounded-full transition-colors ${step >= 3 ? "bg-[var(--color-primary)]/40" : "bg-[var(--color-border)]"}`} />
-        <span className={`font-semibold transition-colors ${step >= 3 ? "text-[var(--color-primary)] font-bold" : ""}`}>
-          3. Kustomisasi
-        </span>
+        {!isLockedBusinessType && (
+          <>
+            <span className={`h-[2px] flex-1 mx-3 rounded-full transition-colors ${step >= 3 ? "bg-[var(--color-primary)]/40" : "bg-[var(--color-border)]"}`} />
+            <span className={`font-semibold transition-colors ${step >= 3 ? "text-[var(--color-primary)] font-bold" : ""}`}>
+              3. Kustomisasi
+            </span>
+          </>
+        )}
       </div>
 
       {displayedError && (
@@ -146,14 +160,25 @@ export function RegisterForm() {
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-[var(--color-text)]">Kata Sandi</label>
-            <input
-              type="password"
-              required
-              placeholder="Minimal 6 karakter"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="min-h-[48px] rounded-lg border border-[var(--color-border)] bg-white/70 px-4 text-base text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:bg-white focus:ring-2 focus:ring-[var(--color-primary)]/20"
-            />
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                required
+                placeholder="Minimal 6 karakter"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="min-h-[48px] w-full rounded-lg border border-[var(--color-border)] bg-white/70 px-4 pr-24 text-base text-[var(--color-text)] outline-none focus:border-[var(--color-primary)] focus:bg-white focus:ring-2 focus:ring-[var(--color-primary)]/20"
+              />
+              <button
+                type="button"
+                aria-pressed={showPassword}
+                aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
+                onClick={() => setShowPassword((visible) => !visible)}
+                className="absolute inset-y-1 right-1 min-w-20 rounded-md px-3 text-xs font-semibold text-[var(--color-primary)] transition-colors hover:bg-[var(--color-primary)]/10 focus:outline-none focus:ring-2 focus:ring-[var(--color-primary)]/30"
+              >
+                {showPassword ? "Sembunyikan" : "Tampilkan"}
+              </button>
+            </div>
           </div>
 
           <button
@@ -195,26 +220,44 @@ export function RegisterForm() {
 
           <div className="flex flex-col gap-1.5">
             <label className="text-sm font-medium text-[var(--color-text)]">Jenis Usaha</label>
-            <div className="grid grid-cols-2 gap-2 mt-1 sm:grid-cols-3">
-              {BUSINESS_MODES.map((t) => (
-                <button
-                  key={t.key}
-                  type="button"
-                  onClick={() => {
-                    setBusinessType(t.key);
-                    setEnabledModules(t.recommendedModules);
-                  }}
-                  className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center transition-all ${
-                    businessType === t.key
-                      ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)] font-semibold shadow-sm"
-                      : "border-[var(--color-border)] bg-white/50 hover:bg-white text-[var(--color-text)]"
-                  }`}
-                >
-                  <span className="text-xs font-semibold leading-tight">{t.shortLabel}</span>
-                  <span className="mt-1 line-clamp-2 text-[10px] font-medium opacity-70">{t.description}</span>
-                </button>
-              ))}
-            </div>
+            {isLockedBusinessType ? (
+              <div className="rounded-xl border border-[var(--color-primary)]/40 bg-[var(--color-primary)]/5 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-bold text-[var(--color-primary)]">
+                      {lockedBusinessLabel ?? currentMode.label}
+                    </p>
+                    <p className="mt-1 text-xs text-[var(--color-text-secondary)]">
+                      Preset fitur sudah disiapkan untuk vertical ini. Modul detail tetap bisa diatur dari Superadmin/Pengaturan nanti.
+                    </p>
+                  </div>
+                  <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-[var(--color-primary)]">
+                    Prebuilt
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 mt-1 sm:grid-cols-3">
+                {BUSINESS_MODES.map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => {
+                      setBusinessType(t.key);
+                      setEnabledModules(t.recommendedModules);
+                    }}
+                    className={`flex flex-col items-center justify-center p-3 rounded-lg border text-center transition-all ${
+                      businessType === t.key
+                        ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5 text-[var(--color-primary)] font-semibold shadow-sm"
+                        : "border-[var(--color-border)] bg-white/50 hover:bg-white text-[var(--color-text)]"
+                    }`}
+                  >
+                    <span className="text-xs font-semibold leading-tight">{t.shortLabel}</span>
+                    <span className="mt-1 line-clamp-2 text-[10px] font-medium opacity-70">{t.description}</span>
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="flex gap-3 mt-2">
@@ -225,13 +268,29 @@ export function RegisterForm() {
             >
               ← Kembali
             </button>
-            <button
-              type="button"
-              onClick={nextStep}
-              className="flex min-h-[52px] flex-[2] items-center justify-center rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90"
-            >
-              Kustomisasi Fitur →
-            </button>
+            {isLockedBusinessType ? (
+              <button
+                type="submit"
+                disabled={isPending}
+                onClick={(event) => {
+                  if (!validateStep2()) event.preventDefault();
+                }}
+                className="flex min-h-[52px] flex-[2] items-center justify-center gap-2 rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90 disabled:opacity-60"
+              >
+                {isPending && (
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-[var(--color-on-primary)]/30 border-t-[var(--color-on-primary)]" />
+                )}
+                {isPending ? "Mendaftarkan..." : `Selesaikan & Buat ${currentMode.shortLabel}`}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={nextStep}
+                className="flex min-h-[52px] flex-[2] items-center justify-center rounded-lg bg-[var(--color-primary)] text-base font-semibold text-[var(--color-on-primary)] transition-opacity hover:opacity-90"
+              >
+                Kustomisasi Fitur →
+              </button>
+            )}
           </div>
         </div>
       )}

@@ -1,4 +1,5 @@
 import type { ModuleKey } from "@/lib/modules";
+import type { VerticalKey } from "@/lib/verticals";
 
 export type BusinessModeKey = "CAFE" | "TOKO" | "LAUNDRY" | "COUNTER" | "COMPANY";
 
@@ -87,6 +88,27 @@ export function normalizeBusinessMode(value: string | null | undefined): Busines
       return value;
     default:
       return "CAFE";
+  }
+}
+
+export function businessModeForVerticalKey(key: VerticalKey): BusinessModeKey {
+  switch (key) {
+    case "cafe":
+      return "CAFE";
+    case "toko":
+    case "ecommerce":
+    case "supermarket":
+      return "TOKO";
+    case "laundry":
+      return "LAUNDRY";
+    case "counter":
+    case "jasa":
+      return "COUNTER";
+    case "pabrik":
+    case "company":
+    case "teams":
+    case "accounting":
+      return "COMPANY";
   }
 }
 

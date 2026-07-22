@@ -6,7 +6,8 @@ import { signIn } from "@/lib/auth";
 import { getBaseUrl } from "@/lib/base-url";
 import { registerTenant } from "@/server/services/tenant-service";
 import { checkRateLimit, getClientIp, formatRetryMessage } from "@/lib/rate-limit";
-import { BUSINESS_MODES } from "@/lib/business-modes";
+import { BUSINESS_MODES, businessModeForVerticalKey } from "@/lib/business-modes";
+import { getRequestVertical } from "@/lib/request-vertical";
 
 export type RegisterState = {
   error?: string;
@@ -37,9 +38,14 @@ export async function registerAction(
   _prevState: RegisterState,
   formData: FormData
 ): Promise<RegisterState> {
+  const vertical = await getRequestVertical();
+  const forcedBusinessType = vertical
+    ? businessModeForVerticalKey(vertical.key)
+    : String(formData.get("businessType") ?? "CAFE");
+
   const values = {
     businessName: String(formData.get("businessName") ?? ""),
-    businessType: String(formData.get("businessType") ?? "CAFE"),
+    businessType: forcedBusinessType,
     outletName: String(formData.get("outletName") ?? ""),
     ownerName: String(formData.get("ownerName") ?? ""),
     email: String(formData.get("email") ?? ""),
