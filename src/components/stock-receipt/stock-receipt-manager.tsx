@@ -769,6 +769,18 @@ export function StockReceiptManager({
                       Ongkir & biaya lain: {formatRupiah(receipt.shippingCost + receipt.otherCost)}
                     </p>
                   )}
+                  {receipt.status !== "PENDING" && receipt.status !== "REJECTED" && (() => {
+                    const totalAccepted = receipt.items.reduce((sum, i) => sum + i.qtyAccepted, 0);
+                    const totalDefect = receipt.items.reduce((sum, i) => sum + i.qtyDefect, 0);
+                    const notes = receipt.items.filter((i) => i.qcNotes?.trim());
+                    return (
+                      <p className="text-xs text-[var(--color-text-secondary)]">
+                        QC: {totalAccepted} diterima
+                        {totalDefect > 0 && <span className="text-[var(--color-danger)]"> · {totalDefect} cacat</span>}
+                        {notes.length > 0 && ` · "${notes[0].qcNotes}"${notes.length > 1 ? ` (+${notes.length - 1} catatan lain)` : ""}`}
+                      </p>
+                    );
+                  })()}
                 </div>
                 <div className="flex flex-wrap items-center gap-2">
                   {receipt.status === "PENDING" && (
