@@ -1,6 +1,27 @@
 import type { NextAuthConfig, Session } from "next-auth";
 import type { JWT } from "next-auth/jwt";
 
+function isAltoraOrigin(url: URL): boolean {
+  const host = url.hostname.toLowerCase();
+  return url.protocol === "https:" && (host === "altora.my.id" || host.endsWith(".altora.my.id"));
+}
+
+function isLocalDevelopmentOrigin(url: URL): boolean {
+  const host = url.hostname.toLowerCase();
+  return process.env.NODE_ENV !== "production" && (host === "localhost" || host === "127.0.0.1" || host === "::1");
+}
+
+function getSafeBaseUrl(baseUrl: string): string {
+  try {
+    const parsed = new URL(baseUrl);
+    if (isAltoraOrigin(parsed) || isLocalDevelopmentOrigin(parsed)) return parsed.origin;
+  } catch {
+    // Auth.js still receives a safe public fallback below.
+  }
+
+  return "https://altora.my.id";
+}
+
 /**
  * Konfigurasi yang aman dijalankan di Edge Runtime (middleware/proxy):
  * TIDAK BOLEH mengimpor Prisma/bcrypt di sini. Provider Credentials (yang
@@ -14,6 +35,22 @@ export const authConfig: NextAuthConfig = {
   },
   providers: [],
   callbacks: {
+    redirect: ({ url, baseUrl }) => {
+      const safeBaseUrl = getSafeBaseUrl(baseUrl);
+
+      if (url.startsWith("/")) return new URL(url, safeBaseUrl).toString();
+
+      try {
+        const target = new URL(url);
+        if (isAltoraOrigin(target) || isLocalDevelopmentOrigin(target)) {
+          return target.toString();
+        }
+      } catch {
+        // Invalid callback URLs must never become redirects.
+      }
+
+      return safeBaseUrl;
+    },
     jwt: ({ token, user }) => {
       if (user) {
         const typedUser = user as {

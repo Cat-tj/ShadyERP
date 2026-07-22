@@ -2,6 +2,7 @@
 
 import { AuthError } from "next-auth";
 import { signIn } from "@/lib/auth";
+import { getBaseUrl } from "@/lib/base-url";
 import { checkRateLimit, getClientIp, formatRetryMessage } from "@/lib/rate-limit";
 
 export type LoginState = {
@@ -36,10 +37,11 @@ export async function loginAction(
   }
 
   try {
+    const redirectTo = `${await getBaseUrl()}/pilih-aplikasi`;
     await signIn("credentials", {
       email,
       password,
-      redirectTo: "/pilih-aplikasi",
+      redirectTo,
     });
     return {};
   } catch (error) {

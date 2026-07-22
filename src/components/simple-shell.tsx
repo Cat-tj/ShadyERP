@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { getCurrentLoginUrl } from "@/lib/auth-client";
 import { BarChartIcon, GridIcon, HomeIcon, ReceiptIcon, WalletIcon, UserIcon, PowerIcon } from "@/components/ui/icons";
 import type { Role } from "@/lib/nav";
 import { SettingsSidebarNav } from "@/features/settings/components/settings-sidebar-nav";
@@ -131,7 +132,7 @@ export function SimpleShell({
           </Link>
           <button
             type="button"
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={() => signOut({ callbackUrl: getCurrentLoginUrl() })}
             className="mt-2.5 min-h-[36px] w-full rounded-lg border border-[var(--color-border)] bg-white/40 text-xs font-semibold text-[var(--color-text)] transition-colors duration-150 hover:bg-white/70"
           >
             Keluar
@@ -159,7 +160,7 @@ export function SimpleShell({
             </Link>
             <button
               type="button"
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={() => signOut({ callbackUrl: getCurrentLoginUrl() })}
               className="flex h-[40px] w-[40px] items-center justify-center rounded-lg border border-[var(--color-border)] bg-white/45 text-[var(--color-text)]"
               aria-label="Keluar"
             >

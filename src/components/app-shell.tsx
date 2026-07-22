@@ -4,6 +4,7 @@ import { useEffect, useState, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { getCurrentLoginUrl } from "@/lib/auth-client";
 import { navItemsForHub, type Role, hubsAvailableForRole } from "@/lib/nav";
 import { UserIcon, PowerIcon, GridIcon, ChevronDownIcon } from "@/components/ui/icons";
 import MobileCartBar from "@/components/ui/mobile-cart-bar";
@@ -226,7 +227,7 @@ export function AppShell({
               <p className="text-xs text-[var(--color-text-secondary)]">{ROLE_LABEL[role]}</p>
             </Link>
             <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={() => signOut({ callbackUrl: getCurrentLoginUrl() })}
               className="mt-2.5 min-h-[36px] w-full rounded-lg border border-[var(--color-border)] bg-white/40 text-xs font-semibold text-[var(--color-text)] transition-colors duration-150 hover:bg-white/70"
             >
               Keluar
@@ -314,7 +315,7 @@ export function AppShell({
                 <UserIcon aria-hidden className="h-5 w-5" />
               </Link>
               <button
-                onClick={() => signOut({ callbackUrl: "/login" })}
+                onClick={() => signOut({ callbackUrl: getCurrentLoginUrl() })}
                 aria-label="Keluar"
                 className="flex h-10 w-10 items-center justify-center rounded-lg text-[var(--color-text-secondary)] hover:bg-white/40"
               >

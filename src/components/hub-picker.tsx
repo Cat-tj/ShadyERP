@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
+import { getCurrentLoginUrl } from "@/lib/auth-client";
 import { HUBS, type HubDef, type HubKey } from "@/lib/hubs";
 import { PowerIcon } from "@/components/ui/icons";
 import { BUSINESS_MODE_MAP, type BusinessModeKey } from "@/lib/business-modes";
@@ -91,7 +92,7 @@ export function HubPicker({
             </div>
           </div>
           <button
-            onClick={() => signOut({ callbackUrl: "/login" })}
+            onClick={() => signOut({ callbackUrl: getCurrentLoginUrl() })}
             aria-label="Keluar"
             className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[var(--color-text-secondary)] transition-colors hover:bg-[var(--color-surface)] hover:text-[var(--color-text)]"
           >

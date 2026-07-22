@@ -3,6 +3,7 @@
 import { z } from "zod";
 import { AuthError } from "next-auth";
 import { signIn } from "@/lib/auth";
+import { getBaseUrl } from "@/lib/base-url";
 import { registerTenant } from "@/server/services/tenant-service";
 import { checkRateLimit, getClientIp, formatRetryMessage } from "@/lib/rate-limit";
 import { BUSINESS_MODES } from "@/lib/business-modes";
@@ -85,10 +86,11 @@ export async function registerAction(
   }
 
   try {
+    const redirectTo = `${await getBaseUrl()}/pilih-aplikasi`;
     await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirectTo: "/pilih-aplikasi",
+      redirectTo,
     });
     return {};
   } catch (error) {
