@@ -442,7 +442,10 @@ export function PosScreen({
                 <span className="text-sm font-medium text-[var(--color-text)]">👤 {posMember.name}</span>
                 <button
                   type="button"
-                  onClick={() => setPosMember(null)}
+                  onClick={() => {
+                    setPosMember(null);
+                    setShowMemberPicker(true);
+                  }}
                   className="text-xs font-semibold text-[var(--color-primary)]"
                 >
                   Ganti
@@ -695,6 +698,7 @@ export function PosScreen({
           description="Barcode/QR yang cocok dengan SKU akan langsung masuk invoice."
           onDetected={handleBarcodeDetected}
           onClose={() => setShowBarcodeScanner(false)}
+          onError={(message) => showToast(message)}
         />
       )}
 
@@ -705,6 +709,10 @@ export function PosScreen({
           persistent
           onDetected={handleBarcodeDetected}
           onClose={() => setScannerAlwaysOn(false)}
+          onError={(message) => {
+            setScannerAlwaysOn(false);
+            showToast(message);
+          }}
         />
       )}
 

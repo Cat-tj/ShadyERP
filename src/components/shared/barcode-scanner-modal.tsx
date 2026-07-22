@@ -24,12 +24,15 @@ export function BarcodeScannerModal({
   description = "Arahkan kamera ke barcode atau QR produk.",
   onDetected,
   onClose,
+  onError,
   persistent = false,
 }: {
   title?: string;
   description?: string;
   onDetected: (value: string) => void;
   onClose: () => void;
+  /** Called once if the camera never actually starts (unsupported browser, permission denied, or busy) — lets the caller avoid showing a toggle/state as "active" when the display is really broken. */
+  onError?: (message: string) => void;
   /** Keep the camera open for fast, repeated POS scanning. */
   persistent?: boolean;
 }) {
@@ -38,13 +41,15 @@ export function BarcodeScannerModal({
   const stoppedRef = useRef(false);
   const onDetectedRef = useRef(onDetected);
   const onCloseRef = useRef(onClose);
+  const onErrorRef = useRef(onError);
   const lastDetectedRef = useRef<{ value: string; at: number } | null>(null);
   const [message, setMessage] = useState("Menyiapkan kamera...");
 
   useEffect(() => {
     onDetectedRef.current = onDetected;
     onCloseRef.current = onClose;
-  }, [onClose, onDetected]);
+    onErrorRef.current = onError;
+  }, [onClose, onDetected, onError]);
 
   useEffect(() => {
     let timeoutId: number | null = null;
@@ -52,7 +57,9 @@ export function BarcodeScannerModal({
     async function startScanner() {
       const BarcodeDetectorCtor = (window as unknown as { BarcodeDetector?: BarcodeDetectorConstructor }).BarcodeDetector;
       if (!BarcodeDetectorCtor) {
-        setMessage("Browser ini belum mendukung scan kamera. Pakai barcode scanner fisik atau ketik SKU manual.");
+        const text = "Browser ini belum mendukung scan kamera. Pakai barcode scanner fisik atau ketik SKU manual.";
+        setMessage(text);
+        onErrorRef.current?.(text);
         return;
       }
 
@@ -96,7 +103,9 @@ export function BarcodeScannerModal({
 
         scan();
       } catch {
-        setMessage("Kamera tidak bisa dibuka. Izinkan akses kamera, atau pakai input manual.");
+        const text = "Kamera tidak bisa dibuka. Izinkan akses kamera, atau pakai input manual.";
+        setMessage(text);
+        onErrorRef.current?.(text);
       }
     }
 

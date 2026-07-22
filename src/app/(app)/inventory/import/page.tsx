@@ -34,6 +34,7 @@ export default function InventoryImportPage() {
   const [csvText, setCsvText] = useState("");
   const [parsedRows, setParsedRows] = useState<ParsedRow[]>([]);
   const [errorSummary, setErrorSummary] = useState<string | null>(null);
+  const [isDraggingFile, setIsDraggingFile] = useState(false);
 
   function parseCSV(text: string): ParsedRow[] {
     const lines = text.split(/\r?\n/).filter((line) => line.trim().length > 0);
@@ -162,9 +163,11 @@ export default function InventoryImportPage() {
     return cells;
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  function processFile(file: File) {
+    if (!file.name.toLowerCase().endsWith(".csv")) {
+      showToast("File harus berformat .csv");
+      return;
+    }
 
     const reader = new FileReader();
     reader.onload = (event) => {
@@ -184,6 +187,20 @@ export default function InventoryImportPage() {
       }
     };
     reader.readAsText(file);
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    processFile(file);
+  }
+
+  function handleDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    setIsDraggingFile(false);
+    const file = e.dataTransfer.files?.[0];
+    if (!file) return;
+    processFile(file);
   }
 
   function downloadTemplate() {
@@ -258,7 +275,19 @@ export default function InventoryImportPage() {
             <h2 className="text-base font-bold text-[var(--color-text)] mb-3">1. Upload File CSV</h2>
             
             <div className="flex flex-col gap-4">
-              <div className="rounded-lg border-2 border-dashed border-[var(--color-border)] p-6 text-center hover:bg-[var(--color-bg)] transition-colors">
+              <div
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setIsDraggingFile(true);
+                }}
+                onDragLeave={() => setIsDraggingFile(false)}
+                onDrop={handleDrop}
+                className={`rounded-lg border-2 border-dashed p-6 text-center transition-colors ${
+                  isDraggingFile
+                    ? "border-[var(--color-primary)] bg-[var(--color-primary)]/5"
+                    : "border-[var(--color-border)] hover:bg-[var(--color-bg)]"
+                }`}
+              >
                 <input
                   type="file"
                   accept=".csv"
@@ -271,7 +300,7 @@ export default function InventoryImportPage() {
                     Pilih file CSV toko Anda
                   </span>
                   <span className="mt-1 block text-xs text-[var(--color-text-secondary)]">
-                    Maksimum ukuran file 5MB · Format .csv saja · mendukung outlet, supplier, batch, expired
+                    Atau tarik &amp; lepas file di sini · maksimum ukuran file 5MB · Format .csv saja
                   </span>
                 </label>
               </div>
