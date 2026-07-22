@@ -6,8 +6,9 @@ import { signIn } from "@/lib/auth";
 import { getBaseUrl } from "@/lib/base-url";
 import { registerTenant } from "@/server/services/tenant-service";
 import { checkRateLimit, getClientIp, formatRetryMessage } from "@/lib/rate-limit";
-import { BUSINESS_MODES, businessModeForVerticalKey } from "@/lib/business-modes";
+import { BUSINESS_MODES, BUSINESS_MODE_MAP, businessModeForVerticalKey } from "@/lib/business-modes";
 import { getRequestVertical } from "@/lib/request-vertical";
+import { MODULES } from "@/lib/modules";
 
 export type RegisterState = {
   error?: string;
@@ -51,14 +52,6 @@ export async function registerAction(
     email: String(formData.get("email") ?? ""),
   };
 
-  const disabledModulesStr = String(formData.get("disabledModules") ?? "[]");
-  let disabledModules: string[] = [];
-  try {
-    disabledModules = JSON.parse(disabledModulesStr);
-  } catch {}
-
-  const seedSampleData = formData.get("seedSampleData") === "true";
-
   const ip = await getClientIp();
   const limit = checkRateLimit(`register:ip:${ip}`, 5, 60_000);
   if (!limit.allowed) {
@@ -77,6 +70,14 @@ export async function registerAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Data belum lengkap.", values };
   }
+
+  const allToggleableModuleKeys = MODULES.filter((module) => !module.core).map((module) => module.key);
+  const authoritativeEnabledModules = vertical
+    ? vertical.modules
+    : BUSINESS_MODE_MAP[parsed.data.businessType].recommendedModules;
+  const enabledSet = new Set(authoritativeEnabledModules);
+  const disabledModules = allToggleableModuleKeys.filter((key) => !enabledSet.has(key));
+  const seedSampleData = false;
 
   try {
     await registerTenant({

@@ -60,6 +60,7 @@ export const BUSINESS_MODES: BusinessModeDef[] = [
       "keuangan",
       "promo",
       "resep",
+      "produksi",
     ],
     painKillers: ["Multi-cabang", "Approval", "Dokumen", "Finance lengkap"],
   },

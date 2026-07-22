@@ -3,12 +3,16 @@ import { requireRole } from "@/server/require-session";
 import { listOutletsForUser } from "@/server/services/outlet-service";
 import { getSimpleTodaySummary } from "@/server/services/simple-dashboard-service";
 import { formatRupiah } from "@/lib/format";
+import { getRequestVertical } from "@/lib/request-vertical";
+import { getPrimaryActionForVertical } from "@/lib/vertical-navigation";
 import { StatCard } from "@/components/ui/stat-card";
 import { EmptyState } from "@/components/ui/empty-state";
-import { TrendingUpIcon, TrendingDownIcon, AlertCircleIcon, AwardIcon } from "@/components/ui/icons";
+import { AwardIcon } from "@/components/ui/icons";
 
 export default async function SimpleHariIniPage() {
   const user = await requireRole(["OWNER", "MANAGER"]);
+  const vertical = await getRequestVertical();
+  const primaryAction = getPrimaryActionForVertical(vertical?.key, user.role);
   const outlets = await listOutletsForUser(user.tenantId, user.id, user.role);
   const outletIds = outlets.map((outlet) => outlet.id);
 
@@ -18,8 +22,12 @@ export default async function SimpleHariIniPage() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--color-text)] sm:text-3xl">Hari Ini</h1>
-        <p className="text-sm text-[var(--color-text-secondary)]">Dashboard pantauan cepat bisnis Anda.</p>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-[var(--color-text)] sm:text-3xl">
+          {vertical ? `${vertical.label} Hari Ini` : "Hari Ini"}
+        </h1>
+        <p className="text-sm text-[var(--color-text-secondary)]">
+          Dashboard pantauan cepat {vertical ? vertical.caseKicker.toLowerCase() : "bisnis Anda"}.
+        </p>
       </div>
 
       {/* Main Metrics Grid */}
@@ -112,10 +120,10 @@ export default async function SimpleHariIniPage() {
           {summary.topProducts.length === 0 ? (
             <EmptyState
               icon={AwardIcon}
-              title="Belum ada penjualan hari ini"
-              description="Transaksi penjualan di Kasir akan tercatat secara langsung di sini."
+              title={primaryAction.emptyTitle}
+              description={primaryAction.emptyDescription}
               compact
-              action={{ label: "Buka Kasir POS", href: "/kasir" }}
+              action={{ label: primaryAction.label, href: primaryAction.href }}
             />
           ) : (
             <div className="flex flex-col divide-y divide-[var(--color-border)]">

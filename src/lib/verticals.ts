@@ -212,7 +212,7 @@ export const VERTICALS: VerticalDef[] = [
     caseKicker: "Produksi & manufaktur kecil",
     caseTitle: "Bahan baku terpantau, mesin terjadwal.",
     caseDescription: "Stok bahan baku, jadwal maintenance mesin/alat, dan laporan pemakaian tercatat rapi.",
-    modules: ["inventory", "hr", "keuangan"],
+    modules: ["produksi", "inventory", "hr", "keuangan"],
     theme: {
       primary: "#334155",
       deep: "#1E293B",

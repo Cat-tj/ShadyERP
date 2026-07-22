@@ -3,18 +3,20 @@ import { headers } from "next/headers";
 import { auth } from "@/lib/auth";
 import { LandingContent } from "@/components/landing/landing-content";
 import { VERTICAL_MAP, type VerticalKey } from "@/lib/verticals";
+import { getDefaultAppHrefForVertical } from "@/lib/vertical-navigation";
+import type { Role } from "@/lib/nav";
 import { FAQ_ITEMS } from "@/lib/landing-data";
 import "./landing.css";
 
 export default async function RootPage() {
-  const session = await auth();
-  if (session?.user) {
-    redirect("/pilih-aplikasi");
-  }
-
   const headerList = await headers();
   const verticalKey = headerList.get("x-altora-vertical") as VerticalKey | null;
   const vertical = verticalKey ? VERTICAL_MAP[verticalKey] : undefined;
+  const session = await auth();
+
+  if (session?.user && vertical) {
+    redirect(getDefaultAppHrefForVertical(vertical.key, session.user.role as Role));
+  }
 
   return (
     <>

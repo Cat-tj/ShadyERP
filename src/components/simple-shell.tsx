@@ -4,8 +4,22 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "next-auth/react";
 import { getCurrentLoginUrl } from "@/lib/auth-client";
-import { BarChartIcon, GridIcon, HomeIcon, ReceiptIcon, WalletIcon, UserIcon, PowerIcon } from "@/components/ui/icons";
+import {
+  BarChartIcon,
+  BriefcaseIcon,
+  BuildingIcon,
+  CalendarIcon,
+  GridIcon,
+  HomeIcon,
+  PackageIcon,
+  ReceiptIcon,
+  UserIcon,
+  UsersIcon,
+  WalletIcon,
+  PowerIcon,
+} from "@/components/ui/icons";
 import type { Role } from "@/lib/nav";
+import type { VerticalDef } from "@/lib/verticals";
 import { SettingsSidebarNav } from "@/features/settings/components/settings-sidebar-nav";
 
 const ROLE_LABEL: Record<Role, string> = {
@@ -14,12 +28,65 @@ const ROLE_LABEL: Record<Role, string> = {
   STAFF: "Staf",
 };
 
-const tabs = [
-  { href: "/kasir", label: "Kasir", icon: ReceiptIcon },
-  { href: "/simple/uang", label: "Uang", icon: WalletIcon },
-  { href: "/simple/data", label: "Data", icon: BarChartIcon },
-  { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
-];
+type SimpleTab = {
+  href: string;
+  label: string;
+  icon: typeof ReceiptIcon;
+};
+
+function getSimpleTabs(vertical: VerticalDef | undefined, role: Role): SimpleTab[] {
+  switch (vertical?.key) {
+    case "teams":
+      return [
+        { href: role === "STAFF" ? "/absensi" : "/hris", label: role === "STAFF" ? "Absen" : "Tim", icon: UsersIcon },
+        { href: "/tim", label: "Jadwal", icon: CalendarIcon },
+        { href: "/simple/data", label: "Data", icon: BarChartIcon },
+        { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
+      ];
+    case "pabrik":
+      return [
+        { href: "/produksi", label: "Produksi", icon: BuildingIcon },
+        { href: "/inventory", label: "Stok", icon: PackageIcon },
+        { href: "/simple/data", label: "Data", icon: BarChartIcon },
+        { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
+      ];
+    case "accounting":
+      return [
+        { href: "/finance", label: "Finance", icon: WalletIcon },
+        { href: "/finance/laba-rugi", label: "Laporan", icon: BarChartIcon },
+        { href: "/simple/data", label: "Data", icon: BarChartIcon },
+        { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
+      ];
+    case "laundry":
+      return [
+        { href: "/laundry", label: "Laundry", icon: BriefcaseIcon },
+        { href: "/simple/uang", label: "Uang", icon: WalletIcon },
+        { href: "/simple/data", label: "Data", icon: BarChartIcon },
+        { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
+      ];
+    case "jasa":
+      return [
+        { href: "/booking", label: "Booking", icon: CalendarIcon },
+        { href: "/simple/uang", label: "Uang", icon: WalletIcon },
+        { href: "/simple/data", label: "Data", icon: BarChartIcon },
+        { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
+      ];
+    case "company":
+      return [
+        { href: "/simple/hari-ini", label: "Ringkasan", icon: HomeIcon },
+        { href: "/finance", label: "Finance", icon: WalletIcon },
+        { href: "/hris", label: "Tim", icon: UsersIcon },
+        { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
+      ];
+    default:
+      return [
+        { href: "/kasir", label: "Kasir", icon: ReceiptIcon },
+        { href: "/simple/uang", label: "Uang", icon: WalletIcon },
+        { href: "/simple/data", label: "Data", icon: BarChartIcon },
+        { href: "/simple/menu", label: "Lainnya", icon: GridIcon },
+      ];
+  }
+}
 
 // Halaman yang sengaja ditautkan dari hub "Lainnya" (simple/menu) — tetap bagian
 // dari alur normal mode Simpel, jadi TIDAK perlu banner "mode lengkap".
@@ -31,8 +98,11 @@ const SIMPLE_FRIENDLY_PREFIXES = [
   "/inventory",
   "/member",
   "/absensi",
+  "/tim",
   "/laundry",
+  "/booking",
   "/finance",
+  "/produksi",
   "/pengaturan",
 ];
 
@@ -49,6 +119,7 @@ export function SimpleShell({
   disabledModules = [],
   children,
   alertCount = 0,
+  vertical,
 }: {
   userName: string;
   role: Role;
@@ -56,6 +127,7 @@ export function SimpleShell({
   disabledModules?: string[];
   children: React.ReactNode;
   alertCount?: number;
+  vertical?: VerticalDef;
 }) {
   const pathname = usePathname();
   // Kasir manages its own fixed-height, internally-scrolling layout (h-[calc(100dvh-Npx)])
@@ -63,6 +135,10 @@ export function SimpleShell({
   // of that double-books the same space, leaving an empty draggable gap below the fold.
   const isFullBleedPage = pathname === "/kasir";
   const showAdvancedBanner = isAdvancedEscapePage(pathname);
+  const tabs = getSimpleTabs(vertical, role);
+  const homeHref = tabs[0]?.href ?? "/simple/hari-ini";
+  const logoSrc = vertical ? `/brand/${vertical.key}-symbol-onlight.svg` : "/brand/altora-purple-symbol.svg";
+  const modeLabel = vertical?.label ?? "Mode Simpel";
   const shellBackgroundStyle: React.CSSProperties = {
     backgroundImage:
       "radial-gradient(900px 520px at 0% -10%, rgba(167, 48, 168, 0.06) 0%, transparent 58%), radial-gradient(760px 480px at 100% 0%, rgba(22, 163, 74, 0.05) 0%, transparent 52%), linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg-secondary) 100%)",
@@ -72,11 +148,11 @@ export function SimpleShell({
   return (
     <div className="flex min-h-dvh w-full bg-[var(--color-bg)]" style={shellBackgroundStyle}>
       <aside className="glass-surface sticky top-0 hidden h-dvh w-64 shrink-0 flex-col rounded-none border-y-0 border-l-0 lg:flex">
-        <Link href="/simple/hari-ini" className="flex min-h-14 items-center gap-3 border-b border-[var(--color-gold-soft)] px-5">
-          <img src="/brand/altora-purple-symbol.svg" alt="Altora" className="h-8 w-8 shrink-0" />
+        <Link href={homeHref} className="flex min-h-14 items-center gap-3 border-b border-[var(--color-gold-soft)] px-5">
+          <img src={logoSrc} alt={modeLabel} className="h-8 w-8 shrink-0" />
           <span className="min-w-0">
             <span className="block truncate font-display text-sm font-semibold text-[var(--color-text)]">{tenantName}</span>
-            <span className="block text-xs font-medium text-[var(--color-primary)]">Mode Simpel</span>
+            <span className="block text-xs font-medium text-[var(--color-primary)]">{modeLabel}</span>
           </span>
         </Link>
 
@@ -144,8 +220,8 @@ export function SimpleShell({
       <header className="glass-nav sticky top-0 z-20 rounded-none border-x-0 border-t-0 pt-[var(--safe-area-top)] lg:hidden">
         <div className="mx-auto flex h-[var(--topbar-height)] max-w-[1600px] items-center justify-between gap-4 px-[var(--content-padding-x)]">
           <div className="flex min-w-0 items-center gap-8">
-            <Link href="/simple/hari-ini" className="flex min-w-0 shrink-0 items-center gap-2">
-              <img src="/brand/altora-purple-symbol.svg" alt="Altora" className="h-8 w-8 shrink-0" />
+            <Link href={homeHref} className="flex min-w-0 shrink-0 items-center gap-2">
+              <img src={logoSrc} alt={modeLabel} className="h-8 w-8 shrink-0" />
               <p className="truncate text-xs font-medium text-[var(--color-text-secondary)]">{tenantName}</p>
             </Link>
           </div>
@@ -191,7 +267,7 @@ export function SimpleShell({
         className="fixed inset-x-0 bottom-0 z-30 border-t border-[var(--color-border)] bg-[var(--color-surface)]/95 px-3 pb-[max(var(--safe-area-bottom),0.5rem)] pt-2 shadow-[0_-18px_40px_rgba(15,23,42,0.08)] backdrop-blur lg:hidden"
         style={{ height: "calc(var(--bottom-nav-height) + var(--safe-area-bottom))" }}
       >
-        <div className="mx-auto grid max-w-5xl grid-cols-4 gap-1">
+        <div className="mx-auto grid max-w-5xl gap-1" style={{ gridTemplateColumns: `repeat(${tabs.length}, minmax(0, 1fr))` }}>
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const active = pathname === tab.href || pathname.startsWith(`${tab.href}/`);
