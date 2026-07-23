@@ -9,7 +9,7 @@ or deploying.
 | --- | --- |
 | Repository | `Cat-tj/ShadyERP` |
 | Release branch | `master` |
-| Last deployed application SHA | `93a7b6a` |
+| Last deployed application SHA | `3ee5f69` |
 | Runtime | Altora VPS |
 | Product scope | Altora web application and its verticals |
 
@@ -62,3 +62,13 @@ Before coding or pushing, an agent must state in its handover:
   application SHA `93a7b6a`.
 - Local health endpoint plus `https://altora.my.id` and
   `https://teams.altora.my.id` returned HTTP 200 after restart.
+
+## VPS deployment record — HRIS KPI scopes
+
+- Application commit `3ee5f69` was deployed to `/home/altora/ShadyERP`.
+- A PostgreSQL backup was completed before migration
+  `20260723093000_hris_kpi_scopes` was applied.
+- `altora-main` was built from the deployed checkout and restarted only after
+  `.next/BUILD_ID` existed.
+- Local `/api/health`, `https://altora.my.id`, and
+  `https://teams.altora.my.id` each returned HTTP 200 after restart.
