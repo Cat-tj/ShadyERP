@@ -21,6 +21,7 @@ import {
   CheckCircleIcon,
   LockIcon,
   ShoppingCart,
+  AwardIcon,
 } from "@/components/ui/icons";
 import type { ModuleKey } from "@/lib/modules";
 import type { HubKey } from "@/lib/hubs";
@@ -67,6 +68,7 @@ export const NAV_ITEMS: NavItem[] = [
   { href: "/hris", label: "Database Staf", icon: UsersIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "hr", hub: "hris" },
   { href: "/tim", label: "Jadwal Kerja", icon: HomeIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "hr", hub: "hris" },
   { href: "/absensi", label: "Absensi Masuk", icon: MapPinIcon, roles: ["OWNER", "MANAGER", "STAFF"], showOnBottomNav: true, module: "hr", hub: "hris" },
+  { href: "/hris/kpi", label: "Target & KPI", icon: AwardIcon, roles: ["OWNER", "MANAGER", "STAFF"], module: "hr", hub: "hris" },
   { href: "/tim/analitik", label: "Laporan Kehadiran", icon: BarChartIcon, roles: ["OWNER", "MANAGER"], module: "hr", hub: "hris" },
 
   // ===== Finance =====

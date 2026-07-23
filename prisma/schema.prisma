@@ -3188,20 +3188,24 @@ model Candidate {
 model KpiGoal {
   id          String   @id @default(cuid())
   tenantId    String
-  workerId    String
+  workerId    String?
   title       String // e.g. "Efisiensi Produksi 98%"
   weight      Float // Bobot penilaian (0 - 1)
   targetValue Float
   actualValue Float    @default(0)
   status      String // ACTIVE, ACHIEVED, FAILED
+  scope       String   @default("INDIVIDUAL") // INDIVIDUAL, DEPARTMENT, ORGANIZATION
+  department  String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  worker Worker @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  tenant Tenant  @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  worker Worker? @relation(fields: [workerId], references: [id], onDelete: SetNull)
 
   @@index([tenantId])
   @@index([workerId])
+  @@index([tenantId, scope])
+  @@index([tenantId, department])
 }
 
 model PerformanceReview {

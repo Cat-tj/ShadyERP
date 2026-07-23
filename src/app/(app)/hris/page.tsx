@@ -45,8 +45,8 @@ const HRIS_FEATURES = [
   },
   {
     title: "Performa & KPI staf",
-    desc: "Kehadiran, keterlambatan, produktivitas shift, dan review berkala.",
-    href: "/tim/analitik",
+    desc: "Target individu, departemen, organisasi, dan progres berkala.",
+    href: "/hris/kpi",
     status: "Aktif",
     icon: BarChartIcon,
   },
