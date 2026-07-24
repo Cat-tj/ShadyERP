@@ -8,6 +8,8 @@ export type TeamAttendanceRow = {
   clockInAt: string | null;
   clockOutAt: string | null;
   status: "PRESENT" | "LATE" | "ABSENT";
+  lat: number | null;
+  lng: number | null;
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -35,6 +37,18 @@ export function TimAttendanceList({ rows }: { rows: TeamAttendanceRow[] }) {
               {formatTanggal(row.createdAt)} · {row.outletName} ·{" "}
               {row.clockInAt ? formatJam(row.clockInAt) : "-"}–{row.clockOutAt ? formatJam(row.clockOutAt) : "belum pulang"}
             </p>
+            {row.lat != null && row.lng != null ? (
+              <a
+                href={`https://www.google.com/maps?q=${row.lat},${row.lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs font-medium text-[var(--color-primary)] hover:underline"
+              >
+                Lihat lokasi absen
+              </a>
+            ) : (
+              <p className="text-xs text-[var(--color-text-secondary)]">Lokasi tidak tercatat</p>
+            )}
           </div>
           <span
             className={`w-fit rounded-full px-2.5 py-1 text-xs font-medium ${

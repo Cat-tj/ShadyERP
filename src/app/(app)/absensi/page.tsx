@@ -40,6 +40,8 @@ export default async function AbsensiPage() {
                 clockOutAt: attendance.clockOutAt?.toISOString() ?? null,
                 status: attendance.status,
                 clockInPhotoUrl: attendance.clockInPhotoUrl,
+                lat: attendance.lat,
+                lng: attendance.lng,
               }
             : null
         }

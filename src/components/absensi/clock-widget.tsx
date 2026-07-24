@@ -12,7 +12,25 @@ export type AttendanceInfo = {
   clockOutAt: string | null;
   status: "PRESENT" | "LATE" | "ABSENT";
   clockInPhotoUrl: string | null;
+  lat: number | null;
+  lng: number | null;
 } | null;
+
+function LocationLine({ lat, lng }: { lat: number | null; lng: number | null }) {
+  if (lat == null || lng == null) {
+    return <p className="text-xs text-[var(--color-text-secondary)]">Lokasi tidak tercatat</p>;
+  }
+  return (
+    <a
+      href={`https://www.google.com/maps?q=${lat},${lng}`}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-xs font-medium text-[var(--color-primary)] hover:underline"
+    >
+      Lihat lokasi absen
+    </a>
+  );
+}
 
 const STATUS_LABEL: Record<string, string> = {
   PRESENT: "Tepat waktu",
@@ -161,6 +179,7 @@ export function ClockWidget({
                 Masuk {formatJam(attendance.clockInAt!)}
               </p>
               <p className="text-xs text-[var(--color-text-secondary)]">{STATUS_LABEL[attendance.status]}</p>
+              <LocationLine lat={attendance.lat} lng={attendance.lng} />
             </div>
           </div>
           <button
@@ -189,6 +208,7 @@ export function ClockWidget({
             <p className="text-xs text-[var(--color-text-secondary)]">
               {STATUS_LABEL[attendance.status]} · Absensi hari ini selesai
             </p>
+            <LocationLine lat={attendance.lat} lng={attendance.lng} />
           </div>
         </div>
       )}

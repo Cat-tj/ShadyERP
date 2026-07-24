@@ -7,6 +7,38 @@ entri terbaru di atas.
 
 ---
 
+## 2026-07-23 — Fix: lokasi absensi tidak tampil
+
+**Commit SHA:** akan dicatat setelah commit dibuat (lihat entri commit di bawah setelah push).
+
+### Fitur/perubahan
+
+Bug: widget absensi (`ClockWidget`) sudah menangkap `lat`/`lng` lewat
+`navigator.geolocation` sejak awal dan menyimpannya ke `Attendance.lat/lng`,
+tapi kedua halaman yang merender widget itu (personal `/absensi` dan manager
+`/absensi/tim`) tidak pernah meneruskan field itu ke komponen — jadi lokasi
+terekam di database tapi tidak pernah terlihat siapa pun. Diperbaiki dengan
+meneruskan `lat`/`lng` dari service ke komponen, dan menampilkan link
+"Lihat lokasi absen" (Google Maps, plain URL — tidak perlu API key) di kartu
+absen personal maupun baris riwayat tim.
+
+### File yang diubah
+
+- `src/components/absensi/clock-widget.tsx` — `AttendanceInfo` type + `LocationLine` komponen
+- `src/components/absensi/tim-attendance-list.tsx` — `TeamAttendanceRow` type + link lokasi per baris
+- `src/app/(app)/absensi/page.tsx`, `src/app/(app)/absensi/tim/page.tsx` — teruskan `lat`/`lng` dari service ke komponen
+
+### Hasil validasi
+
+`npx tsc --noEmit` bersih, `npx eslint` pada semua file yang diubah bersih.
+Tidak ada perubahan schema/migration (field `lat`/`lng` sudah ada sejak awal).
+
+### Status deploy
+
+Belum di-deploy — commit ini baru dibuat, VPS masih menjalankan SHA sebelumnya.
+
+---
+
 ## 2026-07-23 — Dashboard Supermarket + migrasi ke `master`
 
 **Commit SHA:** `20a5a77` (kode fitur) — sudah menjadi ancestor `master` saat ini

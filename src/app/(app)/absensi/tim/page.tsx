@@ -57,6 +57,8 @@ export default async function AbsensiTimPage() {
             clockInAt: a.clockInAt?.toISOString() ?? null,
             clockOutAt: a.clockOutAt?.toISOString() ?? null,
             status: a.status,
+            lat: a.lat,
+            lng: a.lng,
           }))}
         />
       </div>
